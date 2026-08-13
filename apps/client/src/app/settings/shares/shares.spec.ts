@@ -76,6 +76,14 @@ describe('SettingsShares', () => {
     expect(component['translations'].incomingShares()).toBe('IncomingShares');
   });
 
+  it('renders sharing guidance as an article callout', () => {
+    const callout = fixture.nativeElement.querySelector('[data-test-id="shares-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.ShareSettings');
+  });
+
   it('disables share mutations while saved shares reload', async () => {
     const sharesState = TestBed.inject(sharesStateToken);
     sharesState.setState('outgoing', [

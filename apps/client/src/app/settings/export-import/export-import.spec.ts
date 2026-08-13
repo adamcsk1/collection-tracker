@@ -160,6 +160,26 @@ describe('ExportImport component', () => {
     toastState = TestBed.inject(toastStateToken);
   });
 
+  it('renders each explanation as a translated article callout', () => {
+    createComponent();
+
+    const calloutTestIds = [
+      'export-import-info',
+      'collection-data-export-info',
+      'collection-data-import-info',
+      'collection-items-imdb-id-import-info',
+      'tag-management-export-import-info',
+    ];
+
+    for (const testId of calloutTestIds) {
+      const callout = fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`);
+
+      expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+      expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+      expect(callout.textContent).toContain('Message.');
+    }
+  });
+
   it('exports collection data JSON', async () => {
     createComponent();
     component['onExportCollectionData']();

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
+import { Callout } from '@components/callout/callout';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Select } from '@components/select/select';
 import { apiStateToken } from '@services/api/api-store';
@@ -17,7 +18,7 @@ import { SettingsService } from '../settings-service';
 
 @Component({
   selector: 'ct-settings-basics',
-  imports: [Select, FormField, FormRoot, Checkbox],
+  imports: [Callout, Select, FormField, FormRoot, Checkbox],
   templateUrl: './basics.html',
   styleUrl: './basics.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

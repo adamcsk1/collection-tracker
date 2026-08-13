@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { form, FormField, FormRoot } from '@angular/forms/signals';
+import { Callout } from '@components/callout/callout';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
 import { DEFAULT_COLLECTION_FEATURE_PREFERENCES } from '@shared/constants/collection-feature-preferences-const';
@@ -9,7 +10,7 @@ import { SettingsService } from '../settings-service';
 
 @Component({
   selector: 'ct-settings-features',
-  imports: [Checkbox, FormField, FormRoot],
+  imports: [Callout, Checkbox, FormField, FormRoot],
   templateUrl: './features.html',
   styleUrl: './features.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

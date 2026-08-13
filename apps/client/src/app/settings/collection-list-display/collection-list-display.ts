@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { form, FormField, FormRoot } from '@angular/forms/signals';
+import { Callout } from '@components/callout/callout';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Select } from '@components/select/select';
 import {
@@ -14,7 +15,7 @@ import { SettingsService } from '../settings-service';
 
 @Component({
   selector: 'ct-settings-collection-list-display',
-  imports: [Checkbox, FormField, FormRoot, Select],
+  imports: [Callout, Checkbox, FormField, FormRoot, Select],
   templateUrl: './collection-list-display.html',
   styleUrl: './collection-list-display.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

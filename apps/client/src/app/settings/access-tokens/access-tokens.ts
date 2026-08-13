@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Callout } from '@components/callout/callout';
 import { TokenDialog } from '../token-dialog/token-dialog';
 import { TokenItem } from './token-item/token-item';
 
@@ -12,7 +13,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-access-tokens',
-  imports: [TokenItem],
+  imports: [Callout, TokenItem],
   templateUrl: './access-tokens.html',
   styleUrl: './access-tokens.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,4 +1,6 @@
-<p>{{ translations.messageAccessTokenSettings() }}</p>
+<libc-callout data-test-id="access-tokens-info" icon="article">
+  {{ translations.messageAccessTokenSettings() }}
+</libc-callout>
 <div class="access-tokens-toolbar">
   <button data-test-id="settings-create-access-token" (click)="onCreateAccessToken()">
     <i class="material-icons" [title]="translations.createNewAccessToken()">add</i>

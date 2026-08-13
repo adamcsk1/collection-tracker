@@ -1,5 +1,7 @@
 <div data-test-id="settings-account-actions">
-  <p>{{ translations.messageUserSettings() }}</p>
+  <libc-callout data-test-id="account-actions-info" icon="article">
+    {{ translations.messageUserSettings() }}
+  </libc-callout>
 
   <div class="actions">
     <button data-test-id="settings-create-user-token" (click)="onCreateNewUserToken()">

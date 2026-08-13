@@ -22,8 +22,6 @@ describe('SettingsFeatures', () => {
         provideStore(initialMainState, mainStateToken),
       ],
     });
-    TestBed.overrideComponent(SettingsFeatures, { set: { template: '', imports: [] } });
-
     mainState = TestBed.inject(mainStateToken);
     mainState.setState('collectionFeaturePreferences', {
       books: true,
@@ -34,6 +32,14 @@ describe('SettingsFeatures', () => {
     fixture = TestBed.createComponent(SettingsFeatures);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('renders feature guidance as an article callout', () => {
+    const callout = fixture.nativeElement.querySelector('[data-test-id="features-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.Features');
   });
 
   it('initializes the form from main state preferences without saving', () => {

@@ -34,7 +34,9 @@
       {{ translations.refreshBackgroundImages() }}
     </button>
   </div>
-  <p>{{ translations.messageStorageSettings() }}</p>
+  <libc-callout data-test-id="storage-settings-info" icon="article">
+    {{ translations.messageStorageSettings() }}
+  </libc-callout>
   <libc-select
     data-test-id="settings-sensitive-data-storage"
     [label]="translations.sensitiveDataStorage()"

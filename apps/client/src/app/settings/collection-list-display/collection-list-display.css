@@ -7,7 +7,3 @@ form {
   flex-direction: column;
   gap: var(--size-xs);
 }
-
-p {
-  margin-top: 0;
-}

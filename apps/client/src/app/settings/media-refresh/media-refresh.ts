@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, computed, signal } from '@angular/core';
+import { Callout } from '@components/callout/callout';
 import { Select } from '@components/select/select';
 import { apiStateToken } from '@services/api/api-store';
 import { SelectDataModel } from '@shared/models/select-model';
@@ -10,7 +11,7 @@ import { ImageRefreshService } from './image-refresh/image-refresh-service';
 
 @Component({
   selector: 'ct-settings-media-refresh',
-  imports: [Select],
+  imports: [Callout, Select],
   templateUrl: './media-refresh.html',
   styleUrl: './media-refresh.css',
   providers: [ExternalRatingsRefreshService, ImageRefreshService, SharesService],

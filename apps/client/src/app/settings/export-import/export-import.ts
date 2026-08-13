@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Callout } from '@components/callout/callout';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
@@ -22,7 +23,7 @@ import { ExportImportService } from './export-import-service';
 
 @Component({
   selector: 'ct-export-import',
-  imports: [],
+  imports: [Callout],
   templateUrl: './export-import.html',
   styleUrl: './export-import.css',
   providers: [ExportImportService],

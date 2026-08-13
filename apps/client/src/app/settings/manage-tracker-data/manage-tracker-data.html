@@ -1,4 +1,6 @@
-<p>{{ translations.messageManageTrackerData() }}</p>
+<libc-callout data-test-id="manage-tracker-data-info" icon="article">
+  {{ translations.messageManageTrackerData() }}
+</libc-callout>
 @if (showLibrarySelect()) {
   <libc-select
     data-test-id="settings-manage-tracker-data-library"
@@ -10,7 +12,9 @@
   />
 }
 @if (featurePreferences().tracking || featurePreferences().books) {
-  <p class="tracker-cleanup-message">{{ translations.messageTrackerCleanup() }}</p>
+  <libc-callout class="tracker-cleanup-message" data-test-id="tracker-cleanup-info" icon="article">
+    {{ translations.messageTrackerCleanup() }}
+  </libc-callout>
 }
 @if (featurePreferences().books) {
   <h4>{{ translations.books() }}</h4>

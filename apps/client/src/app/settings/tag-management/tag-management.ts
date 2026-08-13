@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Callout } from '@components/callout/callout';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -23,7 +24,7 @@ import { tagManagementStateToken } from '../../tag-management/tag-management-sto
 
 @Component({
   selector: 'ct-tag-management',
-  imports: [Input, TagManagementCard],
+  imports: [Callout, Input, TagManagementCard],
   templateUrl: './tag-management.html',
   styleUrl: './tag-management.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

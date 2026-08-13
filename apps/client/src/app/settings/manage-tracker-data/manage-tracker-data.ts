@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Callout } from '@components/callout/callout';
 import { Select } from '@components/select/select';
 import { apiStateToken } from '@services/api/api-store';
 import { SelectDataModel } from '@shared/models/select-model';
@@ -10,7 +11,7 @@ import { mainStateToken } from '../../main/main-store';
 
 @Component({
   selector: 'ct-settings-manage-tracker-data',
-  imports: [Select],
+  imports: [Callout, Select],
   templateUrl: './manage-tracker-data.html',
   styleUrl: './manage-tracker-data.css',
   providers: [ManageTrackerDataService, SharesService],

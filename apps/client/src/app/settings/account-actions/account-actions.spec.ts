@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountActions } from './account-actions';
 
 describe('AccountActions component', () => {
+  let fixture: ComponentFixture<AccountActions>;
   let component: AccountActions;
   let api: { createNewUserToken: ReturnType<typeof vi.fn>; deleteUser: ReturnType<typeof vi.fn> };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
@@ -38,15 +39,21 @@ describe('AccountActions component', () => {
       ],
     });
 
-    TestBed.overrideComponent(AccountActions, { set: { template: '' } });
-
-    const fixture = TestBed.createComponent(AccountActions);
+    fixture = TestBed.createComponent(AccountActions);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('renders account guidance as an article callout', () => {
+    const callout = fixture.nativeElement.querySelector('[data-test-id="account-actions-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.UserSettings');
   });
 
   it('creates a new user token and opens the token dialog when confirmed', () => {

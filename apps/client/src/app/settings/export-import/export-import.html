@@ -1,9 +1,15 @@
-<p>{{ translations.messageExportImport() }}</p>
+<libc-callout data-test-id="export-import-info" icon="article">
+  {{ translations.messageExportImport() }}
+</libc-callout>
 
 <section class="export-import-section">
   <h2>{{ translations.collectionData() }}</h2>
-  <p>{{ translations.messageCollectionDataExport() }}</p>
-  <p>{{ translations.messageCollectionDataImport() }}</p>
+  <libc-callout data-test-id="collection-data-export-info" icon="article">
+    {{ translations.messageCollectionDataExport() }}
+  </libc-callout>
+  <libc-callout data-test-id="collection-data-import-info" icon="article">
+    {{ translations.messageCollectionDataImport() }}
+  </libc-callout>
   <div class="export-import-toolbar">
     <button data-test-id="collection-data-export" (click)="onExportCollectionData()">
       <i class="material-icons" aria-hidden="true">download</i>
@@ -30,7 +36,9 @@
 
 <section class="export-import-section">
   <h2>{{ translations.collectionItemsByIMDbId() }}</h2>
-  <p>{{ translations.messageCollectionItemsByIMDbIdImport() }}</p>
+  <libc-callout data-test-id="collection-items-imdb-id-import-info" icon="article">
+    {{ translations.messageCollectionItemsByIMDbIdImport() }}
+  </libc-callout>
   <div class="export-import-toolbar">
     <button
       data-test-id="collection-items-imdb-id-import"
@@ -53,7 +61,9 @@
 
 <section class="export-import-section">
   <h2>{{ translations.tagManagement() }}</h2>
-  <p>{{ translations.messageExportImportTagManagement() }}</p>
+  <libc-callout data-test-id="tag-management-export-import-info" icon="article">
+    {{ translations.messageExportImportTagManagement() }}
+  </libc-callout>
   <div class="export-import-toolbar">
     <button data-test-id="tag-management-export" (click)="onExportTagManagement()">
       <i class="material-icons" aria-hidden="true">download</i>

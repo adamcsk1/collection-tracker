@@ -1,5 +1,7 @@
 <form role="form" data-test-id="settings-collection-list-display-form" [formRoot]="form">
-  <p>{{ translations.messageCollectionListDisplay() }}</p>
+  <libc-callout data-test-id="collection-list-display-info" icon="article">
+    {{ translations.messageCollectionListDisplay() }}
+  </libc-callout>
   <libc-checkbox
     data-test-id="settings-list-show-year"
     [formField]="form.showYear"

@@ -22,15 +22,17 @@ describe('SettingsCollectionListDisplay', () => {
         provideStore(initialMainState, mainStateToken),
       ],
     });
-    TestBed.overrideComponent(SettingsCollectionListDisplay, {
-      set: {
-        template: '',
-      },
-    });
-
     fixture = TestBed.createComponent(SettingsCollectionListDisplay);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('renders display guidance as an article callout', () => {
+    const callout = fixture.nativeElement.querySelector('[data-test-id="collection-list-display-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.CollectionListDisplay');
   });
 
   it('initializes from main state preferences', () => {

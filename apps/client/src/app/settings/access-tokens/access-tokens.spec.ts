@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
@@ -15,6 +15,7 @@ const mockTokens = [
 ];
 
 describe('AccessTokens component', () => {
+  let fixture: ComponentFixture<AccessTokens>;
   let component: AccessTokens;
   let api: {
     getAccessTokens: ReturnType<typeof vi.fn>;
@@ -44,11 +45,17 @@ describe('AccessTokens component', () => {
       ],
     });
 
-    TestBed.overrideComponent(AccessTokens, { set: { template: '' } });
-
-    const fixture = TestBed.createComponent(AccessTokens);
+    fixture = TestBed.createComponent(AccessTokens);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('renders access token guidance as an article callout', () => {
+    const callout = fixture.nativeElement.querySelector('[data-test-id="access-tokens-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.AccessTokenSettings');
   });
 
   it('loads access tokens on init and populates the signal', () => {

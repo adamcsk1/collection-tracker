@@ -89,6 +89,16 @@ describe('SettingsManageTrackerData component', () => {
     expect(component['canMarkBooks']()).toBe(true);
   });
 
+  it('renders tracker guidance as article callouts', () => {
+    const pageCallout = fixture.nativeElement.querySelector('[data-test-id="manage-tracker-data-info"]');
+    const cleanupCallout = fixture.nativeElement.querySelector('[data-test-id="tracker-cleanup-info"]');
+
+    expect(pageCallout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(pageCallout.textContent).toContain('Message.ManageTrackerData');
+    expect(cleanupCallout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(cleanupCallout.textContent).toContain('Message.TrackerCleanup');
+  });
+
   it('calls service to mark all movies as uncompleted', () => {
     component['onMarkAllMoviesAsUncompleted']();
 
@@ -339,5 +349,6 @@ describe('SettingsManageTrackerData component', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-movie-data"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-series-data"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-book-data"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="tracker-cleanup-info"]')).toBeNull();
   });
 });

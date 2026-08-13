@@ -11,6 +11,5 @@ h4 {
 }
 
 .tracker-cleanup-message {
-  flex-basis: 100%;
   margin: var(--size-s) 0 0;
 }

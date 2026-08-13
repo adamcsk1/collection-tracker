@@ -1,5 +1,5 @@
 <div class="shares-page" [attr.aria-busy]="mutating()">
-  <p>{{ translations.messageShareSettings() }}</p>
+  <libc-callout data-test-id="shares-info" icon="article">{{ translations.messageShareSettings() }}</libc-callout>
   <div class="shares-grid">
     <section class="card share-code-card" data-test-id="share-code-card">
       <h3 class="card-title">{{ translations.yourUserHash() }}</h3>

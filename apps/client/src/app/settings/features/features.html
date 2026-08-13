@@ -1,5 +1,5 @@
 <form role="form" data-test-id="settings-features-form" [formRoot]="form">
-  <p>{{ translations.message() }}</p>
+  <libc-callout data-test-id="features-info" icon="article">{{ translations.message() }}</libc-callout>
   <libc-checkbox
     data-test-id="settings-feature-wishlist"
     [formField]="form.wishlist"

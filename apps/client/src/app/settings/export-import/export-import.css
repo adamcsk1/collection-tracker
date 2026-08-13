@@ -1,14 +1,12 @@
 .export-import-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-xs);
   margin-bottom: var(--size-lg);
 
   h2 {
     font-size: var(--font-size-lg);
-    margin-bottom: var(--size-xs);
-  }
-
-  p {
-    margin-bottom: var(--size-md);
-    color: var(--text-color-muted);
+    margin-bottom: 0;
   }
 }
 

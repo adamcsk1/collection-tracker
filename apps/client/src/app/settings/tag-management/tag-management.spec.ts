@@ -92,6 +92,15 @@ describe('TagManagement component', () => {
     toastState = TestBed.inject(toastStateToken);
   });
 
+  it('renders tag management guidance as an article callout', () => {
+    createComponent();
+    const callout = fixture.nativeElement.querySelector('[data-test-id="tag-management-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.TagManagement');
+  });
+
   it('builds tag management entries from collection tags including former internal and virtual tags', () => {
     createComponent(['#a', '#b', '#series', '#movie', '#unwatched', '#a', '#tag-with-weight']);
 

@@ -73,6 +73,14 @@ describe('SettingsMediaRefresh component', () => {
     expect(component['showLibrarySelect']()).toBe(false);
   });
 
+  it('renders media refresh guidance as an article callout', () => {
+    const callout = fixture.nativeElement.querySelector('[data-test-id="media-refresh-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.MissingImages');
+  });
+
   it('calls service to refresh external ratings', () => {
     component['onStartExternalRatingsRefresh']();
 

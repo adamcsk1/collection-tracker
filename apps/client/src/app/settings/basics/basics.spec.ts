@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialMainState, mainStateToken, type MainState } from '../../main/main-store';
 import { SettingsBasics } from './basics';
 import { SettingsService } from '../settings-service';
@@ -11,6 +11,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('SettingsBasics component', () => {
+  let fixture: ComponentFixture<SettingsBasics>;
   let component: SettingsBasics;
   let settingsService: { storeFormData: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
@@ -31,10 +32,18 @@ describe('SettingsBasics component', () => {
       ],
     });
 
-    const fixture = TestBed.createComponent(SettingsBasics);
+    fixture = TestBed.createComponent(SettingsBasics);
     component = fixture.componentInstance;
     mainState = TestBed.inject(mainStateToken);
     fixture.detectChanges();
+  });
+
+  it('renders storage guidance as an article callout', () => {
+    const callout = fixture.nativeElement.querySelector('[data-test-id="storage-settings-info"]');
+
+    expect(callout.querySelector('aside').getAttribute('role')).toBe('note');
+    expect(callout.querySelector('.material-icons').textContent.trim()).toBe('article');
+    expect(callout.textContent).toContain('Message.StorageSettings');
   });
 
   it('does not save settings while initializing from state', () => {
