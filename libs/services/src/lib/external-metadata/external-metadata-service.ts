@@ -7,7 +7,7 @@ import {
 } from '@shared/models/external-metadata-model';
 import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { getIMDbId } from '@shared/utils/imdb-id-util';
-import { catchError, EMPTY, Observable } from 'rxjs';
+import { catchError, EMPTY, finalize, Observable, of, Subscription } from 'rxjs';
 import { AlertService } from '../alert-service';
 import { ApiService } from '../api/api-service';
 
@@ -18,24 +18,39 @@ export class ExternalMetadataService {
   private readonly api = inject(ApiService);
   private searchText = '';
   private directImdbId: string | null = null;
+  private directImdbItem: { reference: string; item: ExternalMetadataItemModel } | null = null;
+  private searchSubscription: Subscription | null = null;
   private searchRequestId = 0;
   private provider: ExternalMetadataProviderNameModel | null = null;
   private readonly _matchedContent = signal<ExternalMetadataSelectDataModel[]>([]);
   private readonly _matchedReferences = signal<Record<string, ExternalMetadataReferenceModel>>({});
   private readonly _selectedContent = signal<ExternalMetadataItemModel | null>(null);
   private readonly _completedSearchText = signal('');
+  private readonly _searchPending = signal(false);
   public readonly matchedContent = this._matchedContent.asReadonly();
   public readonly selectedContent = this._selectedContent.asReadonly();
   public readonly completedSearchText = this._completedSearchText.asReadonly();
+  public readonly searchPending = this._searchPending.asReadonly();
   public readonly selectedContent$ = toObservable(this.selectedContent);
 
   public getMatchedContents(searchText: string, provider: ExternalMetadataProviderNameModel | null = null): void {
+    this.searchSubscription?.unsubscribe();
+    this.searchSubscription = null;
     this.searchText = searchText;
     this.provider = provider;
     this.directImdbId = provider === 'openlibrary' ? null : getIMDbId(this.searchText) || null;
+    this.directImdbItem = null;
     this.searchRequestId++;
     this._completedSearchText.set('');
+    this._matchedContent.set([]);
+    this._matchedReferences.set({});
 
+    if (!searchText.trim()) {
+      this._searchPending.set(false);
+      return;
+    }
+
+    this._searchPending.set(true);
     this.fetchExternalMetadata();
   }
 
@@ -44,6 +59,11 @@ export class ExternalMetadataService {
     if (!selectedReference) {
       this._selectedContent.set(null);
       return this.selectedContent$;
+    }
+
+    if (this.directImdbItem?.reference === selectedExternalMetadataValue) {
+      this._selectedContent.set(this.directImdbItem.item);
+      return of(null, this.directImdbItem.item);
     }
 
     this.directImdbId = selectedReference?.identitySource === 'imdb' ? selectedReference.identityId : null;
@@ -72,24 +92,52 @@ export class ExternalMetadataService {
 
   private fetchExternalMetadata(): void {
     if (this.directImdbId) {
-      const value = this.getExternalMetadataReferenceKey('imdb', this.directImdbId);
-      this._matchedReferences.set({
-        [value]: {
-          identitySource: 'imdb',
-          identityId: this.directImdbId,
-          externalIds: [{ source: 'imdb', id: this.directImdbId }],
-        },
-      });
-      this._matchedContent.set([
-        {
-          text: `IMDb id: ${this.directImdbId}`,
-          value,
-        },
-      ]);
+      const searchText = this.searchText.trim();
+      const searchRequestId = this.searchRequestId;
+      const directImdbId = this.directImdbId;
+      this.searchSubscription = this.api
+        .getExternalMetadataItem({ externalIdentitySource: 'imdb', externalIdentityId: directImdbId })
+        .pipe(
+          catchError(() => {
+            if (searchRequestId === this.searchRequestId) {
+              this._matchedContent.set([]);
+              this._matchedReferences.set({});
+              this._completedSearchText.set(searchText);
+            }
+            return EMPTY;
+          }),
+          finalize(() => {
+            if (searchRequestId === this.searchRequestId) this._searchPending.set(false);
+          }),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe((response) => {
+          if (searchRequestId !== this.searchRequestId) return;
+
+          const value = this.getExternalMetadataReferenceKey('imdb', directImdbId);
+          this.directImdbItem = { reference: value, item: response };
+          this._matchedReferences.set({
+            [value]: {
+              identitySource: 'imdb',
+              identityId: directImdbId,
+              externalIds: response.externalIds ?? [{ source: 'imdb', id: directImdbId }],
+            },
+          });
+          this._matchedContent.set([
+            {
+              contentType: response.contentType,
+              poster: response.poster,
+              text: response.title,
+              value,
+              year: response.year,
+            },
+          ]);
+          this._completedSearchText.set(searchText);
+        });
     } else {
       const searchText = this.searchText.trim();
       const searchRequestId = this.searchRequestId;
-      this.api
+      this.searchSubscription = this.api
         .searchExternalMetadata({ s: searchText, provider: this.provider })
         .pipe(
           catchError(() => {
@@ -99,6 +147,9 @@ export class ExternalMetadataService {
               this._completedSearchText.set(searchText);
             }
             return EMPTY;
+          }),
+          finalize(() => {
+            if (searchRequestId === this.searchRequestId) this._searchPending.set(false);
           }),
           takeUntilDestroyed(this.destroyRef)
         )

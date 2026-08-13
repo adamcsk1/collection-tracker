@@ -44,36 +44,166 @@ describe('ExternalMetadataService', () => {
     httpMock.verify();
   });
 
-  it('uses an IMDb id in the search text without calling the API', () => {
+  it('fetches metadata for an IMDb id in the search text', () => {
     service.getMatchedContents('see tt0133093 now');
 
-    expect(service.matchedContent()).toEqual([{ text: 'IMDb id: tt0133093', value: directMatrixReference }]);
+    const detailRequest = httpMock.expectOne(
+      `${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093`
+    );
+    detailRequest.flush({
+      data: {
+        provider: 'omdb',
+        providerItemId: 'tt0133093',
+        externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+        title: 'The Matrix',
+        year: '1999',
+        contentType: 'movie',
+        poster: 'matrix.jpg',
+        plot: 'Plot text',
+        actors: 'Keanu Reeves',
+        genres: ['Sci-Fi'],
+        ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
+      } satisfies ExternalMetadataItemModel,
+    });
+
+    expect(service.matchedContent()).toEqual([
+      {
+        contentType: 'movie',
+        poster: 'matrix.jpg',
+        text: 'The Matrix',
+        value: directMatrixReference,
+        year: '1999',
+      },
+    ]);
     expect(service.getProviderReference(directMatrixReference)).toEqual({
       identitySource: 'imdb',
       identityId: 'tt0133093',
       externalIds: [{ source: 'imdb', id: 'tt0133093' }],
     });
-    expect(service.completedSearchText()).toBe('');
-    httpMock.expectNone(() => true);
+    expect(service.completedSearchText()).toBe('see tt0133093 now');
+    expect(service.searchPending()).toBe(false);
+  });
+
+  it('cancels pending requests and clears results for empty search text', () => {
+    service.getMatchedContents('Matrix');
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
+
+    service.getMatchedContents('   ');
+
+    expect(searchRequest.cancelled).toBe(true);
+    expect(service.matchedContent()).toEqual([]);
+    expect(service.getProviderReference(matrixReference)).toBeNull();
+    expect(service.searchPending()).toBe(false);
+  });
+
+  it('cancels pending requests when the service is destroyed', () => {
+    service.getMatchedContents('Matrix');
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
+
+    TestBed.resetTestingModule();
+
+    expect(searchRequest.cancelled).toBe(true);
+    expect(service.searchPending()).toBe(false);
   });
 
   it('extracts an IMDb id from a URL when searching with the omdb provider', () => {
     service.getMatchedContents('https://www.imdb.com/title/tt0116213', 'omdb');
 
-    expect(service.matchedContent()).toEqual([{ text: 'IMDb id: tt0116213', value: 'imdb/tt0116213' }]);
+    const detailRequest = httpMock.expectOne(
+      `${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0116213`
+    );
+    detailRequest.flush({
+      data: {
+        provider: 'omdb',
+        providerItemId: 'tt0116213',
+        title: 'The Truth About Cats & Dogs',
+        year: '1996',
+        contentType: 'movie',
+        poster: '',
+        plot: '',
+        actors: '',
+        genres: [],
+        ratings: [],
+      } satisfies ExternalMetadataItemModel,
+    });
+
+    expect(service.matchedContent()).toEqual([
+      {
+        contentType: 'movie',
+        poster: '',
+        text: 'The Truth About Cats & Dogs',
+        value: 'imdb/tt0116213',
+        year: '1996',
+      },
+    ]);
     expect(service.getProviderReference('imdb/tt0116213')).toEqual({
       identitySource: 'imdb',
       identityId: 'tt0116213',
       externalIds: [{ source: 'imdb', id: 'tt0116213' }],
     });
-    httpMock.expectNone(() => true);
   });
 
   it('extracts a bare IMDb id when searching with the omdb provider', () => {
     service.getMatchedContents('tt0133093', 'omdb');
 
-    expect(service.matchedContent()).toEqual([{ text: 'IMDb id: tt0133093', value: directMatrixReference }]);
-    httpMock.expectNone(() => true);
+    const detailRequest = httpMock.expectOne(
+      `${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093`
+    );
+    detailRequest.flush({
+      data: {
+        provider: 'omdb',
+        providerItemId: 'tt0133093',
+        title: 'The Matrix',
+        year: '1999',
+        contentType: 'movie',
+        poster: '',
+        plot: '',
+        actors: '',
+        genres: [],
+        ratings: [],
+      } satisfies ExternalMetadataItemModel,
+    });
+
+    expect(service.matchedContent()).toEqual([
+      {
+        contentType: 'movie',
+        poster: '',
+        text: 'The Matrix',
+        value: directMatrixReference,
+        year: '1999',
+      },
+    ]);
+  });
+
+  it('clears previous results while direct IMDb metadata is loading', () => {
+    service.getMatchedContents('Matrix');
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
+    searchRequest.flush({
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt0133093',
+            title: 'The Matrix',
+            year: '1999',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [],
+          },
+        ],
+      },
+    });
+
+    service.getMatchedContents('tt1160419');
+
+    expect(service.matchedContent()).toEqual([]);
+    expect(service.getProviderReference(matrixReference)).toBeNull();
+    httpMock
+      .expectOne(`${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt1160419`)
+      .flush('missing', { status: 404, statusText: 'Not Found' });
   });
 
   it('requests search results and maps them to select options', async () => {
@@ -164,31 +294,14 @@ describe('ExternalMetadataService', () => {
     });
   });
 
-  it('ignores stale search responses', () => {
+  it('cancels stale search requests', () => {
     service.getMatchedContents('Matrix');
     const firstSearchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
 
     service.getMatchedContents('Dune');
     const secondSearchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Dune`);
 
-    firstSearchRequest.flush({
-      data: {
-        results: [
-          {
-            provider: 'omdb',
-            providerItemId: 'tt0133093',
-            title: 'The Matrix',
-            year: '1999',
-            contentType: 'movie',
-            poster: '',
-            plot: '',
-            actors: '',
-            genres: [],
-            ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
-          },
-        ],
-      },
-    });
+    expect(firstSearchRequest.cancelled).toBe(true);
 
     expect(service.matchedContent()).toEqual([]);
     expect(service.completedSearchText()).toBe('');
@@ -224,6 +337,37 @@ describe('ExternalMetadataService', () => {
     expect(service.getProviderReference(matrixReference)).toBeNull();
     expect(service.getProviderReference(duneReference)).toEqual({ identitySource: 'omdb', identityId: 'tt1160419' });
     expect(service.completedSearchText()).toBe('Dune');
+  });
+
+  it('ignores stale direct IMDb responses', () => {
+    service.getMatchedContents('tt0133093');
+    const directRequest = httpMock.expectOne(
+      `${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093`
+    );
+
+    service.getMatchedContents('Dune');
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Dune`);
+
+    expect(directRequest.cancelled).toBe(true);
+    searchRequest.flush({ data: { results: [] } });
+
+    expect(service.matchedContent()).toEqual([]);
+    expect(service.getProviderReference(directMatrixReference)).toBeNull();
+    expect(service.completedSearchText()).toBe('Dune');
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('cancels a pending title search when starting a direct IMDb lookup', () => {
+    service.getMatchedContents('Matrix');
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
+
+    service.getMatchedContents('tt0133093');
+
+    expect(searchRequest.cancelled).toBe(true);
+    httpMock
+      .expectOne(`${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093`)
+      .flush('missing', { status: 404, statusText: 'Not Found' });
+    expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
   it('sets an empty result list when search returns no matches', () => {
@@ -267,6 +411,40 @@ describe('ExternalMetadataService', () => {
     expect(service.matchedContent()).toEqual([]);
     expect(service.getProviderReference(matrixReference)).toBeNull();
     expect(service.completedSearchText()).toBe('ErrorSearch');
+  });
+
+  it('clears suggestions when a direct IMDb lookup fails', () => {
+    service.getMatchedContents('Matrix');
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
+    searchRequest.flush({
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt0133093',
+            title: 'The Matrix',
+            year: '1999',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [],
+          },
+        ],
+      },
+    });
+
+    service.getMatchedContents('tt0000000');
+    const detailRequest = httpMock.expectOne(
+      `${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0000000`
+    );
+    detailRequest.flush('missing', { status: 404, statusText: 'Not Found' });
+
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+    expect(service.matchedContent()).toEqual([]);
+    expect(service.getProviderReference(matrixReference)).toBeNull();
+    expect(service.completedSearchText()).toBe('tt0000000');
   });
 
   it('clears suggestions when response has no results property', () => {
@@ -327,13 +505,10 @@ describe('ExternalMetadataService', () => {
 
   it('fetches a direct IMDb id through the server resolver', async () => {
     service.getMatchedContents('tt0133093');
-
-    const selected$ = service.getSelectedContent(directMatrixReference).pipe(filter(Boolean));
-
-    const detailRequest = httpMock.expectOne(
+    const searchDetailRequest = httpMock.expectOne(
       `${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093`
     );
-    detailRequest.flush({
+    searchDetailRequest.flush({
       data: {
         provider: 'omdb',
         providerItemId: 'tt0133093',
@@ -348,8 +523,11 @@ describe('ExternalMetadataService', () => {
       } satisfies ExternalMetadataItemModel,
     });
 
+    const selected$ = service.getSelectedContent(directMatrixReference).pipe(filter(Boolean));
+
     const result = await firstValueFrom(selected$);
     expect(result?.provider).toBe('omdb');
+    httpMock.expectNone(`${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093`);
   });
 
   it('alerts and throws when fetching selected item fails', () => {

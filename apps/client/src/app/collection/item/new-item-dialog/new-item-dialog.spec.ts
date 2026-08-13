@@ -262,6 +262,18 @@ describe('NewItemDialog component', () => {
     expect(service.search).toHaveBeenCalledWith('matrix', 'omdb');
   });
 
+  it('forwards cleared search text to cancel pending metadata requests', async () => {
+    const control = component['searchForm'].searchText();
+    control.value.set('matrix');
+    vi.advanceTimersByTime(500);
+    service.search.mockClear();
+
+    control.value.set('');
+    await fixture.whenStable();
+
+    expect(service.search).toHaveBeenCalledWith('', 'omdb');
+  });
+
   it('cancels a pending search when switching to manual mode', () => {
     service.search.mockClear();
     component['searchForm'].searchText().value.set('matrix');
@@ -270,7 +282,19 @@ describe('NewItemDialog component', () => {
     component['onModeChange']('manual');
     vi.advanceTimersByTime(500);
 
-    expect(service.search).not.toHaveBeenCalled();
+    expect(service.search).toHaveBeenCalledOnce();
+    expect(service.search).toHaveBeenCalledWith('', 'omdb');
+  });
+
+  it('resets an active search when switching to manual mode', () => {
+    component['searchForm'].searchText().value.set('matrix');
+    vi.advanceTimersByTime(500);
+    expect(service.search).toHaveBeenCalledWith('matrix', 'omdb');
+    service.search.mockClear();
+
+    component['onModeChange']('manual');
+
+    expect(service.search).toHaveBeenCalledWith('', 'omdb');
   });
 
   it('searches immediately without clearing the search text when enter is pressed', () => {

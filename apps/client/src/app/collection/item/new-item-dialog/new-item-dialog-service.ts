@@ -1,4 +1,4 @@
-import { effect, inject, Injectable } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable } from '@angular/core';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -25,6 +25,7 @@ import { SaveMode, SaveOptions } from './new-item-dialog-model';
 @Injectable()
 export class NewItemDialogService {
   private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly externalMetadata = inject(ExternalMetadataService);
   private readonly collection = inject(CollectionService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
@@ -36,13 +37,12 @@ export class NewItemDialogService {
 
   constructor() {
     effect(() => {
-      this.matchedContent();
-      this.spinnerLoadingState.setState('show', false);
+      this.spinnerLoadingState.setState('show', this.externalMetadata.searchPending());
     });
+    this.destroyRef.onDestroy(() => this.spinnerLoadingState.setState('show', false));
   }
 
   public search(searchText: string, provider: ExternalMetadataProviderNameModel | null = null): void {
-    this.spinnerLoadingState.setState('show', true);
     this.externalMetadata.getMatchedContents(searchText, provider);
   }
 

@@ -27,7 +27,18 @@ import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadat
 import { resolveImdbId } from '@shared/utils/imdb-id-util';
 import { extractIsbn13 } from '@shared/utils/isbn-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap, timer } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  debounceTime,
+  filter,
+  firstValueFrom,
+  of,
+  pairwise,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
 import { mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
@@ -643,6 +654,14 @@ export class NewItemDialog {
         this.service.search(searchText, contentType === 'book' ? 'openlibrary' : 'omdb');
       });
 
+    toObservable(this.searchForm.searchText().value)
+      .pipe(
+        pairwise(),
+        filter(([previousSearchText, searchText]) => !!previousSearchText && !searchText),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.service.search('', this.selectedAddContentType() === 'book' ? 'openlibrary' : 'omdb'));
+
     combineLatest([
       toObservable(this.mode),
       toObservable(this.searchForm.selectedExternalReference().value),
@@ -758,6 +777,9 @@ export class NewItemDialog {
 
   protected onModeChange(newMode: NewItemMode): void {
     if (this.mode() === newMode) return;
+    if (newMode !== 'search') {
+      this.service.search('', this.selectedAddContentType() === 'book' ? 'openlibrary' : 'omdb');
+    }
     this.mode.set(newMode);
     this.knownSearchIMDbIdExists.set(false);
     this.knownManualIMDbIdExists.set(false);

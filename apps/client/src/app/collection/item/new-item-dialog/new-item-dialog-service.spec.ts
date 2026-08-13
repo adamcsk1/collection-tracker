@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { CollectionService } from '../../collection-service';
 import { NewItemDialogService } from './new-item-dialog-service';
@@ -68,6 +68,7 @@ describe('NewItemDialogService', () => {
   let externalMetadata: {
     matchedContent: ReturnType<typeof signal<SelectInputModel>>;
     completedSearchText: ReturnType<typeof signal<string>>;
+    searchPending: ReturnType<typeof signal<boolean>>;
     getMatchedContents: ReturnType<typeof vi.fn>;
     getSelectedContent: ReturnType<typeof vi.fn>;
     getProviderReference: ReturnType<typeof vi.fn>;
@@ -119,6 +120,7 @@ describe('NewItemDialogService', () => {
     externalMetadata = {
       matchedContent: signal<SelectInputModel>([]),
       completedSearchText: signal(''),
+      searchPending: signal(false),
       getMatchedContents: vi.fn(),
       getSelectedContent: vi.fn(),
       getProviderReference: vi.fn(),
@@ -145,17 +147,44 @@ describe('NewItemDialogService', () => {
     toastStore = TestBed.inject(toastStateToken);
   });
 
-  it('search triggers external metadata lookup and shows spinner', () => {
+  it('search triggers external metadata lookup', () => {
     service.search('matrix');
 
-    expect(spinnerStore.state.show()).toBe(true);
     expect(externalMetadata.getMatchedContents).toHaveBeenCalledWith('matrix', null);
+  });
+
+  it('forwards whitespace input so pending searches are cancelled', () => {
+    service.search('   ');
+
+    expect(externalMetadata.getMatchedContents).toHaveBeenCalledWith('   ', null);
   });
 
   it('limits book searches to OpenLibrary', () => {
     service.search('dune', 'openlibrary');
 
     expect(externalMetadata.getMatchedContents).toHaveBeenCalledWith('dune', 'openlibrary');
+  });
+
+  it('keeps spinner visible while pending results are cleared', async () => {
+    externalMetadata.searchPending.set(true);
+    await TestBed.inject(ApplicationRef).whenStable();
+    externalMetadata.matchedContent.set([]);
+
+    expect(spinnerStore.state.show()).toBe(true);
+
+    externalMetadata.searchPending.set(false);
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('clears spinner when service is destroyed during a search', async () => {
+    externalMetadata.searchPending.set(true);
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(spinnerStore.state.show()).toBe(true);
+
+    TestBed.resetTestingModule();
+
+    expect(spinnerStore.state.show()).toBe(false);
   });
 
   it('saves OpenLibrary books without coercing their content type', async () => {
