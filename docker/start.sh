@@ -116,5 +116,21 @@ NODE_PID=$!
 
 echo "Node server started with PID ${NODE_PID} on ${HOST}:${PORT}"
 
-# Start nginx in foreground
-nginx -g 'daemon off;'
+# Start nginx and stop the container when either process exits
+nginx -g 'daemon off;' &
+NGINX_PID=$!
+
+cleanup() {
+  status=$?
+  trap - EXIT TERM INT
+  kill "${NODE_PID}" "${NGINX_PID}" 2>/dev/null || true
+  wait "${NODE_PID}" 2>/dev/null || true
+  wait "${NGINX_PID}" 2>/dev/null || true
+  exit "${status}"
+}
+
+trap cleanup EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
+
+wait -n "${NODE_PID}" "${NGINX_PID}"

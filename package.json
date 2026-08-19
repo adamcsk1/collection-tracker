@@ -14,6 +14,7 @@
     "build:server": "npm run nx -- run server:build",
     "test": "vitest run scripts && npm run nx -- run-many --target=test --projects=client,components,services,shared,server,login,health",
     "test:affected": "npm run nx -- affected --target=test",
+    "test:docker-lifecycle": "npm run build && bash scripts/docker-lifecycle-test.sh",
     "cypress:chrome": "npm run nx -- run collection-e2e:prepare && npm run nx -- run collection-e2e:e2e --browser=chrome && bash apps/collection-e2e/scripts/stop.sh collection-tracker-cypress",
     "cypress:chrome:affected": "npm run nx -- run collection-e2e:prepare && npm run nx -- affected --target=e2e --browser=chrome && bash apps/collection-e2e/scripts/stop.sh collection-tracker-cypress",
     "cypress:firefox": "npm run nx -- run collection-e2e:prepare && npm run nx -- run collection-e2e:e2e --browser=firefox && bash apps/collection-e2e/scripts/stop.sh collection-tracker-cypress",

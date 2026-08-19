@@ -61,7 +61,7 @@ docker buildx build --load -t collection-tracker .
 docker run --rm -p 3001:3001 -e APP_UID=$(id -u) -e APP_GID=$(id -g) -v ${PWD}/.data:/data collection-tracker
 ```
 
-> `OMDB_API_KEY` in `/data/.env` enables the OMDb external metadata provider. Optional `OMDB_API_URL` overrides its endpoint; when omitted or empty, it defaults to `https://www.omdbapi.com/`. Open Library book metadata needs no API key; optional `OPENLIBRARY_API_URL` overrides its default `https://openlibrary.org/` endpoint. Without an OMDb key, movie and series metadata operations remain unavailable while book search continues to work.
+> `OMDB_API_KEY` in `/data/.env` enables the OMDb external metadata provider. Optional `OMDB_API_URL` overrides its endpoint; when omitted or empty, it defaults to `https://www.omdbapi.com/`. OMDb requests time out after 10 seconds. Open Library book metadata needs no API key; optional `OPENLIBRARY_API_URL` overrides its default `https://openlibrary.org/` endpoint. Without an OMDb key, movie and series metadata operations remain unavailable while book search continues to work.
 
 AI search uses Ollama. Install Ollama on the host and run:
 
@@ -103,6 +103,8 @@ The Docker default uses `host.docker.internal` so the container can reach Ollama
 | --------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | `BASE_PATH`           | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.      |
 | `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.  |
+| `HEALTH_RATE_LIMIT`   | `60`                     | Public health and authenticated health-diagnostics requests allowed per client IP per minute.                    |
+| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy requests allowed per client IP per minute.                                                           |
 | `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                     |
 | `APP_PORT`            | `3001`                   | Host port mapped to the container's nginx listener.                                                              |
 | `APP_UID`             | `1000`                   | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |
@@ -153,6 +155,8 @@ services:
     environment:
       BASE_PATH: ${BASE_PATH:-}
       HEALTH_CHECK_URL: ${HEALTH_CHECK_URL:-}
+      HEALTH_RATE_LIMIT: ${HEALTH_RATE_LIMIT:-60}
+      IMAGE_RATE_LIMIT: ${IMAGE_RATE_LIMIT:-240}
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
@@ -202,5 +206,7 @@ This is the recommended deployment model for secure cookie handling, TLS certifi
 ## Operational Notes
 
 - The runtime image is based on `node:26.0.0-slim`.
+- The image proxy permits four concurrent uncached fetches and queues up to 32 more for 10 seconds. Queue saturation or wait timeout returns `503 Service Unavailable` with `Retry-After` guidance; only actual per-IP rate limiting returns `429 Too Many Requests`. It applies one 30-second deadline across DNS resolution and all redirects, rejects empty images, and limits each image to 10 MiB. It evicts least-recently-accessed entries to keep the cache within 512 MiB including estimated metadata/filesystem overhead and 10,000 entries. These limits are fixed; only the per-IP request rate is configurable.
 - [`docker/entrypoint.sh`](../docker/entrypoint.sh) prepares the mounted `/data` volume and then drops privileges to the configured non-root `APP_UID`/`APP_GID`.
+- Run `npm run test:docker-lifecycle` from a Bash environment with Docker available to verify first start, generated secrets, authentication, restart, and data persistence. `DOCKER_LIFECYCLE_IMAGE=<local-image>` reuses an existing image.
 - Release packaging details are covered in [Release packaging](./release.md).

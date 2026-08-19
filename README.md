@@ -57,6 +57,7 @@ Common workspace commands:
 ```powershell
 npm run build
 npm run test
+npm run test:docker-lifecycle
 npm run cypress:chrome
 npm run lint:check
 npm run lint
@@ -85,6 +86,8 @@ services:
     environment:
       BASE_PATH: ${BASE_PATH:-}
       HEALTH_CHECK_URL: ${HEALTH_CHECK_URL:-}
+      HEALTH_RATE_LIMIT: ${HEALTH_RATE_LIMIT:-60}
+      IMAGE_RATE_LIMIT: ${IMAGE_RATE_LIMIT:-240}
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
@@ -115,6 +118,8 @@ Docker deployments also support these container-level variables:
 | --------------------- | ------------------------ | -------------------------------------------------------------------------------------------- |
 | `BASE_PATH`           | _(empty)_                | URL subpath prefix, such as `/collection-tracker`.                                           |
 | `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL used by the server health endpoint to check the nginx frontend.                          |
+| `HEALTH_RATE_LIMIT`   | `60`                     | Public health and authenticated diagnostics requests allowed per client IP per minute.       |
+| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy requests allowed per client IP per minute.                                       |
 | `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address. |
 | `APP_PORT`            | `3001`                   | Host port mapped to the container nginx listener.                                            |
 | `APP_UID`             | `1000`                   | Runtime user ID for Docker writable files. Use `$(id -u)` on Linux.                          |
@@ -179,10 +184,12 @@ CACHE_MAX=200
 RATE_LIMIT=120
 AUTH_RATE_LIMIT=10
 REFRESH_RATE_LIMIT=60
+HEALTH_RATE_LIMIT=60
+IMAGE_RATE_LIMIT=240
 ```
 
 `RATE_LIMIT` controls the default per-IP request limit for a 1-minute window. When omitted, it defaults to `120`. High-frequency collection entry routes have their own higher per-route limit so adding multiple items in a row does not quickly exhaust the default bucket.
-`AUTH_RATE_LIMIT` controls sign-in and sign-up requests per IP per minute and defaults to `10`. `REFRESH_RATE_LIMIT` separately controls session refresh requests and defaults to `60`, allowing multiple users and tabs behind one address without weakening credential endpoint protection. The bundled nginx proxy ignores forwarded client-IP headers unless the immediate sender matches `TRUSTED_PROXY_CIDRS`.
+`AUTH_RATE_LIMIT` controls sign-in and sign-up requests per IP per minute and defaults to `10`. `REFRESH_RATE_LIMIT` separately controls session refresh requests and defaults to `60`, allowing multiple users and tabs behind one address without weakening credential endpoint protection. `HEALTH_RATE_LIMIT` defaults to `60` for both health endpoints, and `IMAGE_RATE_LIMIT` defaults to `240` for the image proxy. The bundled nginx proxy ignores forwarded client-IP headers unless the immediate sender matches `TRUSTED_PROXY_CIDRS`.
 
 See the server documentation for the full runtime model and data layout.
 

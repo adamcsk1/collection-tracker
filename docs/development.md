@@ -16,6 +16,12 @@ Running Cypress this way gives the suite a stable system boundary:
 
 The tradeoff is that `npm run cypress:chrome` and `npm run cypress:firefox` do more work before the browser opens: they build the app image, prepare the database, and start the test container. That is intentional. Cypress is the deployment-level confidence check, while unit tests and type checks stay fast for source-level feedback.
 
+## Docker Lifecycle Verification
+
+`npm run test:docker-lifecycle` builds the applications and a Docker image, starts it with a temporary named data volume, verifies first-start secret/config/database creation and sign-up/sign-in, recreates the container, and verifies credentials and persisted data still work. Run it from a shell with Bash, Docker, `curl`, and standard Unix utilities available. Set `DOCKER_LIFECYCLE_IMAGE` to an existing local image to skip the image build performed by the lifecycle script.
+
+The GHCR publish workflow runs the same lifecycle script against its smoke-test image before publishing.
+
 ## Development Proxy Verification
 
 The development proxy in `apps/dev-proxy` is development-only infrastructure. It is not part of the production Docker runtime and is not shipped as an application feature, so it does not currently have a dedicated unit test harness.

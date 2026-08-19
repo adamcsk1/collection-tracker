@@ -47,6 +47,7 @@ Issue description and why it matters. Suggested fix.
 - Cross-project imports must use declared aliases such as `@client/*`, `@server/*`, `@components/*`, `@services/*`, `@shared/*`, or `@public/*`.
 - Relative imports are acceptable within the same app or library.
 - Do not allow `any` or unsafe casts when a precise project model or narrow type can be used.
+- Interfaces and type aliases belong in `*-model.ts` files, except signal-store state interfaces and store-only type aliases, which must stay in the matching `*-store.ts` file.
 
 ## Angular
 
