@@ -8,6 +8,7 @@ Source: [`apps/login`](../apps/login)
 
 - `sign-up`: create a user and return the user token that must be retained by the operator
 - `sign-in`: exchange username and user token for an authenticated API session
+- validate new sign-up usernames as 3 to 32 characters; sign-in accepts any non-empty legacy username
 - render the shared blocker, toast, and theme experience used by the workspace
 - route under the login subpath with hash-based navigation
 

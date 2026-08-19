@@ -16,7 +16,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 
 @Component({
-  selector: 'lo-root',
+  selector: 'ct-root',
   imports: [RouterOutlet, Toast, BlockerLoading],
   templateUrl: './main.html',
   styleUrl: './main.css',

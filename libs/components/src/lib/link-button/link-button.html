@@ -5,9 +5,10 @@
   [attr.target]="external() ? '_blank' : null"
   [attr.rel]="external() ? 'noopener noreferrer' : null"
 >
-  <i class="material-icons">{{ icon() }}</i>
+  <i class="material-icons" aria-hidden="true">{{ icon() }}</i>
   <span>{{ label() }}</span>
   @if (external()) {
-    <i class="material-icons link-button-external">open_in_new</i>
+    <span class="visually-hidden"> ({{ translations.opensInNewTab() }})</span>
+    <i class="material-icons link-button-external" aria-hidden="true">open_in_new</i>
   }
 </a>

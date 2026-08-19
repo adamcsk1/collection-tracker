@@ -1,15 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import {
-  BlockerLoadingState,
   blockerLoadingStateToken,
   initialBlockerLoadingState,
+  type BlockerLoadingState,
 } from '@components/blocker-loading/blocker-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { apiStateToken, initialApiState, type ApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { ThemeService } from '@services/theme/theme-service';
-import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
+import { initialThemeState, themeStateToken, type ThemeState } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
 import { getApiPrefix } from '@shared/utils/get-api-prefix-util';

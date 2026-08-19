@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { apiStateToken, initialApiState, type ApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { SharedApiService } from '@services/api/shared-api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { ThemeService } from '@services/theme/theme-service';
-import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
+import { initialThemeState, themeStateToken, type ThemeState } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
@@ -95,6 +95,32 @@ describe('SignIn component', () => {
     expect(themeState.state.theme()).toBe('system');
   });
 
+  it('requires a non-empty username', () => {
+    const usernameField = fixture.componentInstance['form'].username();
+
+    usernameField.value.set('');
+
+    expect(usernameField.valid()).toBe(false);
+  });
+
+  it.each([1, 33])('submits a legacy username with length %s', async (length) => {
+    const component = fixture.componentInstance;
+    const username = 'u'.repeat(length);
+    component['signInModel'].set({
+      username,
+      token: 'matrix',
+      apiUrl: 'https://stored-api',
+      language: 'en',
+      theme: 'light',
+    });
+    fixture.detectChanges();
+
+    const submitButton = fixture.nativeElement.querySelector('[data-test-id="sign-in-submit"]') as HTMLButtonElement;
+    submitButton.click();
+
+    await vi.waitFor(() => expect(publicApiService.signIn).toHaveBeenCalledWith(username, 'matrix'));
+  });
+
   it('toggles token visibility through the UI control', () => {
     const component = fixture.componentInstance;
     const toggleButton = fixture.nativeElement.querySelector(
@@ -103,13 +129,13 @@ describe('SignIn component', () => {
     expect(component['tokenInputType']()).toBe('password');
     expect(toggleButton.tagName).toBe('BUTTON');
     expect(toggleButton.textContent?.trim()).toBe('ShowSecret');
-    expect(toggleButton.getAttribute('aria-label')).toBe('ShowSecret');
+    expect(toggleButton.hasAttribute('aria-label')).toBe(false);
+    expect(toggleButton.hasAttribute('aria-pressed')).toBe(false);
 
     toggleButton.click();
     fixture.detectChanges();
     expect(component['tokenInputType']()).toBe('text');
     expect(toggleButton.textContent?.trim()).toBe('HideSecret');
-    expect(toggleButton.getAttribute('aria-label')).toBe('HideSecret');
 
     toggleButton.click();
     expect(component['tokenInputType']()).toBe('password');

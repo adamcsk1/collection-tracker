@@ -9,15 +9,7 @@
     [label]="translations.username()"
     [mandatory]="true"
     [formField]="form.username"
-    ><ng-container errors>
-      @if (formErrors.username.minLength()) {
-        {{ translations.validationUsernameMinLength() }}
-      }
-      @if (formErrors.username.maxLength()) {
-        {{ translations.validationUsernameMaxLength() }}
-      }
-    </ng-container>
-  </libc-input>
+  />
   <libc-input
     data-test-id="sign-in-token"
     icon="lock"
@@ -26,14 +18,7 @@
     [type]="tokenInputType()"
     [formField]="form.token"
   />
-  <button
-    type="button"
-    data-test-id="sign-in-toggle-secret"
-    class="text-button"
-    [attr.aria-pressed]="tokenInputType() === 'text'"
-    [attr.aria-label]="translations.toggleSecretAriaLabel()"
-    (click)="onToggleTokenInputType()"
-  >
+  <button type="button" data-test-id="sign-in-toggle-secret" class="text-button" (click)="onToggleTokenInputType()">
     {{ translations.toggleSecretLabel() }}
   </button>
   @if (showApiUrlInput()) {

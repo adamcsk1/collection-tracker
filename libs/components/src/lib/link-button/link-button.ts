@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'libc-link-button',
@@ -7,6 +8,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LinkButton {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  protected readonly translations = {
+    opensInNewTab: computed(() => this.ngxSignalTranslate.translate('Aria.OpensInNewTab')),
+  };
   public readonly href = input.required<string>();
   public readonly icon = input.required<string>();
   public readonly label = input.required<string>();

@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { form, FormField, FormRoot, maxLength, minLength, required } from '@angular/forms/signals';
+import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
@@ -33,7 +33,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, firstValueFrom, of } from 'rxjs';
 
 @Component({
-  selector: 'lo-sign-in',
+  selector: 'ct-sign-in',
   imports: [Input, FormField, FormRoot, RouterLink, Select],
   templateUrl: './sign-in.html',
   styleUrl: './sign-in.css',
@@ -55,8 +55,6 @@ export class SignIn implements OnInit {
     messageSignIn: computed(() => this.ngxSignalTranslate.translate('Message.SignIn')),
     signIn: computed(() => this.ngxSignalTranslate.translate('SignIn')),
     username: computed(() => this.ngxSignalTranslate.translate('Username')),
-    validationUsernameMinLength: computed(() => this.ngxSignalTranslate.translate('Validation.UsernameMinLength')),
-    validationUsernameMaxLength: computed(() => this.ngxSignalTranslate.translate('Validation.UsernameMaxLength')),
     secret: computed(() => this.ngxSignalTranslate.translate('Secret')),
     apiUrl: computed(() => this.ngxSignalTranslate.translate('ApiUrl')),
     messageApiUrl: computed(() => this.ngxSignalTranslate.translate('Message.ApiUrl')),
@@ -67,9 +65,6 @@ export class SignIn implements OnInit {
     changeApiUrl: computed(() => this.ngxSignalTranslate.translate('ChangeApiUrl')),
     language: computed(() => this.ngxSignalTranslate.translate('Language')),
     theme: computed(() => this.ngxSignalTranslate.translate('Theme')),
-    toggleSecretAriaLabel: computed(() =>
-      this.ngxSignalTranslate.translate(this.tokenInputType() === 'text' ? 'HideSecret' : 'ShowSecret')
-    ),
     toggleSecretLabel: computed(() =>
       this.ngxSignalTranslate.translate(this.tokenInputType() === 'text' ? 'HideSecret' : 'ShowSecret')
     ),
@@ -85,8 +80,6 @@ export class SignIn implements OnInit {
     this.signInModel,
     (signIn) => {
       required(signIn.username);
-      minLength(signIn.username, 3);
-      maxLength(signIn.username, 32);
       required(signIn.token);
       required(signIn.apiUrl);
       required(signIn.language);
@@ -98,22 +91,6 @@ export class SignIn implements OnInit {
       },
     }
   );
-  protected readonly formErrors = {
-    username: {
-      minLength: computed(() =>
-        this.form
-          .username()
-          .errors()
-          .some((error) => error.kind === 'minLength')
-      ),
-      maxLength: computed(() =>
-        this.form
-          .username()
-          .errors()
-          .some((error) => error.kind === 'maxLength')
-      ),
-    },
-  };
   protected readonly showApiUrlInput = signal(false);
   protected readonly tokenInputType = signal<'text' | 'password'>('password');
   protected readonly themeOptions = this.theme.themeOptions;

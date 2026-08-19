@@ -8,13 +8,14 @@ import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@shared/constants/username-const';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  selector: 'lo-sign-up',
+  selector: 'ct-sign-up',
   imports: [Input, FormField, FormRoot, RouterLink],
   templateUrl: './sign-up.html',
   styleUrl: './sign-up.css',
@@ -49,8 +50,8 @@ export class SignUp implements OnInit {
     this.signUpModel,
     (signUp) => {
       required(signUp.username);
-      minLength(signUp.username, 3);
-      maxLength(signUp.username, 32);
+      minLength(signUp.username, USERNAME_MIN_LENGTH);
+      maxLength(signUp.username, USERNAME_MAX_LENGTH);
       required(signUp.apiUrl);
     },
     {

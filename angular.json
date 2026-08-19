@@ -103,7 +103,7 @@
       "projectType": "application",
       "root": "apps/login",
       "sourceRoot": "apps/login/src",
-      "prefix": "lo",
+      "prefix": "ct",
       "schematics": {
         "@schematics/angular:component": {
           "style": "css"

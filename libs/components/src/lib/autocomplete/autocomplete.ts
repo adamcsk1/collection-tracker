@@ -103,7 +103,7 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
 
     this.lastKeycode = $event.code;
 
-    if (['ArrowUp', 'ArrowDown', 'Tab'].includes($event.code)) {
+    if (['ArrowUp', 'ArrowDown'].includes($event.code) || ($event.code === 'Tab' && this.suggestions().length > 0)) {
       $event.preventDefault();
       $event.stopPropagation();
     }

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Autocomplete, AutocompleteService } from './autocomplete';
 
 @Component({
+  selector: 'libc-autocomplete-test-host',
   imports: [FormField, Autocomplete],
   template: `<libc-autocomplete
     [formField]="field"
@@ -21,6 +22,7 @@ class HostComponent {
 }
 
 @Component({
+  selector: 'libc-autocomplete-no-hint-test-host',
   imports: [FormField, Autocomplete],
   template: `<libc-autocomplete [formField]="field" placeholder="Search" [showReset]="true"></libc-autocomplete>`,
 })
@@ -30,6 +32,7 @@ class NoHintHostComponent {
 }
 
 @Component({
+  selector: 'libc-autocomplete-top-placement-test-host',
   imports: [FormField, Autocomplete],
   template: `<libc-autocomplete
     [formField]="field"
@@ -288,6 +291,22 @@ describe('Autocomplete component', () => {
 
     expect(fixture.componentInstance.model()).toBe('alpha-formatted');
     expect(component['suggestions']()).toEqual([]);
+    expect(baseEvent.preventDefault).toHaveBeenCalled();
+    expect(baseEvent.stopPropagation).toHaveBeenCalled();
+  });
+
+  it('does not intercept Tab when there are no suggestions', () => {
+    const keyboardEvent = {
+      code: 'Tab',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as KeyboardEvent;
+
+    component['onKeydown'](keyboardEvent);
+
+    expect(keyboardEvent.preventDefault).not.toHaveBeenCalled();
+    expect(keyboardEvent.stopPropagation).not.toHaveBeenCalled();
+    expect(component.value()).toBe('');
   });
 
   it('does not set suggestions when service returns empty array', () => {

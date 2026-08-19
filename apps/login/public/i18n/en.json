@@ -1,6 +1,7 @@
 {
   "ApiUrl": "API url",
   "AppTitle": "Collection tracker",
+  "Aria.OpensInNewTab": "opens in a new tab",
   "BackToSignIn": "Back to Sign In",
   "ChangeApiUrl": "Change API url",
   "Close": "Close",

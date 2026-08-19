@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LinkButton } from './link-button';
 
 @Component({
+  selector: 'libc-link-button-test-host',
   imports: [LinkButton],
   template: `
     <libc-link-button [href]="href" [icon]="icon" [label]="label" [external]="external" [dataTestId]="dataTestId" />
@@ -23,6 +25,7 @@ describe('LinkButton component', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HostComponent],
+      providers: [{ provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } }],
     });
 
     fixture = TestBed.createComponent(HostComponent);
@@ -41,6 +44,7 @@ describe('LinkButton component', () => {
     expect(anchor.getAttribute('href')).toBe('/home');
     expect(anchor.textContent).toContain('home');
     expect(anchor.textContent).toContain('Home');
+    expect(anchor.querySelector('.material-icons')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('sets data-test-id attribute when provided', () => {
@@ -83,6 +87,8 @@ describe('LinkButton component', () => {
     const externalIcon = anchor.querySelector('.link-button-external');
     expect(externalIcon).toBeTruthy();
     expect(externalIcon?.textContent?.trim()).toBe('open_in_new');
+    expect(externalIcon?.getAttribute('aria-hidden')).toBe('true');
+    expect(anchor.querySelector('.visually-hidden')?.textContent?.trim()).toBe('(Aria.OpensInNewTab)');
   });
 
   it('does not show the external icon for internal links', () => {
@@ -91,5 +97,6 @@ describe('LinkButton component', () => {
     const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
     const externalIcon = anchor.querySelector('.link-button-external');
     expect(externalIcon).toBeNull();
+    expect(anchor.querySelector('.visually-hidden')).toBeNull();
   });
 });

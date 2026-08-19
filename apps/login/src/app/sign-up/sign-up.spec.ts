@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
+import { apiStateToken, initialApiState, type ApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@shared/constants/username-const';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -70,6 +71,19 @@ describe('SignUp component', () => {
     expect(apiState.setState).toHaveBeenCalledWith('apiUrl', 'https://new-api');
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, 'https://new-api');
     expect(component['secret']()).toBe('new-token');
+  });
+
+  it.each([
+    { length: USERNAME_MIN_LENGTH - 1, valid: false },
+    { length: USERNAME_MIN_LENGTH, valid: true },
+    { length: USERNAME_MAX_LENGTH, valid: true },
+    { length: USERNAME_MAX_LENGTH + 1, valid: false },
+  ])('validates username length $length', ({ length, valid }) => {
+    const usernameField = fixture.componentInstance['form'].username();
+
+    usernameField.value.set('u'.repeat(length));
+
+    expect(usernameField.valid()).toBe(valid);
   });
 
   it('keeps matching API URL without storing it again', async () => {
