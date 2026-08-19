@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
-import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
+import { collectionStateToken, initialCollectionState, type CollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
 import { Tracking } from './tracking';
@@ -44,7 +44,7 @@ describe('Tracking', () => {
         {
           provide: AiSearchService,
           useValue: {
-            getMatchedIds: () => of(null),
+            getMatchedIds: () => of({ status: 'idle' }),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
           },

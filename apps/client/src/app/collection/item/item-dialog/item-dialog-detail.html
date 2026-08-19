@@ -8,7 +8,9 @@
     <header class="detail-header">
       <p class="eyebrow">{{ collectionItem().year || translations().fallbackUnknownYear() }}</p>
       @if (collectionItem().IMDbId) {
-        <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
+        <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer"
+          >{{ collectionItem().IMDbId }}<span class="visually-hidden"> ({{ translations().opensInNewTab() }})</span></a
+        >
       }
       @if (book() && isbn()) {
         <span data-test-id="item-dialog-isbn">{{ translations().isbn() }} {{ isbn() }}</span>

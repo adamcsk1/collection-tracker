@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { initialMainState, MainState, mainStateToken } from '../main/main-store';
+import { initialMainState, mainStateToken, type MainState } from '../main/main-store';
 import { SettingsModel } from './settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -18,7 +18,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of, Subject, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { SettingsService } from './settings-service';
-import { initialSharesState, SharesState, sharesStateToken } from '../shares/shares-store';
+import { initialSharesState, sharesStateToken, type SharesState } from '../shares/shares-store';
 
 const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel => ({
   sensitiveDataStorage: 'local',

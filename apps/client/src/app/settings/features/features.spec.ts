@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialMainState, MainState, mainStateToken } from '../../main/main-store';
+import type { MainState } from '../../main/main-store';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { SettingsService } from '../settings-service';
 import { SettingsFeatures } from './features';
 

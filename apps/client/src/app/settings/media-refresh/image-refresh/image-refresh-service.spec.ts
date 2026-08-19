@@ -3,12 +3,12 @@ import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,
 } from '@components/blocker-loading/blocker-loading-store';
-import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionService } from '../../../collection/collection-service';
 import { ImageRefreshService } from './image-refresh-service';
@@ -41,20 +41,49 @@ describe('ImageRefreshService', () => {
 
   it('does nothing when the user cancels the confirmation', () => {
     confirm.ifConfirmed = vi.fn(() => EMPTY);
+    const toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
 
     service.refreshImages();
 
     expect(api.refreshImages).not.toHaveBeenCalled();
     expect(service.state().running).toBe(false);
+    expect(toastState.state.message()).toBe('');
   });
 
   it('sets running state and shows blocker when confirmed', () => {
-    api.refreshImages = vi.fn(() => EMPTY);
+    api.refreshImages = vi.fn(() => new Subject());
 
     service.refreshImages();
 
     expect(service.state().running).toBe(true);
     expect(TestBed.inject(blockerLoadingStateToken).state.show()).toBe(true);
+  });
+
+  it('cleans up running state and blocker on API error', () => {
+    api.refreshImages = vi.fn(() => throwError(() => new Error('network error')));
+    const toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+
+    service.refreshImages();
+
+    expect(service.state().running).toBe(false);
+    expect(service.state().completed).toBe(false);
+    expect(TestBed.inject(blockerLoadingStateToken).state.show()).toBe(false);
+    expect(toastState.state.message()).toBe('Toast.ImageRefreshError');
+  });
+
+  it('cleans up running state and blocker when request is cancelled on destroy', () => {
+    const response = new Subject<{ count: number; checked: number; fixed: number; errors: number }>();
+    api.refreshImages = vi.fn(() => response);
+    const blockerState = TestBed.inject(blockerLoadingStateToken);
+    const toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+    service.refreshImages();
+
+    TestBed.resetTestingModule();
+
+    expect(response.observed).toBe(false);
+    expect(service.state().running).toBe(false);
+    expect(blockerState.state.show()).toBe(false);
+    expect(toastState.state.message()).toBe('');
   });
 
   it('shows success toast when all images are valid', () => {

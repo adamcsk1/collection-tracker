@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { initialMainState, mainStateToken, type MainState } from '../../main/main-store';
+import type { MainState } from '../../main/main-store';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { SettingsBasics } from './basics';
 import { SettingsService } from '../settings-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';

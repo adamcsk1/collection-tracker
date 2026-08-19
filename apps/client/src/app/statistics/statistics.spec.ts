@@ -13,13 +13,18 @@ import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainState, mainStateToken } from '../main/main-store';
 import { StatisticsChartService } from './statistics-chart-service';
+import { initialStatisticsState, statisticsStateToken } from './statistics-store';
 import { Statistics } from './statistics';
 
 describe('Statistics component', () => {
   let fixture: ComponentFixture<Statistics>;
   let component: Statistics;
   let api: { getStatistics: ReturnType<typeof vi.fn> };
-  let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
+  let webstorage: {
+    getItem: ReturnType<typeof vi.fn>;
+    setItem: ReturnType<typeof vi.fn>;
+    removeItem: ReturnType<typeof vi.fn>;
+  };
   let portal: { closeAll: ReturnType<typeof vi.fn> };
   let routerNavigate: ReturnType<typeof vi.fn>;
 
@@ -102,7 +107,7 @@ describe('Statistics component', () => {
     api = {
       getStatistics: vi.fn((filters: { type?: 'movie' | 'series' | 'book' }) => of(responses[filters.type ?? 'all'])),
     };
-    webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
+    webstorage = { getItem: vi.fn(() => null), setItem: vi.fn(), removeItem: vi.fn() };
     portal = { closeAll: vi.fn() };
     routerNavigate = vi.fn(() => Promise.resolve(true));
     vi.clearAllMocks();
@@ -129,7 +134,12 @@ describe('Statistics component', () => {
       ],
     });
     TestBed.overrideComponent(Statistics, {
-      set: { providers: [{ provide: StatisticsChartService, useValue: chartService }] },
+      set: {
+        providers: [
+          { provide: StatisticsChartService, useValue: chartService },
+          provideStore(initialStatisticsState, statisticsStateToken),
+        ],
+      },
     });
 
     fixture = TestBed.createComponent(Statistics);
@@ -217,6 +227,7 @@ describe('Statistics component', () => {
   it('filters tags by media scope while preserving selections hidden in that scope', () => {
     component['onToggleTag']('#book');
     component['onSelectScope']('movie');
+    fixture.detectChanges();
 
     expect(component['tags']()).toEqual(['#shared', '#movie']);
     expect(component['selectedTags']()).toEqual(['#book']);
@@ -224,18 +235,39 @@ describe('Statistics component', () => {
     expect(component['selectedVisibleTags']()).toEqual([]);
 
     component['onSelectScope']('all');
+    fixture.detectChanges();
     expect(component['applicableSelectedTags']()).toEqual(['#book']);
     expect(component['selectedVisibleTags']()).toEqual(['#book']);
   });
 
   it('uses cached statistics when returning to an already loaded scope', () => {
     component['onSelectScope']('movie');
+    fixture.detectChanges();
     component['onSelectScope']('all');
+    fixture.detectChanges();
     component['onSelectScope']('movie');
+    fixture.detectChanges();
 
     expect(api.getStatistics).toHaveBeenCalledTimes(2);
     expect(api.getStatistics).toHaveBeenNthCalledWith(1, {});
     expect(api.getStatistics).toHaveBeenNthCalledWith(2, { type: 'movie' });
+  });
+
+  it('cancels stale scope loads and ignores their responses', () => {
+    const movieResponse = new Subject<CollectionStatisticsApiResponseModel>();
+    const seriesResponse = new Subject<CollectionStatisticsApiResponseModel>();
+    api.getStatistics.mockReturnValueOnce(movieResponse).mockReturnValueOnce(seriesResponse);
+
+    component['onSelectScope']('movie');
+    fixture.detectChanges();
+    component['onSelectScope']('series');
+    fixture.detectChanges();
+
+    movieResponse.next(responses.movie);
+    expect(component['statistics']()).toBeNull();
+
+    seriesResponse.next(responses.series);
+    expect(component['statistics']()).toEqual(responses.series);
   });
 
   it('clears stale statistics while a new scope loads and shows request errors', () => {
@@ -278,6 +310,40 @@ describe('Statistics component', () => {
     component['onClearSelectedTags']();
     expect(component['selectedTags']()).toEqual([]);
     expect(webstorage.setItem).toHaveBeenLastCalledWith(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify([]));
+  });
+
+  it('sets deterministic contrast-safe colors on selected tag chips', () => {
+    component['onToggleTag']('#shared');
+    fixture.detectChanges();
+
+    const chip = fixture.nativeElement.querySelector('[data-test-id="statistics-tag-#shared"]') as HTMLElement;
+    expect(chip.style.getPropertyValue('--tag-background-color')).toMatch(/^hsl\(/);
+    expect(chip.style.getPropertyValue('--tag-foreground-color')).toMatch(/^#(?:000000|FFFFFF)$/);
+  });
+
+  it.each(['', 'not-json', '{"tag":"#shared"}', '["#shared", 1]'])(
+    'discards malformed or stale stored tag selections: %s',
+    (storedTags) => {
+      fixture.destroy();
+      webstorage.getItem.mockReturnValue(storedTags);
+
+      fixture = TestBed.createComponent(Statistics);
+      component = fixture.componentInstance;
+
+      expect(component['selectedTags']()).toEqual([]);
+      expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_STATISTICS_SELECTED_TAGS);
+    }
+  );
+
+  it('restores stored tag selections when they are a string array', () => {
+    fixture.destroy();
+    webstorage.getItem.mockReturnValue('["#shared", "#book"]');
+
+    fixture = TestBed.createComponent(Statistics);
+    component = fixture.componentInstance;
+
+    expect(component['selectedTags']()).toEqual(['#shared', '#book']);
+    expect(webstorage.removeItem).not.toHaveBeenCalled();
   });
 
   it('navigates focused cards to their relevant lists and filters', () => {

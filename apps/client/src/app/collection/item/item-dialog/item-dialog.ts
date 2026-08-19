@@ -122,6 +122,7 @@ export class ItemDialog implements OnInit {
     links: computed(() => this.ngxSignalTranslate.translate('Links')),
     linkYouTubeTrailer: computed(() => this.ngxSignalTranslate.translate('Link.YouTubeTrailer')),
     linkWebSearch: computed(() => this.ngxSignalTranslate.translate('Link.WebSearch')),
+    opensInNewTab: computed(() => this.ngxSignalTranslate.translate('Aria.OpensInNewTab')),
     backToDetails: computed(() => this.ngxSignalTranslate.translate('BackToDetails')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     edit: computed(() => {

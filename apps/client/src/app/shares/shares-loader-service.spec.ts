@@ -4,7 +4,7 @@ import { ApiService } from '@services/api/api-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialSharesState, SharesState, sharesStateToken } from './shares-store';
+import { initialSharesState, sharesStateToken, type SharesState } from './shares-store';
 import { SharesLoaderService } from './shares-loader-service';
 
 describe('SharesLoaderService', () => {

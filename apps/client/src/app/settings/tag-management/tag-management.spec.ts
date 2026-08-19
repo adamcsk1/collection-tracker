@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { TagManagementModel } from './tag-management-model';
-import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
@@ -13,8 +13,8 @@ import { TagManagement } from './tag-management';
 import { TagManagementService } from './tag-management-service';
 import {
   initialTagManagementState,
-  TagManagementState,
   tagManagementStateToken,
+  type TagManagementState,
 } from '../../tag-management/tag-management-store';
 
 const buildTagManagement = (

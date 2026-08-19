@@ -72,7 +72,10 @@ export class List implements OnDestroy {
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
     messageEmptyCollection: computed(() => this.ngxSignalTranslate.translate('Message.EmptyCollection')),
     messageAddFirstCollectionItem: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstCollectionItem')),
+    messageAiSearchError: computed(() => this.ngxSignalTranslate.translate('Message.AiSearchError')),
     messageEmptySearch: computed(() => this.ngxSignalTranslate.translate('Message.EmptySearch')),
+    messageSearchError: computed(() => this.ngxSignalTranslate.translate('Message.SearchError')),
+    retry: computed(() => this.ngxSignalTranslate.translate('Retry')),
   };
   protected readonly visibleCollection = signal<CollectionItemModel[]>([]);
   protected readonly collectionLength = signal(0);
@@ -85,6 +88,13 @@ export class List implements OnDestroy {
   protected readonly scrollToTopAvailable = signal(false);
   protected readonly scrolling = signal(false);
   protected readonly isInternalCollectionPrefiltered = computed(() => this.listType() !== 'library');
+  protected readonly aiFilterActive = computed(
+    () =>
+      !!this.collectionState.state.aiSearchPromptText().trim() &&
+      !this.collectionState.state.forceStandardSearch() &&
+      !this.routeSearchText().trim() &&
+      !this.routeFilterKey()
+  );
   public readonly hideFloatActions = input(false);
   public readonly showAddButton = input(true);
   public readonly showRandomPickButton = input(true);
@@ -99,6 +109,7 @@ export class List implements OnDestroy {
   private scrollingIdleSubscription: Subscription | null = null;
   private loadRequestId = 0;
   private pendingLoadRequestId: number | null = null;
+  private failedAiRequestWasReset: boolean | null = null;
 
   constructor() {
     this.sharesLoader.load(this.destroyRef);
@@ -275,6 +286,20 @@ export class List implements OnDestroy {
     this.showFunctions.emit();
   }
 
+  protected onRetrySearch(): void {
+    if (this.aiFilterActive()) {
+      if (this.failedAiRequestWasReset === false) {
+        this.loadItems(false, this.debouncedSearchText(), this.orderBy(), this.orderDirection());
+        return;
+      }
+
+      this.collectionState.setState('aiSearchSendVersion', this.collectionState.state.aiSearchSendVersion() + 1);
+      return;
+    }
+
+    this.mainCollectionState.setState('reloadTrigger', this.mainCollectionState.state.reloadTrigger() + 1);
+  }
+
   protected onResetScrollPosition(): void {
     const element = this.scrollContainer()?.nativeElement;
     if (!element) return;
@@ -301,11 +326,19 @@ export class List implements OnDestroy {
     orderDirection = this.orderDirection()
   ): void {
     const requestId = ++this.loadRequestId;
+    const aiRequest = this.aiFilterActive();
     this.pendingLoadRequestId = requestId;
     this.getItemsRequest(reset, searchText, orderBy, orderDirection)
       .pipe(
         catchError(() => {
           if (requestId === this.loadRequestId) {
+            this.failedAiRequestWasReset = aiRequest ? reset : null;
+            if (reset && aiRequest) {
+              this.visibleCollection.set([]);
+              this.collectionLength.set(0);
+              this.nextCursor.set(null);
+              this.hasMore.set(false);
+            }
             this.apiState.setState('loadNetworkStatus', 'error');
           }
           return EMPTY;
@@ -332,13 +365,6 @@ export class List implements OnDestroy {
   ): Observable<CollectionItemsPageModel> {
     const cursor = reset ? null : this.nextCursor();
     const limit = COLLECTION_LIST_PAGE_SIZE;
-    if (reset) {
-      this.visibleCollection.set([]);
-      this.collectionLength.set(0);
-      this.nextCursor.set(null);
-      this.hasMore.set(true);
-    }
-
     this.apiState.setState('loadNetworkStatus', 'pending');
 
     const request = this.dataSource()({ reset, cursor, limit, searchText, orderBy, orderDirection });
@@ -357,6 +383,7 @@ export class List implements OnDestroy {
 
   private applyItemsResponse(response: CollectionItemsPageModel, reset: boolean): void {
     const malformedContinuation = response.page.hasMore && response.page.nextCursor === null;
+    this.failedAiRequestWasReset = null;
     this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
     this.collectionLength.set(this.visibleCollection().length);
     this.nextCursor.set(response.page.nextCursor);

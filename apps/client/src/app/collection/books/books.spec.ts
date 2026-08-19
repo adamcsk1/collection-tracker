@@ -35,7 +35,7 @@ describe('Books', () => {
         {
           provide: AiSearchService,
           useValue: {
-            getMatchedIds: () => of(null),
+            getMatchedIds: () => of({ status: 'idle' }),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
           },

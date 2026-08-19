@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DEFAULT_TAG_MANAGEMENT_COLOR } from '../settings/tag-management/tag-management-const';
-import { initialTagManagementState, TagManagementState, tagManagementStateToken } from './tag-management-store';
+import { initialTagManagementState, tagManagementStateToken, type TagManagementState } from './tag-management-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagManagementColorPipe } from './tag-management-color-pipe';

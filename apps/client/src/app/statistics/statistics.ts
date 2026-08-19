@@ -9,35 +9,32 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { ApiService } from '@services/api/api-service';
-import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
-import {
-  CollectionItemTypeFilter,
-  CollectionStatisticsApiResponseModel,
-  CollectionStatisticsStatus,
-} from '@shared/models/api-model';
-import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
+import { CollectionItemTypeFilter, CollectionStatisticsStatus } from '@shared/models/api-model';
+import { textToContrastColor, textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { BehaviorSubject, catchError, EMPTY, of, switchMap, tap } from 'rxjs';
+import { provideStore } from 'ngx-simple-signal-store';
+import { catchError, EMPTY, of, switchMap, tap } from 'rxjs';
 import type { CollectionMediaChip } from '../collection/media-chips/media-chips-model';
 import { CollectionMediaChips } from '../collection/media-chips/media-chips';
 import { mainStateToken } from '../main/main-store';
 import { StatisticsChartService } from './statistics-chart-service';
+import { initialStatisticsState, statisticsStateToken } from './statistics-store';
 
 @Component({
   selector: 'ct-statistics',
   imports: [CollectionMediaChips, Details, Input],
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
-  providers: [StatisticsChartService],
+  providers: [StatisticsChartService, provideStore(initialStatisticsState, statisticsStateToken)],
   host: { class: 'page' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -45,13 +42,11 @@ export class Statistics implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly apiState = inject(apiStateToken);
+  private readonly statisticsState = inject(statisticsStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly portal = inject(PortalService);
   private readonly charts = inject(StatisticsChartService);
-  private readonly scopeChanges = new BehaviorSubject<CollectionMediaChip>('all');
-  private readonly statisticsCache = new Map<CollectionMediaChip, CollectionStatisticsApiResponseModel>();
   protected readonly featurePreferences = inject(mainStateToken).state.collectionFeaturePreferences;
   protected readonly translations = {
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
@@ -90,9 +85,9 @@ export class Statistics implements OnDestroy {
     releaseYears: computed(() => this.ngxSignalTranslate.translate('ReleaseYears')),
     userRatings: computed(() => this.ngxSignalTranslate.translate('UserRatings')),
   };
-  protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly selectedScope = signal<CollectionMediaChip>('all');
-  protected readonly statistics = signal<CollectionStatisticsApiResponseModel | null>(null);
+  protected readonly statisticsLoadStatus = this.statisticsState.state.loadStatus;
+  protected readonly selectedScope = this.statisticsState.state.selectedScope;
+  protected readonly statistics = this.statisticsState.state.statistics;
   protected readonly tags = computed(() => this.statistics()?.charts.tagCounts.map(({ tag }) => tag) ?? []);
   protected readonly applicableSelectedTags = computed(() => {
     const availableTags = new Set(this.tags());
@@ -163,15 +158,27 @@ export class Statistics implements OnDestroy {
   );
   protected readonly defaultOpenSelectedTags: boolean;
   protected readonly textToHexColor = textToHexColor;
+  protected readonly textToContrastColor = textToContrastColor;
 
   constructor() {
     const storedTags = this.webstorage.getItem(STORAGE_STATISTICS_SELECTED_TAGS);
-    if (storedTags) this.selectedTags.set(JSON.parse(storedTags));
+    if (storedTags !== null) {
+      try {
+        const parsedTags = JSON.parse(storedTags) as unknown;
+        if (Array.isArray(parsedTags) && parsedTags.every((tag) => typeof tag === 'string')) {
+          this.selectedTags.set(parsedTags);
+        } else {
+          this.webstorage.removeItem(STORAGE_STATISTICS_SELECTED_TAGS);
+        }
+      } catch {
+        this.webstorage.removeItem(STORAGE_STATISTICS_SELECTED_TAGS);
+      }
+    }
     this.defaultOpenSelectedTags = this.selectedTags().length === 0;
 
     afterRenderEffect(() => {
       const statistics = this.statistics();
-      const networkStatus = this.apiLoadNetworkStatus();
+      const networkStatus = this.statisticsLoadStatus();
       this.applicableSelectedTags();
       if (!statistics || networkStatus !== 'finished') return;
       untracked(() => {
@@ -181,16 +188,23 @@ export class Statistics implements OnDestroy {
       });
     });
 
-    this.scopeChanges
+    const loadTrigger = computed(() => ({
+      scope: this.selectedScope(),
+      reloadVersion: this.statisticsState.state.reloadVersion(),
+    }));
+
+    toObservable(loadTrigger)
       .pipe(
-        tap(() => this.apiState.setState('loadNetworkStatus', 'pending')),
-        switchMap((scope) => {
-          const cached = this.statisticsCache.get(scope);
+        tap(() => this.statisticsState.setState('loadStatus', 'pending')),
+        switchMap(({ scope }) => {
+          const cached = this.statisticsState.state.cache()[scope];
           if (cached) return of(cached);
           return this.api.getStatistics(scope === 'all' ? {} : { type: scope }).pipe(
-            tap((statistics) => this.statisticsCache.set(scope, statistics)),
+            tap((statistics) =>
+              this.statisticsState.setState('cache', { ...this.statisticsState.state.cache(), [scope]: statistics })
+            ),
             catchError(() => {
-              this.apiState.setState('loadNetworkStatus', 'error');
+              this.statisticsState.setState('loadStatus', 'error');
               return EMPTY;
             })
           );
@@ -198,8 +212,8 @@ export class Statistics implements OnDestroy {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((statistics) => {
-        this.statistics.set(statistics);
-        this.apiState.setState('loadNetworkStatus', 'finished');
+        this.statisticsState.setState('statistics', statistics);
+        this.statisticsState.setState('loadStatus', 'finished');
       });
   }
 
@@ -212,14 +226,16 @@ export class Statistics implements OnDestroy {
   }
 
   protected onSelectScope(scope: CollectionMediaChip): void {
-    this.selectedScope.set(scope);
-    this.statistics.set(null);
+    this.statisticsState.setState('selectedScope', scope);
+    this.statisticsState.setState('statistics', null);
+    this.statisticsState.setState('loadStatus', 'pending');
+    this.statisticsState.setState('reloadVersion', this.statisticsState.state.reloadVersion() + 1);
     this.tagFilter.set('');
-    this.scopeChanges.next(scope);
   }
 
   protected onRetryLoadStatistics(): void {
-    this.scopeChanges.next(this.selectedScope());
+    this.statisticsState.setState('loadStatus', 'pending');
+    this.statisticsState.setState('reloadVersion', this.statisticsState.state.reloadVersion() + 1);
   }
 
   protected onToggleTag(tag: string): void {

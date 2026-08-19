@@ -2,51 +2,64 @@
   #scrollContainer
   data-test-id="collection-list"
   class="list"
-  role="list"
-  [attr.aria-label]="translations.collection()"
   [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
   (scroll)="onScroll()"
 >
   @if ((!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') && visibleCollection().length === 0) {
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
+    <div class="list-loading" aria-hidden="true">
+      <ct-list-item-skeleton />
+      <ct-list-item-skeleton />
+      <ct-list-item-skeleton />
+      <ct-list-item-skeleton />
+      <ct-list-item-skeleton />
+      <ct-list-item-skeleton />
+    </div>
   }
 
-  @for (
-    collectionItem of visibleCollection();
-    track (collectionItem.ownerShareCode ?? '') +
-      ':' +
-      (collectionItem.listType ?? 'library') +
-      ':' +
-      collectionItem.externalProvider +
-      ':' +
-      collectionItem.externalItemId
-  ) {
-    <ct-list-item [collectionItem]="collectionItem" />
-  } @empty {
-    @if (apiLoadNetworkStatus() !== 'pending') {
-      <div data-test-id="list-empty" class="list-empty">
-        <i class="material-icons" data-test-id="list-empty-icon">{{ emptyIcon() }}</i>
-        <ng-content select="[list-empty]">
-          @if (!debouncedSearchText().trim() && !routeFilterKey() && collectionLength() === 0) {
-            {{ translations.messageEmptyCollection() }}<br />
-            <a data-test-id="add-first-item" href="#" role="button" (click)="onAddNew()">{{
-              translations.messageAddFirstCollectionItem()
-            }}</a>
-          } @else {
-            {{ translations.messageEmptySearch() }}<br />
-          }
-        </ng-content>
-      </div>
+  @if (apiLoadNetworkStatus() === 'error') {
+    <div data-test-id="ai-search-error" class="list-error" role="alert">
+      <span>{{ aiFilterActive() ? translations.messageAiSearchError() : translations.messageSearchError() }}</span>
+      <button type="button" data-test-id="ai-search-retry" class="button" (click)="onRetrySearch()">
+        {{ translations.retry() }}
+      </button>
+    </div>
+  }
+
+  <div class="list-items" role="list" [attr.aria-label]="translations.collection()">
+    @for (
+      collectionItem of visibleCollection();
+      track (collectionItem.ownerShareCode ?? '') +
+        ':' +
+        (collectionItem.listType ?? 'library') +
+        ':' +
+        collectionItem.externalProvider +
+        ':' +
+        collectionItem.externalItemId
+    ) {
+      <ct-list-item [collectionItem]="collectionItem" />
     }
+  </div>
+
+  @if (visibleCollection().length === 0 && apiLoadNetworkStatus() !== 'pending' && apiLoadNetworkStatus() !== 'error') {
+    <div data-test-id="list-empty" class="list-empty">
+      <i class="material-icons" data-test-id="list-empty-icon" aria-hidden="true">{{ emptyIcon() }}</i>
+      <ng-content select="[list-empty]">
+        @if (!debouncedSearchText().trim() && !routeFilterKey() && collectionLength() === 0) {
+          {{ translations.messageEmptyCollection() }}<br />
+          <button type="button" data-test-id="add-first-item" class="text-button" (click)="onAddNew()">
+            {{ translations.messageAddFirstCollectionItem() }}
+          </button>
+        } @else {
+          {{ translations.messageEmptySearch() }}<br />
+        }
+      </ng-content>
+    </div>
   }
 
   @if (apiLoadNetworkStatus() === 'pending' && visibleCollection().length > 0) {
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
+    <div class="list-loading" aria-hidden="true">
+      <ct-list-item-skeleton />
+      <ct-list-item-skeleton />
+    </div>
   }
 </div>

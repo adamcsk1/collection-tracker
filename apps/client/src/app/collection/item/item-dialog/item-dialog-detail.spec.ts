@@ -36,6 +36,7 @@ const translations: ItemDialogTranslations = {
   moveToFinished: signal('Move to Watched'),
   moveToTracking: signal('Move to Tracking'),
   openInTracking: signal('Open in Tracking'),
+  opensInNewTab: signal('opens in a new tab'),
   removeFavorite: signal('Remove favorite'),
   removeFromTracking: signal('Remove from Tracking'),
   share: signal('Share item'),
@@ -97,6 +98,9 @@ describe('ItemDialogDetail', () => {
     expect(element.querySelector('[data-test-id="item-dialog-tags-section"]')?.textContent).toContain('#drama');
     expect(element.querySelector('[data-test-id="item-dialog-episode-progress-chip"]')?.textContent).toContain(
       'S01E02'
+    );
+    expect(element.querySelector('a[target="_blank"] .visually-hidden')?.textContent?.trim()).toBe(
+      '(opens in a new tab)'
     );
   });
 

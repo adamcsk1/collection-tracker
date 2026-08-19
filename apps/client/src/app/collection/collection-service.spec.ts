@@ -3,8 +3,8 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   initialMainCollectionState,
-  MainCollectionState,
   mainCollectionStateToken,
+  type MainCollectionState,
 } from '../main/main-collection-store';
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import { CollectionModel } from './collection-model';

@@ -1,11 +1,11 @@
 import { ElementRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
+import { collectionStateToken, initialCollectionState, type CollectionState } from '../collection-store';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { apiStateToken, initialApiState, type ApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_COLLECTION_LIST_ORDER_PREFERENCES } from '@shared/constants/storage-const';
@@ -149,6 +149,7 @@ describe('List', () => {
     expect(component['translations'].messageEmptyCollection()).toBe('Message.EmptyCollection');
     expect(component['translations'].messageAddFirstCollectionItem()).toBe('Message.AddFirstCollectionItem');
     expect(component['translations'].messageEmptySearch()).toBe('Message.EmptySearch');
+    expect(component['translations'].messageSearchError()).toBe('Message.SearchError');
     expect(component['isInternalCollectionPrefiltered']()).toBe(false);
 
     fixture.componentRef.setInput('listType', 'tracking');
@@ -223,9 +224,19 @@ describe('List', () => {
       fixture.detectChanges();
 
       const emptyMessage = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-empty"]');
+      const list = (fixture.nativeElement as HTMLElement).querySelector('[role="list"]');
+      const addFirstButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+        '[data-test-id="add-first-item"]'
+      );
       expect(emptyMessage?.textContent).toContain('Message.EmptyCollection');
       expect(emptyMessage?.textContent).toContain('Message.AddFirstCollectionItem');
-      expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="add-first-item"]')).toBeTruthy();
+      expect(list?.contains(emptyMessage)).toBe(false);
+      expect(addFirstButton?.tagName).toBe('BUTTON');
+      expect(addFirstButton?.type).toBe('button');
+
+      addFirstButton?.click();
+
+      expect(portal.open).toHaveBeenCalledWith(NewItemDialog, expect.any(Object));
     } finally {
       vi.useRealTimers();
     }
@@ -449,6 +460,132 @@ describe('List', () => {
     expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Reset Result']);
     expect(component['nextCursor']()).toBe('reset-cursor');
     expect(apiState.state.loadNetworkStatus()).toBe('finished');
+  });
+
+  it('retains current rows until a reset succeeds, including through errors', () => {
+    const pendingResponse = new Subject<CollectionItemsPageModel>();
+    api.searchItems.mockReturnValueOnce(pendingResponse);
+    component['visibleCollection'].set([buildItem('Existing')]);
+
+    component['loadItems'](true, 'new search');
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Existing']);
+
+    pendingResponse.error(new Error('failed'));
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Existing']);
+    expect(apiState.state.loadNetworkStatus()).toBe('error');
+
+    api.searchItems.mockReturnValueOnce(of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } }));
+    component['loadItems'](true, 'new search');
+
+    expect(component['visibleCollection']()).toEqual([]);
+    expect(apiState.state.loadNetworkStatus()).toBe('finished');
+  });
+
+  it('clears retained AI rows and renders an alert with a retry action when AI search fails', () => {
+    const pendingResponse = new Subject<CollectionItemsPageModel>();
+    fixture.componentRef.setInput('dataSource', () => pendingResponse);
+    collectionState.setState('aiSearchPromptText', 'science fiction');
+    collectionState.setState('forceStandardSearch', false);
+    component['visibleCollection'].set([buildItem('Stale AI Match')]);
+
+    component['loadItems'](true);
+    pendingResponse.error(new Error('AI search failed'));
+    fixture.detectChanges();
+
+    const error = fixture.nativeElement.querySelector('[data-test-id="ai-search-error"]');
+    expect(component['visibleCollection']()).toEqual([]);
+    expect(error?.getAttribute('role')).toBe('alert');
+    expect(error?.textContent).toContain('Message.AiSearchError');
+
+    fixture.nativeElement.querySelector('[data-test-id="ai-search-retry"]').click();
+
+    expect(collectionState.state.aiSearchPromptText()).toBe('science fiction');
+    expect(collectionState.state.aiSearchSendVersion()).toBe(1);
+  });
+
+  it('shows a standard failure and retries the standard request when a route filter retains an AI prompt', () => {
+    const pendingResponse = new Subject<CollectionItemsPageModel>();
+    fixture.componentRef.setInput('dataSource', () => pendingResponse);
+    fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ favorite: true }));
+    collectionState.setState('aiSearchPromptText', 'science fiction');
+    collectionState.setState('forceStandardSearch', false);
+    component['visibleCollection'].set([buildItem('Existing')]);
+
+    component['loadItems'](true);
+    pendingResponse.error(new Error('Standard search failed'));
+    fixture.detectChanges();
+
+    const error = fixture.nativeElement.querySelector('[data-test-id="ai-search-error"]');
+    expect(component['aiFilterActive']()).toBe(false);
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Existing']);
+    expect(error?.getAttribute('role')).toBe('alert');
+    expect(error?.textContent).toContain('Message.SearchError');
+    expect(error?.textContent).not.toContain('Message.AiSearchError');
+
+    const reloadTrigger = TestBed.inject(mainCollectionStateToken).state.reloadTrigger();
+    fixture.nativeElement.querySelector('[data-test-id="ai-search-retry"]').click();
+
+    expect(TestBed.inject(mainCollectionStateToken).state.reloadTrigger()).toBe(reloadTrigger + 1);
+    expect(collectionState.state.aiSearchSendVersion()).toBe(0);
+  });
+
+  it('retries a failed AI continuation without resetting successful rows or cursor', () => {
+    const failedResponse = new Subject<CollectionItemsPageModel>();
+    const successfulResponse = new Subject<CollectionItemsPageModel>();
+    const dataSource = vi.fn().mockReturnValueOnce(failedResponse).mockReturnValueOnce(successfulResponse);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('dataSource', dataSource);
+    collectionState.setState('aiSearchPromptText', 'science fiction');
+    collectionState.setState('forceStandardSearch', false);
+    component['visibleCollection'].set([buildItem('AI Match')]);
+    component['collectionLength'].set(1);
+    component['nextCursor'].set('next-page');
+    component['hasMore'].set(true);
+
+    component['loadItems'](false);
+    failedResponse.error(new Error('AI continuation failed'));
+    fixture.detectChanges();
+
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['AI Match']);
+    expect(component['collectionLength']()).toBe(1);
+    expect(component['nextCursor']()).toBe('next-page');
+    expect(component['hasMore']()).toBe(true);
+    const error = fixture.nativeElement.querySelector('[data-test-id="ai-search-error"]');
+    const list = (fixture.nativeElement as HTMLElement).querySelector('[role="list"]');
+    expect(error?.getAttribute('role')).toBe('alert');
+    expect(list?.contains(error)).toBe(false);
+    expect(Array.from(list?.children ?? []).every((child) => child.getAttribute('role') === 'listitem')).toBe(true);
+
+    fixture.nativeElement.querySelector('[data-test-id="ai-search-retry"]').click();
+    successfulResponse.next({
+      items: [buildItem('Next AI Match')],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
+
+    expect(dataSource).toHaveBeenNthCalledWith(2, {
+      reset: false,
+      cursor: 'next-page',
+      limit: 50,
+      searchText: '',
+      orderBy: 'createdAt',
+      orderDirection: 'desc',
+    });
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['AI Match', 'Next AI Match']);
+    expect(component['collectionLength']()).toBe(2);
+    expect(collectionState.state.aiSearchSendVersion()).toBe(0);
+    expect(apiState.state.loadNetworkStatus()).toBe('finished');
+  });
+
+  it('keeps loading placeholders outside the collection list semantics', () => {
+    const pendingResponse = new Subject<CollectionItemsPageModel>();
+    fixture.componentRef.setInput('dataSource', () => pendingResponse);
+
+    fixture.detectChanges();
+
+    const list = fixture.nativeElement.querySelector('[role="list"]');
+    const loadingPlaceholder = fixture.nativeElement.querySelector('ct-list-item-skeleton');
+    expect(loadingPlaceholder).toBeTruthy();
+    expect(list?.contains(loadingPlaceholder)).toBe(false);
   });
 
   it('does not let a stale error clear the current pending request or status', () => {

@@ -14,7 +14,7 @@ import {
   type MainCollectionState,
 } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
-import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
+import { collectionStateToken, initialCollectionState, type CollectionState } from '../collection-store';
 import { AiSearchService } from '../search/ai-search-service';
 import { CollectionLibrary } from './library';
 
@@ -47,7 +47,7 @@ describe('Collection library component', () => {
         {
           provide: AiSearchService,
           useFactory: () => ({
-            getMatchedIds: () => of(null),
+            getMatchedIds: () => of({ status: 'idle' }),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
           }),
@@ -122,7 +122,7 @@ describe('Collection library component', () => {
         {
           provide: AiSearchService,
           useFactory: () => ({
-            getMatchedIds: () => of(null),
+            getMatchedIds: () => of({ status: 'idle' }),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
           }),

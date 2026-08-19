@@ -3,7 +3,7 @@ import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,
 } from '@components/blocker-loading/blocker-loading-store';
-import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';

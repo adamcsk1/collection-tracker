@@ -6,8 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagManagementService } from './tag-management-service';
 import {
   initialTagManagementState,
-  TagManagementState,
   tagManagementStateToken,
+  type TagManagementState,
 } from '../../tag-management/tag-management-store';
 
 describe('TagManagementService', () => {

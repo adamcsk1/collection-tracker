@@ -47,6 +47,7 @@ export interface ItemDialogTranslations {
   moveToFinished: Signal<string>;
   moveToTracking: Signal<string>;
   openInTracking: Signal<string>;
+  opensInNewTab: Signal<string>;
   plot: Signal<string>;
   ratings: Signal<string>;
   removeFavorite: Signal<string>;

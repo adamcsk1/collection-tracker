@@ -4,15 +4,14 @@ import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
-import {
-  initialTagManagementState,
-  TagManagementState,
-  tagManagementStateToken,
-} from '../../../tag-management/tag-management-store';
-import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
+import type { MainState } from '../../../main/main-store';
+import { initialMainState, mainStateToken } from '../../../main/main-store';
+import type { SharesState } from '../../../shares/shares-store';
+import { initialSharesState, sharesStateToken } from '../../../shares/shares-store';
+import type { TagManagementState } from '../../../tag-management/tag-management-store';
+import { initialTagManagementState, tagManagementStateToken } from '../../../tag-management/tag-management-store';
 import { CollectionItemModel } from '../../collection-model';
-import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
+import { collectionStateToken, initialCollectionState, type CollectionState } from '../../collection-store';
 import { ListItem } from './list-item';
 
 const COMPLETED_TAG = '#completed';

@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { form } from '@angular/forms/signals';
 import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import type { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
-import { catchError, debounceTime, EMPTY, startWith, switchMap } from 'rxjs';
+import { catchError, concat, EMPTY, filter, of, startWith, switchMap, throwError, timer } from 'rxjs';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import type { CollectionListDataSource, CollectionListDataSourceRequest } from '../collection-model';
 import { AiSearchDialog } from '../search/ai-search-dialog';
@@ -49,11 +49,18 @@ export const setupCollectionAiSearch = ({
 
   const aiSearchMatchedIds = toSignal(
     toObservable(aiSearchSendTrigger).pipe(
-      debounceTime(500),
-      switchMap(({ promptText }) => aiSearch.getMatchedIds(promptText, listType)),
-      startWith(null)
+      switchMap(({ promptText }) =>
+        concat(
+          of(promptText ? ({ status: 'pending' } as const) : ({ status: 'idle' } as const)),
+          timer(500).pipe(
+            switchMap(() => aiSearch.getMatchedIds(promptText, listType)),
+            filter((result) => result.status !== 'pending')
+          )
+        )
+      ),
+      startWith({ status: 'idle' } as const)
     ),
-    { initialValue: null }
+    { initialValue: { status: 'idle' } as const }
   );
 
   const aiFilterActive = computed(() => !!collectionState.state.aiSearchPromptText().trim() && !forceStandardSearch());
@@ -130,22 +137,28 @@ export const setupCollectionAiSearch = ({
     orderBy,
     orderDirection,
   }: CollectionListDataSourceRequest) => {
-    const aiIds = aiSearchMatchedIds();
+    const aiResult = aiSearchMatchedIds();
     const promptText = collectionState.state.aiSearchPromptText().trim();
     const useAiFilter = !!promptText && !forceStandardSearch();
 
-    if (useAiFilter && aiIds === null) {
+    if (useAiFilter && (aiResult.status === 'idle' || aiResult.status === 'pending')) {
       return EMPTY;
     }
 
-    if (useAiFilter) {
+    if (useAiFilter && aiResult.status === 'error') {
+      return throwError(() => new Error('AI search failed'));
+    }
+
+    if (useAiFilter && aiResult.status === 'success') {
       return api.getMatchedItems({
-        identities: (aiIds as string[]).map(toMatchedIdentity),
+        identities: aiResult.matchedIds.map(toMatchedIdentity),
         cursor: cursor ?? undefined,
         limit,
         filters: { listType },
       });
     }
+
+    if (useAiFilter) return EMPTY;
 
     const filters = buildStandardSearchFilters(searchText, listType, queryFilters());
     return api.searchItems({ ...filters, orderBy, orderDirection }, cursor, limit);

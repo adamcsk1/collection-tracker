@@ -5,7 +5,7 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { take, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, take, tap } from 'rxjs';
 import { CollectionService } from '../../../collection/collection-service';
 import { ImageRefreshStateModel } from './image-refresh-model';
 
@@ -60,7 +60,6 @@ export class ImageRefreshService {
                 fixed: response.fixed,
                 errors: response.errors,
               });
-              this.blockerLoadingState.patchState('show', false);
 
               if (response.errors > 0) {
                 this.toastState.setState('timeout', 10000);
@@ -72,6 +71,14 @@ export class ImageRefreshService {
                 this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ImagesRegenerated'));
               }
               this.collection.triggerReload();
+            }),
+            catchError(() => {
+              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ImageRefreshError'));
+              return EMPTY;
+            }),
+            finalize(() => {
+              this._state.update((state) => ({ ...state, running: false }));
+              this.blockerLoadingState.patchState('show', false);
             })
           )
           .subscribe();

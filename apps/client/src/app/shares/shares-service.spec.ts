@@ -9,7 +9,7 @@ import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SharesService } from './shares-service';
 import { SharesLoaderService } from './shares-loader-service';
-import { initialSharesState, SharesState, sharesStateToken } from './shares-store';
+import { initialSharesState, sharesStateToken, type SharesState } from './shares-store';
 import { initialMainState, mainStateToken } from '../main/main-store';
 import { SettingsService } from '../settings/settings-service';
 

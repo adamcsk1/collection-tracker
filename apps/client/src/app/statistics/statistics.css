@@ -125,9 +125,9 @@
 }
 
 .tag-chip-selected {
-  background-color: var(--tag-color);
-  color: var(--background-color);
-  border-color: var(--tag-color);
+  background-color: var(--tag-background-color);
+  color: var(--tag-foreground-color);
+  border-color: var(--tag-background-color);
 }
 
 .tags-empty {

@@ -7,9 +7,9 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../../main/main-collection-store';
-import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
+import { initialMainState, mainStateToken, type MainState } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
-import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
+import { initialSharesState, sharesStateToken, type SharesState } from '../../../shares/shares-store';
 import { NewItemDialog } from './new-item-dialog';
 import { NewItemDialogService } from './new-item-dialog-service';
 

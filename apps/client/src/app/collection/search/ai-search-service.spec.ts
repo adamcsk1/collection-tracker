@@ -1,14 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import {
   initialSpinnerLoadingState,
-  SpinnerLoadingState,
   spinnerLoadingStateToken,
+  type SpinnerLoadingState,
 } from '@components/spinner-loading/spinner-loading-store';
 import { ApiService } from '@services/api/api-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { initialMainState, MainState, mainStateToken } from '../../main/main-store';
+import { initialMainState, mainStateToken, type MainState } from '../../main/main-store';
 import { AiSearchService } from './ai-search-service';
 
 describe('AiSearchService', () => {
@@ -40,13 +40,13 @@ describe('AiSearchService', () => {
     vi.clearAllMocks();
   });
 
-  it('returns null without calling API when searchText is empty', () => {
+  it('returns idle without calling API when searchText is empty', () => {
     setup();
 
-    let result: string[] | null | undefined;
+    let result: unknown;
     service.getMatchedIds('', 'library').subscribe((value) => (result = value));
 
-    expect(result).toBeNull();
+    expect(result).toEqual({ status: 'idle' });
     expect(getAiQueryDataSpy).not.toHaveBeenCalled();
   });
 
@@ -54,11 +54,11 @@ describe('AiSearchService', () => {
     setup();
     getAiQueryDataSpy.mockReturnValue(of({ matchedIds: ['tt0133093', 'tt0372784'] }));
 
-    let result: string[] | null | undefined;
-    service.getMatchedIds('sci-fi movies', 'up-next').subscribe((value) => (result = value));
+    const results: unknown[] = [];
+    service.getMatchedIds('sci-fi movies', 'up-next').subscribe((value) => results.push(value));
 
     expect(getAiQueryDataSpy).toHaveBeenCalledWith('sci-fi movies', 'up-next');
-    expect(result).toEqual(['tt0133093', 'tt0372784']);
+    expect(results).toEqual([{ status: 'pending' }, { status: 'success', matchedIds: ['tt0133093', 'tt0372784'] }]);
   });
 
   it('resets searchInProgress and spinner after a successful response', () => {
@@ -71,16 +71,32 @@ describe('AiSearchService', () => {
     expect(spinnerState.state.show()).toBe(false);
   });
 
-  it('returns null and resets searchInProgress and spinner on API error', () => {
+  it('returns error and resets searchInProgress and spinner on API error', () => {
     setup();
     getAiQueryDataSpy.mockReturnValue(throwError(() => new Error('network error')));
 
-    let result: string[] | null | undefined;
-    service.getMatchedIds('sci-fi', 'library').subscribe((value) => (result = value));
+    const results: unknown[] = [];
+    service.getMatchedIds('sci-fi', 'library').subscribe((value) => results.push(value));
 
-    expect(result).toBeNull();
+    expect(results).toEqual([{ status: 'pending' }, { status: 'error' }]);
     expect(service.searchInProgress()).toBe(false);
     expect(spinnerState.state.show()).toBe(false);
+  });
+
+  it('resets searchInProgress and spinner when the search is unsubscribed', () => {
+    setup();
+    getAiQueryDataSpy.mockReturnValue(new Subject<{ matchedIds: string[] }>());
+
+    const results: unknown[] = [];
+    const subscription = service.getMatchedIds('sci-fi', 'library').subscribe((value) => results.push(value));
+    expect(service.searchInProgress()).toBe(true);
+    expect(spinnerState.state.show()).toBe(true);
+
+    subscription.unsubscribe();
+
+    expect(service.searchInProgress()).toBe(false);
+    expect(spinnerState.state.show()).toBe(false);
+    expect(results).toEqual([{ status: 'pending' }]);
   });
 
   it('checks AI availability and updates main state on success', () => {

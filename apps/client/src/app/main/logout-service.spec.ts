@@ -5,7 +5,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { LogoutService } from './logout-service';
-import { initialMainState, MainState, mainStateToken } from './main-store';
+import { initialMainState, mainStateToken, type MainState } from './main-store';
 
 describe('LogoutService', () => {
   let service: LogoutService;

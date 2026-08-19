@@ -3,7 +3,7 @@ import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
 } from '@components/spinner-loading/spinner-loading-store';
-import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
@@ -14,7 +14,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainState, mainStateToken } from '../../../main/main-store';
-import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
+import { initialSharesState, sharesStateToken, type SharesState } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
 import { ItemDialog } from './item-dialog';

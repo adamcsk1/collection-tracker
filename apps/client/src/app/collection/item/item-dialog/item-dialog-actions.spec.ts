@@ -16,6 +16,7 @@ const translations: ItemDialogTranslations = {
   moveToFinished: signal('Move to Watched'),
   moveToTracking: signal('Move to Tracking'),
   openInTracking: signal('Open in Tracking'),
+  opensInNewTab: signal('opens in a new tab'),
   removeFavorite: signal('Remove favorite'),
   removeFromTracking: signal('Remove from Tracking'),
   share: signal('Share item'),

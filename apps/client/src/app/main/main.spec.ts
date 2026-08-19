@@ -7,7 +7,7 @@ import {
   spinnerLoadingStateToken,
 } from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { apiStateToken, initialApiState, type ApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';

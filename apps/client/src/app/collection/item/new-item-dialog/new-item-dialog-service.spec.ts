@@ -4,10 +4,10 @@ import { CollectionService } from '../../collection-service';
 import { NewItemDialogService } from './new-item-dialog-service';
 import {
   initialSpinnerLoadingState,
-  SpinnerLoadingState,
   spinnerLoadingStateToken,
+  type SpinnerLoadingState,
 } from '@components/spinner-loading/spinner-loading-store';
-import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';

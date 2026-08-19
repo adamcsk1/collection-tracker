@@ -13,11 +13,11 @@
     role="region"
     tabindex="0"
     [attr.aria-label]="translations.statistics()"
-    [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
+    [attr.aria-busy]="statisticsLoadStatus() === 'pending'"
   >
-    @if (apiLoadNetworkStatus() === 'pending') {
+    @if (statisticsLoadStatus() === 'pending') {
       <span class="statistics-message" role="status">{{ translations.messageLoadStatistics() }}</span>
-    } @else if (apiLoadNetworkStatus() === 'error') {
+    } @else if (statisticsLoadStatus() === 'error') {
       <div class="statistics-message">
         <span data-test-id="statistics-error" role="alert">{{ translations.loadStatisticsError() }}</span>
         <button data-test-id="statistics-retry" type="button" (click)="onRetryLoadStatistics()">
@@ -268,7 +268,8 @@
                       class="tag-chip tag-chip-selected"
                       [attr.aria-pressed]="true"
                       (click)="onToggleTag(tag)"
-                      [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
+                      [style.--tag-background-color]="textToHexColor(tag.replace('#', ''))"
+                      [style.--tag-foreground-color]="textToContrastColor(tag.replace('#', ''))"
                     >
                       {{ tag }}
                     </button>
@@ -290,7 +291,8 @@
                       class="tag-chip"
                       [attr.aria-pressed]="false"
                       (click)="onToggleTag(tag)"
-                      [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
+                      [style.--tag-background-color]="textToHexColor(tag.replace('#', ''))"
+                      [style.--tag-foreground-color]="textToContrastColor(tag.replace('#', ''))"
                     >
                       {{ tag }}
                     </button>
@@ -318,7 +320,7 @@
 
     <div
       class="charts-grid"
-      [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished' || (statistics()?.summary?.total ?? 0) === 0"
+      [class.chart-hidden]="statisticsLoadStatus() !== 'finished' || (statistics()?.summary?.total ?? 0) === 0"
     >
       <div
         data-test-id="statistics-tag-chart-card"

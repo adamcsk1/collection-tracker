@@ -30,7 +30,7 @@ describe('setupCollectionAiSearch', () => {
       searchItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
     };
     aiSearch = {
-      getMatchedIds: vi.fn(() => of(null)),
+      getMatchedIds: vi.fn(() => of({ status: 'idle' as const })),
       checkAiAvailable: vi.fn(() => of(true)),
     };
     portal = { open: vi.fn() };
@@ -117,7 +117,7 @@ describe('setupCollectionAiSearch', () => {
   });
 
   it('loads matched items with listType when AI filter is active', async () => {
-    aiSearch.getMatchedIds.mockReturnValue(of(['tt1', 'tt2']));
+    aiSearch.getMatchedIds.mockReturnValue(of({ status: 'success', matchedIds: ['tt1', 'tt2'] }));
     const setup = TestBed.runInInjectionContext(() => createSetup());
     const collectionState = TestBed.inject(collectionStateToken);
     collectionState.setState('aiSearchPromptText', 'sci-fi');
@@ -148,8 +148,58 @@ describe('setupCollectionAiSearch', () => {
     });
   });
 
+  it('does not reuse previous matches for reloads during a new prompt debounce', async () => {
+    aiSearch.getMatchedIds
+      .mockReturnValueOnce(of({ status: 'success', matchedIds: ['tt-old'] }))
+      .mockReturnValueOnce(of({ status: 'success', matchedIds: ['tt-new'] }));
+    const setup = TestBed.runInInjectionContext(() => createSetup());
+    const collectionState = TestBed.inject(collectionStateToken);
+    const request = {
+      reset: true,
+      cursor: null,
+      limit: 50,
+      searchText: '',
+      orderBy: 'createdAt' as const,
+      orderDirection: 'desc' as const,
+    };
+    collectionState.setState('aiSearchPromptText', 'old prompt');
+    collectionState.setState('aiSearchSendVersion', 1);
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(500);
+    TestBed.tick();
+    setup.dataSource(request).subscribe();
+
+    expect(api.getMatchedItems).toHaveBeenCalledWith(
+      expect.objectContaining({ identities: [{ source: 'imdb', id: 'tt-old' }] })
+    );
+    api.getMatchedItems.mockClear();
+
+    collectionState.setState('aiSearchPromptText', 'new prompt');
+    collectionState.setState('aiSearchSendVersion', 2);
+    TestBed.tick();
+
+    const reloadEmissions = await firstValueFrom(setup.dataSource(request).pipe(toArray()));
+    const scrollEmissions = await firstValueFrom(
+      setup.dataSource({ ...request, reset: false, cursor: 'old-cursor' }).pipe(toArray())
+    );
+
+    expect(reloadEmissions).toEqual([]);
+    expect(scrollEmissions).toEqual([]);
+    expect(api.getMatchedItems).not.toHaveBeenCalled();
+    expect(aiSearch.getMatchedIds).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(500);
+    TestBed.tick();
+    setup.dataSource(request).subscribe();
+
+    expect(aiSearch.getMatchedIds).toHaveBeenLastCalledWith('new prompt', 'up-next');
+    expect(api.getMatchedItems).toHaveBeenCalledWith(
+      expect.objectContaining({ identities: [{ source: 'imdb', id: 'tt-new' }] })
+    );
+  });
+
   it('loads provider-native book matches with their encoded identity source', async () => {
-    aiSearch.getMatchedIds.mockReturnValue(of(['openlibrary:9780140328721']));
+    aiSearch.getMatchedIds.mockReturnValue(of({ status: 'success', matchedIds: ['openlibrary:9780140328721'] }));
     const setup = TestBed.runInInjectionContext(() => createSetup('books'));
     const collectionState = TestBed.inject(collectionStateToken);
     collectionState.setState('aiSearchPromptText', 'fantasy books');
@@ -172,6 +222,43 @@ describe('setupCollectionAiSearch', () => {
       identities: [{ source: 'openlibrary', id: '9780140328721' }],
       limit: 25,
       filters: { listType: 'books' },
+    });
+  });
+
+  it('surfaces AI errors and retries the current prompt', async () => {
+    aiSearch.getMatchedIds
+      .mockReturnValueOnce(of({ status: 'error' }))
+      .mockReturnValueOnce(of({ status: 'success', matchedIds: ['tt-retry'] }));
+    const setup = TestBed.runInInjectionContext(() => createSetup());
+    const collectionState = TestBed.inject(collectionStateToken);
+    collectionState.setState('aiSearchPromptText', 'retry me');
+    collectionState.setState('aiSearchSendVersion', 1);
+    collectionState.setState('forceStandardSearch', false);
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(500);
+    TestBed.tick();
+
+    const request = {
+      reset: true,
+      cursor: null,
+      limit: 50,
+      searchText: '',
+      orderBy: 'createdAt' as const,
+      orderDirection: 'desc' as const,
+    };
+    await expect(firstValueFrom(setup.dataSource(request))).rejects.toThrow('AI search failed');
+
+    collectionState.setState('aiSearchSendVersion', 2);
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(500);
+    TestBed.tick();
+    setup.dataSource(request).subscribe();
+
+    expect(aiSearch.getMatchedIds).toHaveBeenCalledTimes(2);
+    expect(api.getMatchedItems).toHaveBeenCalledWith({
+      identities: [{ source: 'imdb', id: 'tt-retry' }],
+      limit: 50,
+      filters: { listType: 'up-next' },
     });
   });
 
