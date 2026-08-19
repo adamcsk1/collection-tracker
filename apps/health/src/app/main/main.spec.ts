@@ -137,7 +137,7 @@ describe('Main component', () => {
       fixture.nativeElement.querySelector('[data-test-id="health-status-banner"]')?.getAttribute('data-status')
     ).toBe('warn');
     expect(fixture.nativeElement.querySelector('[data-test-id="health-metrics-grid"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test-id="health-diagnostics-login"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="health-login-link"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test-id="health-diagnostics-error"]')).toBeNull();
   });
 

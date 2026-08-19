@@ -12,7 +12,6 @@ describe('Health page', () => {
       .should('match', /^(ok|warn|error)$/);
     HealthPage.getMetricsGrid().should('not.exist');
     HealthPage.getDiagnosticsUnauthorized().should('be.visible');
-    HealthPage.getDiagnosticsLoginLink().should('be.visible').and('have.attr', 'href', '/login/');
   });
 
   describe('authenticated diagnostics', () => {

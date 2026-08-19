@@ -136,12 +136,6 @@
   @if (loadError() === 'unauthorized') {
     <div data-test-id="health-diagnostics-unauthorized" class="load-error" role="status">
       <p>{{ translations.diagnosticsUnauthorized() }}</p>
-      <libc-link-button
-        dataTestId="health-diagnostics-login"
-        [href]="basePath + '/login/'"
-        icon="login"
-        [label]="translations.navigateToLogin()"
-      />
     </div>
   } @else if (loadError() === 'error') {
     <div data-test-id="health-diagnostics-error" class="load-error" role="alert">
