@@ -3,7 +3,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeService } from './theme-service';
-import { initialThemeState, ThemeState, themeStateToken } from './theme-store';
+import { initialThemeState, themeStateToken, type ThemeState } from './theme-store';
 
 type MatchMediaMock = {
   matches: boolean;

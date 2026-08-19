@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
 import type { HealthApiResponseModel, SignUpApiResponseModel } from '@shared/models/api-model';
 import { Observable } from 'rxjs';
+import type { ApiRequestOptions } from './api-request-model';
 import { BaseApiService } from './base-api-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PublicApiService extends BaseApiService {
-  public getHealth(): Observable<HealthApiResponseModel> {
-    return this.request('GET', '/health');
+  public getHealth(options: ApiRequestOptions = {}): Observable<HealthApiResponseModel> {
+    return this.request('GET', '/health', undefined, options);
   }
 
   public signUp(username: string): Observable<SignUpApiResponseModel> {

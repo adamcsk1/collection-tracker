@@ -6,7 +6,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { filter, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlertService } from '../alert-service';
-import { ApiState, apiStateToken, initialApiState } from '../api/api-store';
+import { apiStateToken, initialApiState, type ApiState } from '../api/api-store';
 import { ExternalMetadataService } from './external-metadata-service';
 
 const API_URL = 'https://api.test/api/v1';

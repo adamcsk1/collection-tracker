@@ -5,7 +5,7 @@ import { AlertService } from '../alert-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { lastValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiState, apiStateToken, initialApiState } from './api-store';
+import { apiStateToken, initialApiState, type ApiState } from './api-store';
 import { SharedApiService } from './shared-api-service';
 
 describe('SharedApiService', () => {
@@ -35,6 +35,35 @@ describe('SharedApiService', () => {
 
   afterEach(() => {
     httpMock.verify();
+  });
+
+  it('gets authenticated health diagnostics', async () => {
+    const diagnostics = {
+      status: 'ok' as const,
+      memory: { usedPercent: 40 },
+      cpu: { usagePercent: 20 },
+      disk: { usedPercent: 60 },
+      load: { avg1m: 0.5, avg5m: 0.3, avg15m: 0.2 },
+      frontend: { status: 'up' as const },
+      ai: { status: 'up' as const },
+    };
+    const promise = lastValueFrom(service.getHealthDiagnostics());
+
+    const request = httpMock.expectOne('https://api.test/users/me/health');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: diagnostics });
+
+    await expect(promise).resolves.toEqual(diagnostics);
+  });
+
+  it('suppresses the global alert and rethrows when health diagnostics fail', async () => {
+    const promise = lastValueFrom(service.getHealthDiagnostics());
+
+    const request = httpMock.expectOne('https://api.test/users/me/health');
+    request.flush('bad', { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500 });
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 
   it('updates user settings', async () => {

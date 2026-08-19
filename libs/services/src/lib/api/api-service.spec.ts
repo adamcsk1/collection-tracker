@@ -7,7 +7,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { lastValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api-service';
-import { ApiState, apiStateToken, initialApiState } from './api-store';
+import { apiStateToken, initialApiState, type ApiState } from './api-store';
 
 describe('ApiService', () => {
   let service: ApiService;
@@ -126,6 +126,17 @@ describe('ApiService', () => {
     request.flush({ data: [{ title: 'Matched' }], page });
 
     await expect(promise).resolves.toEqual({ items: [{ title: 'Matched' }], page });
+  });
+
+  it('suppresses the global alert and rethrows when loading AI matched items fails', async () => {
+    const body = { identities: [{ source: 'imdb' as const, id: 'tt001' }], limit: 50 };
+    const promise = lastValueFrom(service.getMatchedItems(body));
+
+    const request = httpMock.expectOne('https://api.test/collection-items/matches');
+    request.flush('bad', { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500 });
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 
   it('creates an item with provided data', async () => {
@@ -649,7 +660,7 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ totalCount: 1, importedCount: 1, skippedCount: 0, errorCount: 0 });
   });
 
-  it('alerts with RFC 9457 detail and rethrows when AI query fails', async () => {
+  it('suppresses the global alert and rethrows when AI query fails', async () => {
     const problem = {
       type: 'https://collectiontracker.app/problems/ai-unavailable',
       title: 'Bad Gateway',
@@ -663,8 +674,7 @@ describe('ApiService', () => {
     aiRequest.flush(problem, { status: 502, statusText: 'Bad Gateway' });
 
     await expect(promise).rejects.toMatchObject({ status: 502, error: problem });
-    expect(alertSpy).toHaveBeenCalledOnce();
-    expect(alertSpy).toHaveBeenCalledWith(problem.detail);
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 
   it('alerts and rethrows when retrieving user tag management fails', async () => {
@@ -1017,14 +1027,14 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ count: 1, checked: 1, fixed: 1, errors: 0 });
   });
 
-  it('alerts and rethrows when refreshImages fails', async () => {
+  it('suppresses the global alert and rethrows when refreshImages fails', async () => {
     const promise = lastValueFrom(service.refreshImages());
 
     const refreshRequest = httpMock.expectOne('https://api.test/collection-items/actions/refresh-images');
     refreshRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 
   it('alerts and rethrows when getAccessTokens fails', async () => {

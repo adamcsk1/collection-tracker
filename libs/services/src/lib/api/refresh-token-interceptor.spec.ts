@@ -1,10 +1,11 @@
-import { HttpHandlerFn, HttpRequest, HttpResponse } from '@angular/common/http';
+import { HttpContext, HttpHandlerFn, HttpRequest, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { refreshTokenInterceptor } from './refresh-token-interceptor';
 import { RefreshTokenService } from './refresh-token-service';
+import { redirectOnRefreshFailureContext } from './auth-request-context';
 
 vi.mock('@shared/utils/redirect-to-login-util', () => ({
   redirectToLogin: vi.fn(),
@@ -41,6 +42,22 @@ describe('refreshTokenInterceptor', () => {
     await firstValueFrom(result, { defaultValue: new HttpResponse() });
 
     expect(redirectToLogin).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates a rejected refresh when redirect is disabled for the request', async () => {
+    const refreshError = { status: 401 };
+    refresh.mockReturnValue(throwError(() => refreshError));
+    const next: HttpHandlerFn = vi.fn(() => throwError(() => ({ status: 401 })));
+    const healthRequest = request.clone({
+      context: new HttpContext().set(redirectOnRefreshFailureContext, false),
+    });
+
+    const result = TestBed.runInInjectionContext(() => refreshTokenInterceptor(healthRequest, next));
+
+    await expect(firstValueFrom(result)).rejects.toBe(refreshError);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(redirectToLogin).not.toHaveBeenCalled();
   });
 
   it('retries the original request after a successful refresh', async () => {

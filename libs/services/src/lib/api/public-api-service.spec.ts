@@ -5,7 +5,7 @@ import { AlertService } from '../alert-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { lastValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiState, apiStateToken, initialApiState } from './api-store';
+import { apiStateToken, initialApiState, type ApiState } from './api-store';
 import { PublicApiService } from './public-api-service';
 
 describe('PublicApiService', () => {
@@ -40,12 +40,6 @@ describe('PublicApiService', () => {
   it('returns health data on success', async () => {
     const healthData = {
       status: 'ok',
-      memory: { usedPercent: 40 },
-      cpu: { usagePercent: 20 },
-      disk: { usedPercent: 60 },
-      load: { avg1m: 0.5, avg5m: 0.3, avg15m: 0.2 },
-      frontend: { status: 'up' },
-      ai: { status: 'up' },
     };
 
     const promise = lastValueFrom(service.getHealth());
@@ -55,6 +49,17 @@ describe('PublicApiService', () => {
     healthRequest.flush({ data: healthData });
 
     await expect(promise).resolves.toEqual(healthData);
+  });
+
+  it('suppresses the alert when public health is requested with suppressErrorAlert', async () => {
+    const promise = lastValueFrom(service.getHealth({ suppressErrorAlert: true }));
+
+    httpMock
+      .expectOne('https://api.test/health')
+      .flush({ title: 'Service Unavailable', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+
+    await expect(promise).rejects.toMatchObject({ status: 503 });
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 
   it('falls back to the HTTP message and rethrows unchanged when RFC 9457 detail is missing', async () => {

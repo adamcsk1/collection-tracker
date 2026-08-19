@@ -80,7 +80,7 @@ export class ApiService extends BaseApiService {
   }
 
   public getMatchedItems(request: CollectionMatchedItemsApiRequestModel): Observable<CollectionItemsPageModel> {
-    return this.paginatedRequest('POST', '/collection-items/matches', request);
+    return this.paginatedRequest('POST', '/collection-items/matches', request, { suppressErrorAlert: true });
   }
 
   public getRandomItem(): Observable<CollectionItemApiModel> {
@@ -176,7 +176,14 @@ export class ApiService extends BaseApiService {
   }
 
   public refreshImages(ownerShareCode?: string): Observable<RefreshImagesApiResponseModel> {
-    return this.request('POST', `/collection-items/actions/refresh-images${this.buildQuery({ ownerShareCode })}`);
+    return this.request(
+      'POST',
+      `/collection-items/actions/refresh-images${this.buildQuery({ ownerShareCode })}`,
+      undefined,
+      {
+        suppressErrorAlert: true,
+      }
+    );
   }
 
   public refreshExternalRatings(ownerShareCode?: string): Observable<RefreshExternalRatingsApiResponseModel> {
@@ -444,7 +451,7 @@ export class ApiService extends BaseApiService {
 
   public getAiQueryData(prompt: string, listType: CollectionListTypeModel): Observable<AiQueryResponseModel> {
     const body: AiQueryRequestModel = { prompt, listType };
-    return this.request('POST', '/ai/matches', body);
+    return this.request('POST', '/ai/matches', body, { suppressErrorAlert: true });
   }
 
   public getAiAvailable(): Observable<AiAvailableApiResponseModel> {
