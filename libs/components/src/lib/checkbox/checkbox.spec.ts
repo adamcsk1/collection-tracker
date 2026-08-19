@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Checkbox } from './checkbox';
 
 @Component({
+  selector: 'libc-checkbox-test-host',
   imports: [FormField, Checkbox],
   template: `<libc-checkbox
     [formField]="field"
@@ -26,6 +27,7 @@ class HostComponent {
 }
 
 @Component({
+  selector: 'libc-checkbox-no-hint-test-host',
   imports: [FormField, Checkbox],
   template: `<libc-checkbox [formField]="field" label="Watched"></libc-checkbox>`,
 })

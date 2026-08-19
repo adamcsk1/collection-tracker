@@ -7,6 +7,7 @@ import { Tabs } from './tabs';
 type TestTab = 'first' | 'second';
 
 @Component({
+  selector: 'libc-tabs-test-host',
   imports: [Tabs],
   template: `
     <libc-tabs
@@ -30,6 +31,7 @@ class HostComponent {
 }
 
 @Component({
+  selector: 'libc-multiple-tabs-test-host',
   imports: [Tabs],
   template: `
     <libc-tabs idPrefix="first-tabs" ariaLabel="First tabs" [options]="options" [selected]="'first'" />

@@ -11,6 +11,7 @@ import { GenreSuggestionsProvider, TagSuggestionsProvider } from './item-autocom
 import { TagSuggestionService } from './tag-suggestion-service';
 
 @Component({
+  selector: 'ct-item-autocomplete-providers-test-host',
   imports: [Autocomplete, FormField, GenreSuggestionsProvider, TagSuggestionsProvider],
   template: `
     <libc-autocomplete ctGenreSuggestions [formField]="genreField" />

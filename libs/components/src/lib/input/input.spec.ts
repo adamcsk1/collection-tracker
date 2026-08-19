@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Input } from './input';
 
 @Component({
+  selector: 'libc-input-test-host',
   imports: [FormField, Input],
   template: `<libc-input
     [formField]="field"
@@ -22,6 +23,7 @@ class HostComponent {
 }
 
 @Component({
+  selector: 'libc-input-no-hint-test-host',
   imports: [FormField, Input],
   template: `<libc-input [formField]="field" label="Name"></libc-input>`,
 })

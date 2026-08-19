@@ -7,9 +7,12 @@
       "{workspaceRoot}/eslint.config.cjs",
       "{workspaceRoot}/package.json",
       "{workspaceRoot}/package-lock.json",
+      "{workspaceRoot}/tsconfig.base.json",
       "{workspaceRoot}/tsconfig.json",
-      "{workspaceRoot}/tsconfig.app.json",
-      "{workspaceRoot}/tsconfig.spec.json"
+      "{workspaceRoot}/tsconfig.spec.json",
+      "{workspaceRoot}/vitest.angular.config.ts",
+      "{workspaceRoot}/vitest.coverage-exclude.ts",
+      "{workspaceRoot}/vitest.setup.ts"
     ]
   },
   "targetDefaults": {

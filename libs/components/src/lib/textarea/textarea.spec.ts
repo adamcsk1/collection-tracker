@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Textarea } from './textarea';
 
 @Component({
+  selector: 'libc-textarea-test-host',
   imports: [FormField, Textarea],
   template: `
     <div style="height: 120px;">
@@ -20,6 +21,7 @@ class HostComponent {
 }
 
 @Component({
+  selector: 'libc-textarea-no-hint-test-host',
   imports: [FormField, Textarea],
   template: `<libc-textarea [formField]="field" label="Choose"></libc-textarea>`,
 })

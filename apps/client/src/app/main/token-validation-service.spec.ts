@@ -9,7 +9,7 @@ import { TagManagementService } from '../settings/tag-management/tag-management-
 import { MainService } from './main-service';
 import { TokenValidationService } from './token-validation-service';
 
-@Component({ template: '', standalone: true })
+@Component({ selector: 'ct-token-validation-test-host', template: '', standalone: true })
 class TestHostComponent {}
 
 describe('TokenValidationService', () => {
