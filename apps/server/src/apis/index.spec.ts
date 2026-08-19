@@ -1,4 +1,5 @@
 import fastifyCookie from '@fastify/cookie';
+import fastifyRateLimit from '@fastify/rate-limit';
 import fastify, { type FastifyInstance, type RouteOptions } from 'fastify';
 import { load as parseYaml } from 'js-yaml';
 import { readFileSync } from 'node:fs';
@@ -78,6 +79,7 @@ describe('registered API contract', () => {
     });
     app.addHook('onSend', apiResponseHook);
     await app.register(fastifyCookie, { secret: process.env.COOKIE_SECRET });
+    await app.register(fastifyRateLimit, { max: 120, timeWindow: '1 minute' });
   });
 
   afterEach(async () => {
@@ -121,6 +123,17 @@ describe('registered API contract', () => {
     expect(asRecord(responseProperties.canRead)).toEqual({ type: 'boolean' });
   });
 
+  it('documents image queue unavailability with retry guidance', () => {
+    const document = getOpenApiDocument();
+    const imageProxy = asRecord(asRecord(asRecord(document.paths)['/images/proxy']).get);
+    const serviceUnavailable = asRecord(asRecord(asRecord(document.components).responses).ServiceUnavailable);
+
+    expect(asRecord(asRecord(imageProxy.responses)['503'])).toEqual({
+      $ref: '#/components/responses/ServiceUnavailable',
+    });
+    expect(asRecord(asRecord(serviceUnavailable.headers)['Retry-After'])).toBeDefined();
+  });
+
   it('applies response envelopes to actual public and protected routes', async () => {
     registerAllApis(app);
     await app.ready();
@@ -128,11 +141,11 @@ describe('registered API contract', () => {
     const healthResponse = await app.inject({ method: 'GET', url: '/api/v1/health' });
     expect(healthResponse.statusCode).toBe(200);
     expect(healthResponse.json()).toEqual({
-      data: expect.objectContaining({
-        status: expect.stringMatching(/^(error|ok|warn)$/),
-        frontend: { status: 'up' },
-      }),
+      data: { status: expect.stringMatching(/^(error|ok|warn)$/) },
     });
+
+    const unauthorizedHealthResponse = await app.inject({ method: 'GET', url: '/api/v1/users/me/health' });
+    expect(unauthorizedHealthResponse.statusCode).toBe(401);
 
     const unauthorizedResponse = await app.inject({ method: 'GET', url: '/api/v1/users/me/settings' });
     expect(unauthorizedResponse.statusCode).toBe(401);

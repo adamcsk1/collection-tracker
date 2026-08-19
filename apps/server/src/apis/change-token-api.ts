@@ -44,17 +44,16 @@ export const register = (app: FastifyInstance): void => {
         return response.code(500).send();
       }
 
-      const accessTokenData = getUserAccessToken(newAccessToken, request.headers['user-agent']!, accessCookie.expires!);
-      const refreshTokenData = getUserRefreshToken(
-        newRefreshToken,
-        request.headers['user-agent']!,
-        refreshCookie.expires!
-      );
+      const userAgent = request.headers['user-agent'] ?? '';
+      const accessTokenData = getUserAccessToken(newAccessToken, userAgent, accessCookie.expires!);
+      const refreshTokenData = getUserRefreshToken(newRefreshToken, userAgent, refreshCookie.expires!);
 
-      upsertUser(db, request.usernameHash, hashText(newUserToken));
-      deleteTokensByUser(db, request.usernameHash);
-      insertAccessToken(db, request.usernameHash, accessTokenData);
-      insertRefreshToken(db, request.usernameHash, refreshTokenData);
+      db.transaction(() => {
+        upsertUser(db, request.usernameHash, hashText(newUserToken));
+        deleteTokensByUser(db, request.usernameHash);
+        insertAccessToken(db, request.usernameHash, accessTokenData);
+        insertRefreshToken(db, request.usernameHash, refreshTokenData);
+      })();
 
       const result: ChangeTokenApiResponseModel = { newToken: newUserToken };
       response

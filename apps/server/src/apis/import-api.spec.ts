@@ -3,6 +3,32 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  MAX_FULL_IMPORT_ACTORS_LENGTH,
+  MAX_FULL_IMPORT_CANONICAL_ITEM_ID_LENGTH,
+  MAX_FULL_IMPORT_COLLECTION_ITEMS,
+  MAX_FULL_IMPORT_COLOR_LENGTH,
+  MAX_FULL_IMPORT_COMPLETED_EPISODES,
+  MAX_FULL_IMPORT_EPISODE_TITLE_LENGTH,
+  MAX_FULL_IMPORT_EPISODE_TITLES,
+  MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH,
+  MAX_FULL_IMPORT_GENRE_LENGTH,
+  MAX_FULL_IMPORT_HASH_LENGTH,
+  MAX_FULL_IMPORT_IMAGE_LENGTH,
+  MAX_FULL_IMPORT_ITEM_EXTERNAL_IDENTITIES,
+  MAX_FULL_IMPORT_ITEM_GENRES,
+  MAX_FULL_IMPORT_ITEM_TAGS,
+  MAX_FULL_IMPORT_PLOT_LENGTH,
+  MAX_FULL_IMPORT_RATING_LENGTH,
+  MAX_FULL_IMPORT_SHARE_CODE_LENGTH,
+  MAX_FULL_IMPORT_TAG_LENGTH,
+  MAX_FULL_IMPORT_TAG_CONFIGS,
+  MAX_FULL_IMPORT_TITLE_LENGTH,
+  MAX_FULL_IMPORT_TRACKING_KEY_LENGTH,
+  MAX_FULL_IMPORT_TRACKING_ENTRIES,
+  MAX_FULL_IMPORT_TRACKING_SEASONS,
+  MAX_FULL_IMPORT_YEAR_LENGTH,
+} from './import-api-const';
 
 const IMPORT_PATH = `${API_PREFIX}/users/me/imports`;
 const COLLECTION_ITEMS_IMPORT_PATH = `${API_PREFIX}/collection-items/imports`;
@@ -62,6 +88,341 @@ const watchedItem = {
   listType: 'tracking',
 };
 
+const tagConfig = {
+  tag: '#custom',
+  color: '#111111',
+  useForImageBorder: true,
+  useForTextColor: false,
+  useForImageBadge: false,
+  weight: 1,
+};
+
+const buildImportBody = () => ({
+  type: 'collection-tracker-export',
+  version: 10,
+  userSettings: {},
+  collectionItems: [] as unknown[],
+  tagManagement: [] as unknown[],
+  trackingData: {} as Record<string, unknown>,
+});
+
+const fullImportLimitCases: Array<{
+  name: string;
+  limit: number;
+  buildBody: (count: number) => ReturnType<typeof buildImportBody>;
+}> = [
+  {
+    name: 'collection items',
+    limit: MAX_FULL_IMPORT_COLLECTION_ITEMS,
+    buildBody: (count) => ({ ...buildImportBody(), collectionItems: Array(count).fill(item) }),
+  },
+  {
+    name: 'tag configs',
+    limit: MAX_FULL_IMPORT_TAG_CONFIGS,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      collectionItems: [item, item],
+      tagManagement: Array.from({ length: count }, (_value, index) => ({ ...tagConfig, tag: `#tag-${index}` })),
+    }),
+  },
+  {
+    name: 'tracking entries',
+    limit: MAX_FULL_IMPORT_TRACKING_ENTRIES,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      trackingData: Object.fromEntries(
+        Array.from({ length: count }, (_value, index) => [
+          `omdb/tt${String(index).padStart(7, '0')}`,
+          { seasons: [], completedEpisodes: [] },
+        ])
+      ),
+    }),
+  },
+  {
+    name: 'genres per item',
+    limit: MAX_FULL_IMPORT_ITEM_GENRES,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      collectionItems: [{ ...item, genre: Array(count).fill('Drama') }, item],
+    }),
+  },
+  {
+    name: 'tags per item',
+    limit: MAX_FULL_IMPORT_ITEM_TAGS,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      collectionItems: [{ ...item, tags: Array(count).fill('#tag') }, item],
+    }),
+  },
+  {
+    name: 'external identities per item',
+    limit: MAX_FULL_IMPORT_ITEM_EXTERNAL_IDENTITIES,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        {
+          ...item,
+          externalIds: Array.from({ length: count }, (_value, index) => ({ source: 'imdb', id: `tt${index}` })),
+        },
+        item,
+      ],
+    }),
+  },
+  {
+    name: 'seasons per tracking entry',
+    limit: MAX_FULL_IMPORT_TRACKING_SEASONS,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      collectionItems: [watchingItem],
+      trackingData: {
+        'omdb/not-imported': {
+          seasons: Array.from({ length: count }, (_value, index) => ({ season: index + 1, episodes: 1 })),
+          completedEpisodes: [],
+        },
+      },
+    }),
+  },
+  {
+    name: 'episode titles per season',
+    limit: MAX_FULL_IMPORT_EPISODE_TITLES,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      collectionItems: [watchingItem],
+      trackingData: {
+        'omdb/not-imported': {
+          seasons: [{ season: 1, episodes: 1, titles: Array(count).fill('Episode') }],
+          completedEpisodes: [],
+        },
+      },
+    }),
+  },
+  {
+    name: 'completed episodes per tracking entry',
+    limit: MAX_FULL_IMPORT_COMPLETED_EPISODES,
+    buildBody: (count) => ({
+      ...buildImportBody(),
+      collectionItems: [watchingItem],
+      trackingData: {
+        'omdb/not-imported': {
+          seasons: [],
+          completedEpisodes: Array(count).fill({ season: 1, episode: 1 }),
+        },
+      },
+    }),
+  },
+];
+
+const stringWithPrefix = (prefix: string, length: number): string => prefix + 'x'.repeat(length - prefix.length);
+
+const fullImportStringLimitCases: Array<{
+  name: string;
+  limit: number;
+  buildBody: (value: string) => ReturnType<typeof buildImportBody>;
+}> = [
+  {
+    name: 'item image',
+    limit: MAX_FULL_IMPORT_IMAGE_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, image: value },
+        { ...item, image: value },
+      ],
+    }),
+  },
+  {
+    name: 'item title',
+    limit: MAX_FULL_IMPORT_TITLE_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, title: value },
+        { ...item, title: value },
+      ],
+    }),
+  },
+  {
+    name: 'item genre',
+    limit: MAX_FULL_IMPORT_GENRE_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, genre: [value] },
+        { ...item, genre: [value] },
+      ],
+    }),
+  },
+  {
+    name: 'item tag',
+    limit: MAX_FULL_IMPORT_TAG_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, tags: [value] },
+        { ...item, tags: [value] },
+      ],
+    }),
+  },
+  {
+    name: 'item external ID',
+    limit: MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, externalItemId: value },
+        { ...item, externalItemId: value },
+      ],
+    }),
+  },
+  {
+    name: 'additional external identity ID',
+    limit: MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, externalIds: [{ source: 'imdb', id: value }] },
+        { ...item, externalIds: [{ source: 'imdb', id: value }] },
+      ],
+    }),
+  },
+  {
+    name: 'canonical item ID',
+    limit: MAX_FULL_IMPORT_CANONICAL_ITEM_ID_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, canonicalItemId: stringWithPrefix('imdb:', value.length) },
+        { ...item, canonicalItemId: stringWithPrefix('imdb:', value.length) },
+      ],
+    }),
+  },
+  {
+    name: 'item year',
+    limit: MAX_FULL_IMPORT_YEAR_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, year: value },
+        { ...item, year: value },
+      ],
+    }),
+  },
+  {
+    name: 'item rating',
+    limit: MAX_FULL_IMPORT_RATING_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, rate: value },
+        { ...item, rate: value },
+      ],
+    }),
+  },
+  {
+    name: 'item actors',
+    limit: MAX_FULL_IMPORT_ACTORS_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, actors: value },
+        { ...item, actors: value },
+      ],
+    }),
+  },
+  {
+    name: 'item plot',
+    limit: MAX_FULL_IMPORT_PLOT_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, plot: value },
+        { ...item, plot: value },
+      ],
+    }),
+  },
+  {
+    name: 'cached item title',
+    limit: MAX_FULL_IMPORT_TITLE_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, titleLower: value },
+        { ...item, titleLower: value },
+      ],
+    }),
+  },
+  {
+    name: 'item hash',
+    limit: MAX_FULL_IMPORT_HASH_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [
+        { ...item, hash: value },
+        { ...item, hash: value },
+      ],
+    }),
+  },
+  {
+    name: 'tag configuration tag',
+    limit: MAX_FULL_IMPORT_TAG_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [item, item],
+      tagManagement: [{ ...tagConfig, tag: value }],
+    }),
+  },
+  {
+    name: 'tag configuration color',
+    limit: MAX_FULL_IMPORT_COLOR_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [item, item],
+      tagManagement: [{ ...tagConfig, color: value }],
+    }),
+  },
+  {
+    name: 'legacy owner share code',
+    limit: MAX_FULL_IMPORT_SHARE_CODE_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      userSettings: { defaultLibraryOwnerShareCode: value },
+      collectionItems: [item, item],
+    }),
+  },
+  {
+    name: 'owner share code',
+    limit: MAX_FULL_IMPORT_SHARE_CODE_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      version: 11,
+      userSettings: {
+        defaultCollectionOwners: [{ listType: 'library', contentType: 'movie', ownerUserShareCode: value }],
+      },
+      collectionItems: [item, item],
+    }),
+  },
+  {
+    name: 'episode title',
+    limit: MAX_FULL_IMPORT_EPISODE_TITLE_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [watchingItem, watchingItem],
+      trackingData: {
+        'omdb/tt0000002': { seasons: [{ season: 1, episodes: 1, titles: [value] }], completedEpisodes: [] },
+      },
+    }),
+  },
+  {
+    name: 'tracking key',
+    limit: MAX_FULL_IMPORT_TRACKING_KEY_LENGTH,
+    buildBody: (value) => ({
+      ...buildImportBody(),
+      collectionItems: [watchingItem, watchingItem],
+      trackingData: { [stringWithPrefix('omdb/', value.length)]: { seasons: [], completedEpisodes: [] } },
+    }),
+  },
+];
+
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
     .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
@@ -100,6 +461,76 @@ describe('import-api', () => {
       expect.not.objectContaining({ config: expect.anything() }),
       expect.any(Function)
     );
+  });
+
+  it.each(fullImportLimitCases)('accepts exact full import $name limit', async ({ limit, buildBody }) => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', body: buildBody(limit) };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).not.toHaveBeenCalledWith(413);
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it.each(fullImportLimitCases)('returns 413 above full import $name limit', async ({ limit, buildBody }) => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', body: buildBody(limit + 1) };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(413);
+  });
+
+  it.each(fullImportStringLimitCases)('accepts exact full import $name string limit', async ({ limit, buildBody }) => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', body: buildBody('x'.repeat(limit)) };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).not.toHaveBeenCalledWith(413);
+  });
+
+  it.each(fullImportStringLimitCases)(
+    'returns 413 above full import $name string limit',
+    async ({ limit, buildBody }) => {
+      const response = mockResponse();
+      const request: any = { usernameHash: 'user', body: buildBody('x'.repeat(limit + 1)) };
+      const app = buildRouteApp();
+
+      const { register } = await import('./import-api');
+      register(app);
+      await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+      expect(response.code).toHaveBeenCalledWith(413);
+    }
+  );
+
+  it('returns 400 for a malformed full import that also exceeds a count limit', async () => {
+    const response = mockResponse();
+    const collectionItems = Array(MAX_FULL_IMPORT_COLLECTION_ITEMS + 1).fill(item);
+    collectionItems[0] = { ...item, genre: [1] };
+    const request: any = {
+      usernameHash: 'user',
+      body: { ...buildImportBody(), collectionItems },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.code).not.toHaveBeenCalledWith(413);
   });
 
   it('replaces current user exported data and preserves account data', async () => {
@@ -358,6 +789,7 @@ describe('import-api', () => {
     ['favorite in a non-library list', { favorite: true, listType: 'up-next' }],
     ['image', { image: null }],
     ['title', { title: null }],
+    ['cached title', { titleLower: null }],
     ['genre', { genre: ['Drama', 1] }],
     ['IMDb id', { IMDbId: null }],
     ['external provider', { externalProvider: null }],
@@ -373,10 +805,12 @@ describe('import-api', () => {
     ['user rating', { userRate: '8' }],
     ['actors', { actors: null }],
     ['plot', { plot: null }],
+    ['hash', { hash: null }],
     ['content type', { contentType: 'podcast' }],
     ['favorite flag', { favorite: 'true' }],
     ['list type', { listType: 'archive' }],
     ['watched timestamp', { watchedAt: 1 }],
+    ['owner share code', { ownerShareCode: null }],
   ])('returns 400 for invalid imported %s', async (_caseName, itemChanges) => {
     const response = mockResponse();
     const request: any = {

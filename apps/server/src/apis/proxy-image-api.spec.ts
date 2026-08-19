@@ -49,16 +49,17 @@ const importApi = async (dataFolder: string, lookupAddress = '203.0.113.10') => 
   });
 
   vi.doMock('../core/argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
-  vi.doMock('dns/promises', () => ({
-    lookup: vi.fn(async (hostname: string) => {
+  vi.doMock('dns/promises', () => {
+    const lookup = vi.fn(async (hostname: string) => {
       if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
         return [{ address: '127.0.0.1', family: 4 }];
       }
       return [{ address: lookupAddress, family: 4 }];
-    }),
-  }));
-  vi.doMock('http', () => ({ request: upstreamRequest }));
-  vi.doMock('https', () => ({ request: upstreamRequest }));
+    });
+    return { default: { lookup }, lookup };
+  });
+  vi.doMock('http', () => ({ default: { request: upstreamRequest }, request: upstreamRequest }));
+  vi.doMock('https', () => ({ default: { request: upstreamRequest }, request: upstreamRequest }));
   return import('./proxy-image-api');
 };
 
@@ -92,7 +93,10 @@ describe('proxy-image-api', () => {
     await handlerPromise();
     expect(app.get).toHaveBeenCalledWith(
       `${API_PREFIX}/images/proxy`,
-      { preHandler: expect.any(Function) },
+      {
+        preHandler: [expect.any(Function), expect.any(Function)],
+        config: { rateLimit: { max: 240, timeWindow: '1 minute', groupId: 'image' } },
+      },
       expect.any(Function)
     );
     expect(response.code).toHaveBeenCalledWith(400);
@@ -275,5 +279,23 @@ describe('proxy-image-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(413);
+  });
+
+  it('returns 503 with retry guidance when the image fetch queue is busy', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    vi.doMock('../core/image/image-proxy', () => ({
+      fetchAndCacheImageWithDetails: vi.fn(async () => ({ kind: 'busy' })),
+      getCachedImage: vi.fn(() => null),
+    }));
+    const response = createResponse();
+    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(response.header).toHaveBeenCalledWith('Retry-After', 10);
+    expect(response.code).toHaveBeenCalledWith(503);
   });
 });

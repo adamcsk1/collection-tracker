@@ -2,6 +2,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import type { ApiProblemModel, ApiResponseModel, CursorPageModel } from '@shared/models/api-envelope-model';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { STATUS_CODES } from 'node:http';
+import { getRequestPath } from './request-url-util';
 
 const parseJson = (payload: string): unknown => {
   try {
@@ -41,7 +42,7 @@ export const apiResponseHook = async (
   response: FastifyReply,
   payload: unknown
 ): Promise<unknown> => {
-  const requestPath = request.url.split('?')[0];
+  const requestPath = getRequestPath(request.url);
   if (requestPath !== API_PREFIX && !requestPath.startsWith(`${API_PREFIX}/`)) return payload;
 
   if (response.statusCode >= 400) {

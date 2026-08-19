@@ -67,6 +67,18 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it('returns 400 when body is missing', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('creates a DB item and returns it', async () => {
     insertUser();
     const response = mockResponse();

@@ -112,7 +112,13 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
     ServiceUnavailable:
-      description: Required upstream service is unavailable or unconfigured.
+      description: Service is temporarily unavailable, overloaded, or unconfigured.
+      headers:
+        Retry-After:
+          description: Optional seconds until the client should retry.
+          schema:
+            type: integer
+            minimum: 0
       content:
         application/problem+json:
           schema:
@@ -148,6 +154,14 @@ components:
           description: Request path without its query string.
 
     HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, warn, error]
+
+    HealthDiagnosticsResponse:
       type: object
       required: [status, memory, cpu, disk, load, frontend, ai]
       properties:
@@ -205,6 +219,8 @@ components:
       properties:
         username:
           type: string
+          minLength: 3
+          maxLength: 32
 
     SignUpResponse:
       type: object
@@ -220,6 +236,8 @@ components:
       properties:
         username:
           type: string
+          minLength: 1
+          description: Non-empty account username. Sign-in accepts legacy usernames outside current sign-up limits.
         token:
           type: string
 
@@ -353,6 +371,7 @@ components:
         ownerUserShareCode:
           type: string
           minLength: 1
+          maxLength: 256
 
     AiAvailableResponse:
       type: object
@@ -1194,8 +1213,10 @@ components:
           maximum: 100
         titles:
           type: array
+          maxItems: 100
           items:
             type: string
+            maxLength: 1024
           description: Optional per-episode titles.
 
     TrackingSeasonsRequest:
@@ -1309,9 +1330,11 @@ components:
       properties:
         source:
           type: string
+          maxLength: 64
           enum: [omdb, openlibrary, imdb, isbn]
         id:
           type: string
+          maxLength: 512
 
     ExternalMetadataSearchResponse:
       type: object
@@ -1382,10 +1405,12 @@ components:
       properties:
         tag:
           type: string
+          maxLength: 256
           examples:
             - '#example'
         color:
           type: ['string', 'null']
+          maxLength: 64
           examples:
             - '#112233'
         useForImageBorder:
@@ -1483,26 +1508,41 @@ components:
       properties:
         image:
           type: string
+          maxLength: 8192
         title:
           type: string
+          maxLength: 1024
+        titleLower:
+          type: string
+          maxLength: 1024
+          description: Optional cached lowercase title included by exported documents and ignored during import.
         genre:
           type: array
+          maxItems: 100
           items:
             type: string
+            maxLength: 256
         IMDbId:
           type: string
+          maxLength: 512
         tags:
           type: array
+          maxItems: 100
           items:
             type: string
+            maxLength: 256
         year:
           type: ['string', 'null']
+          maxLength: 64
         rate:
           type: string
+          maxLength: 64
         rottenTomatoesRate:
           type: string
+          maxLength: 64
         metacriticRate:
           type: string
+          maxLength: 64
         userRate:
           type: ['number', 'null']
           minimum: 0
@@ -1510,23 +1550,33 @@ components:
           multipleOf: 0.1
         actors:
           type: string
+          maxLength: 16384
         plot:
           type: string
+          maxLength: 65536
         externalProvider:
           type: string
+          maxLength: 64
           enum: [omdb, openlibrary]
           description: External metadata provider that owns the canonical item identity.
         externalItemId:
           type: string
+          maxLength: 512
           description: Provider-specific canonical item ID.
         externalIds:
           type: array
+          maxItems: 20
           description: Optional cross-provider identifiers known for this item.
           items:
             $ref: '#/components/schemas/ExternalItemIdentity'
         canonicalItemId:
           type: string
+          maxLength: 1024
           description: Optional local canonical identity preserved from exports.
+        hash:
+          type: string
+          maxLength: 128
+          description: Optional exported content hash ignored during import.
         listType:
           type: string
           description: >-
@@ -1534,6 +1584,11 @@ components:
             `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
         watchedAt:
           type: ['string', 'null']
+          maxLength: 64
+        ownerShareCode:
+          type: string
+          maxLength: 256
+          description: Optional exported owner share code ignored during import.
         progressCurrent:
           type: ['integer', 'null']
           minimum: 0
@@ -1585,6 +1640,7 @@ components:
         defaultLibraryOwnerShareCode:
           type: ['string', 'null']
           minLength: 1
+          maxLength: 256
           description: Legacy Library owner default converted into exact Movie and Series defaults when access remains valid.
         collectionListDisplayPreferences:
           $ref: '#/components/schemas/CollectionListDisplayPreferences'
@@ -1617,6 +1673,7 @@ components:
         defaultLibraryOwnerShareCode:
           type: ['string', 'null']
           minLength: 1
+          maxLength: 256
           description: Legacy Library owner default converted into exact Movie and Series defaults when access remains valid.
         collectionListDisplayPreferences:
           $ref: '#/components/schemas/CollectionListDisplayPreferences'
@@ -1631,23 +1688,32 @@ components:
           $ref: '#/components/schemas/ImportUserSettingsV9'
         collectionItems:
           type: array
+          maxItems: 10000
           items:
             $ref: '#/components/schemas/ImportCollectionItemV9'
         tagManagement:
-          $ref: '#/components/schemas/TagManagementResponse'
+          type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/TagManagement'
         trackingData:
           type: object
+          maxProperties: 10000
           description: Tracking list data keyed by encoded provider identity, formatted as provider/externalItemId.
+          propertyNames:
+            maxLength: 2048
           additionalProperties:
             type: object
             required: [seasons, completedEpisodes]
             properties:
               seasons:
                 type: array
+                maxItems: 50
                 items:
                   $ref: '#/components/schemas/TrackingSeason'
               completedEpisodes:
                 type: array
+                maxItems: 5000
                 items:
                   $ref: '#/components/schemas/TrackingCompletedEpisode'
 
@@ -1659,23 +1725,32 @@ components:
           $ref: '#/components/schemas/ImportUserSettingsV10'
         collectionItems:
           type: array
+          maxItems: 10000
           items:
             $ref: '#/components/schemas/ImportCollectionItemV10'
         tagManagement:
-          $ref: '#/components/schemas/TagManagementResponse'
+          type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/TagManagement'
         trackingData:
           type: object
+          maxProperties: 10000
           description: Tracking list data keyed by encoded provider identity, formatted as provider/externalItemId.
+          propertyNames:
+            maxLength: 2048
           additionalProperties:
             type: object
             required: [seasons, completedEpisodes]
             properties:
               seasons:
                 type: array
+                maxItems: 50
                 items:
                   $ref: '#/components/schemas/TrackingSeason'
               completedEpisodes:
                 type: array
+                maxItems: 5000
                 items:
                   $ref: '#/components/schemas/TrackingCompletedEpisode'
 
@@ -1687,23 +1762,32 @@ components:
           $ref: '#/components/schemas/UserSettingsResponse'
         collectionItems:
           type: array
+          maxItems: 10000
           items:
             $ref: '#/components/schemas/ImportCollectionItemV10'
         tagManagement:
-          $ref: '#/components/schemas/TagManagementResponse'
+          type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/TagManagement'
         trackingData:
           type: object
+          maxProperties: 10000
           description: Tracking list data keyed by encoded provider identity, formatted as provider/externalItemId.
+          propertyNames:
+            maxLength: 2048
           additionalProperties:
             type: object
             required: [seasons, completedEpisodes]
             properties:
               seasons:
                 type: array
+                maxItems: 50
                 items:
                   $ref: '#/components/schemas/TrackingSeason'
               completedEpisodes:
                 type: array
+                maxItems: 5000
                 items:
                   $ref: '#/components/schemas/TrackingCompletedEpisode'
 
@@ -1789,6 +1873,12 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/HealthResponse'
+    HealthDiagnosticsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/HealthDiagnosticsResponse'
     SignUpEnvelope:
       type: object
       required: [data]
@@ -2001,11 +2091,34 @@ paths:
       tags: [Public]
       responses:
         '200':
-          description: Health status of the server.
+          description: Aggregate server health status. Detailed diagnostics require authentication.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthEnvelope'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/me/health:
+    get:
+      operationId: getUserHealth
+      summary: Get server health diagnostics
+      tags: [User]
+      responses:
+        '200':
+          description: Server health status with resource and dependency diagnostics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDiagnosticsEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -3906,7 +4019,8 @@ paths:
       description: >-
         Fetches a public HTTP or HTTPS image URL, caches the bytes on the server, and returns the image with long-lived
         cache headers. Safe public redirects are followed (limited hop count) with SSRF checks on each hop. Localhost,
-        private-network targets, unsafe/unresolvable redirects, and oversized responses are rejected.
+        private-network targets, unsafe/unresolvable redirects, and oversized responses are rejected. Queue saturation or
+        queue wait timeout returns 503 with Retry-After guidance.
       tags: [Image Proxy]
       parameters:
         - name: url
@@ -3955,10 +4069,14 @@ paths:
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /ai/matches:
     post:
@@ -4073,7 +4191,11 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '413':
-          $ref: '#/components/responses/PayloadTooLarge'
+          description: Import exceeds one or more documented collection, property, or nested-array limits.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
         '429':

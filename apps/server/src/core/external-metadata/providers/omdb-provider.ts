@@ -3,7 +3,7 @@ import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import { debugLog } from '../../logger';
 import { ExternalMetadataSeasonProvider } from '../external-metadata-provider';
-import { DEFAULT_OMDB_API_URL } from './omdb-const';
+import { DEFAULT_OMDB_API_URL, OMDB_REQUEST_TIMEOUT_MS } from './omdb-const';
 import {
   OMDbResponseItemModel,
   OMDbResponseModel,
@@ -87,7 +87,7 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
     }
     url.searchParams.append('apikey', this.apiKey);
 
-    const response = await fetch(url.href);
+    const response = await fetch(url.href, { signal: AbortSignal.timeout(OMDB_REQUEST_TIMEOUT_MS) });
     if (response.ok === false) {
       throw new Error(`${this.name} responded with ${response.status}`);
     }

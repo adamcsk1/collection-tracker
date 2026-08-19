@@ -1,0 +1,31 @@
+import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/tracking-const';
+
+export const MAX_FULL_IMPORT_COLLECTION_ITEMS = 10_000;
+export const MAX_FULL_IMPORT_TAG_CONFIGS = 1_000;
+export const MAX_FULL_IMPORT_TRACKING_ENTRIES = 10_000;
+export const MAX_FULL_IMPORT_ITEM_GENRES = 100;
+export const MAX_FULL_IMPORT_ITEM_TAGS = 100;
+export const MAX_FULL_IMPORT_ITEM_EXTERNAL_IDENTITIES = 20;
+export const MAX_FULL_IMPORT_TRACKING_SEASONS = MAX_SERIES_SEASONS;
+export const MAX_FULL_IMPORT_EPISODE_TITLES = MAX_SERIES_EPISODES;
+export const MAX_FULL_IMPORT_COMPLETED_EPISODES = 5_000;
+
+// Full imports accept historical exports and provider metadata, so these limits are intentionally
+// larger than typical values while preventing one field from consuming the 50 MiB request budget.
+export const MAX_FULL_IMPORT_TITLE_LENGTH = 1_024;
+export const MAX_FULL_IMPORT_PLOT_LENGTH = 65_536;
+export const MAX_FULL_IMPORT_ACTORS_LENGTH = 16_384;
+export const MAX_FULL_IMPORT_IMAGE_LENGTH = 8_192;
+export const MAX_FULL_IMPORT_TAG_LENGTH = 256;
+export const MAX_FULL_IMPORT_GENRE_LENGTH = 256;
+export const MAX_FULL_IMPORT_EXTERNAL_IDENTITY_SOURCE_LENGTH = 64;
+export const MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH = 512;
+export const MAX_FULL_IMPORT_CANONICAL_ITEM_ID_LENGTH = 1_024;
+export const MAX_FULL_IMPORT_EPISODE_TITLE_LENGTH = 1_024;
+export const MAX_FULL_IMPORT_TRACKING_KEY_LENGTH = 2_048;
+export const MAX_FULL_IMPORT_YEAR_LENGTH = 64;
+export const MAX_FULL_IMPORT_RATING_LENGTH = 64;
+export const MAX_FULL_IMPORT_WATCHED_AT_LENGTH = 64;
+export const MAX_FULL_IMPORT_COLOR_LENGTH = 64;
+export const MAX_FULL_IMPORT_SHARE_CODE_LENGTH = 256;
+export const MAX_FULL_IMPORT_HASH_LENGTH = 128;

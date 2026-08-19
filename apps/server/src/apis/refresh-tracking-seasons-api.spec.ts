@@ -67,7 +67,10 @@ describe('refresh-tracking-seasons-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('i=tt-series'));
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('i=tt-series'),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] })
     );

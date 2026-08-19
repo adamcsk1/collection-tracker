@@ -30,6 +30,9 @@ export const register = (app: FastifyInstance): void => {
     `${API_PREFIX}/auth/sign-in`,
     { config: { rateLimit: { max: getAuthRateLimit(), timeWindow: '1 minute' } } },
     withErrorHandler(async (request, response) => {
+      if (!request.body || typeof request.body !== 'object' || Array.isArray(request.body)) {
+        return response.code(400).send();
+      }
       const { username, token } = request.body as SignInApiRequestModel;
       if (typeof username !== 'string' || !username || typeof token !== 'string' || !token) {
         return response.code(400).send();
@@ -60,18 +63,17 @@ export const register = (app: FastifyInstance): void => {
         return response.code(500).send();
       }
 
-      const accessTokenData = getUserAccessToken(newAccessToken, request.headers['user-agent']!, accessCookie.expires!);
-      const refreshTokenData = getUserRefreshToken(
-        newRefreshToken,
-        request.headers['user-agent']!,
-        refreshCookie.expires!
-      );
+      const userAgent = request.headers['user-agent'] ?? '';
+      const accessTokenData = getUserAccessToken(newAccessToken, userAgent, accessCookie.expires!);
+      const refreshTokenData = getUserRefreshToken(newRefreshToken, userAgent, refreshCookie.expires!);
 
       const now = dayjs().toISOString();
-      deleteExpiredAccessTokens(db, usernameHash, now);
-      deleteExpiredRefreshTokens(db, usernameHash, now);
-      insertAccessToken(db, usernameHash, accessTokenData);
-      insertRefreshToken(db, usernameHash, refreshTokenData);
+      db.transaction(() => {
+        deleteExpiredAccessTokens(db, usernameHash, now);
+        deleteExpiredRefreshTokens(db, usernameHash, now);
+        insertAccessToken(db, usernameHash, accessTokenData);
+        insertRefreshToken(db, usernameHash, refreshTokenData);
+      })();
 
       response
         .setCookie(COOKIE_TOKEN, newAccessToken, accessCookie)

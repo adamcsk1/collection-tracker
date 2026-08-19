@@ -5,8 +5,9 @@ import '../models/fastify-model';
 import { COOKIE_TOKEN } from './cookie/cookie-const';
 import { hashText } from './crypto';
 import { getDatabase } from './database/database';
-import { findAccessTokensByUser } from './database/repositories/user-repository';
+import { hasAccessToken } from './database/repositories/user-repository';
 import { debugLog, errorLog } from './logger';
+import { getRequestPath } from './utils/request-url-util';
 
 const hasUsername = (data: jwt.JwtPayload | string | undefined): data is { username: string } =>
   typeof data === 'object' && data !== null && 'username' in data && typeof data.username === 'string';
@@ -46,7 +47,7 @@ export const generateRefreshToken = async (
 };
 
 export const jwtGuard = async (request: FastifyRequest, response: FastifyReply): Promise<void> => {
-  await debugLog(`Validating access token (${request.url})`);
+  await debugLog(`Validating access token (${getRequestPath(request.url)})`);
 
   const signedCookieToken = request.cookies[COOKIE_TOKEN];
   const cookieToken = signedCookieToken ? request.unsignCookie(signedCookieToken).value : undefined;
@@ -79,9 +80,7 @@ export const jwtGuard = async (request: FastifyRequest, response: FastifyReply):
     const usernameHash = hashText(username);
     const tokenHash = hashText(token);
 
-    const allTokens = new Set(findAccessTokensByUser(getDatabase(), usernameHash).map((t) => t.tokenHash));
-
-    if (!allTokens.has(tokenHash)) {
+    if (!hasAccessToken(getDatabase(), usernameHash, tokenHash)) {
       await debugLog('Access token not recognized');
       response.code(403).send();
       return;

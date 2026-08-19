@@ -2019,7 +2019,7 @@ describe('runMigrations', () => {
         .all() as Array<{ name: string }>;
       expect(indexes.map((i) => i.name)).toEqual(
         expect.arrayContaining([
-          'idx_access_tokens_username',
+          'idx_access_tokens_username_token',
           'idx_ai_search_embeddings_item',
           'idx_collection_item_genres_item',
           'idx_collection_item_tags_item',
@@ -3127,6 +3127,93 @@ describe('runMigrations', () => {
       await runMigrations(db, migrationsDir);
 
       expect(db.prepare('SELECT * FROM collection_owner_defaults').all()).toEqual([]);
+      db.close();
+    });
+  });
+
+  describe('039_add_access_token_lookup_index', () => {
+    it('replaces the username index with a restartable composite lookup index', async () => {
+      const migrationFile = '039_add_access_token_lookup_index.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent) VALUES
+          ('user', 'duplicate', 'now', 'agent'),
+          ('user', 'duplicate', 'now', 'agent');
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+      db.exec(readFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), 'utf8'));
+
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'access_tokens' ORDER BY name")
+          .all()
+      ).toEqual([{ name: 'idx_access_tokens_username_token' }]);
+      expect(db.prepare("PRAGMA index_info('idx_access_tokens_username_token')").all()).toEqual([
+        expect.objectContaining({ seqno: 0, name: 'username_hash' }),
+        expect.objectContaining({ seqno: 1, name: 'token_hash' }),
+      ]);
+      const queryPlan = db
+        .prepare('EXPLAIN QUERY PLAN SELECT 1 FROM access_tokens WHERE username_hash = ? AND token_hash = ? LIMIT 1')
+        .all('user', 'duplicate') as Array<{ detail: string }>;
+      expect(queryPlan.some(({ detail }) => detail.includes('idx_access_tokens_username_token'))).toBe(true);
+      expect(db.prepare("SELECT COUNT(*) AS count FROM access_tokens WHERE token_hash = 'duplicate'").get()).toEqual({
+        count: 2,
+      });
+      db.close();
+    });
+
+    it('records an idempotent migration after restart when SQL applied before its marker', async () => {
+      const migrationFile = '039_add_access_token_lookup_index.sql';
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+      for (const file of readdirSync(MIGRATIONS_SRC_DIR).filter(
+        (file) => /^\d+_.+\.sql$/.test(file) && file < migrationFile
+      )) {
+        copyFileSync(join(MIGRATIONS_SRC_DIR, file), join(migrationsDir, file));
+      }
+      const databasePath = join(migrationsDir, 'restart.db');
+      let db = new Database(databasePath);
+      await runMigrations(db, migrationsDir);
+      db.exec(readFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), 'utf8'));
+      db.close();
+
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+      db = new Database(databasePath);
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').get(migrationFile)).toEqual({
+        id: migrationFile,
+      });
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?")
+          .get('idx_access_tokens_username_token')
+      ).toBeDefined();
+      db.close();
+    });
+  });
+
+  describe('runner-managed migrations', () => {
+    it('rolls back SQL and marker when a future migration fails', async () => {
+      const migrationFile = '040_future_failure.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      writeFileSync(
+        join(migrationsDir, migrationFile),
+        'CREATE TABLE future_migration_probe (id INTEGER PRIMARY KEY); INVALID SQL HERE;'
+      );
+
+      await expect(runMigrations(db, migrationsDir)).rejects.toThrow();
+
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'future_migration_probe'").get()
+      ).toBeUndefined();
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').get(migrationFile)).toBeUndefined();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining(`Migration failed: ${migrationFile}`));
       db.close();
     });
   });

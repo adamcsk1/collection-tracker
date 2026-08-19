@@ -45,6 +45,9 @@ export interface RenameTagApiResponseModel {
 
 export interface HealthApiResponseModel {
   status: 'ok' | 'warn' | 'error';
+}
+
+export interface HealthDiagnosticsApiResponseModel extends HealthApiResponseModel {
   memory: {
     usedPercent: number;
   };

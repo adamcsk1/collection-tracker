@@ -8,10 +8,10 @@ vi.mock('@server/core/jwt', () => ({
   jwtGuard: vi.fn((_request: any, _response: any, next: any) => next()),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
-  getUserAccessToken: vi.fn(() => ({
+  getUserAccessToken: vi.fn((_token: string, userAgent: string) => ({
     tokenHash: 'hashed-access',
     createdAt: 'now',
-    userAgent: 'agent',
+    userAgent,
     expiresAt: null,
   })),
 }));
@@ -22,9 +22,9 @@ describe('create-access-token-api', () => {
     vi.clearAllMocks();
   });
 
-  it('creates a new access token and stores it', async () => {
+  it('creates a new access token without requiring User-Agent metadata', async () => {
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', username: 'user', headers: { 'user-agent': 'agent' } };
+    const request: any = { usernameHash: 'user', username: 'user', headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
@@ -37,6 +37,9 @@ describe('create-access-token-api', () => {
     expect(response.send).toHaveBeenCalledWith({ accessToken: 'access' });
     expect(db.prepare('SELECT COUNT(*) as count FROM access_tokens WHERE username_hash = ?').get('user')).toEqual({
       count: 1,
+    });
+    expect(db.prepare('SELECT user_agent FROM access_tokens WHERE username_hash = ?').get('user')).toEqual({
+      user_agent: '',
     });
   });
 

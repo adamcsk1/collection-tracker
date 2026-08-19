@@ -34,6 +34,7 @@ import { register as registerGetTrackingCompletedEpisodes } from './get-series-c
 import { register as registerTagManagement } from './get-tag-management-api';
 import { register as registerUserSettings } from './get-user-settings-api';
 import { register as registerHealth } from './health-api';
+import { register as registerUserHealth } from './user-health-api';
 import { register as registerUserShares } from './user-shares-api';
 import { register as registerLogout } from './logout-api';
 import { register as registerMarkAllMoviesCompleted } from './mark-all-movies-completed-api';
@@ -64,6 +65,7 @@ import { register as registerReplaceCollectionItemShares } from './replace-colle
 
 export const registerAllApis = (app: FastifyInstance): void => {
   registerHealth(app);
+  registerUserHealth(app);
   registerSignUp(app);
   registerSignIn(app);
   registerRefreshToken(app);

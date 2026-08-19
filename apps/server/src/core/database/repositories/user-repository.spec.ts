@@ -7,7 +7,7 @@ const { hashTextMock } = vi.hoisted(() => ({
 
 vi.mock('../../crypto', () => ({ hashText: hashTextMock }));
 
-import { deleteUser, findUserByShareCode, getUserShareCode } from './user-repository';
+import { deleteUser, findUserByShareCode, getUserShareCode, hasAccessToken } from './user-repository';
 
 describe('user-repository share codes', () => {
   beforeEach(() => {
@@ -42,5 +42,20 @@ describe('user-repository share codes', () => {
     deleteUser(db, 'owner');
 
     expect(db.prepare('SELECT * FROM collection_owner_defaults').all()).toEqual([]);
+  });
+
+  it('checks one access token directly for its user', () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'user-token');
+    db.prepare('INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent) VALUES (?, ?, ?, ?)').run(
+      'user',
+      'known-token',
+      'now',
+      'agent'
+    );
+
+    expect(hasAccessToken(db, 'user', 'known-token')).toBe(true);
+    expect(hasAccessToken(db, 'user', 'unknown-token')).toBe(false);
+    expect(hasAccessToken(db, 'other-user', 'known-token')).toBe(false);
   });
 });

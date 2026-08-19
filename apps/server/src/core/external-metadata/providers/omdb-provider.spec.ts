@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_OMDB_API_URL } from './omdb-const';
+import { DEFAULT_OMDB_API_URL, OMDB_REQUEST_TIMEOUT_MS } from './omdb-const';
 import { OmdbExternalMetadataProvider } from './omdb-provider';
 
 vi.mock('../../logger', () => ({
@@ -42,6 +42,17 @@ describe('OmdbExternalMetadataProvider', () => {
     expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('https://metadata.example.com/omdb/');
     expect(requestUrl.searchParams.get('s')).toBe('custom search');
     expect(requestUrl.searchParams.get('apikey')).toBe('custom-key');
+  });
+
+  it('aborts OMDb requests after the configured timeout', async () => {
+    const signal = new AbortController().signal;
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(signal);
+    vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ Search: [] }) } as Response);
+
+    await provider.search('timeout test');
+
+    expect(timeoutSpy).toHaveBeenCalledWith(OMDB_REQUEST_TIMEOUT_MS);
+    expect(fetch).toHaveBeenCalledWith(expect.any(String), { signal });
   });
 
   it('returns an empty search result when OMDb reports no matches', async () => {

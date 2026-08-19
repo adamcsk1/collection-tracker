@@ -10,6 +10,7 @@ import { getItemHash } from '../utils/collection-item-util';
 import { hashText } from '../crypto';
 
 const MIGRATION_PATTERN = /^\d+_.+\.sql$/;
+const RUNNER_MANAGED_MIGRATION_START = 39;
 
 const recomputeCollectionItemHashes = (db: Database.Database): void => {
   const tableExists = db
@@ -155,6 +156,14 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
         db.transaction(() => {
           db.exec(sql);
           migrateCollectionOwnerDefaults(db);
+          db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
+        })();
+        appliedIds.add(file);
+        continue;
+      }
+      if (Number.parseInt(file, 10) >= RUNNER_MANAGED_MIGRATION_START) {
+        db.transaction(() => {
+          db.exec(sql);
           db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
         })();
         appliedIds.add(file);

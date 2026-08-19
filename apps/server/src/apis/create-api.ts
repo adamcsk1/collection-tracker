@@ -23,6 +23,9 @@ export const register = (app: FastifyInstance): void => {
     `${API_PREFIX}/collection-items`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
+      if (!request.body || typeof request.body !== 'object' || Array.isArray(request.body)) {
+        return response.code(400).send();
+      }
       const body = request.body as CreateApiRequestModel;
       const item = normalizeItem(body);
       const listType = parseListType(body.listType) ?? 'library';

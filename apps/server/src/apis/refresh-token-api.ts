@@ -80,7 +80,11 @@ export const register = (app: FastifyInstance): void => {
           return response.code(500).send();
         }
 
-        const accessTokenData = getUserAccessToken(newAccessToken, request.headers['user-agent']!, cookie.expires!);
+        const accessTokenData = getUserAccessToken(
+          newAccessToken,
+          request.headers['user-agent'] ?? '',
+          cookie.expires!
+        );
         insertAccessToken(db, usernameHash, accessTokenData);
 
         response.setCookie(COOKIE_TOKEN, newAccessToken, cookie).code(204).send();

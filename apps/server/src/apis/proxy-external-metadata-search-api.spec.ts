@@ -32,8 +32,14 @@ describe('proxy-external-metadata-search-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('s=Matrix'));
-      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('apikey=test-key'));
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('s=Matrix'),
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('apikey=test-key'),
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
       expect(response.send).toHaveBeenCalledWith({
         results: [
           expect.objectContaining({

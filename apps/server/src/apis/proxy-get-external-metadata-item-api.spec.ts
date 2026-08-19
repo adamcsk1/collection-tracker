@@ -44,8 +44,14 @@ describe('proxy-get-external-metadata-item-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('i=tt0133093'));
-      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('apikey=test-key'));
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('i=tt0133093'),
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('apikey=test-key'),
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
       expect(response.send).toHaveBeenCalledWith(
         expect.objectContaining({
           provider: 'omdb',
@@ -155,7 +161,10 @@ describe('proxy-get-external-metadata-item-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('i=tt0133093'));
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('i=tt0133093'),
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
       expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ provider: 'omdb', title: 'The Matrix' }));
     });
 

@@ -1,6 +1,7 @@
 import { COOKIE_TOKEN } from './cookie/cookie-const';
 import { getDatabase } from './database/database';
 import { generateAccessToken, generateRefreshToken, jwtGuard } from './jwt';
+import { debugLog } from './logger';
 import type { FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@server/core/crypto', () => ({
   hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
+vi.mock('@server/core/logger', () => ({ debugLog: vi.fn(), errorLog: vi.fn() }));
 
 describe('jwt utilities', () => {
   const mockResponse = () => {
@@ -29,6 +31,7 @@ describe('jwt utilities', () => {
   beforeEach(() => {
     process.env.JWT_SECRET = 'secret';
     vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('generates an access token and returns empty string on errors', async () => {
@@ -69,13 +72,15 @@ describe('jwt utilities', () => {
       'INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
     ).run('hashed-user', `hashed-${token}`, 'now', 'agent', null);
     const response = mockResponse();
-    const request = mockRequest({ cookies: { [COOKIE_TOKEN]: token } });
+    const request = mockRequest({ cookies: { [COOKIE_TOKEN]: token }, url: '/protected?query=secret' });
 
     await jwtGuard(request, response);
 
     expect(response.code).not.toHaveBeenCalled();
     expect(request.username).toBe('user');
     expect(request.usernameHash).toBe('hashed-user');
+    expect(debugLog).toHaveBeenCalledWith('Validating access token (/protected)');
+    expect(debugLog).not.toHaveBeenCalledWith(expect.stringContaining('secret'));
   });
 
   it('jwtGuard rejects expired token with 401', async () => {
@@ -96,6 +101,15 @@ describe('jwt utilities', () => {
       }),
       response
     );
+
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('jwtGuard rejects a validly signed unrecognized access token with 403', async () => {
+    const token = jwt.sign({ username: 'user' }, 'secret');
+    const response = mockResponse();
+
+    await jwtGuard(mockRequest({ cookies: { [COOKIE_TOKEN]: token } }), response);
 
     expect(response.code).toHaveBeenCalledWith(403);
   });

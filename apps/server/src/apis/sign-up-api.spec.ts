@@ -1,6 +1,7 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@shared/constants/username-const';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@server/core/crypto', () => ({
@@ -33,6 +34,46 @@ describe('sign-up-api', () => {
     );
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when body is missing', async () => {
+    const response = mockResponse();
+    const request: any = {};
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./sign-up-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it.each([USERNAME_MIN_LENGTH - 1, USERNAME_MAX_LENGTH + 1])(
+    'returns 400 when username length is %s',
+    async (usernameLength) => {
+      const response = mockResponse();
+      const request: any = { body: { username: 'u'.repeat(usernameLength) } };
+      const { app, handlerPromise } = buildApp(request, response);
+
+      const { register } = await import('./sign-up-api');
+      register(app);
+
+      await handlerPromise();
+      expect(response.code).toHaveBeenCalledWith(400);
+    }
+  );
+
+  it.each([USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH])('accepts username boundary length %s', async (usernameLength) => {
+    const response = mockResponse();
+    const request: any = { body: { username: 'u'.repeat(usernameLength) } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./sign-up-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).not.toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({ token: 'generated-token' });
   });
 
   it('returns 403 when registration disabled', async () => {

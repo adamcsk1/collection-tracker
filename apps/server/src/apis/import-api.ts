@@ -47,6 +47,34 @@ import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { parseListType } from '../core/utils/query-parse-util';
 import { isValidShareScope } from '@shared/utils/share-grant-util';
 import { normalizeTrackingSeasons } from '../core/utils/tracking-seasons-api-util';
+import {
+  MAX_FULL_IMPORT_ACTORS_LENGTH,
+  MAX_FULL_IMPORT_CANONICAL_ITEM_ID_LENGTH,
+  MAX_FULL_IMPORT_COLLECTION_ITEMS,
+  MAX_FULL_IMPORT_COLOR_LENGTH,
+  MAX_FULL_IMPORT_COMPLETED_EPISODES,
+  MAX_FULL_IMPORT_EPISODE_TITLE_LENGTH,
+  MAX_FULL_IMPORT_EPISODE_TITLES,
+  MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH,
+  MAX_FULL_IMPORT_EXTERNAL_IDENTITY_SOURCE_LENGTH,
+  MAX_FULL_IMPORT_GENRE_LENGTH,
+  MAX_FULL_IMPORT_HASH_LENGTH,
+  MAX_FULL_IMPORT_IMAGE_LENGTH,
+  MAX_FULL_IMPORT_ITEM_EXTERNAL_IDENTITIES,
+  MAX_FULL_IMPORT_ITEM_GENRES,
+  MAX_FULL_IMPORT_ITEM_TAGS,
+  MAX_FULL_IMPORT_PLOT_LENGTH,
+  MAX_FULL_IMPORT_RATING_LENGTH,
+  MAX_FULL_IMPORT_SHARE_CODE_LENGTH,
+  MAX_FULL_IMPORT_TAG_LENGTH,
+  MAX_FULL_IMPORT_TAG_CONFIGS,
+  MAX_FULL_IMPORT_TITLE_LENGTH,
+  MAX_FULL_IMPORT_TRACKING_KEY_LENGTH,
+  MAX_FULL_IMPORT_TRACKING_ENTRIES,
+  MAX_FULL_IMPORT_TRACKING_SEASONS,
+  MAX_FULL_IMPORT_WATCHED_AT_LENGTH,
+  MAX_FULL_IMPORT_YEAR_LENGTH,
+} from './import-api-const';
 import { ImportedCollectionItemApiModel, ImportedUserRequestModel } from './import-api-model';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -234,6 +262,7 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
   return (
     typeof value['image'] === 'string' &&
     typeof value['title'] === 'string' &&
+    (value['titleLower'] === undefined || typeof value['titleLower'] === 'string') &&
     isStringArray(value['genre']) &&
     (typeof value['IMDbId'] === 'string' || value['IMDbId'] === undefined) &&
     typeof value['externalProvider'] === 'string' &&
@@ -249,12 +278,14 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
     (typeof value['userRate'] === 'number' || value['userRate'] === null) &&
     typeof value['actors'] === 'string' &&
     typeof value['plot'] === 'string' &&
+    (value['hash'] === undefined || typeof value['hash'] === 'string') &&
     (value['contentType'] === 'movie' || value['contentType'] === 'series' || value['contentType'] === 'book') &&
     typeof value['favorite'] === 'boolean' &&
     typeof value['listType'] === 'string' &&
     parseListType(value['listType']) !== undefined &&
     value['watchedAt'] !== undefined &&
     isWatchedAt(value['watchedAt']) &&
+    (value['ownerShareCode'] === undefined || typeof value['ownerShareCode'] === 'string') &&
     isOptionalNonNegativeInteger(value['progressCurrent']) &&
     isOptionalPositiveInteger(value['progressTotal'])
   );
@@ -291,6 +322,82 @@ const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
       Array.isArray(entry['completedEpisodes']) &&
       entry['completedEpisodes'].every(isCompletedEpisode)
   );
+};
+
+const isUserImportOverLimit = (importData: ImportedUserRequestModel): boolean => {
+  if (
+    importData.collectionItems.length > MAX_FULL_IMPORT_COLLECTION_ITEMS ||
+    importData.tagManagement.length > MAX_FULL_IMPORT_TAG_CONFIGS ||
+    Object.keys(importData.trackingData ?? {}).length > MAX_FULL_IMPORT_TRACKING_ENTRIES
+  ) {
+    return true;
+  }
+
+  const importSettings = importData.userSettings as UserSettingsApiResponseModel & {
+    defaultLibraryOwnerShareCode?: string | null;
+  };
+  if (
+    (importSettings.defaultLibraryOwnerShareCode?.length ?? 0) > MAX_FULL_IMPORT_SHARE_CODE_LENGTH ||
+    (importSettings.defaultCollectionOwners ?? []).some(
+      (ownerDefault) => ownerDefault.ownerUserShareCode.length > MAX_FULL_IMPORT_SHARE_CODE_LENGTH
+    ) ||
+    importData.tagManagement.some(
+      (config) =>
+        config.tag.length > MAX_FULL_IMPORT_TAG_LENGTH || (config.color?.length ?? 0) > MAX_FULL_IMPORT_COLOR_LENGTH
+    )
+  ) {
+    return true;
+  }
+
+  for (const item of importData.collectionItems) {
+    if (
+      item.genre.length > MAX_FULL_IMPORT_ITEM_GENRES ||
+      item.tags.length > MAX_FULL_IMPORT_ITEM_TAGS ||
+      (item.externalIds?.length ?? 0) > MAX_FULL_IMPORT_ITEM_EXTERNAL_IDENTITIES ||
+      item.image.length > MAX_FULL_IMPORT_IMAGE_LENGTH ||
+      item.title.length > MAX_FULL_IMPORT_TITLE_LENGTH ||
+      item.genre.some((genre) => genre.length > MAX_FULL_IMPORT_GENRE_LENGTH) ||
+      (item.IMDbId?.length ?? 0) > MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH ||
+      item.externalProvider.length > MAX_FULL_IMPORT_EXTERNAL_IDENTITY_SOURCE_LENGTH ||
+      item.externalItemId.length > MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH ||
+      (item.externalIds ?? []).some(
+        (identity) =>
+          identity.source.length > MAX_FULL_IMPORT_EXTERNAL_IDENTITY_SOURCE_LENGTH ||
+          identity.id.length > MAX_FULL_IMPORT_EXTERNAL_IDENTITY_ID_LENGTH
+      ) ||
+      (item.canonicalItemId?.length ?? 0) > MAX_FULL_IMPORT_CANONICAL_ITEM_ID_LENGTH ||
+      item.tags.some((tag) => tag.length > MAX_FULL_IMPORT_TAG_LENGTH) ||
+      (item.year?.length ?? 0) > MAX_FULL_IMPORT_YEAR_LENGTH ||
+      item.rate.length > MAX_FULL_IMPORT_RATING_LENGTH ||
+      item.rottenTomatoesRate.length > MAX_FULL_IMPORT_RATING_LENGTH ||
+      item.metacriticRate.length > MAX_FULL_IMPORT_RATING_LENGTH ||
+      item.actors.length > MAX_FULL_IMPORT_ACTORS_LENGTH ||
+      item.plot.length > MAX_FULL_IMPORT_PLOT_LENGTH ||
+      (item.watchedAt?.length ?? 0) > MAX_FULL_IMPORT_WATCHED_AT_LENGTH ||
+      (item.titleLower?.length ?? 0) > MAX_FULL_IMPORT_TITLE_LENGTH ||
+      (item.hash?.length ?? 0) > MAX_FULL_IMPORT_HASH_LENGTH ||
+      (item.ownerShareCode?.length ?? 0) > MAX_FULL_IMPORT_SHARE_CODE_LENGTH
+    ) {
+      return true;
+    }
+  }
+
+  for (const [trackingKey, trackingData] of Object.entries(importData.trackingData ?? {})) {
+    if (
+      trackingKey.length > MAX_FULL_IMPORT_TRACKING_KEY_LENGTH ||
+      trackingData.seasons.length > MAX_FULL_IMPORT_TRACKING_SEASONS ||
+      trackingData.completedEpisodes.length > MAX_FULL_IMPORT_COMPLETED_EPISODES ||
+      trackingData.seasons.some(
+        (season) =>
+          (season.titles?.length ?? 0) > MAX_FULL_IMPORT_EPISODE_TITLES ||
+          (season.titles ?? []).some((title) => title.length > MAX_FULL_IMPORT_EPISODE_TITLE_LENGTH)
+      )
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 const toCollectionItemChange = (item: ImportedCollectionItemApiModel): CollectionItemChangeApiModel => ({
@@ -402,6 +509,7 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler((request, response) => {
       const body = request.body as unknown;
       if (!isUserImport(body)) return response.code(400).send();
+      if (isUserImportOverLimit(body)) return response.code(413).send();
       const importData = body;
       const normalizedFeaturePreferences = parseCollectionFeaturePreferences(
         importData.userSettings.collectionFeaturePreferences

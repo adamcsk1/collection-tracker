@@ -13,10 +13,10 @@ vi.mock('@server/core/jwt', () => ({
   generateAccessToken: vi.fn().mockReturnValue('new-access'),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
-  getUserAccessToken: vi.fn((_token: string, _agent: string, expires: Date | null) => ({
+  getUserAccessToken: vi.fn((_token: string, userAgent: string, expires: Date | null) => ({
     tokenHash: 'hashed-new-access',
     createdAt: dayjs().toISOString(),
-    userAgent: 'agent',
+    userAgent,
     expiresAt: expires?.toISOString() || null,
   })),
 }));
@@ -81,10 +81,10 @@ describe('refresh-token-api', () => {
     expect(response.code).toHaveBeenCalledWith(403);
   });
 
-  it('issues a new access token and sets cookie for a valid refresh token', async () => {
+  it('issues a new access token without requiring User-Agent metadata', async () => {
     const response = mockResponse();
     const token = jwt.sign({ username: 'user' }, 'secret');
-    const request: any = { cookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: { 'user-agent': 'agent' } };
+    const request: any = { cookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
@@ -98,6 +98,9 @@ describe('refresh-token-api', () => {
     await handlerPromise();
     expect(response.setCookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'new-access', expect.any(Object));
     expect(response.code).toHaveBeenCalledWith(204);
+    expect(db.prepare('SELECT user_agent FROM access_tokens WHERE token_hash = ?').get('hashed-new-access')).toEqual({
+      user_agent: '',
+    });
   });
 
   it('prunes expired refresh tokens before validating', async () => {

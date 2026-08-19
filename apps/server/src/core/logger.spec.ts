@@ -1,5 +1,6 @@
 import { getArgv } from './argv/argv';
 import { debugLog, errorLog, infoLog } from './logger';
+import { logIncomingRequest } from './main';
 import { FOLDERS } from './main-const';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
@@ -93,5 +94,16 @@ describe('logger', () => {
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringMatching(/\[ info \]\[ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z \] info via env/)
     );
+  });
+
+  it('logs request pathname without query values', async () => {
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: true });
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await logIncomingRequest({ url: '/api/v1/collection-items?query=secret&type=movie' });
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Incoming request: /api/v1/collection-items'));
+    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('secret'));
+    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('?query='));
   });
 });

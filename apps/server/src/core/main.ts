@@ -4,20 +4,25 @@ import fastifyFormbody from '@fastify/formbody';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
-import fastify from 'fastify';
+import fastify, { type FastifyRequest } from 'fastify';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { registerAllApis } from '../apis';
 import { register as registerDocsApi } from '../apis/docs-api';
 import { initializeFolders } from '../tools/initializer';
 import { getArgv } from './argv/argv';
-import { RATE_LIMIT_EXCLUDED_PATHS } from './constants/rate-limit-const';
+import { getGlobalRateLimit } from './utils/rate-limit-util';
 import { initializeDatabase } from './database/database';
 import { hasSqlMigrations, runMigrations } from './database/migrations';
 import { debugLog, errorLog, infoLog } from './logger';
 import { SERVER_MAX_PARAM_LENGTH } from './main-const';
 import { apiResponseHook } from './utils/api-response-util';
 import { validateEnvironment } from './utils/environment-util';
+import { getRequestPath } from './utils/request-url-util';
+
+export const logIncomingRequest = async (request: Pick<FastifyRequest, 'url'>): Promise<void> => {
+  await debugLog(`Incoming request: ${getRequestPath(request.url)}`);
+};
 
 export const main = async () => {
   try {
@@ -65,9 +70,7 @@ export const main = async () => {
     // Registered before global middleware so helmet's CSP does not block Swagger UI assets.
     await registerDocsApi(app);
 
-    app.addHook('onRequest', async (request) => {
-      debugLog(`Incoming request: ${request.url}`);
-    });
+    app.addHook('onRequest', logIncomingRequest);
     app.addHook('onSend', apiResponseHook);
     debugLog('Applying request logging middleware');
     await app.register(fastifyHelmet);
@@ -79,12 +82,10 @@ export const main = async () => {
       response.header('Expires', '0');
     });
     debugLog('Applying no-cache middleware');
-    const rateLimitValue = process.env.RATE_LIMIT !== undefined ? Number(process.env.RATE_LIMIT) : 120;
     await app.register(fastifyRateLimit, {
-      max: rateLimitValue,
+      max: getGlobalRateLimit(),
       timeWindow: 60 * 1000,
       enableDraftSpec: true,
-      allowList: (request) => RATE_LIMIT_EXCLUDED_PATHS.includes(request.routeOptions.url ?? request.url),
     });
     debugLog('Applying rate limiting middleware');
     await app.register(fastifyCors, {

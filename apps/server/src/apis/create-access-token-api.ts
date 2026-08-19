@@ -18,7 +18,7 @@ export const register = (app: FastifyInstance): void => {
         return response.code(500).send();
       }
 
-      const tokenData = getUserAccessToken(newAccessToken, request.headers['user-agent']!, null);
+      const tokenData = getUserAccessToken(newAccessToken, request.headers['user-agent'] ?? '', null);
       insertAccessToken(getDatabase(), request.usernameHash, tokenData);
 
       const result: CreateAccessTokenApiResponseModel = { accessToken: newAccessToken };

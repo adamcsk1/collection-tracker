@@ -82,6 +82,12 @@ export const findAccessTokensByUser = (db: Database.Database, usernameHash: stri
   }));
 };
 
+export const hasAccessToken = (db: Database.Database, usernameHash: string, tokenHash: string): boolean => {
+  return !!db
+    .prepare('SELECT 1 FROM access_tokens WHERE username_hash = ? AND token_hash = ? LIMIT 1')
+    .get(usernameHash, tokenHash);
+};
+
 export const deleteAccessToken = (db: Database.Database, usernameHash: string, tokenHash: string): void => {
   db.prepare('DELETE FROM access_tokens WHERE username_hash = ? AND token_hash = ?').run(usernameHash, tokenHash);
 };

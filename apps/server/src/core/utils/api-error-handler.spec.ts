@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import { errorLog } from '../logger';
 import { withErrorHandler } from './api-error-handler';
+
+vi.mock('@server/core/logger', () => ({ errorLog: vi.fn() }));
 
 describe('withErrorHandler', () => {
   const mockResponse = () => {
@@ -25,13 +28,15 @@ describe('withErrorHandler', () => {
     const error = new Error('boom');
     error.stack = 'Error: boom\n    at somewhere';
     const handler = vi.fn().mockRejectedValue(error);
-    const request = { method: 'POST', url: '/api/v1/collection-items' } as any;
+    const request = { method: 'POST', url: '/api/v1/collection-items?query=secret' } as any;
     const response = mockResponse();
 
     const wrapped = withErrorHandler(handler);
     await wrapped(request, response);
 
     expect(response.code).toHaveBeenCalledWith(500);
+    expect(errorLog).toHaveBeenCalledWith(expect.stringContaining('POST /api/v1/collection-items'));
+    expect(errorLog).not.toHaveBeenCalledWith(expect.stringContaining('secret'));
   });
 
   it('sends 500 for non-error throws', async () => {

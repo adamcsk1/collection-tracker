@@ -6,7 +6,7 @@ describe('image-proxy', () => {
     'rejects invalid source URL %s',
     async (sourceUrl) => {
       expect(await fetchAndCacheImageWithDetails(sourceUrl)).toEqual({ kind: 'invalid-url' });
-      expect(getCachedImage(sourceUrl)).toBeNull();
+      expect(await getCachedImage(sourceUrl)).toBeNull();
     }
   );
 
