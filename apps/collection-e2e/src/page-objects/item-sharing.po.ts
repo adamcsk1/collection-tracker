@@ -1,6 +1,7 @@
 const getItemShareDialog = () => cy.getByTestId('item-share-dialog').last().find('[data-test-id="dialog-frame"]');
 
 export const ItemSharingDialog = {
+  getDialogHost: () => cy.getByTestId('item-share-dialog'),
   getDialog: getItemShareDialog,
   getTitle: () => getItemShareDialog().find('[data-test-id="item-share-dialog-title"]'),
   getRecipientCheckbox: (recipientShareCode: string) =>

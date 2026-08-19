@@ -171,12 +171,28 @@ describe('Individual item sharing - scope transitions', () => {
       ItemSharingDialog.getRecipientCheckbox(sharedUser.shareCode).check();
       cy.intercept('PUT', '/api/v1/collection-items/*/*/shares*').as('restoreSelectedScope');
       ItemSharingDialog.getSaveButton().click();
-      cy.wait('@restoreSelectedScope').its('response.statusCode').should('eq', 204);
-      cy.get('body').find('[data-test-id=item-share-dialog]').should('not.exist');
+      cy.wait('@restoreSelectedScope').then(({ request, response }) => {
+        expect(response?.statusCode).to.eq(204);
+        expect(request.body.selections).to.deep.equal([
+          {
+            sharedWithUserShareCode: sharedUser.shareCode,
+            permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+          },
+        ]);
+      });
+      getItemShares(owner, itemIdentity(selectedId)).then((response) => {
+        expectItemShare(response.body.data, sharedUser.shareCode, {
+          readMode: 'selected',
+          permissions: { canRead: true },
+        });
+      });
+      ItemSharingDialog.getDialogHost().should('not.exist');
       CollectionPage.closeActiveDialogByOverlay();
-      cy.get('body').find('[data-test-id=item-dialog]').should('not.exist');
+      CollectionPage.getItemDialogShellHost().should('not.exist');
 
+      cy.intercept('GET', '/api/v1/users/me/shares').as('loadRestoredScope');
       SettingsPage.visitShares();
+      cy.wait('@loadRestoredScope').its('response.statusCode').should('eq', 200);
       SettingsPage.getEditShareButton(sharedUser.shareCode).click({ scrollBehavior: 'center' });
       SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read').should(
         'have.prop',
