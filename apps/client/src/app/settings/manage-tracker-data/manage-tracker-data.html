@@ -12,7 +12,7 @@
   />
 }
 @if (featurePreferences().tracking || featurePreferences().books) {
-  <libc-callout class="tracker-cleanup-message" data-test-id="tracker-cleanup-info" icon="article">
+  <libc-callout data-test-id="tracker-cleanup-info" icon="article">
     {{ translations.messageTrackerCleanup() }}
   </libc-callout>
 }

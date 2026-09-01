@@ -1,5 +1,6 @@
 :host {
   display: block;
+  margin-block: var(--size-sm);
 }
 
 aside {

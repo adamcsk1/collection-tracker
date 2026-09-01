@@ -1,10 +1,6 @@
 :host {
   display: flex;
   flex-direction: column;
-
-  > libc-callout {
-    margin-bottom: var(--size-xs);
-  }
 }
 
 .access-tokens-toolbar {

@@ -9,7 +9,3 @@ h4 {
   gap: var(--size-xs);
   margin-top: var(--size-xs);
 }
-
-.tracker-cleanup-message {
-  margin: var(--size-s) 0 0;
-}
