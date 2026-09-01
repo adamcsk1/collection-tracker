@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Background } from './background/background';
+import { PosterBackground } from '@components/poster-background/poster-background';
 import { FloatActions } from './float-actions/float-actions';
 import { Header } from './header/header';
 import { MenuNav } from './menu-nav/menu-nav';
@@ -19,7 +19,7 @@ import { AndroidBackHandlerService } from './android-back-handler-service';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, Header, MenuNav, SpinnerLoading, Toast, Background, BlockerLoading, FloatActions],
+  imports: [RouterOutlet, Header, MenuNav, SpinnerLoading, Toast, PosterBackground, BlockerLoading, FloatActions],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +36,7 @@ export class Main implements OnInit {
   private readonly theme = inject(ThemeService);
   private readonly collectionDialogsRef = viewChild('portal', { read: ViewContainerRef });
   protected readonly useAnimatedBackground = this.mainState.state.animatedBackground;
+  protected readonly backgroundImagesRefreshTrigger = this.mainState.state.backgroundImagesRefreshTrigger;
 
   constructor() {
     effect(() => {

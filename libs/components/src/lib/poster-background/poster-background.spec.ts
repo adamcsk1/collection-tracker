@@ -1,14 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
-import { initialMainState, mainStateToken, type MainState } from '../main-store';
 import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import * as coarsePointerUtil from '@shared/utils/prefer-coarse-pointer-util';
 import * as randomIntUtil from '@shared/utils/random-int-util';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Background } from './background';
+import { PosterBackground } from './poster-background';
 
 vi.mock('@shared/utils/mobile-user-agent.util', () => ({
   mobileUserAgent: vi.fn(() => false),
@@ -18,17 +17,16 @@ vi.mock('@shared/utils/prefer-coarse-pointer-util', () => ({
   getCoarsePointerBasedDebounceTime: vi.fn(() => 0),
 }));
 
-describe('Background component', () => {
-  let fixture: ComponentFixture<Background>;
-  let component: Background;
-  let api: { getRandomImages: ReturnType<typeof vi.fn> };
+describe('PosterBackground component', () => {
+  let fixture: ComponentFixture<PosterBackground>;
+  let component: PosterBackground;
+  let api: { getBackgroundImages: ReturnType<typeof vi.fn> };
   let randomSpy: ReturnType<typeof vi.spyOn>;
   let orientationTarget: EventTarget;
   let setImagesSpy: ReturnType<typeof vi.spyOn>;
-  let mainState: NgxSimpleSignalStoreService<MainState>;
 
   const createComponent = () => {
-    fixture = TestBed.createComponent(Background);
+    fixture = TestBed.createComponent(PosterBackground);
     component = fixture.componentInstance;
     fixture.detectChanges();
   };
@@ -54,25 +52,19 @@ describe('Background component', () => {
     (coarsePointerUtil.getCoarsePointerBasedDebounceTime as unknown as ReturnType<typeof vi.fn>).mockReturnValue(0);
 
     api = {
-      getRandomImages: vi.fn(() =>
+      getBackgroundImages: vi.fn(() =>
         of({
           images: ['img-1', 'img-2'],
         })
       ),
     };
 
-    setImagesSpy = vi.spyOn(Background.prototype as any, 'setImages');
+    setImagesSpy = vi.spyOn(PosterBackground.prototype as never, 'setImages' as never);
 
     TestBed.configureTestingModule({
-      imports: [Background],
-      providers: [
-        { provide: ApiService, useValue: api },
-        provideStore(initialApiState, apiStateToken),
-        provideStore(initialMainState, mainStateToken),
-      ],
+      imports: [PosterBackground],
+      providers: [{ provide: PublicApiService, useValue: api }, provideStore(initialApiState, apiStateToken)],
     });
-
-    mainState = TestBed.inject(mainStateToken);
   });
 
   afterEach(() => {
@@ -82,7 +74,7 @@ describe('Background component', () => {
   });
 
   it('keeps images empty when the API returns no images', () => {
-    api.getRandomImages.mockReturnValue(of({ images: [] }));
+    api.getBackgroundImages.mockReturnValue(of({ images: [] }));
     createComponent();
 
     expect(component['images']()).toEqual([]);
@@ -93,28 +85,26 @@ describe('Background component', () => {
 
     const images = component['images']();
     expect(images.length).toBeGreaterThan(0);
-    expect(images.every((img: any) => ['img-1', 'img-2'].includes(img.url))).toBe(true);
+    expect(images.every((image) => ['img-1', 'img-2'].includes(image.url))).toBe(true);
   });
 
-  it('loads random images once on creation', () => {
+  it('loads background images once on creation', () => {
     createComponent();
 
-    expect(api.getRandomImages).toHaveBeenCalledTimes(1);
-    expect(api.getRandomImages).toHaveBeenCalledWith(50);
+    expect(api.getBackgroundImages).toHaveBeenCalledTimes(1);
   });
 
-  it('reloads random images when the refresh trigger changes', () => {
+  it('reloads background images when the refresh trigger changes', () => {
     createComponent();
 
-    mainState.patchState('backgroundImagesRefreshTrigger', (trigger) => trigger + 1);
+    fixture.componentRef.setInput('refreshTrigger', 1);
     fixture.detectChanges();
 
-    expect(api.getRandomImages).toHaveBeenCalledTimes(2);
-    expect(api.getRandomImages).toHaveBeenLastCalledWith(50);
+    expect(api.getBackgroundImages).toHaveBeenCalledTimes(2);
   });
 
   it('proxies external background image URLs', () => {
-    api.getRandomImages.mockReturnValue(
+    api.getBackgroundImages.mockReturnValue(
       of({
         images: ['https://images.example/poster.png'],
       })
@@ -128,7 +118,7 @@ describe('Background component', () => {
   it('recomputes images on resize', () => {
     createComponent();
 
-    Object.assign(window.visualViewport as any, { height: 1200, width: 500 });
+    Object.assign(window.visualViewport as object, { height: 1200, width: 500 });
     Object.defineProperty(window, 'innerHeight', { value: 1200, writable: true });
     window.dispatchEvent(new Event('resize'));
     vi.advanceTimersByTime(500);
@@ -142,20 +132,21 @@ describe('Background component', () => {
     component['lastViewportHeight'] = 800;
     component['lastViewportWidth'] = 500;
 
-    expect((component as any).shouldHandleHeight(950)).toBe(true);
-    expect((component as any).shouldHandleWidth(700)).toBe(true);
+    expect(component['shouldHandleHeight'](950)).toBe(true);
+    expect(component['shouldHandleWidth'](700)).toBe(true);
   });
 
   it('detects likely keyboard appearance from visual viewport shrink', () => {
-    Object.assign(window.visualViewport as any, { height: 650 });
-    expect((component as any).isKeyboardLikely(650)).toBe(true);
+    createComponent();
+    Object.assign(window.visualViewport as object, { height: 650 });
+    expect(component['isKeyboardLikely'](650)).toBe(true);
   });
 
   it('skips recompute when keyboard is likely open', () => {
     createComponent();
     setImagesSpy.mockClear();
 
-    Object.assign(window.visualViewport as any, { height: 600, width: 500 });
+    Object.assign(window.visualViewport as object, { height: 600, width: 500 });
     window.dispatchEvent(new Event('resize'));
     vi.runAllTimers();
 
@@ -171,7 +162,7 @@ describe('Background component', () => {
     document.body.appendChild(input);
     input.focus();
 
-    Object.assign(window.visualViewport as any, { height: 900, width: 520 });
+    Object.assign(window.visualViewport as object, { height: 900, width: 520 });
     window.dispatchEvent(new Event('resize'));
     vi.runAllTimers();
 

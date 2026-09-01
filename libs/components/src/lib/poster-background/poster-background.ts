@@ -1,21 +1,29 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken } from '@services/api/api-store';
-import { getProxyImageUrl } from '../../collection/utils/proxy-image-url-util';
-import { mainStateToken } from '../main-store';
-import { DESKTOP_HEIGHT_BUFFER, HEIGHT_BUFFER, WIDTH_BUFFER } from './background-const';
-import { BackgroundImagesModel } from './background-model';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
+import { getProxyImageUrl } from '@shared/utils/proxy-image-url-util';
 import { randomInt } from '@shared/utils/random-int-util';
-import { debounceTime, filter, fromEvent, map, merge } from 'rxjs';
+import { catchError, debounceTime, filter, fromEvent, map, merge, of } from 'rxjs';
+import { DESKTOP_HEIGHT_BUFFER, HEIGHT_BUFFER, WIDTH_BUFFER } from './poster-background-const';
+import { PosterBackgroundImagesModel } from './poster-background-model';
 
 @Component({
-  selector: 'ct-background',
-  templateUrl: './background.html',
-  styleUrl: './background.css',
+  selector: 'libc-poster-background',
+  templateUrl: './poster-background.html',
+  styleUrl: './poster-background.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.--window-height]': 'windowHeight() + "px"',
@@ -24,10 +32,9 @@ import { debounceTime, filter, fromEvent, map, merge } from 'rxjs';
     'aria-hidden': 'true',
   },
 })
-export class Background {
-  private readonly api = inject(ApiService);
+export class PosterBackground {
+  private readonly api = inject(PublicApiService);
   private readonly apiState = inject(apiStateToken);
-  private readonly mainState = inject(mainStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private get isTextInputFocused(): boolean {
@@ -40,9 +47,10 @@ export class Background {
   private get viewportWidth(): number {
     return window.visualViewport?.width ?? window.innerWidth;
   }
-  protected readonly images = signal<BackgroundImagesModel>([]);
-  protected readonly imageWidth = 90; // px
-  protected readonly imageHeight = 125; // px
+  public readonly refreshTrigger = input(0);
+  protected readonly images = signal<PosterBackgroundImagesModel>([]);
+  protected readonly imageWidth = 90;
+  protected readonly imageHeight = 125;
   protected readonly windowHeight = signal(this.viewportHeight);
   protected readonly windowWidth = signal(this.viewportWidth);
   private lastViewportHeight = this.viewportHeight;
@@ -51,8 +59,8 @@ export class Background {
 
   constructor() {
     effect(() => {
-      this.mainState.state.backgroundImagesRefreshTrigger();
-      untracked(() => this.loadRandomImages());
+      this.refreshTrigger();
+      untracked(() => this.loadImages());
     });
 
     const resizeEvent$ = mobileUserAgent()
@@ -78,10 +86,13 @@ export class Background {
       });
   }
 
-  private loadRandomImages(): void {
+  private loadImages(): void {
     this.api
-      .getRandomImages(50)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .getBackgroundImages()
+      .pipe(
+        catchError(() => of({ images: [] })),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe((response) => {
         this.imageUrls = response.images;
         this.setImages(this.windowHeight(), this.windowWidth());
@@ -94,7 +105,7 @@ export class Background {
       return;
     }
 
-    const images: BackgroundImagesModel = [];
+    const images: PosterBackgroundImagesModel = [];
     const startY = -Math.ceil(viewportHeight / 2);
     const targetY = Math.ceil(viewportHeight * 1.5);
     let x = 0;

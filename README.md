@@ -108,7 +108,7 @@ See [Docker deployment](./docs/docker.md) for GHCR tags, runtime variables, Olla
 
 ## Environment
 
-The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates both files from [apps/server/scripts](./apps/server/scripts) when they are missing.
+The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. Animated backgrounds read IMDb IDs from `.data/background.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates those files from [apps/server/scripts](./apps/server/scripts) when they are missing.
 
 `JWT_SECRET` and `COOKIE_SECRET` must be non-empty, and `SALT` must be explicitly configured. Keep `SALT` unchanged after users or data have been created because it participates in persisted hashes. Docker generates and persists all three values when it creates `/data/.env` on first start; it never replaces an existing file.
 
@@ -119,7 +119,7 @@ Docker deployments also support these container-level variables:
 | `BASE_PATH`           | _(empty)_                | URL subpath prefix, such as `/collection-tracker`.                                           |
 | `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL used by the server health endpoint to check the nginx frontend.                          |
 | `HEALTH_RATE_LIMIT`   | `60`                     | Public health and authenticated diagnostics requests allowed per client IP per minute.       |
-| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy requests allowed per client IP per minute.                                       |
+| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy and public background-image list requests allowed per client IP per minute.      |
 | `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address. |
 | `APP_PORT`            | `3001`                   | Host port mapped to the container nginx listener.                                            |
 | `APP_UID`             | `1000`                   | Runtime user ID for Docker writable files. Use `$(id -u)` on Linux.                          |

@@ -23,7 +23,6 @@ import {
   MarkAllUncompletedApiResponseModel,
   MarkAllCompletedApiResponseModel,
   CompletedApiResponseModel,
-  RandomImagesApiResponseModel,
   RefreshExternalRatingsApiResponseModel,
   RefreshImagesApiResponseModel,
   RenameTagApiResponseModel,
@@ -85,10 +84,6 @@ export class ApiService extends BaseApiService {
 
   public getRandomItem(): Observable<CollectionItemApiModel> {
     return this.request('GET', '/collection-items/random');
-  }
-
-  public getRandomImages(count = 10): Observable<RandomImagesApiResponseModel> {
-    return this.request('GET', `/collection-items/random-images${this.buildQuery({ count })}`);
   }
 
   public markAllMoviesAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {

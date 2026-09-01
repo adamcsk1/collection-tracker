@@ -522,12 +522,7 @@ describe('ApiService', () => {
     await expect(searchPromise).resolves.toEqual({ results: [] });
   });
 
-  it('uses default limits for random images and suggestions', async () => {
-    const randomImagesPromise = lastValueFrom(service.getRandomImages());
-    const randomImagesRequest = httpMock.expectOne('https://api.test/collection-items/random-images?count=10');
-    randomImagesRequest.flush({ data: { images: [] } });
-    await randomImagesPromise;
-
+  it('uses default limits for suggestions', async () => {
     const itemSuggestionsPromise = lastValueFrom(service.getItemSearchSuggestions('matrix'));
     const itemSuggestionsRequest = httpMock.expectOne(
       'https://api.test/collection-items/suggestions?query=matrix&limit=10'

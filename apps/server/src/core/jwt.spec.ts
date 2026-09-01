@@ -1,6 +1,6 @@
 import { COOKIE_TOKEN } from './cookie/cookie-const';
 import { getDatabase } from './database/database';
-import { generateAccessToken, generateRefreshToken, jwtGuard } from './jwt';
+import { generateAccessToken, generateRefreshToken, jwtGuard, optionalJwtGuard } from './jwt';
 import { debugLog } from './logger';
 import type { FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
@@ -126,6 +126,59 @@ describe('jwt utilities', () => {
     );
 
     expect(response.code).toHaveBeenCalledWith(500);
+  });
+
+  it('optionalJwtGuard continues without a username when no token is provided', async () => {
+    const response = mockResponse();
+    const request = mockRequest({ url: '/images/proxy' });
+
+    await optionalJwtGuard(request, response);
+
+    expect(response.code).not.toHaveBeenCalled();
+    expect(request.username).toBeUndefined();
+    expect(request.usernameHash).toBeUndefined();
+  });
+
+  it('optionalJwtGuard continues anonymously when the token is expired', async () => {
+    const token = jwt.sign({ username: 'user' }, 'secret', { expiresIn: '-1s' });
+    const response = mockResponse();
+    const request = mockRequest({ cookies: { [COOKIE_TOKEN]: token }, url: '/images/proxy' });
+
+    await optionalJwtGuard(request, response);
+
+    expect(response.code).not.toHaveBeenCalled();
+    expect(request.username).toBeUndefined();
+    expect(request.usernameHash).toBeUndefined();
+  });
+
+  it('optionalJwtGuard continues anonymously when the token is invalid', async () => {
+    const response = mockResponse();
+    const request = mockRequest({
+      headers: { authorization: 'Bearer invalid' },
+      url: '/images/proxy',
+    });
+
+    await optionalJwtGuard(request, response);
+
+    expect(response.code).not.toHaveBeenCalled();
+    expect(request.username).toBeUndefined();
+  });
+
+  it('optionalJwtGuard validates a token when one is provided', async () => {
+    const token = jwt.sign({ username: 'optional-user' }, 'secret');
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-optional-user', 'token');
+    db.prepare(
+      'INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('hashed-optional-user', `hashed-${token}`, 'now', 'agent', null);
+    const response = mockResponse();
+    const request = mockRequest({ cookies: { [COOKIE_TOKEN]: token }, url: '/images/proxy' });
+
+    await optionalJwtGuard(request, response);
+
+    expect(response.code).not.toHaveBeenCalled();
+    expect(request.username).toBe('optional-user');
+    expect(request.usernameHash).toBe('hashed-optional-user');
   });
 
   it('jwtGuard rejects token payloads without username', async () => {

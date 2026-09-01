@@ -7,7 +7,7 @@
 </div>
 @if (useAnimatedBackground()) {
   @defer (on idle) {
-    <ct-background />
+    <libc-poster-background [refreshTrigger]="backgroundImagesRefreshTrigger()" />
   }
 }
 <libc-spinner-loading />

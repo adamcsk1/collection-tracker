@@ -2,8 +2,9 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { IMAGE_RATE_LIMIT_GROUP_ID } from '../core/constants/rate-limit-const';
 import { IMAGE_PROXY_QUEUE_TIMEOUT_MS } from '../core/image/image-proxy-const';
+import { isBackgroundImageUrl } from '../core/background/background';
 import { fetchAndCacheImageWithDetails, getCachedImage } from '../core/image/image-proxy';
-import { jwtGuard } from '../core/jwt';
+import { optionalJwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getGroupedRateLimitHook, getImageRateLimit } from '../core/utils/rate-limit-util';
 
@@ -12,11 +13,29 @@ export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/images/proxy`,
     {
-      preHandler: [getGroupedRateLimitHook(app, IMAGE_RATE_LIMIT_GROUP_ID, rateLimit), jwtGuard],
+      preHandler: [getGroupedRateLimitHook(app, IMAGE_RATE_LIMIT_GROUP_ID, rateLimit), optionalJwtGuard],
       config: { rateLimit: { max: rateLimit, timeWindow: '1 minute', groupId: IMAGE_RATE_LIMIT_GROUP_ID } },
     },
     withErrorHandler(async (request, response) => {
       const sourceUrl = String((request.query as Record<string, unknown>).url ?? '');
+
+      if (!request.usernameHash) {
+        if (!isBackgroundImageUrl(sourceUrl)) {
+          response.code(401).send();
+          return;
+        }
+
+        const allowlisted = await getCachedImage(sourceUrl);
+        if (allowlisted) {
+          response.header('Content-Type', allowlisted.contentType);
+          response.header('Cache-Control', 'public, max-age=31536000, immutable');
+          response.send(allowlisted.buffer);
+          return;
+        }
+
+        response.code(404).send();
+        return;
+      }
 
       const cached = await getCachedImage(sourceUrl);
       if (cached) {

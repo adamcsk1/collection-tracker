@@ -71,7 +71,7 @@ export interface CollectionItemExistsApiResponseModel {
 
 export type CollectionItemExternalIdentityApiModel = ExternalItemIdentityModel;
 
-export interface RandomImagesApiResponseModel {
+export interface BackgroundImagesApiResponseModel {
   images: string[];
 }
 

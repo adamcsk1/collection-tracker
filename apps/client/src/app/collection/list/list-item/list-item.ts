@@ -10,7 +10,7 @@ import { TagManagementColorPipe } from '../../../tag-management/tag-management-c
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { setCollectionItemQuery } from '../../utils/collection-item-route-util';
-import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
+import { getProxyImageUrl } from '@shared/utils/proxy-image-url-util';
 import { ListItemCard } from '../list-item-card/list-item-card';
 import { ListItemCardRatingModel } from '../list-item-card/list-item-card-model';
 

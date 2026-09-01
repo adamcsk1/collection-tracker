@@ -46,34 +46,29 @@ export const generateRefreshToken = async (
   }
 };
 
-export const jwtGuard = async (request: FastifyRequest, response: FastifyReply): Promise<void> => {
-  await debugLog(`Validating access token (${getRequestPath(request.url)})`);
-
+const getRequestAccessToken = (request: FastifyRequest): string => {
   const signedCookieToken = request.cookies[COOKIE_TOKEN];
   const cookieToken = signedCookieToken ? request.unsignCookie(signedCookieToken).value : undefined;
   const authorizationToken = request.headers['authorization'];
   let token = cookieToken || authorizationToken || '';
   if (token.includes('Bearer ')) token = token.split(' ')[1];
+  return token;
+};
 
-  if (!token) {
-    await debugLog('No token found');
-    response.code(401).send();
-    return;
-  }
+type AccessTokenResult = 'ok' | 'missing-secret' | 'expired' | 'invalid' | 'error';
 
+const applyAccessToken = async (request: FastifyRequest, token: string): Promise<AccessTokenResult> => {
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     await errorLog('Access token validation error (JWT secret is not configured)');
-    response.code(500).send();
-    return;
+    return 'missing-secret';
   }
 
   try {
     const data = jwt.verify(token, jwtSecret);
     if (!hasUsername(data)) {
       await debugLog('Access token payload is invalid');
-      response.code(403).send();
-      return;
+      return 'invalid';
     }
 
     const { username } = data;
@@ -82,22 +77,53 @@ export const jwtGuard = async (request: FastifyRequest, response: FastifyReply):
 
     if (!hasAccessToken(getDatabase(), usernameHash, tokenHash)) {
       await debugLog('Access token not recognized');
-      response.code(403).send();
-      return;
+      return 'invalid';
     }
 
     request.username = username;
     request.usernameHash = usernameHash;
 
     await debugLog('Access token validated successfully');
+    return 'ok';
   } catch (error: unknown) {
     if (error instanceof jwt.JsonWebTokenError) {
       await debugLog(`Access token verification failed (${error.message})`);
-      response.code(error.name === 'TokenExpiredError' ? 401 : 403).send();
-      return;
+      return error.name === 'TokenExpiredError' ? 'expired' : 'invalid';
     }
 
     if (error instanceof Error) await errorLog(`Access token validation unknown error (${error.message})`);
-    response.code(500).send();
+    return 'error';
+  }
+};
+
+const sendAccessTokenFailure = (response: FastifyReply, result: Exclude<AccessTokenResult, 'ok'>): void => {
+  if (result === 'expired') response.code(401).send();
+  else if (result === 'missing-secret' || result === 'error') response.code(500).send();
+  else response.code(403).send();
+};
+
+export const jwtGuard = async (request: FastifyRequest, response: FastifyReply): Promise<void> => {
+  await debugLog(`Validating access token (${getRequestPath(request.url)})`);
+
+  const token = getRequestAccessToken(request);
+  if (!token) {
+    await debugLog('No token found');
+    response.code(401).send();
+    return;
+  }
+
+  const result = await applyAccessToken(request, token);
+  if (result !== 'ok') sendAccessTokenFailure(response, result);
+};
+
+export const optionalJwtGuard = async (request: FastifyRequest, response: FastifyReply): Promise<void> => {
+  const token = getRequestAccessToken(request);
+  if (!token) return;
+
+  await debugLog(`Validating access token (${getRequestPath(request.url)})`);
+  const result = await applyAccessToken(request, token);
+  if (result === 'ok') return;
+  if (result === 'missing-secret' || result === 'error') {
+    sendAccessTokenFailure(response, result);
   }
 };

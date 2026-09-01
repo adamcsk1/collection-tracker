@@ -514,24 +514,6 @@ export const findRandomCollectionItem = (
   return row ? toApiItem(db, row, viewerUsernameHash) : undefined;
 };
 
-export const findRandomCollectionImages = (
-  db: Database.Database,
-  viewerUsernameHash: string,
-  count: number
-): string[] => {
-  const scope = buildReadableItemScope(viewerUsernameHash, { listType: 'library' });
-  const rows = db
-    .prepare(
-      `SELECT image FROM collection_items
-       WHERE image != ?
-          AND ${scope.where.join(' AND ')}
-          ORDER BY RANDOM() LIMIT ?`
-    )
-    .all('', ...scope.params, count) as Array<{ image: string }>;
-
-  return rows.map((row) => row.image);
-};
-
 export const countCollectionItems = (
   db: Database.Database,
   usernameHashes: string[],

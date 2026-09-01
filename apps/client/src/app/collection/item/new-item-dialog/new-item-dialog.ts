@@ -44,7 +44,7 @@ import { mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { ListItemCard } from '../../list/list-item-card/list-item-card';
-import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
+import { getProxyImageUrl } from '@shared/utils/proxy-image-url-util';
 import { ItemFormModel } from '../item-form/item-form-model';
 import {
   isImdbIdValid,

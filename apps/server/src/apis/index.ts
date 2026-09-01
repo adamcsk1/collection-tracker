@@ -47,7 +47,7 @@ import { register as registerProxyExternalMetadataProviders } from './proxy-exte
 import { register as registerProxyExternalMetadataItem } from './proxy-get-external-metadata-item-api';
 import { register as registerProxyImage } from './proxy-image-api';
 import { register as registerProxyExternalMetadataSearch } from './proxy-external-metadata-search-api';
-import { register as registerRandomImages } from './random-images-api';
+import { register as registerBackgroundImages } from './background-images-api';
 import { register as registerRefreshExternalRatings } from './refresh-external-ratings-api';
 import { register as registerRefreshImages } from './refresh-images-api';
 import { register as registerRandomItem } from './random-item-api';
@@ -82,7 +82,6 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerGetCollectionItemShares(app);
   registerReplaceCollectionItemShares(app);
   registerRandomItem(app);
-  registerRandomImages(app);
   registerMarkAllMoviesCompleted(app);
   registerMarkAllMoviesUncompleted(app);
   registerMarkAllSeriesCompleted(app);
@@ -121,6 +120,7 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerProxyExternalMetadataProviders(app);
   registerProxyExternalMetadataSearch(app);
   registerProxyExternalMetadataItem(app);
+  registerBackgroundImages(app);
   registerProxyImage(app);
   registerProxyAi(app);
   registerProxyAiAvailable(app);

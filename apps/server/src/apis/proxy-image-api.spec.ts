@@ -69,6 +69,8 @@ describe('proxy-image-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doUnmock('../core/background/background');
+    vi.doUnmock('../core/image/image-proxy');
     vi.unstubAllGlobals();
     upstreamResponses = [
       {
@@ -84,7 +86,7 @@ describe('proxy-image-api', () => {
   it('returns 400 when url is missing or unsupported', async () => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
     const response = createResponse();
-    const request: any = { query: { url: 'file:///tmp/image.png' } };
+    const request: any = { usernameHash: 'user', query: { url: 'file:///tmp/image.png' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await importApi(dataFolder);
@@ -107,7 +109,7 @@ describe('proxy-image-api', () => {
     const image = Buffer.from('image-bytes');
 
     const { register } = await importApi(dataFolder);
-    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const request: any = { usernameHash: 'user', query: { url: 'https://images.example/poster.png' } };
     const firstResponse = createResponse();
     const firstApp = buildApp(request, firstResponse);
     register(firstApp.app);
@@ -149,6 +151,7 @@ describe('proxy-image-api', () => {
     ];
     const response = createResponse();
     const request: any = {
+      usernameHash: 'user',
       query: { url: 'https://covers.openlibrary.org/b/id/13430209-M.jpg?default=false' },
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -185,7 +188,7 @@ describe('proxy-image-api', () => {
       },
     ];
     const response = createResponse();
-    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const request: any = { usernameHash: 'user', query: { url: 'https://images.example/poster.png' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await importApi(dataFolder);
@@ -203,7 +206,7 @@ describe('proxy-image-api', () => {
       body: Buffer.from(''),
     }));
     const response = createResponse();
-    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const request: any = { usernameHash: 'user', query: { url: 'https://images.example/poster.png' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await importApi(dataFolder);
@@ -218,7 +221,7 @@ describe('proxy-image-api', () => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
     upstreamResponses = [{ statusCode: 200, headers: { 'content-type': 'text/html' }, body: Buffer.from('html') }];
     const response = createResponse();
-    const request: any = { query: { url: 'https://images.example/poster' } };
+    const request: any = { usernameHash: 'user', query: { url: 'https://images.example/poster' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await importApi(dataFolder);
@@ -232,7 +235,7 @@ describe('proxy-image-api', () => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
     upstreamResponses = [{ statusCode, headers: {}, body: Buffer.from('') }];
     const response = createResponse();
-    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const request: any = { usernameHash: 'user', query: { url: 'https://images.example/poster.png' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await importApi(dataFolder);
@@ -245,7 +248,10 @@ describe('proxy-image-api', () => {
   it('rejects localhost and private network targets', async () => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
     const localhostResponse = createResponse();
-    const localhostApp = buildApp({ query: { url: 'http://localhost/poster.png' } }, localhostResponse);
+    const localhostApp = buildApp(
+      { usernameHash: 'user', query: { url: 'http://localhost/poster.png' } },
+      localhostResponse
+    );
 
     const { register } = await importApi(dataFolder);
     register(localhostApp.app);
@@ -254,7 +260,10 @@ describe('proxy-image-api', () => {
     expect(localhostResponse.code).toHaveBeenCalledWith(400);
 
     const privateResponse = createResponse();
-    const privateApp = buildApp({ query: { url: 'http://192.168.1.10/poster.png' } }, privateResponse);
+    const privateApp = buildApp(
+      { usernameHash: 'user', query: { url: 'http://192.168.1.10/poster.png' } },
+      privateResponse
+    );
     register(privateApp.app);
 
     await privateApp.handlerPromise();
@@ -271,7 +280,7 @@ describe('proxy-image-api', () => {
       },
     ];
     const response = createResponse();
-    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const request: any = { usernameHash: 'user', query: { url: 'https://images.example/poster.png' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await importApi(dataFolder);
@@ -288,7 +297,7 @@ describe('proxy-image-api', () => {
       getCachedImage: vi.fn(() => null),
     }));
     const response = createResponse();
-    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const request: any = { usernameHash: 'user', query: { url: 'https://images.example/poster.png' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await importApi(dataFolder);
@@ -297,5 +306,55 @@ describe('proxy-image-api', () => {
     await handlerPromise();
     expect(response.header).toHaveBeenCalledWith('Retry-After', 10);
     expect(response.code).toHaveBeenCalledWith(503);
+  });
+
+  it('rejects unauthenticated requests for URLs outside the background allowlist', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    const response = createResponse();
+    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(401);
+    expect(upstreamRequest).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 for unauthenticated allowlisted URLs that are not cached', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    vi.doMock('../core/background/background', () => ({ isBackgroundImageUrl: () => true }));
+    const response = createResponse();
+    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(404);
+    expect(upstreamRequest).not.toHaveBeenCalled();
+  });
+
+  it('serves cached bytes for unauthenticated allowlisted URLs', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    const image = Buffer.from('background-bytes');
+    vi.doMock('../core/background/background', () => ({ isBackgroundImageUrl: () => true }));
+    vi.doMock('../core/image/image-proxy', () => ({
+      getCachedImage: vi.fn(async () => ({ contentType: 'image/jpeg', buffer: image })),
+      fetchAndCacheImageWithDetails: vi.fn(),
+    }));
+    const response = createResponse();
+    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(response.header).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+    expect(response.send).toHaveBeenCalledWith(image);
+    expect(upstreamRequest).not.toHaveBeenCalled();
   });
 });

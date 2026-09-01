@@ -13,6 +13,7 @@ Source: [`libs/components`](../libs/components)
 - `details`: wrapper around native expandable panels
 - `dialog-shell`: shared dialog layout for portal-driven overlays
 - `input`: reusable text and password input
+- `poster-background`: floating poster animation used by login and the client shell
 - `link-button`: router-aware link styled as a button
 - `reveal-label`: touch-hold behavior for icon buttons whose labels expand on fine pointers
 - `select`: typed select component

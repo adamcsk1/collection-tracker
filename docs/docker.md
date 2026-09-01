@@ -38,7 +38,7 @@ docker run --rm \
 - The client application is served from `/client/`.
 - The health application is served from `/health/`.
 - `/api/` is proxied to the Node server on `127.0.0.1:3000`.
-- `/data` is the writable volume for `.env`, `ollama.config.json`, the SQLite database, logs, and image cache files.
+- `/data` is the writable volume for `.env`, `ollama.config.json`, `background.config.json`, the SQLite database, logs, and image cache files.
 
 When `/data/.env` does not exist, the container creates it with independent cryptographically random `JWT_SECRET`, `COOKIE_SECRET`, and `SALT` values and mode `0600`. The file is reused unchanged on later starts. An existing file missing `JWT_SECRET`, `COOKIE_SECRET`, or `SALT` causes startup to fail rather than silently rotating credentials.
 
@@ -97,6 +97,8 @@ Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "
 
 The Docker default uses `host.docker.internal` so the container can reach Ollama running on the Docker host. Docker Compose maps that name to the host gateway for Linux hosts.
 
+`/data/background.config.json` is created with default IMDb IDs when missing and is never overwritten. Edit it to change the animated poster background. Without `OMDB_API_KEY`, the public background list stays empty.
+
 ## Environment Variables
 
 | Variable              | Default                  | Description                                                                                                      |
@@ -104,7 +106,7 @@ The Docker default uses `host.docker.internal` so the container can reach Ollama
 | `BASE_PATH`           | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.      |
 | `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.  |
 | `HEALTH_RATE_LIMIT`   | `60`                     | Public health and authenticated health-diagnostics requests allowed per client IP per minute.                    |
-| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy requests allowed per client IP per minute.                                                           |
+| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy and public background-image list requests allowed per client IP per minute.                          |
 | `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                     |
 | `APP_PORT`            | `3001`                   | Host port mapped to the container's nginx listener.                                                              |
 | `APP_UID`             | `1000`                   | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |

@@ -107,6 +107,46 @@ EOF
   chmod 600 /data/ollama.config.json
 fi
 
+if [ ! -f "/data/background.config.json" ]; then
+  echo "INFO: /data/background.config.json not found. Creating a default one."
+  cat > /data/background.config.json <<'EOF'
+{
+  "imdbIds": [
+    "tt0111161",
+    "tt0068646",
+    "tt0468569",
+    "tt0071562",
+    "tt0050083",
+    "tt0108052",
+    "tt0167260",
+    "tt0110912",
+    "tt0120737",
+    "tt0060196",
+    "tt0109830",
+    "tt0137523",
+    "tt0167261",
+    "tt1375666",
+    "tt0080684",
+    "tt0133093",
+    "tt0099685",
+    "tt0073486",
+    "tt0816692",
+    "tt0114369",
+    "tt0038650",
+    "tt0047478",
+    "tt0102926",
+    "tt0120815",
+    "tt0317248",
+    "tt0118799",
+    "tt0120689",
+    "tt0103064",
+    "tt0076759",
+    "tt0245429"
+  ]
+}
+EOF
+fi
+
 # Run node server
 NODE_ENV=${NODE_ENV:-production} \
 HOST=${HOST:-0.0.0.0} \

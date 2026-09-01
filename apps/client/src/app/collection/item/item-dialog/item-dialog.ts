@@ -33,7 +33,7 @@ import { CollectionService } from '../../collection-service';
 import { clearCollectionItemQuery, setCollectionItemQuery } from '../../utils/collection-item-route-util';
 import { SeriesSeasonMetadataDialog } from '../../tracking/series-season-metadata-dialog/series-season-metadata-dialog';
 import { CompletedEpisodesDialog } from '../../tracking/completed-episodes-dialog/completed-episodes-dialog';
-import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
+import { getProxyImageUrl } from '@shared/utils/proxy-image-url-util';
 import { formatTrackingEpisode } from '../../tracking/utils/tracking-progress-util';
 import { filterDisplayTags } from '../../validators/tag-validators';
 import {

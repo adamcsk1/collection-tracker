@@ -19,6 +19,7 @@ import { SERVER_MAX_PARAM_LENGTH } from './main-const';
 import { apiResponseHook } from './utils/api-response-util';
 import { validateEnvironment } from './utils/environment-util';
 import { getRequestPath } from './utils/request-url-util';
+import { warmBackgroundImages } from './background/background';
 
 export const logIncomingRequest = async (request: Pick<FastifyRequest, 'url'>): Promise<void> => {
   await debugLog(`Incoming request: ${getRequestPath(request.url)}`);
@@ -106,6 +107,7 @@ export const main = async () => {
 
     await app.listen({ port: Number(process.env.PORT), host: `${process.env.HOST}` });
     infoLog(`[ ready ] http://${process.env.HOST}:${process.env.PORT}`);
+    void warmBackgroundImages();
   } catch (error: unknown) {
     if (error instanceof Error) errorLog(`Server start unknown error (${error.message})`);
     process.exit(1);

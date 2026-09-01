@@ -897,7 +897,7 @@ components:
           type: string
           description: Content hash of the existing item, when it exists.
 
-    RandomImagesResponse:
+    BackgroundImagesResponse:
       type: object
       required: [images]
       properties:
@@ -905,6 +905,8 @@ components:
           type: array
           items:
             type: string
+            format: uri
+          description: Cached source image URLs suitable for GET /images/proxy?url=.
 
     CollectionStatisticsResponse:
       oneOf:
@@ -1951,12 +1953,12 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/CollectionItemExistsResponse'
-    RandomImagesEnvelope:
+    BackgroundImagesEnvelope:
       type: object
       required: [data]
       properties:
         data:
-          $ref: '#/components/schemas/RandomImagesResponse'
+          $ref: '#/components/schemas/BackgroundImagesResponse'
     CollectionStatisticsEnvelope:
       type: object
       required: [data]
@@ -2076,7 +2078,7 @@ tags:
   - name: External Metadata Proxy
     description: Proxy endpoints for external metadata providers. OMDb is used when `OMDB_API_KEY` is configured; Open Library is always available for book metadata.
   - name: Image Proxy
-    description: Cached proxy endpoint for external collection item images.
+    description: Cached proxy for external images, plus the public animated-background URL list.
   - name: AI Proxy
     description: Proxy endpoint for local Ollama AI search.
   - name: Tag
@@ -2820,36 +2822,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /collection-items/random-images:
-    get:
-      operationId: getRandomImages
-      summary: Get random collection image URLs
-      description: Returns random library image URLs from caller-owned items and exact readable shared library/content scopes.
-      tags: [Collection]
-      parameters:
-        - name: count
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 50
-            default: 10
-      responses:
-        '200':
-          description: Random image URLs.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RandomImagesEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -4012,15 +3984,41 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
+  /images/background:
+    get:
+      operationId: getBackgroundImages
+      summary: Get cached animated-background image URLs
+      security: []
+      description: >-
+        Returns source image URLs from `background.config.json` that are already in the image proxy cache.
+        Unauthenticated. Suitable as the `url` query value for GET /images/proxy. After startup the server resolves
+        IMDb IDs through the configured movie metadata provider and caches missing posters. Missing provider credentials
+        yield an empty list.
+      tags: [Image Proxy]
+      responses:
+        '200':
+          description: Cached background image URLs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundImagesEnvelope'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /images/proxy:
     get:
       operationId: proxyImage
       summary: Proxy and cache an external image
+      security: []
       description: >-
         Fetches a public HTTP or HTTPS image URL, caches the bytes on the server, and returns the image with long-lived
-        cache headers. Safe public redirects are followed (limited hop count) with SSRF checks on each hop. Localhost,
-        private-network targets, unsafe/unresolvable redirects, and oversized responses are rejected. Queue saturation or
-        queue wait timeout returns 503 with Retry-After guidance.
+        cache headers. Authenticated requests follow safe public redirects (limited hop count) with SSRF checks on each
+        hop. Unauthenticated requests only serve cached bytes for URLs returned by GET /images/background; other URLs
+        return 401 and allowlisted cache misses return 404 without fetching. Localhost, private-network targets,
+        unsafe/unresolvable redirects, and oversized responses are rejected. Queue saturation or queue wait timeout
+        returns 503 with Retry-After guidance.
       tags: [Image Proxy]
       parameters:
         - name: url
@@ -4065,6 +4063,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':

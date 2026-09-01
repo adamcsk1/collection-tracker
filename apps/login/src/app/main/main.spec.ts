@@ -24,7 +24,7 @@ describe('Main component', () => {
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
   let blockerState: NgxSimpleSignalStoreService<BlockerLoadingState>;
-  let apiService: { validateSession: Mock };
+  let apiService: { validateSession: Mock; getBackgroundImages: Mock };
   let webStorage: { getItem: Mock; setItem: Mock; removeItem: Mock };
   let themeService: { listen: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
@@ -36,7 +36,7 @@ describe('Main component', () => {
   };
 
   beforeEach(() => {
-    apiService = { validateSession: vi.fn(() => EMPTY) };
+    apiService = { validateSession: vi.fn(() => EMPTY), getBackgroundImages: vi.fn(() => EMPTY) };
     webStorage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),

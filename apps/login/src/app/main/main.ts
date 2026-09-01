@@ -1,6 +1,7 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
+import { PosterBackground } from '@components/poster-background/poster-background';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { Toast } from '@components/toast/toast';
 import { apiStateToken } from '@services/api/api-store';
@@ -17,7 +18,7 @@ import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, Toast, BlockerLoading],
+  imports: [RouterOutlet, Toast, BlockerLoading, PosterBackground],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

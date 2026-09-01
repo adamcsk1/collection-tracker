@@ -37,6 +37,27 @@ describe('PublicApiService', () => {
     httpMock.verify();
   });
 
+  it('returns background image URLs without alerting on failure', async () => {
+    const promise = lastValueFrom(service.getBackgroundImages());
+
+    const request = httpMock.expectOne('https://api.test/images/background');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: { images: ['https://images.example/poster.jpg'] } });
+
+    await expect(promise).resolves.toEqual({ images: ['https://images.example/poster.jpg'] });
+  });
+
+  it('suppresses the alert when background images fail', async () => {
+    const promise = lastValueFrom(service.getBackgroundImages());
+
+    httpMock
+      .expectOne('https://api.test/images/background')
+      .flush({ title: 'Service Unavailable', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+
+    await expect(promise).rejects.toMatchObject({ status: 503 });
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
   it('returns health data on success', async () => {
     const healthData = {
       status: 'ok',

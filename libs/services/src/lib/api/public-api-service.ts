@@ -1,5 +1,9 @@
 import { Injectable } from '@angular/core';
-import type { HealthApiResponseModel, SignUpApiResponseModel } from '@shared/models/api-model';
+import type {
+  BackgroundImagesApiResponseModel,
+  HealthApiResponseModel,
+  SignUpApiResponseModel,
+} from '@shared/models/api-model';
 import { Observable } from 'rxjs';
 import type { ApiRequestOptions } from './api-request-model';
 import { BaseApiService } from './base-api-service';
@@ -10,6 +14,10 @@ import { BaseApiService } from './base-api-service';
 export class PublicApiService extends BaseApiService {
   public getHealth(options: ApiRequestOptions = {}): Observable<HealthApiResponseModel> {
     return this.request('GET', '/health', undefined, options);
+  }
+
+  public getBackgroundImages(): Observable<BackgroundImagesApiResponseModel> {
+    return this.request('GET', '/images/background', undefined, { suppressErrorAlert: true });
   }
 
   public signUp(username: string): Observable<SignUpApiResponseModel> {
