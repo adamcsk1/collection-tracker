@@ -631,21 +631,56 @@ describe('Collection — order controls', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderDirectionAscButton().click();
     waitForItemsRequestIncluding(['orderDirection=asc']);
+    cy.url().should('include', 'orderDirection=asc');
+    cy.url().should('not.include', 'orderBy=');
     expectVisibleTitles(['Order Alpha', 'Order Charlie', 'Order Bravo']);
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderByAlphabetButton().click();
     waitForItemsRequestIncluding(['orderBy=alphabet']);
+    cy.url().should('include', 'orderBy=alphabet');
+    cy.url().should('include', 'orderDirection=asc');
     expectVisibleTitles(['Order Alpha', 'Order Bravo', 'Order Charlie']);
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderDirectionDescButton().click();
     waitForItemsRequestIncluding(['orderDirection=desc']);
+    cy.url().should('include', 'orderBy=alphabet');
+    cy.url().should('not.include', 'orderDirection=');
     expectVisibleTitles(['Order Charlie', 'Order Bravo', 'Order Alpha']);
 
     cy.reload();
     waitForItemsRequestIncluding(['orderBy=alphabet', 'orderDirection=desc']);
+    cy.url().should('include', 'orderBy=alphabet');
     expectVisibleTitles(['Order Charlie', 'Order Bravo', 'Order Alpha']);
+  });
+
+  it('applies order from the query string', () => {
+    seedItems([
+      buildCollectionItem('Query Alpha', 'movie', 'tt8400031'),
+      buildCollectionItem('Query Charlie', 'movie', 'tt8400032'),
+      buildCollectionItem('Query Bravo', 'movie', 'tt8400033'),
+    ]);
+    cy.intercept('GET', '/api/v1/collection-items*').as('getItems');
+    CollectionPage.visitLibraryWithQuery('orderBy=alphabet&orderDirection=asc');
+    waitForItemsRequestIncluding(['orderBy=alphabet', 'orderDirection=asc']);
+    cy.url().should('include', 'orderBy=alphabet');
+    cy.url().should('include', 'orderDirection=asc');
+    expectVisibleTitles(['Query Alpha', 'Query Bravo', 'Query Charlie']);
+  });
+
+  it('keeps order query params when an item is opened and closed', () => {
+    seedItems([buildCollectionItem('Order Url Movie', 'movie', 'tt8400034')]);
+    CollectionPage.visitLibraryWithQuery('orderBy=alphabet');
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', 'orderBy=alphabet');
+    cy.url().should('include', 'item=omdb:tt8400034');
+
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('include', 'orderBy=alphabet');
+    cy.url().should('not.include', 'item=');
   });
 
   it('keeps order preferences isolated per collection page', () => {
@@ -671,16 +706,21 @@ describe('Collection — order controls', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderDirectionAscButton().click();
     waitForItemsRequestIncluding(['orderBy=alphabet', 'orderDirection=asc']);
+    cy.url().should('include', 'orderBy=alphabet');
+    cy.url().should('include', 'orderDirection=asc');
     expectVisibleTitles(['Library Alpha', 'Library Bravo']);
 
     CommonPage.openMenu();
     CommonPage.getNavWishlistLink().click();
     waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=createdAt', 'orderDirection=desc']);
+    cy.url().should('include', '#/collection/wishlist');
+    cy.url().should('not.include', 'orderBy=');
     expectVisibleTitles(['Wishlist Bravo', 'Wishlist Alpha']);
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderByAlphabetButton().click();
     waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=alphabet']);
+    cy.url().should('include', 'orderBy=alphabet');
     cy.reload();
     waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=alphabet']);
     expectVisibleTitles(['Wishlist Bravo', 'Wishlist Alpha']);
@@ -886,7 +926,7 @@ describe('Collection — tracking series', () => {
     cy.request('PUT', '/api/v1/collection-items/omdb/tt8200001/tracking/seasons', {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    CollectionPage.visitTracking();
+    cy.reload();
 
     CollectionPage.getListItemImages().first().click();
     CollectionPage.expectItemDialogActionsVisible();

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
-import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -60,18 +60,18 @@ describe('ListItem', () => {
   let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
-  let portal: { open: ReturnType<typeof vi.fn> };
+  let router: { navigate: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    portal = { open: vi.fn() };
+    router = { navigate: vi.fn(() => Promise.resolve(true)) };
     translate = {
       translate: vi.fn((key: string) => ({ MetacriticShort: 'MC', RottenTomatoesShort: 'RT' })[key] ?? key),
     };
     TestBed.configureTestingModule({
       imports: [ListItem],
       providers: [
-        { provide: PortalService, useValue: portal },
+        { provide: Router, useValue: router },
         { provide: NgxSignalTranslateService, useValue: translate },
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
@@ -98,14 +98,15 @@ describe('ListItem', () => {
     expect(collectionState.state.searchText()).toBe('query');
   });
 
-  it('opens the item dialog with current collection item', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#action']));
+  it('writes the opened item to the query string', () => {
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Sample', ['#action']), externalItemId: 'tt1' });
     fixture.detectChanges();
 
     component['onOpenDetail']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
-      collectionItem: expect.objectContaining(buildItem('Sample', ['#action'])),
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: 'omdb:tt1' },
+      queryParamsHandling: 'merge',
     });
   });
 

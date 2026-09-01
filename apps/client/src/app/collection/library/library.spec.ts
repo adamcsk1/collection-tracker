@@ -225,4 +225,75 @@ describe('Collection library component', () => {
   it('keeps main collection reload trigger available for AI results', () => {
     expect(mainCollectionState.state.reloadTrigger()).toBe(0);
   });
+
+  it('writes a random library item to the query string', () => {
+    const router = TestBed.inject(Router);
+    api.getRandomItem.mockReturnValue(
+      of({
+        image: '',
+        title: 'Random',
+        titleLower: 'random',
+        genre: [],
+        IMDbId: 'tt-random',
+        externalProvider: 'omdb',
+        externalItemId: 'tt-random',
+        tags: [],
+        year: null,
+        rate: '',
+        rottenTomatoesRate: '',
+        metacriticRate: '',
+        userRate: null,
+        hash: '',
+        actors: '',
+        plot: '',
+        listType: 'library',
+        contentType: 'movie',
+        favorite: false,
+        watchedAt: null,
+        ownerShareCode: 'own-code',
+      })
+    );
+
+    fixture.componentInstance['onRandomPick']();
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: 'omdb:tt-random' },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('navigates to the random item list when it is not library', () => {
+    const router = TestBed.inject(Router);
+    api.getRandomItem.mockReturnValue(
+      of({
+        image: '',
+        title: 'Random Tracking',
+        titleLower: 'random tracking',
+        genre: [],
+        IMDbId: 'tt-track',
+        externalProvider: 'omdb',
+        externalItemId: 'tt-track',
+        tags: [],
+        year: null,
+        rate: '',
+        rottenTomatoesRate: '',
+        metacriticRate: '',
+        userRate: null,
+        hash: '',
+        actors: '',
+        plot: '',
+        listType: 'tracking',
+        contentType: 'movie',
+        favorite: false,
+        watchedAt: null,
+        ownerShareCode: 'own-code',
+      })
+    );
+
+    fixture.componentInstance['onRandomPick']();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/collection', 'tracking'], {
+      queryParams: { item: 'omdb:tt-track' },
+    });
+  });
 });

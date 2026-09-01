@@ -1,6 +1,6 @@
 import { ElementRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { collectionStateToken, initialCollectionState, type CollectionState } from '../collection-store';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
@@ -16,13 +16,14 @@ import {
 } from '@shared/models/api-model';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { initialTagManagementState, tagManagementStateToken } from '../../tag-management/tag-management-store';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
+import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { List } from './list';
 import { FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
@@ -32,7 +33,7 @@ vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 describe('List', () => {
   let fixture: ComponentFixture<List>;
   let component: List;
-  let portal: { open: ReturnType<typeof vi.fn> };
+  let portal: { open: ReturnType<typeof vi.fn>; closeAll: ReturnType<typeof vi.fn> };
   let api: {
     searchItems: Mock<
       (
@@ -52,6 +53,7 @@ describe('List', () => {
   let scrollSpy: ReturnType<typeof vi.fn>;
   let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
   let router: { navigate: ReturnType<typeof vi.fn> };
+  let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
     const search = searchText.trim();
@@ -84,8 +86,9 @@ describe('List', () => {
   });
 
   beforeEach(() => {
-    portal = { open: vi.fn() };
+    portal = { open: vi.fn(), closeAll: vi.fn() };
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
+    queryParamMap = new BehaviorSubject(convertToParamMap({}));
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     api = {
       searchItems: vi.fn(() => {
@@ -104,6 +107,10 @@ describe('List', () => {
       providers: [
         { provide: PortalService, useValue: portal },
         { provide: Router, useValue: router },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParams: {} }, queryParamMap },
+        },
         { provide: WebstorageService, useValue: webstorage },
         { provide: ApiService, useValue: api },
 
@@ -919,14 +926,26 @@ describe('List', () => {
 
   it('toggles order controls in both directions', () => {
     component['onToggleOrderBy']();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { orderBy: 'alphabet', orderDirection: null },
+      queryParamsHandling: 'merge',
+    });
     component['onToggleOrderDirection']();
     expect(component['orderBy']()).toBe('alphabet');
     expect(component['orderDirection']()).toBe('asc');
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { orderBy: 'alphabet', orderDirection: 'asc' },
+      queryParamsHandling: 'merge',
+    });
 
     component['onToggleOrderBy']();
     component['onToggleOrderDirection']();
     expect(component['orderBy']()).toBe('createdAt');
     expect(component['orderDirection']()).toBe('desc');
+    expect(router.navigate).toHaveBeenLastCalledWith([], {
+      queryParams: { orderBy: null, orderDirection: null },
+      queryParamsHandling: 'merge',
+    });
   });
 
   it.each([
@@ -1026,5 +1045,103 @@ describe('List', () => {
 
     expect(component['orderBy']()).toBe('alphabet');
     expect(component['orderDirection']()).toBe('asc');
+  });
+
+  it('applies order from query params over stored preferences', () => {
+    webstorage.getItem.mockReturnValue(JSON.stringify({ library: { orderBy: 'createdAt', orderDirection: 'desc' } }));
+    queryParamMap.next(convertToParamMap({ orderBy: 'alphabet', orderDirection: 'asc' }));
+    fixture.detectChanges();
+
+    expect(component['orderBy']()).toBe('alphabet');
+    expect(component['orderDirection']()).toBe('asc');
+  });
+
+  it('opens an item dialog from the item query param', () => {
+    const matchedItem = buildItem('Deep Link', 'tt-deep');
+    api.getMatchedItems.mockReturnValue(
+      of({ items: [matchedItem], page: { limit: 1, hasMore: false, nextCursor: null } })
+    );
+    fixture.detectChanges();
+
+    queryParamMap.next(convertToParamMap({ item: 'omdb:tt-deep' }));
+    fixture.detectChanges();
+
+    expect(api.getMatchedItems).toHaveBeenCalledWith({
+      identities: [{ source: 'omdb', id: 'tt-deep' }],
+      limit: 1,
+      filters: { listType: 'library' },
+    });
+    expect(portal.open).toHaveBeenCalledWith(ItemDialog, { collectionItem: matchedItem });
+  });
+
+  it('closes the opened item when the item query param is cleared', () => {
+    const matchedItem = buildItem('Deep Link', 'tt-deep');
+    api.getMatchedItems.mockReturnValue(
+      of({ items: [matchedItem], page: { limit: 1, hasMore: false, nextCursor: null } })
+    );
+    fixture.detectChanges();
+    queryParamMap.next(convertToParamMap({ item: 'omdb:tt-deep' }));
+    fixture.detectChanges();
+
+    queryParamMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+
+    expect(portal.closeAll).toHaveBeenCalled();
+  });
+
+  it('strips an invalid item query param', () => {
+    fixture.detectChanges();
+    queryParamMap.next(convertToParamMap({ item: 'not-an-identity' }));
+    fixture.detectChanges();
+
+    expect(api.getMatchedItems).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  });
+
+  it('strips an item query param when no match is found', () => {
+    api.getMatchedItems.mockReturnValue(of({ items: [], page: { limit: 1, hasMore: false, nextCursor: null } }));
+    fixture.detectChanges();
+    queryParamMap.next(convertToParamMap({ item: 'omdb:missing' }));
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    expect(portal.open).not.toHaveBeenCalled();
+  });
+
+  it('strips the item query param when matching the item fails', () => {
+    api.getMatchedItems.mockReturnValue(throwError(() => new Error('offline')));
+    fixture.detectChanges();
+    queryParamMap.next(convertToParamMap({ item: 'omdb:tt-deep' }));
+    fixture.detectChanges();
+
+    expect(portal.open).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  });
+
+  it('closes an opened item dialog when the list is destroyed', () => {
+    const matchedItem = buildItem('Deep Link', 'tt-deep');
+    api.getMatchedItems.mockReturnValue(
+      of({ items: [matchedItem], page: { limit: 1, hasMore: false, nextCursor: null } })
+    );
+    fixture.detectChanges();
+    queryParamMap.next(convertToParamMap({ item: 'omdb:tt-deep' }));
+    fixture.detectChanges();
+    portal.closeAll.mockClear();
+
+    fixture.destroy();
+
+    expect(portal.closeAll).toHaveBeenCalled();
   });
 });

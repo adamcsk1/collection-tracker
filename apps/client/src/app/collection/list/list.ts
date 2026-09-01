@@ -13,7 +13,8 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -25,7 +26,7 @@ import {
   CollectionListTypeModel,
 } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { asyncScheduler, catchError, debounceTime, EMPTY, finalize, fromEvent, Observable, Subscription } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
@@ -37,7 +38,13 @@ import { collectionStateToken } from '../collection-store';
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
 import { FloatActionFilter } from '../float-action-buttons/float-action-buttons-model';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
+import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
+import {
+  clearCollectionItemQuery,
+  COLLECTION_ITEM_QUERY_PARAM,
+  parseCollectionItemQueryValue,
+} from '../utils/collection-item-route-util';
 import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS, FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
 import { getAllowedAddContentTypes } from './list-util';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
@@ -64,7 +71,13 @@ export class List implements OnDestroy {
   private readonly actionButtons = inject(FloatActionButtonsService);
   private readonly webstorage = inject(WebstorageService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly api = inject(ApiService);
   private readonly mainState = inject(mainStateToken);
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, {
+    initialValue: convertToParamMap(this.route.snapshot.queryParams ?? {}),
+  });
+  private openedItemQueryValue: string | null = null;
   protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
   private lastRouteSearchText: string | null = null;
@@ -155,13 +168,22 @@ export class List implements OnDestroy {
       });
     });
 
+    effect((onCleanup) => {
+      const itemValue = this.queryParamMap().get(COLLECTION_ITEM_QUERY_PARAM);
+      const listType = this.listType();
+      let cancelled = false;
+      untracked(() => this.syncOpenedCollectionItem(itemValue, listType, () => cancelled));
+      onCleanup(() => {
+        cancelled = true;
+      });
+    });
+
     effect(() => {
       const storageKey = this.getOrderStorageKey();
-      const preference = this.readOrderPreference(storageKey);
-      untracked(() => {
-        this.orderBy.set(preference.orderBy);
-        this.orderDirection.set(preference.orderDirection);
-      });
+      const queryParamMap = this.queryParamMap();
+      untracked(() =>
+        this.applyOrderPreference(storageKey, queryParamMap.get('orderBy'), queryParamMap.get('orderDirection'))
+      );
     });
 
     effect(() => {
@@ -213,6 +235,10 @@ export class List implements OnDestroy {
     this.scrollingIdleSubscription?.unsubscribe();
     this.floatActions.resetActions();
     this.actionButtons.reset();
+    if (this.openedItemQueryValue) {
+      this.portal.closeAll();
+      this.openedItemQueryValue = null;
+    }
   }
 
   protected onRandomPick(): void {
@@ -256,10 +282,12 @@ export class List implements OnDestroy {
 
   protected onToggleOrderBy(): void {
     this.orderBy.update((orderBy) => (orderBy === 'createdAt' ? 'alphabet' : 'createdAt'));
+    this.syncOrderQueryParams();
   }
 
   protected onToggleOrderDirection(): void {
     this.orderDirection.update((orderDirection) => (orderDirection === 'asc' ? 'desc' : 'asc'));
+    this.syncOrderQueryParams();
   }
 
   protected onApplyFilter(filter: FloatActionFilter): void {
@@ -393,6 +421,92 @@ export class List implements OnDestroy {
 
   private getOrderStorageKey(): string {
     return this.orderStorageKey() || this.listType();
+  }
+
+  private applyOrderPreference(
+    storageKey: string,
+    orderByParam: string | null,
+    orderDirectionParam: string | null
+  ): void {
+    const urlPreference = this.parseOrderQuery(orderByParam, orderDirectionParam);
+    const preference = urlPreference ?? this.readOrderPreference(storageKey);
+    this.orderBy.set(preference.orderBy);
+    this.orderDirection.set(preference.orderDirection);
+  }
+
+  private parseOrderQuery(
+    orderByParam: string | null,
+    orderDirectionParam: string | null
+  ): CollectionListOrderPreference | null {
+    const orderBy = orderByParam === 'alphabet' || orderByParam === 'createdAt' ? orderByParam : null;
+    const orderDirection = orderDirectionParam === 'asc' || orderDirectionParam === 'desc' ? orderDirectionParam : null;
+    if (!orderBy && !orderDirection) return null;
+
+    return {
+      orderBy: orderBy ?? 'createdAt',
+      orderDirection: orderDirection ?? 'desc',
+    };
+  }
+
+  private syncOrderQueryParams(): void {
+    void this.router.navigate([], {
+      queryParams: {
+        orderBy: this.orderBy() === 'createdAt' ? null : this.orderBy(),
+        orderDirection: this.orderDirection() === 'desc' ? null : this.orderDirection(),
+      },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  private syncOpenedCollectionItem(
+    itemValue: string | null,
+    listType: CollectionListTypeModel,
+    isCancelled: () => boolean
+  ): void {
+    if (!itemValue) {
+      if (this.openedItemQueryValue) {
+        this.portal.closeAll();
+        this.openedItemQueryValue = null;
+      }
+      return;
+    }
+
+    const identity = parseCollectionItemQueryValue(itemValue);
+    if (!identity) {
+      this.clearInvalidItemQuery();
+      return;
+    }
+
+    if (this.openedItemQueryValue === itemValue) return;
+
+    this.api
+      .getMatchedItems({
+        identities: [identity],
+        limit: 1,
+        filters: { listType },
+      })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() => {
+          if (!isCancelled()) this.clearInvalidItemQuery();
+          return EMPTY;
+        })
+      )
+      .subscribe((response) => {
+        if (isCancelled()) return;
+        const item = response.items[0];
+        if (!item) {
+          this.clearInvalidItemQuery();
+          return;
+        }
+        this.portal.open(ItemDialog, { collectionItem: item });
+        this.openedItemQueryValue = itemValue;
+      });
+  }
+
+  private clearInvalidItemQuery(): void {
+    this.openedItemQueryValue = null;
+    clearCollectionItemQuery(this.router, true);
   }
 
   private getFilterActions(): FloatActionFilter[] {

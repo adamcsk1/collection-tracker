@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Router } from '@angular/router';
 import { apiStateToken } from '@services/api/api-store';
-import { PortalService } from '@services/portal-service';
 import { CollectionListDisplayRatingModel } from '@shared/models/collection-list-display-preferences-model';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -9,7 +9,7 @@ import { sharesStateToken } from '../../../shares/shares-store';
 import { TagManagementColorPipe } from '../../../tag-management/tag-management-color-pipe';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
-import { ItemDialog } from '../../item/item-dialog/item-dialog';
+import { setCollectionItemQuery } from '../../utils/collection-item-route-util';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 import { ListItemCard } from '../list-item-card/list-item-card';
 import { ListItemCardRatingModel } from '../list-item-card/list-item-card-model';
@@ -29,7 +29,7 @@ import { ListItemCardRatingModel } from '../list-item-card/list-item-card-model'
 })
 export class ListItem {
   private readonly collectionState = inject(collectionStateToken);
-  private readonly portal = inject(PortalService);
+  private readonly router = inject(Router);
   private readonly apiState = inject(apiStateToken);
   private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
@@ -169,6 +169,6 @@ export class ListItem {
   }
 
   protected onOpenDetail(): void {
-    this.portal.open(ItemDialog, { collectionItem: this.collectionItem() });
+    setCollectionItemQuery(this.router, this.collectionItem());
   }
 }

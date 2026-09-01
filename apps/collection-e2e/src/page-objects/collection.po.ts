@@ -70,6 +70,18 @@ export const CollectionPage = {
     cy.visit(`/client/#/collection/library?shared=${shared}`);
     cy.reload();
   },
+  visitLibraryWithQuery: (query: string) => {
+    cy.visit(`/client/#/collection/library?${query}`);
+    cy.reload();
+  },
+  visitTrackingWithQuery: (query: string) => {
+    cy.visit(`/client/#/collection/tracking?${query}`);
+    cy.reload();
+  },
+  visitBooksWithQuery: (query: string) => {
+    cy.visit(`/client/#/collection/books?${query}`);
+    cy.reload();
+  },
   getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book') => cy.getByTestId(`collection-media-chip-${chip}`),
 
   // Search

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
@@ -21,13 +21,13 @@ import { map } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
-import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { List } from '../list/list';
 import { getMediaChipEmptyIcon } from '../list/list-util';
 import type { CollectionMediaChip } from '../media-chips/media-chips-model';
 import { CollectionMediaChips } from '../media-chips/media-chips';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
+import { setCollectionItemQuery } from '../utils/collection-item-route-util';
 import {
   buildCollectionRouteFilterKey,
   buildCollectionRouteFilters,
@@ -48,6 +48,7 @@ export class CollectionLibrary {
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly api = inject(ApiService);
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
@@ -135,7 +136,7 @@ export class CollectionLibrary {
     this.api
       .getRandomItem()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((item) => this.portal.open(ItemDialog, { collectionItem: item }));
+      .subscribe((item) => setCollectionItemQuery(this.router, item, 'library'));
   }
 
   protected onShowFunctions(): void {

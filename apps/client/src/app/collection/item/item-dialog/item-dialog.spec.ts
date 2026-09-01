@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
@@ -84,6 +85,7 @@ describe('ItemDialog', () => {
     open: ReturnType<typeof vi.fn>;
     openStacked: ReturnType<typeof vi.fn>;
   };
+  let router: { navigate: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let api: {
     deleteByExternalId: ReturnType<typeof vi.fn>;
@@ -113,6 +115,7 @@ describe('ItemDialog', () => {
       triggerReload: vi.fn(),
     };
     portal = { closeAll: vi.fn(), open: vi.fn(), openStacked: vi.fn() };
+    router = { navigate: vi.fn(() => Promise.resolve(true)) };
     confirm = { open: vi.fn() };
     api = {
       deleteByExternalId: vi.fn(() => of(undefined)),
@@ -163,6 +166,7 @@ describe('ItemDialog', () => {
       providers: [
         { provide: CollectionService, useValue: collectionService },
         { provide: PortalService, useValue: portal },
+        { provide: Router, useValue: router },
         { provide: ConfirmService, useValue: confirm },
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: translate },
@@ -778,6 +782,11 @@ describe('ItemDialog', () => {
     );
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(portal.closeAll).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(toastState.state.message()).toBe('Toast.DeleteItem');
@@ -1330,6 +1339,11 @@ describe('ItemDialog', () => {
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(portal.closeAll).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   });
 
   it('moves watch later series items to tracking', async () => {
@@ -1358,6 +1372,11 @@ describe('ItemDialog', () => {
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(portal.closeAll).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   });
 
   it('copies library series items to tracking without deleting the source', async () => {
@@ -1702,7 +1721,20 @@ describe('ItemDialog', () => {
       filters: { listType: 'tracking', shared: 'mine' },
     });
     expect(portal.closeAll).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(ItemDialog, { collectionItem: watchingItem });
+    expect(portal.open).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/collection', 'tracking'], {
+      queryParams: { item: 'omdb:tt1234567' },
+    });
+  });
+
+  it('clears the item query param when the dialog closes', () => {
+    component['onDialogClosed']();
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { item: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   });
 
   it('validates user rating precision and range', () => {

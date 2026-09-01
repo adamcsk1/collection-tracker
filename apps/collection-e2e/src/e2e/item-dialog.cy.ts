@@ -1,4 +1,5 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
+import { buildBooksItem } from '../fixtures/openlibrary';
 import { CollectionPage } from '../page-objects/collection.po';
 
 const tooltipCenterTolerance = 1;
@@ -309,5 +310,122 @@ describe('Item dialog — mark watched / unwatched', () => {
     // Button should switch back to mark-watched
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkFinishedButton().should('be.visible');
+  });
+});
+
+describe('Item dialog — url', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Url Test Movie', 'movie', 'tt7000091'));
+    CollectionPage.visit();
+  });
+
+  it('writes the opened item to the query string and clears it on close', () => {
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', 'item=omdb:tt7000091');
+
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('not.include', 'item=');
+  });
+
+  it('opens an item from the query string', () => {
+    CollectionPage.visitLibraryWithQuery('item=omdb:tt7000091');
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', 'item=omdb:tt7000091');
+    CollectionPage.getItemDialogHost().should('contain.text', 'Url Test Movie');
+  });
+
+  it('strips a missing item from the query string', () => {
+    CollectionPage.visitLibraryWithQuery('item=omdb:tt7000099');
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('not.include', 'item=');
+  });
+
+  it('closes the item dialog on browser back', () => {
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', 'item=omdb:tt7000091');
+
+    cy.go('back');
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('not.include', 'item=');
+  });
+
+  it('keeps filters when an item is opened and closed', () => {
+    CollectionPage.visitLibraryWithQuery('type=movie');
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', 'type=movie');
+    cy.url().should('include', 'item=omdb:tt7000091');
+
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('include', 'type=movie');
+    cy.url().should('not.include', 'item=');
+  });
+
+  it('does not reopen the item after overlay close then back', () => {
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', 'item=omdb:tt7000091');
+
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('not.include', 'item=');
+
+    cy.go('back');
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('not.include', 'item=');
+  });
+});
+
+describe('Item dialog — tracking url', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.request('POST', '/api/v1/collection-items', {
+      ...buildCollectionItem('Url Tracking Series', 'series', 'tt7000092'),
+      listType: 'tracking',
+    });
+    CollectionPage.visitTracking();
+  });
+
+  it('writes and restores a tracking item from the query string', () => {
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', '#/collection/tracking');
+    cy.url().should('include', 'item=omdb:tt7000092');
+
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('not.include', 'item=');
+
+    CollectionPage.visitTrackingWithQuery('item=omdb:tt7000092');
+    CollectionPage.getItemDialogHost().should('be.visible');
+    CollectionPage.getItemDialogHost().should('contain.text', 'Url Tracking Series');
+  });
+});
+
+describe('Item dialog — books url', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.request('POST', '/api/v1/collection-items', buildBooksItem('Url Test Book', '9780306406195'));
+    CollectionPage.visitBooks();
+  });
+
+  it('writes and restores a book item from the query string', () => {
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogHost().should('be.visible');
+    cy.url().should('include', '#/collection/books');
+    cy.url().should('include', 'item=openlibrary:9780306406195');
+
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('not.include', 'item=');
+
+    CollectionPage.visitBooksWithQuery('item=openlibrary:9780306406195');
+    CollectionPage.getItemDialogHost().should('be.visible');
+    CollectionPage.getItemDialogHost().should('contain.text', 'Url Test Book');
   });
 });

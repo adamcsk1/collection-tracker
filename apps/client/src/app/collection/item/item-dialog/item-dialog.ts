@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, max, min, submit, validate } from '@angular/forms/signals';
 import { Autocomplete } from '@components/autocomplete/autocomplete';
@@ -29,6 +30,7 @@ import { sharesStateToken } from '../../../shares/shares-store';
 import { mainStateToken } from '../../../main/main-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
+import { clearCollectionItemQuery, setCollectionItemQuery } from '../../utils/collection-item-route-util';
 import { SeriesSeasonMetadataDialog } from '../../tracking/series-season-metadata-dialog/series-season-metadata-dialog';
 import { CompletedEpisodesDialog } from '../../tracking/completed-episodes-dialog/completed-episodes-dialog';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
@@ -72,6 +74,7 @@ import { buildIMDbUrl, buildTrailerUrl, buildWebSearchUrl } from './utils/item-d
 })
 export class ItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
+  private readonly router = inject(Router);
   private readonly portal = inject(PortalService);
   private readonly sharesState = inject(sharesStateToken);
   private readonly toastState = inject(toastStateToken);
@@ -608,9 +611,18 @@ export class ItemDialog implements OnInit {
           if (listType) this.collectionService.deleteCollectionItem(this.collectionItem(), ownerShareCode, listType);
           else this.collectionService.deleteCollectionItem(this.collectionItem(), ownerShareCode);
           this.collectionService.triggerReload();
-          this.portal.closeAll();
+          this.closeItemAndClearQuery();
         }
       });
+  }
+
+  protected onDialogClosed(): void {
+    clearCollectionItemQuery(this.router, true);
+  }
+
+  private closeItemAndClearQuery(): void {
+    this.portal.closeAll();
+    clearCollectionItemQuery(this.router, true);
   }
 
   protected onEdit(): void {
@@ -761,7 +773,7 @@ export class ItemDialog implements OnInit {
         'up-next'
       );
       this.collectionService.triggerReload();
-      this.portal.closeAll();
+      this.closeItemAndClearQuery();
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
     } finally {
       this.spinnerLoadingState.setState('show', false);
@@ -788,7 +800,7 @@ export class ItemDialog implements OnInit {
         'up-next'
       );
       this.collectionService.triggerReload();
-      this.portal.closeAll();
+      this.closeItemAndClearQuery();
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
     } finally {
       this.spinnerLoadingState.setState('show', false);
@@ -848,7 +860,7 @@ export class ItemDialog implements OnInit {
       const trackingItem = response.items[0];
       if (!trackingItem) return;
       this.portal.closeAll();
-      this.portal.open(ItemDialog, { collectionItem: trackingItem });
+      setCollectionItemQuery(this.router, trackingItem, this.collectionItem().listType);
     } finally {
       this.spinnerLoadingState.setState('show', false);
     }
