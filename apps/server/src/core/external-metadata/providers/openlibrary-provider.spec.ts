@@ -20,7 +20,7 @@ describe('OpenLibraryExternalMetadataProvider', () => {
               title: 'The Book',
               first_publish_year: 1965,
               author_name: ['Author One', 'Author Two'],
-              subject: ['Science fiction'],
+              subject: ['Fiction, Science fiction'],
               isbn: ['invalid', '0-306-40615-2'],
               cover_edition_key: 'OL1M',
               editions: { docs: [{ key: 'OL1M', isbn: ['0-306-40615-2'] }] },
@@ -50,7 +50,7 @@ describe('OpenLibraryExternalMetadataProvider', () => {
         poster: 'https://covers.openlibrary.org/b/isbn/9780306406157-M.jpg?default=false',
         plot: '',
         actors: 'Author One, Author Two',
-        genres: ['Science fiction'],
+        genres: ['Fiction', 'Science fiction'],
         ratings: [],
       },
     ]);
@@ -68,7 +68,7 @@ describe('OpenLibraryExternalMetadataProvider', () => {
           title: 'Detailed Book',
           publish_date: 'April 1965',
           description: { value: 'Book plot' },
-          subjects: ['Physics'],
+          subjects: ['Physics, Astronomy'],
           covers: [-1, 123],
           authors: [{ key: '/authors/OL1A' }, { name: 'Author Two' }],
         });
@@ -88,7 +88,7 @@ describe('OpenLibraryExternalMetadataProvider', () => {
       poster: 'https://covers.openlibrary.org/b/id/123-L.jpg?default=false',
       plot: 'Book plot',
       actors: 'Author One, Author Two',
-      genres: ['Physics'],
+      genres: ['Physics', 'Astronomy'],
       ratings: [],
     });
   });

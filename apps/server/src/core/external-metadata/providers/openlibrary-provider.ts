@@ -1,4 +1,5 @@
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
+import { parseGenreText } from '@shared/utils/collection-item-text-util';
 import { extractIsbn13, normalizeIsbn13 } from '../../utils/isbn-util';
 import { ExternalMetadataProvider } from '../external-metadata-provider';
 import { DEFAULT_OPENLIBRARY_API_URL, DEFAULT_OPENLIBRARY_COVER_URL } from './openlibrary-const';
@@ -83,7 +84,7 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
       poster: this.getCoverUrl(isbn, coverSize, book.covers),
       plot: this.getDescription(book.description),
       actors: authors || this.getString(book.by_statement),
-      genres: this.getStringArray(book.subjects),
+      genres: this.getStringArray(book.subjects).flatMap(parseGenreText),
       ratings: [],
     };
   }
@@ -123,7 +124,7 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
       poster: this.getCoverUrl(isbn, 'M', coverId),
       plot: '',
       actors: this.getStringArray(document.author_name).join(', '),
-      genres: this.getStringArray(document.subject),
+      genres: this.getStringArray(document.subject).flatMap(parseGenreText),
       ratings: [],
     };
   }
