@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -10,7 +10,9 @@ const {
   formatBuildDate,
   formatCommand,
   formatHelp,
+  getAndroidSdkBuildToolsFolder,
   parseArguments,
+  resolveApkSigner,
   updateClientAboutBuildInfoSource,
   withClientAboutBuildInfo,
 } = require('./create-release.js');
@@ -100,6 +102,42 @@ describe('create-release command helpers', () => {
     expect(createCommandFailureMessage('npm', ['run', 'build'], '/repo', 1)).toBe(
       'Command failed with status 1: npm run build\nWorking directory: /repo'
     );
+  });
+});
+
+describe('create-release apk signer helpers', () => {
+  it('resolves Android build-tools from SDK root env fallbacks', () => {
+    expect(getAndroidSdkBuildToolsFolder({ ANDROID_HOME: '/sdk' })).toBe(join('/sdk', 'build-tools'));
+    expect(getAndroidSdkBuildToolsFolder({ ANDROID_SDK_ROOT: '/sdk' })).toBe(join('/sdk', 'build-tools'));
+    expect(getAndroidSdkBuildToolsFolder({ LOCALAPPDATA: '/appdata' })).toBe(
+      join('/appdata', 'Android', 'Sdk', 'build-tools')
+    );
+    expect(getAndroidSdkBuildToolsFolder({ ANDROID_HOME: '/a', ANDROID_SDK_ROOT: '/b', LOCALAPPDATA: '/c' })).toBe(
+      join('/a', 'build-tools')
+    );
+    expect(getAndroidSdkBuildToolsFolder({})).toBe('');
+  });
+
+  it('uses platform apksigner names when build-tools are missing', () => {
+    expect(resolveApkSigner('', 'linux')).toBe('apksigner');
+    expect(resolveApkSigner('/missing-sdk-build-tools', 'linux')).toBe('apksigner');
+    expect(resolveApkSigner('', 'win32')).toBe('apksigner.bat');
+  });
+
+  it('picks the newest build-tools apksigner', () => {
+    const temporaryFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-apksigner-'));
+    const olderSigner = join(temporaryFolder, '34.0.0', 'apksigner');
+    const newerSigner = join(temporaryFolder, '35.0.0', 'apksigner');
+    mkdirSync(join(temporaryFolder, '34.0.0'));
+    mkdirSync(join(temporaryFolder, '35.0.0'));
+    writeFileSync(olderSigner, '');
+    writeFileSync(newerSigner, '');
+
+    try {
+      expect(resolveApkSigner(temporaryFolder, 'linux')).toBe(newerSigner);
+    } finally {
+      rmSync(temporaryFolder, { recursive: true, force: true });
+    }
   });
 });
 

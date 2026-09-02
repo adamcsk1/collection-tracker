@@ -22,9 +22,13 @@ const releaseFolder = join(rootFolder, 'release');
 const clientAboutFile = join(rootFolder, 'apps', 'client', 'src', 'app', 'about', 'about.ts');
 const androidFolder = join(rootFolder, 'android');
 const androidReleaseApkFolder = join(androidFolder, 'app', 'build', 'outputs', 'apk', 'release');
-const androidSdkBuildToolsFolder = process.env.LOCALAPPDATA
-  ? join(process.env.LOCALAPPDATA, 'Android', 'Sdk', 'build-tools')
-  : '';
+const getAndroidSdkBuildToolsFolder = (env = process.env) => {
+  const androidSdkRoot =
+    env.ANDROID_HOME || env.ANDROID_SDK_ROOT || (env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'Android', 'Sdk') : '');
+  return androidSdkRoot ? join(androidSdkRoot, 'build-tools') : '';
+};
+
+const androidSdkBuildToolsFolder = getAndroidSdkBuildToolsFolder();
 const helpHint = 'Run npm run release -- --help for usage.';
 
 let appVersion = '';
@@ -161,16 +165,16 @@ const prepareVersion = () => {
   setReleasePaths(currentVersion);
 };
 
-const resolveApkSigner = () => {
-  if (process.platform !== 'win32') return 'apksigner';
-  if (!androidSdkBuildToolsFolder || !existsSync(androidSdkBuildToolsFolder)) return 'apksigner.bat';
+const resolveApkSigner = (buildToolsFolder = androidSdkBuildToolsFolder, platform = process.platform) => {
+  const executable = platform === 'win32' ? 'apksigner.bat' : 'apksigner';
+  if (!buildToolsFolder || !existsSync(buildToolsFolder)) return executable;
 
-  const versions = readdirSync(androidSdkBuildToolsFolder)
-    .map((folder) => ({ folder, signer: join(androidSdkBuildToolsFolder, folder, 'apksigner.bat') }))
+  const versions = readdirSync(buildToolsFolder)
+    .map((folder) => ({ folder, signer: join(buildToolsFolder, folder, executable) }))
     .filter(({ signer }) => existsSync(signer))
     .sort((first, second) => second.folder.localeCompare(first.folder, undefined, { numeric: true }));
 
-  return versions[0]?.signer ?? 'apksigner.bat';
+  return versions[0]?.signer ?? executable;
 };
 
 const runNpmBuild = () => {
@@ -342,7 +346,9 @@ module.exports = {
   formatBuildDate,
   formatCommand,
   formatHelp,
+  getAndroidSdkBuildToolsFolder,
   parseArguments,
+  resolveApkSigner,
   updateClientAboutBuildInfoSource,
   withClientAboutBuildInfo,
 };

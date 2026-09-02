@@ -236,6 +236,45 @@ jobs:
               );
             }
 
+      - name: Resolve version tag
+        if: steps.gate.outputs.ready == 'true'
+        id: version
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const headSha = context.payload.workflow_run.head_sha;
+            const versionTagPattern = /^v\d+\.\d+\.\d+$/;
+            const refs = await github.paginate(github.rest.git.listMatchingRefs, {
+              owner,
+              repo,
+              ref: 'tags/v',
+            });
+            const tags = [];
+            for (const ref of refs) {
+              const tagName = ref.ref.replace(/^refs\/tags\//, '');
+              if (!versionTagPattern.test(tagName)) continue;
+
+              let commitSha = ref.object.sha;
+              if (ref.object.type === 'tag') {
+                const { data: tagObject } = await github.rest.git.getTag({
+                  owner,
+                  repo,
+                  tag_sha: ref.object.sha,
+                });
+                commitSha = tagObject.object.sha;
+              }
+
+              if (commitSha === headSha) tags.push(tagName);
+            }
+
+            if (tags.length > 1) {
+              core.setFailed(`Multiple vX.Y.Z tags on ${headSha}: ${tags.join(', ')}`);
+              return;
+            }
+
+            core.setOutput('tag', tags[0] || '');
+
       - name: Extract Docker metadata
         if: steps.gate.outputs.ready == 'true'
         id: meta
@@ -245,6 +284,7 @@ jobs:
           tags: |
             type=raw,value=latest
             type=raw,value=sha-${{ github.event.workflow_run.head_sha }}
+            type=raw,value=${{ steps.version.outputs.tag }},enable=${{ steps.version.outputs.tag != '' }}
 
       - name: Build and push Docker image
         if: steps.gate.outputs.ready == 'true'

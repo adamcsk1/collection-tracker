@@ -1,0 +1,282 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows:
+      - Docker GHCR
+    types:
+      - completed
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Package and publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == github.event.repository.default_branch)
+
+    steps:
+      - name: Check release gate
+        id: gate
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const requiredWorkflows = [
+              'Android',
+              'Cypress',
+              'Format',
+              'i18n',
+              'Lint',
+              'Test',
+              'Typecheck',
+            ];
+            const { owner, repo } = context.repo;
+            const headSha =
+              context.eventName === 'workflow_run' ? context.payload.workflow_run.head_sha : context.sha;
+            const failWhenNotReady = context.eventName === 'push' || context.eventName === 'workflow_dispatch';
+
+            core.setOutput('ready', 'false');
+            core.setOutput('tag', '');
+
+            const notReady = (message) => {
+              if (failWhenNotReady) {
+                core.setFailed(message);
+                return;
+              }
+              core.notice(`Skipping release; ${message}`);
+            };
+
+            const versionTagPattern = /^v\d+\.\d+\.\d+$/;
+            const refs = await github.paginate(github.rest.git.listMatchingRefs, {
+              owner,
+              repo,
+              ref: 'tags/v',
+            });
+            const tags = [];
+            for (const ref of refs) {
+              const tagName = ref.ref.replace(/^refs\/tags\//, '');
+              if (!versionTagPattern.test(tagName)) continue;
+
+              let commitSha = ref.object.sha;
+              if (ref.object.type === 'tag') {
+                const { data: tagObject } = await github.rest.git.getTag({
+                  owner,
+                  repo,
+                  tag_sha: ref.object.sha,
+                });
+                commitSha = tagObject.object.sha;
+              }
+
+              if (commitSha === headSha) tags.push(tagName);
+            }
+
+            if (tags.length === 0) {
+              notReady(`no vX.Y.Z tag on ${headSha}`);
+              return;
+            }
+            if (tags.length > 1) {
+              core.setFailed(`Multiple vX.Y.Z tags on ${headSha}: ${tags.join(', ')}`);
+              return;
+            }
+
+            const tag = tags[0];
+            const { data: packageFile } = await github.rest.repos.getContent({
+              owner,
+              repo,
+              path: 'package.json',
+              ref: headSha,
+            });
+            const packageVersion = JSON.parse(
+              Buffer.from(packageFile.content, packageFile.encoding).toString('utf8')
+            ).version;
+            if (tag !== `v${packageVersion}`) {
+              core.setFailed(`Tag ${tag} does not match package.json version ${packageVersion}`);
+              return;
+            }
+
+            const { data: repository } = await github.rest.repos.get({ owner, repo });
+            const { data: defaultBranch } = await github.rest.repos.getBranch({
+              owner,
+              repo,
+              branch: repository.default_branch,
+            });
+            if (defaultBranch.commit.sha !== headSha) {
+              notReady(`${headSha} is not the ${repository.default_branch} tip`);
+              return;
+            }
+
+            const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              branch: repository.default_branch,
+              event: 'push',
+              per_page: 100,
+            });
+
+            const missingOrFailed = [];
+            for (const workflowName of requiredWorkflows) {
+              const workflowRun = data.workflow_runs.find(
+                (run) => run.name === workflowName && run.head_sha === headSha
+              );
+              if (!workflowRun || workflowRun.status !== 'completed' || workflowRun.conclusion !== 'success') {
+                const result = workflowRun?.conclusion ?? workflowRun?.status ?? 'missing';
+                missingOrFailed.push(`${workflowName}: ${result}`);
+              }
+            }
+            if (missingOrFailed.length) {
+              notReady(`required workflows are not all green for ${headSha}: ${missingOrFailed.join(', ')}`);
+              return;
+            }
+
+            const dockerPublishSucceeded = async (runId) => {
+              const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+                owner,
+                repo,
+                run_id: runId,
+                per_page: 100,
+              });
+              const publishStep = jobs.jobs
+                .flatMap((job) => job.steps || [])
+                .find((step) => step.name === 'Build and push Docker image');
+              return publishStep?.conclusion === 'success';
+            };
+
+            let dockerPublished = false;
+            if (context.eventName === 'workflow_run') {
+              dockerPublished = await dockerPublishSucceeded(context.payload.workflow_run.id);
+            } else {
+              const dockerRuns = await github.paginate(github.rest.actions.listWorkflowRuns, {
+                owner,
+                repo,
+                workflow_id: 'docker-ghcr.yml',
+                head_sha: headSha,
+              });
+              for (const run of dockerRuns) {
+                if (run.status !== 'completed') continue;
+                if (await dockerPublishSucceeded(run.id)) {
+                  dockerPublished = true;
+                  break;
+                }
+              }
+            }
+
+            if (!dockerPublished) {
+              notReady(`Docker GHCR did not publish an image for ${headSha}`);
+              return;
+            }
+
+            core.setOutput('ready', 'true');
+            core.setOutput('tag', tag);
+
+      - name: Log in to GHCR
+        if: steps.gate.outputs.ready == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag GHCR image with version
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: docker buildx imagetools create -t "$IMAGE:$TAG" "$IMAGE:sha-$SHA"
+
+      - name: Checkout
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Node
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '26.0.0'
+          cache: npm
+
+      - name: Set up Java
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        if: steps.gate.outputs.ready == 'true'
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 14742923
+
+      - name: Install Android platform
+        if: steps.gate.outputs.ready == 'true'
+        run: sdkmanager "platforms;android-37.0"
+
+      - name: Set up Gradle
+        if: steps.gate.outputs.ready == 'true'
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Decode keystore
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || \
+             [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "Release signing secrets are required" >&2
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$HOME/release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$HOME/release.jks" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        if: steps.gate.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Create release artifacts
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x android/gradlew
+          npm run release
+
+      - name: Publish GitHub Release
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: |
+          shopt -s nullglob
+          files=(release/*.apk release/*.zip release/*.sha256 release/*.md5)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No release artifacts found in release/" >&2
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${files[@]}" --clobber
+          else
+            gh release create "$TAG" "${files[@]}" --generate-notes --title "$TAG"
+          fi

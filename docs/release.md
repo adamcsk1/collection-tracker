@@ -48,3 +48,17 @@ $env:ANDROID_KEY_PASSWORD = "key-password"
 ```
 
 Do not commit keystores or signing passwords. When these variables are omitted, Gradle may produce an unsigned release APK that must be signed before distribution.
+
+## GitHub Actions
+
+A default-branch commit tagged `vX.Y.Z` (matching `package.json`) publishes a GitHub Release after Android, Cypress (Chrome and Firefox), Format, i18n, Lint, Test, Typecheck, and Docker GHCR image publish are all green. The GHCR image for that commit is also tagged `vX.Y.Z`.
+
+```bash
+npm run bump-version -- patch
+git tag v0.0.2
+git push origin main --tags
+```
+
+The Release workflow decodes `ANDROID_KEYSTORE_BASE64` and runs `npm run release` with `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. It uploads the zip, APK, and checksum files. `--no-commit` bumps are local only and do not create that GitHub Release.
+
+If `Cypress (firefox)` is listed in branch protection, keep it required. The Cypress workflow fails when Firefox E2E fails.

@@ -11,6 +11,7 @@ Published tags:
 
 - `ghcr.io/adamcsk1/collection-tracker:latest` for the latest successful main branch image
 - `ghcr.io/adamcsk1/collection-tracker:sha-<commit-sha>` for a commit-pinned image
+- `ghcr.io/adamcsk1/collection-tracker:vX.Y.Z` when that commit has a matching `vX.Y.Z` git tag
 
 For public packages, Docker can pull the image anonymously. For private packages, log in first:
 
@@ -174,7 +175,7 @@ Start it on Linux hosts with your current user and group IDs:
 APP_UID=$(id -u) APP_GID=$(id -g) docker compose up -d
 ```
 
-Pin a deployment to an immutable commit image by replacing `latest` with `sha-<commit-sha>`.
+Pin a deployment to an immutable commit image by replacing `latest` with `sha-<commit-sha>`, or to a release with `vX.Y.Z`.
 
 ### One-shot VPS deploy example
 
