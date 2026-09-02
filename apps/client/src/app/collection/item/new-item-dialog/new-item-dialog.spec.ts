@@ -1293,9 +1293,9 @@ describe('NewItemDialog component', () => {
       component['manualForm'].contentType().value.set('album');
       fixture.detectChanges();
       component['manualForm'].title().value.set('Manual Album');
-      component['manualForm'].IMDbId().value.set(
-        'https://musicbrainz.org/release/f509c5ff-ad54-4dde-b61e-24f750965835'
-      );
+      component['manualForm']
+        .IMDbId()
+        .value.set('https://musicbrainz.org/release/f509c5ff-ad54-4dde-b61e-24f750965835');
       await vi.advanceTimersByTimeAsync(150);
 
       expect(component['selectedAddContentType']()).toBe('album');

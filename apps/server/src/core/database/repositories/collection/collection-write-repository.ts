@@ -29,10 +29,7 @@ const isCompleteProgress = (progressCurrent: number | null | undefined, progress
   progressTotal >= 1 &&
   progressCurrent === progressTotal;
 
-const isIncompleteProgress = (
-  progressCurrent: number | null | undefined,
-  progressTotal: number | null | undefined
-) =>
+const isIncompleteProgress = (progressCurrent: number | null | undefined, progressTotal: number | null | undefined) =>
   typeof progressCurrent === 'number' &&
   typeof progressTotal === 'number' &&
   progressTotal >= 1 &&

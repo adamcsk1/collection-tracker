@@ -120,9 +120,7 @@ export class ListItem {
     if (year && progress) return `${year} · ${progress}`;
     return progress ?? year;
   });
-  protected readonly itemMetaTestId = computed(() =>
-    this.progressText() ? 'list-item-progress' : 'list-item-year'
-  );
+  protected readonly itemMetaTestId = computed(() => (this.progressText() ? 'list-item-progress' : 'list-item-year'));
 
   private getRatingDisplayValue(
     rating: CollectionListDisplayRatingModel,

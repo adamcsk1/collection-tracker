@@ -3226,7 +3226,11 @@ describe('runMigrations', () => {
         { name: 'idx_user_share_item_selections_item' },
       ]);
       expect(
-        db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_collection_items_id_owner_music_migration'").get()
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_collection_items_id_owner_music_migration'"
+          )
+          .get()
       ).toBeUndefined();
       expect(
         db

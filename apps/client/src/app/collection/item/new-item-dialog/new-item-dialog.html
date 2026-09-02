@@ -290,9 +290,7 @@
           }
         </div>
         @if (searchFormErrors.selectedExternalReference.knownIMDbId()) {
-          <small class="error" data-test-id="new-item-known-imdb-id-error">{{
-            knownIdentityError()
-          }}</small>
+          <small class="error" data-test-id="new-item-known-imdb-id-error">{{ knownIdentityError() }}</small>
         }
       </section>
     }

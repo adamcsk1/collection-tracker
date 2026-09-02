@@ -43,7 +43,8 @@ const getOpenLibraryCoverUrl = (isbn: string): string => {
   return url.href;
 };
 
-const getMusicBrainzCoverUrl = (mbid: string): string => new URL(`release/${mbid}/front-500`, getCoverArtArchiveUrl()).href;
+const getMusicBrainzCoverUrl = (mbid: string): string =>
+  new URL(`release/${mbid}/front-500`, getCoverArtArchiveUrl()).href;
 
 const addIdentities = (
   values: unknown,

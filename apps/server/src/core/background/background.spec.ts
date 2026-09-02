@@ -149,7 +149,9 @@ describe('background images', () => {
     await warmBackgroundImages();
 
     expect(getItemByImdbId).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(readFileSync(join(dataFolder!, 'background.config.json'), { encoding: 'utf-8' })).posters).toEqual({
+    expect(
+      JSON.parse(readFileSync(join(dataFolder!, 'background.config.json'), { encoding: 'utf-8' })).posters
+    ).toEqual({
       tt0111161: 'https://images.example/tt0111161.jpg',
     });
 
