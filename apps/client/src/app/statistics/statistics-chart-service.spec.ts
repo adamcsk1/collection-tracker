@@ -111,7 +111,7 @@ describe('StatisticsChartService', () => {
     const chart = buildChart<'doughnut'>();
     const statistics: CollectionStatisticsApiResponseModel = {
       scope: 'all',
-      summary: { total: 4, movies: 2, series: 1, books: 1, favorites: 0 },
+      summary: { total: 4, movies: 2, series: 1, books: 1, music: 0, favorites: 0 },
       charts: {
         ...emptyCommonCharts,
         mediaTypeCounts: [
@@ -133,6 +133,7 @@ describe('StatisticsChartService', () => {
     ['movie', ['Watched', 'Unwatched'], [2, 1]],
     ['series', ['Completed', 'InProgress'], [1, 1]],
     ['book', ['Read', 'Unread', 'InProgress'], [1, 2, 1]],
+    ['album', ['Listened', 'Unlistened', 'InProgress'], [1, 2, 1]],
   ] as const)('adapts the overview dataset to %s statuses', (scope, labels, counts) => {
     const chart = buildChart<'doughnut'>();
     const statistics = buildScopedStatistics(scope);
@@ -189,7 +190,9 @@ describe('StatisticsChartService', () => {
       update: vi.fn(),
     }) as unknown as Chart<TType, number[], string>;
 
-  const buildScopedStatistics = (scope: 'movie' | 'series' | 'book'): CollectionStatisticsApiResponseModel => {
+  const buildScopedStatistics = (
+    scope: 'movie' | 'series' | 'book' | 'album'
+  ): CollectionStatisticsApiResponseModel => {
     if (scope === 'movie') {
       return {
         scope,
@@ -213,6 +216,21 @@ describe('StatisticsChartService', () => {
           mediaTypeCounts: [],
           statusCounts: [
             { status: 'completed', count: 1 },
+            { status: 'inProgress', count: 1 },
+          ],
+        },
+      };
+    }
+    if (scope === 'album') {
+      return {
+        scope,
+        summary: { total: 4, favorites: 0, listened: 1, unlistened: 2, inProgress: 1 },
+        charts: {
+          ...emptyCommonCharts,
+          mediaTypeCounts: [],
+          statusCounts: [
+            { status: 'listened', count: 1 },
+            { status: 'unlistened', count: 2 },
             { status: 'inProgress', count: 1 },
           ],
         },

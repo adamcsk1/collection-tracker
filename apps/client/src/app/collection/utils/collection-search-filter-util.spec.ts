@@ -59,6 +59,12 @@ describe('buildCollectionRouteFilters', () => {
       completed: true,
     });
   });
+
+  it('accepts album type query params', () => {
+    expect(buildCollectionRouteFilters({ get: (name) => (name === 'type' ? 'album' : null) })).toEqual({
+      type: 'album',
+    });
+  });
 });
 
 describe('buildCollectionRouteFilterKey', () => {

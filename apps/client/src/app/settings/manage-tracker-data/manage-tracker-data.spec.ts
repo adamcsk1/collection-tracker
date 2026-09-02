@@ -340,6 +340,7 @@ describe('SettingsManageTrackerData component', () => {
       ...initialMainState.collectionFeaturePreferences,
       tracking: false,
       books: false,
+      music: false,
     });
     fixture.detectChanges();
 

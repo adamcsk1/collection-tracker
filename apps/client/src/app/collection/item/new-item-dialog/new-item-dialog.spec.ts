@@ -163,6 +163,15 @@ describe('NewItemDialog component', () => {
     expect(component['getMatchedContentImageUrl']({ text: 'No image', value: 'none' })).toBe('');
     expect(component['getMatchedContentMeta']({ contentType: 'movie', text: 'Movie', value: 'movie' })).toBe('(movie)');
     expect(component['getMatchedContentMeta']({ text: 'Year only', value: 'year', year: '2026' })).toBe('2026');
+    expect(
+      component['getMatchedContentMeta']({
+        contentType: 'album',
+        text: 'The Dark Side of the Moon',
+        value: 'musicbrainz/mbid',
+        year: '1973',
+        actors: 'Pink Floyd',
+      })
+    ).toBe('(album) 1973 · Pink Floyd');
   });
 
   it('changes content types and refreshes non-empty searches', () => {
@@ -172,7 +181,12 @@ describe('NewItemDialog component', () => {
 
     expect(component['selectedAddContentType']()).toBe('book');
     expect(service.search).toHaveBeenCalledWith('Dune', 'openlibrary');
-    expect(component['contentTypeOptions']().map((option) => option.value)).toEqual(['movie', 'series', 'book']);
+    expect(component['contentTypeOptions']().map((option) => option.value)).toEqual([
+      'movie',
+      'series',
+      'book',
+      'album',
+    ]);
 
     component['onAddContentTypeChange']('invalid');
     component['onAddContentTypeChange']('book');
@@ -213,7 +227,14 @@ describe('NewItemDialog component', () => {
 
     expect(component['form']()).toBe(component['manualForm']());
     expect(component['dialogTitle']()).toBe('Title.NewTrackingItem');
-    expect(component['showBookProgress']()).toBe(true);
+    expect(component['showProgress']()).toBe(true);
+
+    component['manualForm'].contentType().value.set('album');
+    fixture.detectChanges();
+
+    expect(component['isAlbumAdd']()).toBe(true);
+    expect(component['showProgress']()).toBe(true);
+    expect(component['translations'].pagesRead()).toBe('TracksPlayed');
   });
 
   it('switches to manual mode and back preserving drafts', () => {
@@ -1198,6 +1219,7 @@ describe('NewItemDialog component', () => {
       component['manualForm'].progressCurrent().value.set(150);
       component['manualForm'].progressTotal().value.set(100);
       fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(150);
       await fixture.whenStable();
 
       expect(component['manualFormErrors'].progressCurrent.progressRange()).toBe(true);
@@ -1205,6 +1227,7 @@ describe('NewItemDialog component', () => {
 
       component['manualForm'].progressTotal().value.set(200);
       fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(150);
       await fixture.whenStable();
 
       expect(component['manualFormErrors'].progressCurrent.progressRange()).toBe(false);
@@ -1261,6 +1284,28 @@ describe('NewItemDialog component', () => {
       expect(api.collectionItemExists).toHaveBeenCalledWith('openlibrary', '9780306406157', undefined, 'books', [
         { source: 'isbn', id: '9780306406157' },
       ]);
+    });
+
+    it('extracts MBID from MusicBrainz URL for tracking album duplicate checks', async () => {
+      fixture.componentRef.setInput('tracking', true);
+      fixture.detectChanges();
+      component['onModeChange']('manual');
+      component['manualForm'].contentType().value.set('album');
+      fixture.detectChanges();
+      component['manualForm'].title().value.set('Manual Album');
+      component['manualForm'].IMDbId().value.set(
+        'https://musicbrainz.org/release/f509c5ff-ad54-4dde-b61e-24f750965835'
+      );
+      await vi.advanceTimersByTimeAsync(150);
+
+      expect(component['selectedAddContentType']()).toBe('album');
+      expect(api.collectionItemExists).toHaveBeenCalledWith(
+        'musicbrainz',
+        'f509c5ff-ad54-4dde-b61e-24f750965835',
+        undefined,
+        'tracking',
+        [{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }]
+      );
     });
 
     it('does not check malformed manual book identities', async () => {

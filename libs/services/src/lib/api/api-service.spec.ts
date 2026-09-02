@@ -96,7 +96,7 @@ describe('ApiService', () => {
   ])('loads scoped statistics with filters %o', async (filters, expectedUrl) => {
     const statistics = {
       scope: 'all' as const,
-      summary: { total: 0, movies: 0, series: 0, books: 0, favorites: 0 },
+      summary: { total: 0, movies: 0, series: 0, books: 0, music: 0, favorites: 0 },
       charts: {
         tagCounts: [],
         genreCounts: [],
@@ -354,6 +354,16 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.deleteAllBooksItems());
 
     const deleteRequest = httpMock.expectOne('https://api.test/collection-items/books');
+    expect(deleteRequest.request.method).toBe('DELETE');
+    deleteRequest.flush({ data: { changedCount: 4 } });
+
+    await expect(promise).resolves.toEqual({ changedCount: 4 });
+  });
+
+  it('deletes all music tracker items', async () => {
+    const promise = lastValueFrom(service.deleteAllMusicItems());
+
+    const deleteRequest = httpMock.expectOne('https://api.test/collection-items/music');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({ data: { changedCount: 4 } });
 
@@ -876,6 +886,50 @@ describe('ApiService', () => {
 
     const markAllRequest = httpMock.expectOne(
       'https://api.test/collection-items/actions/mark-books-uncompleted?ownerShareCode=owner-code'
+    );
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ data: { changedCount: 1 } });
+
+    await expect(promise).resolves.toEqual({ changedCount: 1 });
+  });
+
+  it('marks all music as completed for the authenticated user', async () => {
+    const promise = lastValueFrom(service.markAllMusicAsCompleted());
+
+    const markAllRequest = httpMock.expectOne('https://api.test/collection-items/actions/mark-music-completed');
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ data: { changedCount: 2 } });
+
+    await expect(promise).resolves.toEqual({ changedCount: 2 });
+  });
+
+  it('marks all music as uncompleted for the authenticated user', async () => {
+    const promise = lastValueFrom(service.markAllMusicAsUncompleted());
+
+    const markAllRequest = httpMock.expectOne('https://api.test/collection-items/actions/mark-music-uncompleted');
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ data: { changedCount: 1 } });
+
+    await expect(promise).resolves.toEqual({ changedCount: 1 });
+  });
+
+  it('marks all music as completed for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllMusicAsCompleted('owner-code'));
+
+    const markAllRequest = httpMock.expectOne(
+      'https://api.test/collection-items/actions/mark-music-completed?ownerShareCode=owner-code'
+    );
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ data: { changedCount: 2 } });
+
+    await expect(promise).resolves.toEqual({ changedCount: 2 });
+  });
+
+  it('marks all music as uncompleted for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllMusicAsUncompleted('owner-code'));
+
+    const markAllRequest = httpMock.expectOne(
+      'https://api.test/collection-items/actions/mark-music-uncompleted?ownerShareCode=owner-code'
     );
     expect(markAllRequest.request.method).toBe('POST');
     markAllRequest.flush({ data: { changedCount: 1 } });

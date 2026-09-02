@@ -3,6 +3,7 @@
     data-test-id="statistics-media-chips"
     [active]="selectedScope()"
     [booksEnabled]="featurePreferences().books"
+    [musicEnabled]="featurePreferences().music"
     [navigate]="false"
     (selectionChange)="onSelectScope($event)"
   />
@@ -69,6 +70,17 @@
               >
                 <span class="stat-value">{{ statistics.summary.books }}</span>
                 <span class="stat-label">{{ translations.books() }}</span>
+              </button>
+            }
+            @if (featurePreferences().music) {
+              <button
+                data-test-id="statistics-summary-music"
+                class="card card-interactive stat-card"
+                (click)="navigateToCollection('album')"
+                [attr.aria-label]="translations.music() + ': ' + statistics.summary.music"
+              >
+                <span class="stat-value">{{ statistics.summary.music }}</span>
+                <span class="stat-label">{{ translations.music() }}</span>
               </button>
             }
             <button
@@ -213,6 +225,51 @@
             </div>
             <div
               data-test-id="statistics-summary-in-progress-books"
+              class="card stat-card"
+              [attr.aria-label]="translations.inProgress() + ': ' + statistics.summary.inProgress"
+            >
+              <span class="stat-value">{{ statistics.summary.inProgress }}</span>
+              <span class="stat-label">{{ translations.inProgress() }}</span>
+            </div>
+          }
+          @case ('album') {
+            <button
+              data-test-id="statistics-summary-music"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('album')"
+              [attr.aria-label]="translations.music() + ': ' + statistics.summary.total"
+            >
+              <span class="stat-value">{{ statistics.summary.total }}</span>
+              <span class="stat-label">{{ translations.music() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-favorites"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('album', { favorite: true })"
+              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
+            >
+              <span class="stat-value">{{ statistics.summary.favorites }}</span>
+              <span class="stat-label">{{ translations.favorites() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-listened-music"
+              class="card card-interactive stat-card"
+              (click)="navigateToTracking('album', { completed: true })"
+              [attr.aria-label]="translations.listened() + ': ' + statistics.summary.listened"
+            >
+              <span class="stat-value">{{ statistics.summary.listened }}</span>
+              <span class="stat-label">{{ translations.listened() }}</span>
+            </button>
+            <div
+              data-test-id="statistics-summary-unlistened-music"
+              class="card stat-card"
+              [attr.aria-label]="translations.unlistened() + ': ' + statistics.summary.unlistened"
+            >
+              <span class="stat-value">{{ statistics.summary.unlistened }}</span>
+              <span class="stat-label">{{ translations.unlistened() }}</span>
+            </div>
+            <div
+              data-test-id="statistics-summary-in-progress-music"
               class="card stat-card"
               [attr.aria-label]="translations.inProgress() + ': ' + statistics.summary.inProgress"
             >

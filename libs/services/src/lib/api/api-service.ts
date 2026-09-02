@@ -125,6 +125,17 @@ export class ApiService extends BaseApiService {
     );
   }
 
+  public markAllMusicAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {
+    return this.request('POST', `/collection-items/actions/mark-music-completed${this.buildQuery({ ownerShareCode })}`);
+  }
+
+  public markAllMusicAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
+    return this.request(
+      'POST',
+      `/collection-items/actions/mark-music-uncompleted${this.buildQuery({ ownerShareCode })}`
+    );
+  }
+
   public addCompletedItemByExternalId(
     externalProvider: string,
     externalItemId: string,
@@ -168,6 +179,10 @@ export class ApiService extends BaseApiService {
 
   public deleteAllBooksItems(): Observable<MarkAllUncompletedApiResponseModel> {
     return this.request('DELETE', '/collection-items/books');
+  }
+
+  public deleteAllMusicItems(): Observable<MarkAllUncompletedApiResponseModel> {
+    return this.request('DELETE', '/collection-items/music');
   }
 
   public refreshImages(ownerShareCode?: string): Observable<RefreshImagesApiResponseModel> {

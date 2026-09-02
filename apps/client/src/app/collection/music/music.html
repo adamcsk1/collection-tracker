@@ -1,0 +1,32 @@
+<div class="collection-container">
+  <ng-template #floatSearch>
+    <libc-autocomplete
+      data-test-id="music-search"
+      [placeholder]="translations.placeholderSearchInMusic()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      [suggestionListPlacement]="'top'"
+      (userEvent)="onSearchFromUser()"
+    />
+  </ng-template>
+  <ct-list
+    [listType]="'music'"
+    [dataSource]="musicDataSource"
+    [routeSearchText]="querySearch()"
+    [routeFilterKey]="queryFilterKey()"
+    [emptyIcon]="'album'"
+  >
+    <span list-empty>
+      {{ translations.messageEmptyMusic() }}<br />
+      <a
+        data-test-id="add-first-music-item"
+        href="#"
+        role="button"
+        (click)="onAddMusic($event)"
+        (keyup.enter)="onAddMusic($event)"
+        (keyup.space)="onAddMusic($event)"
+        >{{ translations.messageAddFirstMusic() }}</a
+      >
+    </span>
+  </ct-list>
+</div>

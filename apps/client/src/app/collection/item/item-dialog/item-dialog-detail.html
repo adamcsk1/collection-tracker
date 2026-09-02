@@ -15,6 +15,9 @@
       @if (book() && isbn()) {
         <span data-test-id="item-dialog-isbn">{{ translations().isbn() }} {{ isbn() }}</span>
       }
+      @if (album() && mbid()) {
+        <span data-test-id="item-dialog-mbid">{{ translations().mbid() }} {{ mbid() }}</span>
+      }
       <h3>{{ collectionItem().title }}</h3>
       <div class="metadata-row">
         <div class="chip-list">
@@ -27,11 +30,11 @@
         </div>
       </div>
     </header>
-    @if (!book() || collectionItem().userRate !== null) {
+    @if ((!book() && !album()) || collectionItem().userRate !== null) {
       <section>
         <h4>{{ translations().ratings() }}</h4>
         <div class="chip-list">
-          @if (!book()) {
+          @if (!book() && !album()) {
             <span class="chip rating">IMDb {{ collectionItem().rate || translations().fallbackNotAvailable() }}</span>
             @if (collectionItem().rottenTomatoesRate) {
               <span class="chip rating"
@@ -55,7 +58,7 @@
 
     @if (collectionItem().genre.length) {
       <section>
-        <h4>{{ book() ? translations().subjects() : translations().genre() }}</h4>
+        <h4>{{ book() || album() ? translations().subjects() : translations().genre() }}</h4>
         <div class="chip-list">
           @for (genre of collectionItem().genre; track $index) {
             <span class="chip">{{ genre }}</span>
@@ -66,7 +69,7 @@
 
     @if (collectionItem().actors) {
       <section>
-        <h4>{{ book() ? translations().authors() : translations().actors() }}</h4>
+        <h4>{{ contributorHeading() }}</h4>
         <p>{{ collectionItem().actors }}</p>
       </section>
     }
@@ -82,7 +85,7 @@
       </section>
     }
 
-    @if (tracking() && !book()) {
+    @if (tracking() && !book() && !album()) {
       <section data-test-id="item-dialog-episode-progress-section">
         <h4>{{ translations().watchedUpTo() }}</h4>
         <div class="chip-list">
@@ -90,18 +93,18 @@
         </div>
       </section>
     }
-    @if (showBookProgress()) {
-      <section data-test-id="item-dialog-book-progress-section">
+    @if (showProgress()) {
+      <section data-test-id="item-dialog-progress-section">
         <h4>{{ translations().readingProgress() }}</h4>
         <div class="chip-list">
-          <span class="chip" data-test-id="item-dialog-book-progress-chip">{{ bookProgressText() }}</span>
+          <span class="chip" data-test-id="item-dialog-progress-chip">{{ progressText() }}</span>
         </div>
       </section>
     }
 
     @if (collectionItem().plot) {
       <section>
-        <h4>{{ book() ? translations().description() : translations().plot() }}</h4>
+        <h4>{{ book() || album() ? translations().description() : translations().plot() }}</h4>
         <p>{{ collectionItem().plot }}</p>
       </section>
     }
@@ -109,7 +112,7 @@
     <section>
       <h4>{{ translations().links() }}</h4>
       <div class="external-links">
-        @if (!book()) {
+        @if (!book() && !album()) {
           <libc-link-button
             [href]="trailerUrl()"
             icon="play_circle"

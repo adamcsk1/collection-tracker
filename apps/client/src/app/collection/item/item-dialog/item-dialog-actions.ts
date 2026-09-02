@@ -22,6 +22,7 @@ export class ItemDialogActions {
   public readonly movie = input.required<boolean>();
   public readonly series = input.required<boolean>();
   public readonly book = input(false);
+  public readonly album = input(false);
   public readonly finished = input.required<boolean>();
   public readonly favorite = input.required<boolean>();
   public readonly inTracking = input.required<boolean>();

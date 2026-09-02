@@ -27,6 +27,7 @@ import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { resolveImdbId } from '@shared/utils/imdb-id-util';
 import { extractIsbn13 } from '@shared/utils/isbn-util';
+import { extractMbid } from '@shared/utils/mbid-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import {
   catchError,
@@ -49,6 +50,7 @@ import { ItemFormModel } from '../item-form/item-form-model';
 import {
   isImdbIdValid,
   isIsbnValid,
+  isMbidValid,
   validateOptionalIMDbRateFormat,
   validateOptionalMetacriticRateFormat,
   validateOptionalRottenTomatoesRateFormat,
@@ -58,6 +60,12 @@ import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item
 import { NewItemDialogService } from './new-item-dialog-service';
 import { NewItemMode, NewItemSearchModel, SaveMode, SaveOptions } from './new-item-dialog-model';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
+
+const metadataProviderFor = (contentType: CollectionItemContentTypeModel) => {
+  if (contentType === 'book') return 'openlibrary';
+  if (contentType === 'album') return 'musicbrainz';
+  return 'omdb';
+};
 
 const defaultSearchModel = (): NewItemSearchModel => ({
   searchText: '',
@@ -164,6 +172,13 @@ export class NewItemDialog {
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
     labelIMDbId: computed(() => this.ngxSignalTranslate.translate('IMDbId')),
     isbn: computed(() => this.ngxSignalTranslate.translate('ISBN')),
+    mbid: computed(() => this.ngxSignalTranslate.translate('MBID')),
+    validationMBID: computed(() => this.ngxSignalTranslate.translate('Validation.MBID')),
+    validationKnownMBID: computed(() => this.ngxSignalTranslate.translate('Validation.KnownMBID')),
+    messageNewMusicItemSearch: computed(() => this.ngxSignalTranslate.translate('Message.NewMusicItemSearch')),
+    titleNewMusicItem: computed(() => this.ngxSignalTranslate.translate('Title.NewMusicItem')),
+    music: computed(() => this.ngxSignalTranslate.translate('Music')),
+    artists: computed(() => this.ngxSignalTranslate.translate('Artists')),
     labelYear: computed(() => this.ngxSignalTranslate.translate('Year')),
     labelIMDbRate: computed(() => this.ngxSignalTranslate.translate('IMDbRate')),
     labelMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Metacritic')),
@@ -192,9 +207,13 @@ export class NewItemDialog {
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
     validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
-    validationProgressRange: computed(() => this.ngxSignalTranslate.translate('Validation.ProgressRange')),
-    pagesRead: computed(() => this.ngxSignalTranslate.translate('PagesRead')),
-    totalPages: computed(() => this.ngxSignalTranslate.translate('TotalPages')),
+    validationProgressRange: computed(() =>
+      this.ngxSignalTranslate.translate(
+        this.isAlbumAdd() ? 'Validation.TracksProgressRange' : 'Validation.ProgressRange'
+      )
+    ),
+    pagesRead: computed(() => this.ngxSignalTranslate.translate(this.isAlbumAdd() ? 'TracksPlayed' : 'PagesRead')),
+    totalPages: computed(() => this.ngxSignalTranslate.translate(this.isAlbumAdd() ? 'TotalTracks' : 'TotalPages')),
     collectionItemFinished: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
     copyToTrackingAsCompleted: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsCompleted')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
@@ -261,18 +280,19 @@ export class NewItemDialog {
         const identity = value()?.trim() ?? '';
         if (!identity) return { kind: 'required' };
         if (this.isBookAdd()) return isIsbnValid(identity) ? undefined : { kind: 'isbn' };
+        if (this.isAlbumAdd()) return isMbidValid(identity) ? undefined : { kind: 'mbid' };
         return isImdbIdValid(identity) ? undefined : { kind: 'imdbId' };
       });
       validate(manualItem.IMDbId, ({ value }) => this.knownManualIMDbIdValidationError(value()));
       validate(manualItem.IMDbId, () => (this.manualIMDbIdLookupPending() ? { kind: 'pending' } : undefined));
       validate(manualItem.rate, ({ value }) =>
-        this.isBookAdd() ? undefined : validateOptionalIMDbRateFormat(value())
+        this.isCatalogAdd() ? undefined : validateOptionalIMDbRateFormat(value())
       );
       validate(manualItem.rottenTomatoesRate, ({ value }) =>
-        this.isBookAdd() ? undefined : validateOptionalRottenTomatoesRateFormat(value())
+        this.isCatalogAdd() ? undefined : validateOptionalRottenTomatoesRateFormat(value())
       );
       validate(manualItem.metacriticRate, ({ value }) =>
-        this.isBookAdd() ? undefined : validateOptionalMetacriticRateFormat(value())
+        this.isCatalogAdd() ? undefined : validateOptionalMetacriticRateFormat(value())
       );
       min(manualItem.userRate, 0, { error: { kind: 'min' } });
       max(manualItem.userRate, 10, { error: { kind: 'max' } });
@@ -370,6 +390,12 @@ export class NewItemDialog {
           .errors()
           .some((error) => error.kind === 'isbn')
       ),
+      mbid: computed(() =>
+        this.manualForm
+          .IMDbId()
+          .errors()
+          .some((error) => error.kind === 'mbid')
+      ),
       knownIMDbId: computed(() =>
         this.manualForm
           .IMDbId()
@@ -443,36 +469,45 @@ export class NewItemDialog {
   public readonly wishlist = input(false);
   public readonly tracking = input(false);
   public readonly books = input(false);
+  public readonly music = input(false);
   public readonly allowedContentTypes = input<readonly CollectionItemContentTypeModel[]>([]);
   protected readonly selectedAddContentType = signal<CollectionItemContentTypeModel>('movie');
   protected readonly resolvedAllowedContentTypes = computed(() => {
     const allowed = this.allowedContentTypes();
     if (allowed.length) return allowed;
     if (this.books()) return ['book'] as const;
+    if (this.music()) return ['album'] as const;
     if (this.tracking()) {
-      return this.mainState.state.collectionFeaturePreferences().books
-        ? (['movie', 'series', 'book'] as const)
-        : (['movie', 'series'] as const);
+      const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
+      if (this.mainState.state.collectionFeaturePreferences().books) types.push('book');
+      if (this.mainState.state.collectionFeaturePreferences().music) types.push('album');
+      return types;
     }
     const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
     if (this.mainState.state.collectionFeaturePreferences().books) types.push('book');
+    if (this.mainState.state.collectionFeaturePreferences().music) types.push('album');
     return types;
   });
   protected readonly isBookAdd = computed(
     () => this.books() || this.selectedAddContentType() === 'book' || this.manualForm.contentType().value() === 'book'
   );
+  protected readonly isAlbumAdd = computed(
+    () => this.music() || this.selectedAddContentType() === 'album' || this.manualForm.contentType().value() === 'album'
+  );
+  protected readonly isCatalogAdd = computed(() => this.isBookAdd() || this.isAlbumAdd());
   protected readonly matchedContent = computed(() => {
     const matchedContent = this.service.matchedContent();
     const selectedType = this.selectedAddContentType();
     return matchedContent.filter((content) => {
-      if (`${content.text}`.toLowerCase().startsWith('imdb id:')) return selectedType !== 'book';
+      if (`${content.text}`.toLowerCase().startsWith('imdb id:'))
+        return selectedType !== 'book' && selectedType !== 'album';
       if (!content.contentType) return true;
       return content.contentType === selectedType;
     });
   });
   protected readonly completedSearchText = this.service.completedSearchText;
   protected readonly showExternalSearchLinks = computed(() => {
-    if (this.mode() !== 'search' || this.isBookAdd()) return false;
+    if (this.mode() !== 'search' || this.isCatalogAdd()) return false;
     const completedSearchText = this.completedSearchText();
     return !!completedSearchText && this.searchForm.searchText().value().trim() === completedSearchText;
   });
@@ -489,7 +524,9 @@ export class NewItemDialog {
   protected readonly searchHint = computed(() =>
     this.isBookAdd()
       ? this.translations.messageNewBooksItemSearch()
-      : this.translations.messageNewCollectionItemSearch()
+      : this.isAlbumAdd()
+        ? this.translations.messageNewMusicItemSearch()
+        : this.translations.messageNewCollectionItemSearch()
   );
   protected readonly selectedContentIsSeries = computed(() => {
     const selectedExternalReference = this.searchForm.selectedExternalReference().value();
@@ -544,33 +581,51 @@ export class NewItemDialog {
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.manualForm.image().value())
   );
-  protected readonly contentTypeOptions = computed(() =>
-    this.resolvedAllowedContentTypes().map((contentType) => ({
-      text:
-        contentType === 'movie'
-          ? this.translations.movies()
-          : contentType === 'series'
-            ? this.translations.seriesLabel()
-            : this.translations.books(),
+  protected readonly contentTypeOptions = computed(() => {
+    const label = (contentType: CollectionItemContentTypeModel) => {
+      if (contentType === 'movie') return this.translations.movies();
+      if (contentType === 'series') return this.translations.seriesLabel();
+      if (contentType === 'album') return this.translations.music();
+      return this.translations.books();
+    };
+    return this.resolvedAllowedContentTypes().map((contentType) => ({
+      text: label(contentType),
       value: contentType,
-    }))
-  );
+    }));
+  });
   protected readonly showContentTypeSelect = computed(() => this.resolvedAllowedContentTypes().length > 1);
   protected readonly showManualUserRate = computed(() => !this.internalListMode());
-  protected readonly showBookProgress = computed(() => this.tracking() && this.isBookAdd());
+  protected readonly showProgress = computed(() => this.tracking() && (this.isBookAdd() || this.isAlbumAdd()));
+  protected readonly identityLabel = computed(() => {
+    if (this.isBookAdd()) return this.translations.isbn();
+    if (this.isAlbumAdd()) return this.translations.mbid();
+    return this.translations.labelIMDbId();
+  });
+  protected readonly contributorLabel = computed(() => {
+    if (this.isBookAdd()) return this.translations.authors();
+    if (this.isAlbumAdd()) return this.translations.artists();
+    return this.translations.actors();
+  });
+  protected readonly knownIdentityError = computed(() => {
+    if (this.isBookAdd()) return this.translations.validationKnownISBN();
+    if (this.isAlbumAdd()) return this.translations.validationKnownMBID();
+    return this.translations.validationKnownIMDbId();
+  });
   protected readonly internalListMode = computed(
-    () => this.upNext() || this.wishlist() || this.tracking() || this.books()
+    () => this.upNext() || this.wishlist() || this.tracking() || this.books() || this.music()
   );
   protected readonly dialogTitle = computed(() => {
     if (this.upNext()) return this.translations.titleNewUpNextItem();
     if (this.wishlist()) return this.translations.titleNewWishlistItem();
     if (this.tracking()) return this.translations.titleNewTrackingItem();
     if (this.books() || this.selectedAddContentType() === 'book') return this.translations.titleNewBooksItem();
+    if (this.music() || this.selectedAddContentType() === 'album') return this.translations.titleNewMusicItem();
     return this.translations.titleNewCollectionItem();
   });
   protected readonly dialogIcon = computed(() => {
     const contentType = this.selectedAddContentType();
     if (contentType === 'book') return 'menu_book';
+    if (contentType === 'album') return 'album';
     if (contentType === 'series') return 'live_tv';
     if (contentType === 'movie') return 'movie';
     return 'add_photo_alternate';
@@ -580,6 +635,7 @@ export class NewItemDialog {
     if (this.wishlist()) return 'wishlist';
     if (this.tracking()) return 'tracking';
     if (this.books() || this.selectedAddContentType() === 'book') return 'books';
+    if (this.music() || this.selectedAddContentType() === 'album') return 'music';
     return 'library';
   });
 
@@ -634,7 +690,7 @@ export class NewItemDialog {
 
     effect(() => {
       const manualType = this.manualForm.contentType().value();
-      if (manualType !== 'movie' && manualType !== 'series' && manualType !== 'book') return;
+      if (manualType !== 'movie' && manualType !== 'series' && manualType !== 'book' && manualType !== 'album') return;
       if (!this.resolvedAllowedContentTypes().includes(manualType)) return;
       if (this.selectedAddContentType() === manualType) return;
       this.selectedAddContentType.set(manualType);
@@ -652,7 +708,7 @@ export class NewItemDialog {
       )
       .subscribe(([searchText, mode, contentType]) => {
         if (mode !== 'search' || this.mode() !== 'search' || !searchText) return;
-        this.service.search(searchText, contentType === 'book' ? 'openlibrary' : 'omdb');
+        this.service.search(searchText, metadataProviderFor(contentType));
       });
 
     toObservable(this.searchForm.searchText().value)
@@ -661,7 +717,7 @@ export class NewItemDialog {
         filter(([previousSearchText, searchText]) => !!previousSearchText && !searchText),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(() => this.service.search('', this.selectedAddContentType() === 'book' ? 'openlibrary' : 'omdb'));
+      .subscribe(() => this.service.search('', metadataProviderFor(this.selectedAddContentType())));
 
     combineLatest([
       toObservable(this.mode),
@@ -713,15 +769,21 @@ export class NewItemDialog {
       toObservable(this.manualForm.IMDbId().value),
       toObservable(this.searchForm.targetOwnerShareCode().value),
       toObservable(this.listType),
+      toObservable(this.isBookAdd),
+      toObservable(this.isAlbumAdd),
     ])
       .pipe(
-        tap(([mode, identity, , listType]) => {
-          const hasIdentity = listType === 'books' ? isIsbnValid(identity) : isImdbIdValid(identity);
+        tap(([mode, identity, , , isBookAdd, isAlbumAdd]) => {
+          const hasIdentity = isBookAdd
+            ? isIsbnValid(identity)
+            : isAlbumAdd
+              ? isMbidValid(identity)
+              : isImdbIdValid(identity);
           this.manualIMDbIdLookupPending.set(mode === 'manual' && hasIdentity);
         }),
-        switchMap(([mode, identity, targetOwnerShareCode, listType]) => {
+        switchMap(([mode, identity, targetOwnerShareCode, listType, isBookAdd, isAlbumAdd]) => {
           if (mode !== 'manual') return of({ exists: false });
-          if (listType === 'books') {
+          if (isBookAdd) {
             const isbn = extractIsbn13(identity);
             if (!isbn) return of({ exists: false });
             return timer(150).pipe(
@@ -729,6 +791,19 @@ export class NewItemDialog {
                 this.api
                   .collectionItemExists('openlibrary', isbn, targetOwnerShareCode || undefined, listType, [
                     { source: 'isbn', id: isbn },
+                  ])
+                  .pipe(catchError(() => of({ exists: false })))
+              )
+            );
+          }
+          if (isAlbumAdd) {
+            const mbid = extractMbid(identity);
+            if (!mbid) return of({ exists: false });
+            return timer(150).pipe(
+              switchMap(() =>
+                this.api
+                  .collectionItemExists('musicbrainz', mbid, targetOwnerShareCode || undefined, listType, [
+                    { source: 'musicbrainz', id: mbid },
                   ])
                   .pipe(catchError(() => of({ exists: false })))
               )
@@ -761,25 +836,26 @@ export class NewItemDialog {
 
     const searchText = this.searchForm.searchText().value().trim();
     if (searchText) {
-      this.service.search(searchText, this.selectedAddContentType() === 'book' ? 'openlibrary' : 'omdb');
+      this.service.search(searchText, metadataProviderFor(this.selectedAddContentType()));
     }
   }
 
   protected onAddContentTypeChange(contentType: string | number | boolean | null): void {
-    if (contentType !== 'movie' && contentType !== 'series' && contentType !== 'book') return;
+    if (contentType !== 'movie' && contentType !== 'series' && contentType !== 'book' && contentType !== 'album')
+      return;
     if (contentType === this.selectedAddContentType()) return;
     this.selectedAddContentType.set(contentType);
     this.searchForm.selectedExternalReference().reset(null);
     const searchText = this.searchForm.searchText().value().trim();
     if (this.mode() === 'search' && searchText) {
-      this.service.search(searchText, contentType === 'book' ? 'openlibrary' : 'omdb');
+      this.service.search(searchText, metadataProviderFor(contentType));
     }
   }
 
   protected onModeChange(newMode: NewItemMode): void {
     if (this.mode() === newMode) return;
     if (newMode !== 'search') {
-      this.service.search('', this.selectedAddContentType() === 'book' ? 'openlibrary' : 'omdb');
+      this.service.search('', metadataProviderFor(this.selectedAddContentType()));
     }
     this.mode.set(newMode);
     this.knownSearchIMDbIdExists.set(false);
@@ -788,7 +864,12 @@ export class NewItemDialog {
     this.searchIMDbIdLookupPending.set(newMode === 'search' && !!providerReference);
     const manualIdentity = this.manualForm.IMDbId().value();
     this.manualIMDbIdLookupPending.set(
-      newMode === 'manual' && (this.isBookAdd() ? isIsbnValid(manualIdentity) : isImdbIdValid(manualIdentity))
+      newMode === 'manual' &&
+        (this.isBookAdd()
+          ? isIsbnValid(manualIdentity)
+          : this.isAlbumAdd()
+            ? isMbidValid(manualIdentity)
+            : isImdbIdValid(manualIdentity))
     );
   }
 
@@ -797,9 +878,10 @@ export class NewItemDialog {
   }
 
   protected getMatchedContentMeta(content: ExternalMetadataSelectDataModel): string | null {
-    if (content.contentType && content.year) return `(${content.contentType}) ${content.year}`;
+    const details = [content.year, content.actors].filter(Boolean).join(' · ');
+    if (content.contentType && details) return `(${content.contentType}) ${details}`;
     if (content.contentType) return `(${content.contentType})`;
-    return content.year ?? null;
+    return details || null;
   }
 
   protected isMatchedContentSelected(content: ExternalMetadataSelectDataModel): boolean {
@@ -820,7 +902,7 @@ export class NewItemDialog {
     if (this.showCopyToTrackingCheckbox()) {
       options.copyToTrackingAsCompleted = this.searchForm.copyToTrackingAsCompleted().value();
     }
-    if (this.showBookProgress()) {
+    if (this.showProgress()) {
       options.progressCurrent = this.searchForm.progressCurrent().value();
       options.progressTotal = this.searchForm.progressTotal().value();
     }
@@ -833,8 +915,8 @@ export class NewItemDialog {
           ...manualValues,
           contentType,
           userRate: this.internalListMode() ? null : manualValues.userRate,
-          progressCurrent: this.showBookProgress() ? manualValues.progressCurrent : null,
-          progressTotal: this.showBookProgress() ? manualValues.progressTotal : null,
+          progressCurrent: this.showProgress() ? manualValues.progressCurrent : null,
+          progressTotal: this.showProgress() ? manualValues.progressTotal : null,
         },
         mode,
         options

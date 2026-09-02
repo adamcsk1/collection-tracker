@@ -90,6 +90,7 @@ export class ItemDialog implements OnInit {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
     titleTrackingItem: computed(() => this.ngxSignalTranslate.translate('Title.TrackingItem')),
     titleBooksItem: computed(() => this.ngxSignalTranslate.translate('Title.BooksItem')),
+    titleMusicItem: computed(() => this.ngxSignalTranslate.translate('Title.MusicItem')),
     titleUpNextItem: computed(() => this.ngxSignalTranslate.translate('Title.UpNextItem')),
     titleWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WishlistItem')),
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
@@ -107,16 +108,20 @@ export class ItemDialog implements OnInit {
     hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
     watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
-    readingProgress: computed(() => this.ngxSignalTranslate.translate('ReadingProgress')),
-    pagesRead: computed(() => this.ngxSignalTranslate.translate('PagesRead')),
-    totalPages: computed(() => this.ngxSignalTranslate.translate('TotalPages')),
+    readingProgress: computed(() =>
+      this.ngxSignalTranslate.translate(this.album() ? 'ListeningProgress' : 'ReadingProgress')
+    ),
+    pagesRead: computed(() => this.ngxSignalTranslate.translate(this.album() ? 'TracksPlayed' : 'PagesRead')),
+    totalPages: computed(() => this.ngxSignalTranslate.translate(this.album() ? 'TotalTracks' : 'TotalPages')),
     manageCompletedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageCompletedEpisodes')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
+    artists: computed(() => this.ngxSignalTranslate.translate('Artists')),
     authors: computed(() => this.ngxSignalTranslate.translate('Authors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
     description: computed(() => this.ngxSignalTranslate.translate('Description')),
     isbn: computed(() => this.ngxSignalTranslate.translate('ISBN')),
+    mbid: computed(() => this.ngxSignalTranslate.translate('MBID')),
     type: computed(() => this.ngxSignalTranslate.translate('Type')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     seriesLabel: computed(() => this.ngxSignalTranslate.translate('Series')),
@@ -134,6 +139,8 @@ export class ItemDialog implements OnInit {
           return this.ngxSignalTranslate.translate('EditTrackingItem');
         case 'books':
           return this.ngxSignalTranslate.translate('EditBooksItem');
+        case 'music':
+          return this.ngxSignalTranslate.translate('EditMusicItem');
         case 'up-next':
           return this.ngxSignalTranslate.translate('EditUpNextItem');
         case 'wishlist':
@@ -159,6 +166,8 @@ export class ItemDialog implements OnInit {
           return this.ngxSignalTranslate.translate('DeleteFromTracking');
         case 'books':
           return this.ngxSignalTranslate.translate('DeleteFromBooks');
+        case 'music':
+          return this.ngxSignalTranslate.translate('DeleteFromMusic');
         case 'up-next':
           return this.ngxSignalTranslate.translate('DeleteFromUpNext');
         case 'wishlist':
@@ -173,7 +182,9 @@ export class ItemDialog implements OnInit {
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
     validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
-    validationProgressRange: computed(() => this.ngxSignalTranslate.translate('Validation.ProgressRange')),
+    validationProgressRange: computed(() =>
+      this.ngxSignalTranslate.translate(this.album() ? 'Validation.TracksProgressRange' : 'Validation.ProgressRange')
+    ),
     ratings: computed(() => this.ngxSignalTranslate.translate('Ratings')),
   };
   protected readonly formModel = signal<ItemFormModel>({
@@ -380,14 +391,19 @@ export class ItemDialog implements OnInit {
   });
   protected readonly libraryItem = computed(() => this.collectionItem().listType === 'library');
   protected readonly ownershipItem = computed(
-    () => this.collectionItem().listType === 'library' || this.collectionItem().listType === 'books'
+    () =>
+      this.collectionItem().listType === 'library' ||
+      this.collectionItem().listType === 'books' ||
+      this.collectionItem().listType === 'music'
   );
   protected readonly tracking = computed(() => this.collectionItem().listType === 'tracking');
   protected readonly inTracking = computed(() => this.trackingExists());
   protected readonly inFinished = computed(() => this.finishedExists());
   protected readonly featurePreferences = this.mainState.state.collectionFeaturePreferences;
   protected readonly books = computed(() => this.collectionItem().listType === 'books');
+  protected readonly music = computed(() => this.collectionItem().listType === 'music');
   protected readonly book = computed(() => this.collectionItem().contentType === 'book');
+  protected readonly album = computed(() => this.collectionItem().contentType === 'album');
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');
   protected readonly isbn = computed(() => {
@@ -397,13 +413,21 @@ export class ItemDialog implements OnInit {
       (item.externalProvider === 'openlibrary' ? item.externalItemId : '')
     );
   });
+  protected readonly mbid = computed(() => {
+    const item = this.collectionItem();
+    return (
+      item.externalIds?.find((identity) => identity.source === 'musicbrainz')?.id ??
+      (item.externalProvider === 'musicbrainz' ? item.externalItemId : '')
+    );
+  });
   protected readonly canEditImdbIdentity = computed(() =>
     isImdbShapedExternalItemId(this.collectionItem().externalItemId)
   );
   protected readonly permissionWatch = computed(
     () =>
       (this.libraryItem() && (this.movie() || this.series())) ||
-      (this.books() && this.book() && this.featurePreferences().tracking)
+      (this.books() && this.book() && this.featurePreferences().tracking) ||
+      (this.music() && this.album() && this.featurePreferences().tracking)
   );
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
@@ -420,7 +444,7 @@ export class ItemDialog implements OnInit {
   protected readonly finished = computed(
     () =>
       this.collectionItem().watched === true ||
-      (this.tracking() && (this.movie() || this.book()) && this.collectionItem().watchedAt !== null)
+      (this.tracking() && (this.movie() || this.book() || this.album()) && this.collectionItem().watchedAt !== null)
   );
   protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly upNext = computed(() => this.collectionItem().listType === 'up-next');
@@ -430,10 +454,16 @@ export class ItemDialog implements OnInit {
     if (this.wishlist()) return this.translations.titleWishlistItem();
     if (this.tracking()) return this.translations.titleTrackingItem();
     if (this.books()) return this.translations.titleBooksItem();
+    if (this.music()) return this.translations.titleMusicItem();
     return this.translations.titleCollectionItem();
   });
-  protected readonly showBookProgress = computed(() => this.book() && this.tracking());
-  protected readonly bookProgressText = computed(() => {
+  protected readonly showProgress = computed(() => this.tracking() && (this.book() || this.album()));
+  protected readonly contributorLabel = computed(() => {
+    if (this.book()) return this.translations.authors();
+    if (this.album()) return this.translations.artists();
+    return this.translations.actors();
+  });
+  protected readonly progressText = computed(() => {
     const item = this.collectionItem();
     const current = item.progressCurrent;
     const total = item.progressTotal;
@@ -444,6 +474,7 @@ export class ItemDialog implements OnInit {
   });
   protected readonly dialogIcon = computed(() => {
     if (this.book() || this.books()) return 'menu_book';
+    if (this.album() || this.music()) return 'album';
     if (this.series() || this.tracking()) return 'live_tv';
     return 'movie';
   });
@@ -480,7 +511,8 @@ export class ItemDialog implements OnInit {
     const loadTracking =
       (this.libraryItem() && (this.series() || this.movie())) ||
       (this.books() && this.book()) ||
-      (this.upNext() && (this.series() || this.book() || this.movie()));
+      (this.music() && this.album()) ||
+      (this.upNext() && (this.series() || this.book() || this.album() || this.movie()));
 
     if (loadTracking) {
       this.api
@@ -489,7 +521,7 @@ export class ItemDialog implements OnInit {
         .subscribe((response) => {
           this.trackingExists.set(response.exists);
           this.trackingHash.set(response.hash);
-          if (this.movie() || this.book()) {
+          if (this.movie() || this.book() || this.album()) {
             this.finishedExists.set(response.exists);
             this.finishedHash.set(response.hash);
           }
@@ -569,8 +601,8 @@ export class ItemDialog implements OnInit {
       plot: formValues.plot,
       contentType: formValues.contentType,
       favorite: this.collectionItem().favorite,
-      progressCurrent: this.showBookProgress() ? formValues.progressCurrent : undefined,
-      progressTotal: this.showBookProgress() ? formValues.progressTotal : undefined,
+      progressCurrent: this.showProgress() ? formValues.progressCurrent : undefined,
+      progressTotal: this.showProgress() ? formValues.progressTotal : undefined,
     };
   }
 
@@ -657,6 +689,7 @@ export class ItemDialog implements OnInit {
       this.collectionItem().listType !== 'library' &&
       this.collectionItem().listType !== 'tracking' &&
       this.collectionItem().listType !== 'books' &&
+      this.collectionItem().listType !== 'music' &&
       this.collectionItem().listType !== 'up-next' &&
       this.collectionItem().listType !== 'wishlist'
     )
@@ -673,11 +706,11 @@ export class ItemDialog implements OnInit {
           mergeMap((confirmed) => {
             if (confirmed) {
               this.spinnerLoadingState.setState('show', true);
-              let updateListType: 'tracking' | 'books' | 'up-next' | 'wishlist' | undefined;
+              let updateListType: 'tracking' | 'books' | 'music' | 'up-next' | 'wishlist' | undefined;
               if (this.tracking()) {
                 updateListType = 'tracking';
-              } else if (this.books()) {
-                updateListType = 'books';
+              } else if (this.books() || this.music()) {
+                updateListType = this.music() ? 'music' : 'books';
               } else if (this.upNext()) {
                 updateListType = 'up-next';
               } else if (this.wishlist()) {
@@ -727,7 +760,7 @@ export class ItemDialog implements OnInit {
     if (!this.featurePreferences().tracking || !this.permissionWatch() || this.finished()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
-      const sourceListType = this.books() ? 'books' : undefined;
+      const sourceListType = this.books() ? 'books' : this.music() ? 'music' : undefined;
       const item = await firstValueFrom(
         this.api.addCompletedItemByExternalId(
           this.collectionItem().externalProvider,
@@ -753,7 +786,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMoveToFinished(): Promise<void> {
-    if (!this.featurePreferences().tracking || !this.upNext() || !(this.movie() || this.book())) return;
+    if (!this.featurePreferences().tracking || !this.upNext() || !(this.movie() || this.book() || this.album())) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -781,7 +814,8 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMoveToTracking(): Promise<void> {
-    if (!this.featurePreferences().tracking || !this.upNext() || !(this.series() || this.book())) return;
+    if (!this.featurePreferences().tracking || !this.upNext() || !(this.series() || this.book() || this.album()))
+      return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -808,12 +842,16 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onCopyToTracking(): Promise<void> {
-    if (!this.featurePreferences().tracking || !this.ownershipItem() || !(this.series() || this.book())) {
+    if (
+      !this.featurePreferences().tracking ||
+      !this.ownershipItem() ||
+      !(this.series() || this.book() || this.album())
+    ) {
       return;
     }
     this.spinnerLoadingState.setState('show', true);
     try {
-      const sourceListType = this.books() ? 'books' : undefined;
+      const sourceListType = this.books() ? 'books' : this.music() ? 'music' : undefined;
       const item = await firstValueFrom(
         this.api.addTrackingItemByExternalId(
           this.collectionItem().externalProvider,
@@ -836,7 +874,7 @@ export class ItemDialog implements OnInit {
     if (
       !this.featurePreferences().tracking ||
       !this.ownershipItem() ||
-      !(this.series() || this.book()) ||
+      !(this.series() || this.book() || this.album()) ||
       !this.inTracking()
     ) {
       return;
@@ -870,7 +908,7 @@ export class ItemDialog implements OnInit {
     if (
       !this.featurePreferences().tracking ||
       !this.ownershipItem() ||
-      !(this.series() || this.book()) ||
+      !(this.series() || this.book() || this.album()) ||
       !this.inTracking()
     ) {
       return;
@@ -918,7 +956,7 @@ export class ItemDialog implements OnInit {
       const updatedSource = { ...sourceItem, watched: false };
       if (sourceItem.contentType === 'movie') {
         this.collectionService.deleteCollectionItem({ ...sourceItem, listType: 'tracking' }, undefined, 'tracking');
-      } else if (sourceItem.contentType === 'book') {
+      } else if (sourceItem.contentType === 'book' || sourceItem.contentType === 'album') {
         this.collectionService.updateCollectionItem(
           { ...sourceItem, listType: 'tracking' },
           { ...sourceItem, listType: 'tracking', watched: false, watchedAt: null },

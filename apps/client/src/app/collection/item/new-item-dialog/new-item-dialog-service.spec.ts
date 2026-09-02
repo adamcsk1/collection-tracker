@@ -214,6 +214,38 @@ describe('NewItemDialogService', () => {
     );
   });
 
+  it('saves MusicBrainz albums to a shared music list with their provider identity', async () => {
+    const mbid = '123e4567-e89b-12d3-a456-426614174000';
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(
+        null,
+        buildSelectedContent({
+          provider: 'musicbrainz',
+          providerItemId: mbid,
+          externalIds: [{ source: 'musicbrainz', id: mbid }],
+          contentType: 'album',
+        })
+      ) as any
+    );
+    api.create.mockReturnValue(createResponse({ title: 'Title', listType: 'music' }));
+
+    await firstValueFrom(
+      service.save(mbid, null, '', 'close', { listType: 'music', targetOwnerShareCode: 'owner-code' })
+    );
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        IMDbId: undefined,
+        externalProvider: 'musicbrainz',
+        externalItemId: mbid,
+        externalIds: [{ source: 'musicbrainz', id: mbid }],
+        contentType: 'album',
+      }),
+      'owner-code',
+      'music'
+    );
+  });
+
   it('returns typed provider references from external metadata', () => {
     externalMetadata.getProviderReference.mockReturnValue({ identitySource: 'omdb', identityId: 'tt123' });
 
@@ -302,6 +334,36 @@ describe('NewItemDialogService', () => {
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
     expect(portal.closeAll).toHaveBeenCalled();
     expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('saveManual creates albums in the music list with MusicBrainz identity', async () => {
+    const mbid = '123e4567-e89b-12d3-a456-426614174000';
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Album',
+        externalProvider: 'musicbrainz',
+        externalItemId: mbid,
+      })
+    );
+
+    await firstValueFrom(
+      service.saveManual({ ...buildManualItem(), title: 'Manual Album', IMDbId: mbid, contentType: 'album' }, 'close', {
+        listType: 'music',
+      })
+    );
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Manual Album',
+        IMDbId: undefined,
+        externalProvider: 'musicbrainz',
+        externalItemId: mbid,
+        externalIds: [{ source: 'musicbrainz', id: mbid }],
+        contentType: 'album',
+      }),
+      undefined,
+      'music'
+    );
   });
 
   it('saveManual does not call external metadata service', async () => {

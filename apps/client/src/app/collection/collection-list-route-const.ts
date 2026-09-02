@@ -7,6 +7,7 @@ export const COLLECTION_LIST_ROUTE_BY_TYPE: Record<CollectionListTypeModel, stri
   'up-next': 'up-next',
   tracking: 'tracking',
   books: 'books',
+  music: 'music',
 };
 
 export const COLLECTION_LIST_TYPE_BY_ROUTE: Record<string, CollectionListTypeModel> = {
@@ -18,6 +19,7 @@ export const COLLECTION_LIST_TYPE_BY_ROUTE: Record<string, CollectionListTypeMod
   tracking: 'tracking',
   finished: 'tracking',
   books: 'books',
+  music: 'music',
 };
 
 /** i18n key for nav / header titles by list_type */
@@ -27,4 +29,5 @@ export const COLLECTION_LIST_TITLE_KEY_BY_TYPE: Record<CollectionListTypeModel, 
   'up-next': 'UpNext',
   tracking: 'Tracking',
   books: 'Books',
+  music: 'Music',
 };

@@ -4,6 +4,7 @@ import {
   buildItemFormFromChange,
   buildItemFromForm,
   isImdbIdValid,
+  isMbidValid,
   validateOptionalIMDbRateFormat,
   validateOptionalMetacriticRateFormat,
   validateOptionalRottenTomatoesRateFormat,
@@ -149,6 +150,94 @@ describe('item form util', () => {
 
     expect(item.externalItemId).toBe('9780306406157');
     expect(item.externalIds).toEqual([{ source: 'isbn', id: '9780306406157' }]);
+  });
+
+  it('builds musicbrainz album items from form values', () => {
+    const item = buildItemFromForm({
+      title: ' The Dark Side of the Moon ',
+      IMDbId: 'F509C5FF-AD54-4DDE-B61E-24F750965835',
+      year: '1973',
+      rate: '8.5',
+      rottenTomatoesRate: '95%',
+      metacriticRate: '85/100',
+      userRate: 9,
+      image: 'cover-url',
+      genreText: 'Progressive Rock',
+      tagsText: 'owned',
+      actors: 'Pink Floyd',
+      plot: 'Studio album',
+      contentType: 'album',
+      progressCurrent: null,
+      progressTotal: null,
+    });
+
+    expect(item).toEqual(
+      expect.objectContaining({
+        title: 'The Dark Side of the Moon',
+        IMDbId: undefined,
+        externalProvider: 'musicbrainz',
+        externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+        externalIds: [{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }],
+        rate: '',
+        rottenTomatoesRate: '',
+        metacriticRate: '',
+        contentType: 'album',
+        actors: 'Pink Floyd',
+      })
+    );
+  });
+
+  it('extracts MBID from MusicBrainz URL when building album form item', () => {
+    const item = buildItemFromForm({
+      title: 'The Dark Side of the Moon',
+      IMDbId: 'https://musicbrainz.org/release/f509c5ff-ad54-4dde-b61e-24f750965835',
+      year: '1973',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      image: '',
+      genreText: '',
+      tagsText: '',
+      actors: '',
+      plot: '',
+      contentType: 'album',
+      progressCurrent: null,
+      progressTotal: null,
+    });
+
+    expect(item.externalItemId).toBe('f509c5ff-ad54-4dde-b61e-24f750965835');
+    expect(item.externalIds).toEqual([{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }]);
+  });
+
+  it('clears album identity when MBID is invalid', () => {
+    const item = buildItemFromForm({
+      title: 'Unknown Album',
+      IMDbId: 'not-a-uuid',
+      year: '1973',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      image: '',
+      genreText: '',
+      tagsText: '',
+      actors: '',
+      plot: '',
+      contentType: 'album',
+      progressCurrent: null,
+      progressTotal: null,
+    });
+
+    expect(item.externalItemId).toBe('');
+    expect(item.externalIds).toBeUndefined();
+  });
+
+  it('checks MBID shape', () => {
+    expect(isMbidValid('f509c5ff-ad54-4dde-b61e-24f750965835')).toBe(true);
+    expect(isMbidValid('https://musicbrainz.org/release/f509c5ff-ad54-4dde-b61e-24f750965835')).toBe(true);
+    expect(isMbidValid('not-a-uuid')).toBe(false);
+    expect(isMbidValid('')).toBe(false);
   });
 
   it('builds form model from item change', () => {

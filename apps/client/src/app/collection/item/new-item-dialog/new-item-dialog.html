@@ -1,7 +1,7 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
-      <i class="material-icons" [title]="dialogTitle()" data-test-id="new-item-dialog-icon">{{ dialogIcon() }}</i>
+      <i class="material-icons" aria-hidden="true" data-test-id="new-item-dialog-icon">{{ dialogIcon() }}</i>
       {{ dialogTitle() }}
     </h3>
   </ng-container>
@@ -97,7 +97,7 @@
           <libc-input
             data-test-id="new-item-manual-imdb-id"
             [mandatory]="true"
-            [label]="isBookAdd() ? translations.isbn() : translations.labelIMDbId()"
+            [label]="identityLabel()"
             [formField]="manualForm.IMDbId"
           >
             <ng-container errors>
@@ -110,8 +110,17 @@
               @if (manualFormErrors.IMDbId.isbn()) {
                 {{ translations.validationISBN() }}
               }
+              @if (manualFormErrors.IMDbId.mbid()) {
+                {{ translations.validationMBID() }}
+              }
               @if (manualFormErrors.IMDbId.knownIMDbId()) {
-                {{ isBookAdd() ? translations.validationKnownISBN() : translations.validationKnownIMDbId() }}
+                {{
+                  isBookAdd()
+                    ? translations.validationKnownISBN()
+                    : isAlbumAdd()
+                      ? translations.validationKnownMBID()
+                      : translations.validationKnownIMDbId()
+                }}
               }
             </ng-container>
           </libc-input>
@@ -129,7 +138,7 @@
               (valueChange)="onAddContentTypeChange($event)"
             />
           }
-          @if (!isBookAdd()) {
+          @if (!isCatalogAdd()) {
             <libc-input
               data-test-id="new-item-manual-rate"
               [label]="translations.labelIMDbRate()"
@@ -185,7 +194,7 @@
           }
           <libc-autocomplete
             data-test-id="new-item-manual-genre"
-            [label]="isBookAdd() ? translations.subjects() : translations.genre()"
+            [label]="isCatalogAdd() ? translations.subjects() : translations.genre()"
             [hint]="translations.hintSeparateGenres()"
             [formField]="manualForm.genreText"
             ctGenreSuggestions
@@ -199,17 +208,17 @@
           />
           <libc-input
             data-test-id="new-item-manual-actors"
-            [label]="isBookAdd() ? translations.authors() : translations.actors()"
+            [label]="contributorLabel()"
             [formField]="manualForm.actors"
           />
           <libc-textarea
             data-test-id="new-item-manual-plot"
             class="full-width"
-            [label]="isBookAdd() ? translations.description() : translations.plot()"
+            [label]="isCatalogAdd() ? translations.description() : translations.plot()"
             [formField]="manualForm.plot"
             [rows]="4"
           />
-          @if (showBookProgress()) {
+          @if (showProgress()) {
             <libc-input
               data-test-id="new-item-manual-progress-current"
               type="number"
@@ -282,7 +291,7 @@
         </div>
         @if (searchFormErrors.selectedExternalReference.knownIMDbId()) {
           <small class="error" data-test-id="new-item-known-imdb-id-error">{{
-            translations.validationKnownIMDbId()
+            knownIdentityError()
           }}</small>
         }
       </section>
@@ -311,7 +320,7 @@
         ctTagSuggestions
       />
     }
-    @if (showBookProgress() && mode() === 'search' && matchedContent().length) {
+    @if (showProgress() && mode() === 'search' && matchedContent().length) {
       <libc-input
         data-test-id="new-item-progress-current"
         type="number"

@@ -103,7 +103,7 @@ describe('Wishlist', () => {
   it('derives initial wishlist page state', () => {
     expect(fixture.componentInstance['activeMediaChip']()).toBe('all');
     expect(fixture.componentInstance['emptyIcon']()).toBe('local_library');
-    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book']);
+    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book', 'album']);
     expect(fixture.componentInstance['translations'].messageEmptyWishlist()).toBe('Message.EmptyWishlist');
     expect(fixture.componentInstance['translations'].messageAddFirstWishlist()).toBe('Message.AddFirstWishlist');
     expect(fixture.componentInstance['translations'].placeholderSearchInWishlist()).toBe(

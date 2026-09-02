@@ -158,11 +158,12 @@ export class StatisticsChartService {
     return this.document.getElementById(elementId) as HTMLCanvasElement | null;
   }
 
-  private translateOverviewLabel(key: CollectionStatisticsStatus | 'movie' | 'series' | 'book'): string {
+  private translateOverviewLabel(key: CollectionStatisticsStatus | 'movie' | 'series' | 'book' | 'album'): string {
     const translationKeys: Record<typeof key, string> = {
       movie: 'Movies',
       series: 'Series',
       book: 'Books',
+      album: 'Music',
       watched: 'Watched',
       unwatched: 'Unwatched',
       untracked: 'Untracked',
@@ -170,6 +171,8 @@ export class StatisticsChartService {
       inProgress: 'InProgress',
       read: 'Read',
       unread: 'Unread',
+      listened: 'Listened',
+      unlistened: 'Unlistened',
     };
     return this.ngxSignalTranslate.translate(translationKeys[key]);
   }

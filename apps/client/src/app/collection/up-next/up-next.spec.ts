@@ -103,7 +103,7 @@ describe('UpNext', () => {
   it('derives initial up-next page state', () => {
     expect(fixture.componentInstance['activeMediaChip']()).toBe('all');
     expect(fixture.componentInstance['emptyIcon']()).toBe('local_library');
-    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book']);
+    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book', 'album']);
     expect(fixture.componentInstance['translations'].messageEmptyUpNext()).toBe('Message.EmptyUpNext');
     expect(fixture.componentInstance['translations'].messageAddFirstUpNext()).toBe('Message.AddFirstUpNext');
     expect(fixture.componentInstance['translations'].placeholderSearchInUpNext()).toBe('Placeholder.SearchInUpNext');

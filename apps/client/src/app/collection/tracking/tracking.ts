@@ -70,10 +70,11 @@ export class Tracking {
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
   protected readonly booksEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().books);
-  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'movie', 'series', 'book'];
+  protected readonly musicEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().music);
+  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'movie', 'series', 'book', 'album'];
   protected readonly activeMediaChip = computed((): CollectionMediaChip => {
     const type = this.queryFilters().type;
-    if (type === 'movie' || type === 'series' || type === 'book') return type;
+    if (type === 'movie' || type === 'series' || type === 'book' || type === 'album') return type;
     return 'all';
   });
   protected readonly emptyIcon = computed(() => getMediaChipEmptyIcon(this.activeMediaChip()));

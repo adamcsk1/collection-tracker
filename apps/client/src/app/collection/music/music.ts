@@ -8,22 +8,20 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute } from '@angular/router';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { map } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
-import { getMediaChipEmptyIcon } from '../list/list-util';
-import { List } from '../list/list';
-import type { CollectionMediaChip } from '../media-chips/media-chips-model';
-import { CollectionMediaChips } from '../media-chips/media-chips';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
+import { List } from '../list/list';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
 import {
@@ -31,20 +29,19 @@ import {
   buildCollectionRouteFilters,
   setupStandardCollectionSearch,
 } from '../utils/collection-search-filter-util';
-import { map } from 'rxjs';
 
 @Component({
-  selector: 'ct-wishlist',
-  imports: [List, FormField, Autocomplete, CollectionMediaChips],
-  templateUrl: './wishlist.html',
+  selector: 'ct-music',
+  imports: [List, FormField, Autocomplete],
+  templateUrl: './music.html',
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'wishlist' },
+    { provide: searchSuggestionListTypeToken, useValue: 'music' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Wishlist {
+export class Music {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
@@ -56,7 +53,10 @@ export class Wishlist {
   private readonly route = inject(ActivatedRoute);
   private readonly floatSearchTemplate = viewChild<TemplateRef<unknown>>('floatSearch');
 
-  protected readonly searchTextModel = signal('');
+  protected readonly querySearch = toSignal(
+    this.route.queryParamMap.pipe(map((queryParamMap) => queryParamMap.get('search')?.trim() ?? '')),
+    { initialValue: this.route.snapshot.queryParams['search']?.trim?.() ?? '' }
+  );
   protected readonly queryFilters = toSignal(
     this.route.queryParamMap.pipe(map((queryParamMap) => buildCollectionRouteFilters(queryParamMap))),
     {
@@ -66,23 +66,15 @@ export class Wishlist {
     }
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
-  protected readonly booksEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().books);
-  protected readonly musicEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().music);
-  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'movie', 'series', 'book', 'album'];
-  protected readonly activeMediaChip = computed((): CollectionMediaChip => {
-    const type = this.queryFilters().type;
-    if (type === 'movie' || type === 'series' || type === 'book' || type === 'album') return type;
-    return 'all';
-  });
-  protected readonly emptyIcon = computed(() => getMediaChipEmptyIcon(this.activeMediaChip()));
   protected readonly forceStandardSearch = computed(
-    () => !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
+    () => !!this.querySearch() || !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
   );
+  protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly translations = {
-    messageEmptyWishlist: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWishlist')),
-    messageAddFirstWishlist: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWishlist')),
-    placeholderSearchInWishlist: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWishlist')),
+    messageEmptyMusic: computed(() => this.ngxSignalTranslate.translate('Message.EmptyMusic')),
+    messageAddFirstMusic: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstMusic')),
+    placeholderSearchInMusic: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInMusic')),
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
   private readonly aiSearchSetup = setupCollectionAiSearch({
@@ -92,13 +84,13 @@ export class Wishlist {
     portal: this.portal,
     floatActions: this.floatActions,
     destroyRef: this.destroyRef,
-    listType: 'wishlist',
+    listType: 'music',
     queryFilters: this.queryFilters,
     forceStandardSearch: this.forceStandardSearch,
     placeholder: this.translations.placeholderReply,
     aiAvailable: this.mainState.state.aiAvailable,
   });
-  protected readonly wishlistDataSource = this.aiSearchSetup.dataSource;
+  protected readonly musicDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -107,6 +99,7 @@ export class Wishlist {
       floatActions: this.floatActions,
       floatSearchTemplate: this.floatSearchTemplate,
       destroyRef: this.destroyRef,
+      initialSearchText: this.querySearch(),
     });
   }
 
@@ -114,8 +107,8 @@ export class Wishlist {
     this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
-  protected onAddWishlist(event: Event): void {
+  protected onAddMusic(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { wishlist: true });
+    this.portal.open(NewItemDialog, { music: true });
   }
 }

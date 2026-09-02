@@ -17,8 +17,9 @@ export class CollectionMediaChips {
 
   public readonly active = input.required<CollectionMediaChip>();
   public readonly listRoute = input('library');
-  public readonly allowedChips = input<readonly CollectionMediaChip[]>(['all', 'movie', 'series', 'book']);
+  public readonly allowedChips = input<readonly CollectionMediaChip[]>(['all', 'movie', 'series', 'book', 'album']);
   public readonly booksEnabled = input(true);
+  public readonly musicEnabled = input(true);
   public readonly navigate = input(true);
   public readonly selectionChange = output<CollectionMediaChip>();
 
@@ -28,6 +29,7 @@ export class CollectionMediaChips {
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
+    music: computed(() => this.ngxSignalTranslate.translate('Music')),
   };
 
   protected readonly chips = computed(() => {
@@ -37,10 +39,12 @@ export class CollectionMediaChips {
       { id: 'movie', label: this.translations.movies(), icon: 'movie', testId: 'collection-media-chip-movie' },
       { id: 'series', label: this.translations.series(), icon: 'live_tv', testId: 'collection-media-chip-series' },
       { id: 'book', label: this.translations.books(), icon: 'menu_book', testId: 'collection-media-chip-book' },
+      { id: 'album', label: this.translations.music(), icon: 'album', testId: 'collection-media-chip-album' },
     ];
     return definitions.filter((chip) => {
       if (!allowed.has(chip.id)) return false;
       if (chip.id === 'book' && !this.booksEnabled()) return false;
+      if (chip.id === 'album' && !this.musicEnabled()) return false;
       return true;
     });
   });

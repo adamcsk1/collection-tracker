@@ -60,6 +60,12 @@ describe('Header component', () => {
     expect(component['currentNavTitle']()).toBe('Books');
   });
 
+  it('uses music as the title for the music page', () => {
+    routerEvents.next(new NavigationEnd(1, '/collection/music', '/collection/music'));
+
+    expect(component['currentNavTitle']()).toBe('Music');
+  });
+
   it('uses settings as the title for settings child pages', () => {
     routerEvents.next(new NavigationEnd(1, '/settings/tag-management', '/settings/tag-management'));
 

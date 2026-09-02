@@ -26,6 +26,7 @@ describe('SettingsFeatures', () => {
     mainState = TestBed.inject(mainStateToken);
     mainState.setState('collectionFeaturePreferences', {
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -46,6 +47,7 @@ describe('SettingsFeatures', () => {
   it('initializes the form from main state preferences without saving', () => {
     expect(component['formModel']()).toEqual({
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -59,6 +61,7 @@ describe('SettingsFeatures', () => {
     expect(component['formModel']().tracking).toBe(true);
     expect(settings.storeCollectionFeaturePreferences).toHaveBeenCalledWith({
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -68,6 +71,7 @@ describe('SettingsFeatures', () => {
   it('updates the form when API-backed main state replaces cached preferences', () => {
     mainState.setState('collectionFeaturePreferences', {
       books: false,
+      music: false,
       wishlist: true,
       upNext: false,
       tracking: true,
@@ -76,6 +80,7 @@ describe('SettingsFeatures', () => {
 
     expect(component['formModel']()).toEqual({
       books: false,
+      music: false,
       wishlist: true,
       upNext: false,
       tracking: true,

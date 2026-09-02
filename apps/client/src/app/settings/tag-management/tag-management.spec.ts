@@ -33,7 +33,7 @@ const buildTagManagement = (
 const mockStatistics = (tags: string[]) =>
   of({
     scope: 'all' as const,
-    summary: { total: tags.length, movies: 0, series: 0, books: 0, favorites: 0 },
+    summary: { total: tags.length, movies: 0, series: 0, books: 0, music: 0, favorites: 0 },
     charts: {
       tagCounts: tags.map((tag) => ({ tag, count: 1 })),
       genreCounts: [],

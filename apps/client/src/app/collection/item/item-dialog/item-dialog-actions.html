@@ -27,7 +27,7 @@
       >
     </button>
   }
-  @if (finishedEnabled() && permissionWatch() && ownershipItem() && (movie() || book())) {
+  @if (finishedEnabled() && permissionWatch() && ownershipItem() && (movie() || book() || album())) {
     @if (finished()) {
       <button
         class="button-icon button-reveal-label"
@@ -58,7 +58,7 @@
       </button>
     }
   }
-  @if (trackingEnabled() && permissionWatch() && ownershipItem() && (series() || book())) {
+  @if (trackingEnabled() && permissionWatch() && ownershipItem() && (series() || book() || album())) {
     @if (inTracking()) {
       <button
         class="button-icon button-reveal-label"
@@ -102,7 +102,7 @@
       </button>
     }
   }
-  @if (finishedEnabled() && upNext() && (movie() || book()) && !inFinished()) {
+  @if (finishedEnabled() && upNext() && (movie() || book() || album()) && !inFinished()) {
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().moveToFinished()"
@@ -117,7 +117,7 @@
       >
     </button>
   }
-  @if (trackingEnabled() && upNext() && (series() || book()) && !inTracking()) {
+  @if (trackingEnabled() && upNext() && (series() || book() || album()) && !inTracking()) {
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().moveToTracking()"

@@ -44,10 +44,10 @@ describe('Statistics component', () => {
     ],
     statusCounts: [],
   };
-  const responses: Record<'all' | 'movie' | 'series' | 'book', CollectionStatisticsApiResponseModel> = {
+  const responses: Record<'all' | 'movie' | 'series' | 'book' | 'album', CollectionStatisticsApiResponseModel> = {
     all: {
       scope: 'all',
-      summary: { total: 4, movies: 2, series: 1, books: 1, favorites: 2 },
+      summary: { total: 4, movies: 2, series: 1, books: 1, music: 0, favorites: 2 },
       charts,
     },
     movie: {
@@ -89,6 +89,16 @@ describe('Statistics component', () => {
         statusCounts: [{ status: 'inProgress', count: 1 }],
       },
     },
+    album: {
+      scope: 'album',
+      summary: { total: 1, favorites: 1, listened: 0, unlistened: 0, inProgress: 1 },
+      charts: {
+        ...charts,
+        tagCounts: [{ tag: '#album', count: 1 }],
+        mediaTypeCounts: [],
+        statusCounts: [{ status: 'inProgress', count: 1 }],
+      },
+    },
   };
   const chartService = {
     createTagChart: vi.fn((chart) => chart ?? buildChart<'pie'>().chart),
@@ -105,7 +115,9 @@ describe('Statistics component', () => {
 
   beforeEach(() => {
     api = {
-      getStatistics: vi.fn((filters: { type?: 'movie' | 'series' | 'book' }) => of(responses[filters.type ?? 'all'])),
+      getStatistics: vi.fn((filters: { type?: 'movie' | 'series' | 'book' | 'album' }) =>
+        of(responses[filters.type ?? 'all'])
+      ),
     };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn(), removeItem: vi.fn() };
     portal = { closeAll: vi.fn() };
@@ -211,6 +223,16 @@ describe('Statistics component', () => {
         'statistics-summary-read-books',
         'statistics-summary-unread-books',
         'statistics-summary-in-progress-books',
+      ],
+    ],
+    [
+      'album',
+      [
+        'statistics-summary-music',
+        'statistics-summary-favorites',
+        'statistics-summary-listened-music',
+        'statistics-summary-unlistened-music',
+        'statistics-summary-in-progress-music',
       ],
     ],
   ] as const)('requests and renders only %s-focused summary cards', (scope, expectedCards) => {
@@ -349,13 +371,15 @@ describe('Statistics component', () => {
   it('navigates focused cards to their relevant lists and filters', () => {
     component['navigateToCollection']('book', { favorite: true });
     component['navigateToCollection']('movie', { watched: false });
+    component['navigateToCollection']('album');
     component['navigateToTracking']('series', { completed: false });
 
     expect(routerNavigate).toHaveBeenNthCalledWith(1, ['/collection', 'books'], { queryParams: { favorite: true } });
     expect(routerNavigate).toHaveBeenNthCalledWith(2, ['/collection', 'library'], {
       queryParams: { type: 'movie', watched: false },
     });
-    expect(routerNavigate).toHaveBeenNthCalledWith(3, ['/collection', 'tracking'], {
+    expect(routerNavigate).toHaveBeenNthCalledWith(3, ['/collection', 'music'], undefined);
+    expect(routerNavigate).toHaveBeenNthCalledWith(4, ['/collection', 'tracking'], {
       queryParams: { type: 'series', completed: false },
     });
   });

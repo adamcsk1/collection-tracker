@@ -84,14 +84,19 @@ export class NewItemDialogService {
             listType === 'tracking' &&
             selectedContentType !== 'movie' &&
             selectedContentType !== 'series' &&
-            selectedContentType !== 'book'
+            selectedContentType !== 'book' &&
+            selectedContentType !== 'album'
           ) {
-            throw new Error('Tracking items must be movies, series, or books.');
+            throw new Error('Tracking items must be movies, series, books, or albums.');
           }
           if (listType === 'books' && selectedContentType !== 'book') {
             throw new Error('Books list items must be books.');
           }
-          const includeBookProgress = listType === 'tracking' && selectedContentType === 'book';
+          if (listType === 'music' && selectedContentType !== 'album') {
+            throw new Error('Music list items must be albums.');
+          }
+          const includeProgress =
+            listType === 'tracking' && (selectedContentType === 'book' || selectedContentType === 'album');
           return {
             item: {
               image: selectedContent.poster,
@@ -111,7 +116,7 @@ export class NewItemDialogService {
               plot: selectedContent.plot,
               contentType: selectedContentType,
               favorite: false,
-              ...(includeBookProgress
+              ...(includeProgress
                 ? { progressCurrent: progressCurrent ?? null, progressTotal: progressTotal ?? null }
                 : {}),
             },
@@ -154,12 +159,16 @@ export class NewItemDialogService {
           listType === 'tracking' &&
           change.contentType !== 'movie' &&
           change.contentType !== 'series' &&
-          change.contentType !== 'book'
+          change.contentType !== 'book' &&
+          change.contentType !== 'album'
         ) {
-          throw new Error('Tracking items must be movies, series, or books.');
+          throw new Error('Tracking items must be movies, series, books, or albums.');
         }
         if (listType === 'books' && change.contentType !== 'book') {
           throw new Error('Books list items must be books.');
+        }
+        if (listType === 'music' && change.contentType !== 'album') {
+          throw new Error('Music list items must be albums.');
         }
         return change;
       }),

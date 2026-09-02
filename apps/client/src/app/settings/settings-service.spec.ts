@@ -118,6 +118,7 @@ describe('SettingsService', () => {
   it('moves the feature cache from session storage to local storage when the mode changes', () => {
     const preferences = {
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -219,12 +220,14 @@ describe('SettingsService', () => {
   it('overrides cached collection feature preferences with API preferences', () => {
     const cachedPreferences = {
       books: true,
+      music: true,
       wishlist: true,
       upNext: true,
       tracking: true,
     };
     const apiPreferences = {
       books: false,
+      music: false,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -245,6 +248,7 @@ describe('SettingsService', () => {
   it('uses and caches default collection feature preferences when the API field is missing', () => {
     mainState.setState('collectionFeaturePreferences', {
       books: false,
+      music: false,
       wishlist: false,
       upNext: false,
       tracking: false,
@@ -277,6 +281,7 @@ describe('SettingsService', () => {
   it('stores, caches, and posts collection feature preferences', () => {
     const preferences = {
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -296,6 +301,7 @@ describe('SettingsService', () => {
   it('caches collection feature preferences in configured session storage', () => {
     const preferences = {
       books: false,
+      music: false,
       wishlist: true,
       upNext: false,
       tracking: true,
@@ -412,6 +418,7 @@ describe('SettingsService', () => {
     const firstUpdate = new Subject<void>();
     const firstPreferences = {
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -433,6 +440,7 @@ describe('SettingsService', () => {
   it('continues serialized collection feature preference updates after an error', () => {
     const firstPreferences = {
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,

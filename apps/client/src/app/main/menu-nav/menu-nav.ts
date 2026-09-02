@@ -38,6 +38,7 @@ export class MenuNav {
     return (
       path.startsWith('/collection/library') ||
       path.startsWith('/collection/books') ||
+      path.startsWith('/collection/music') ||
       path === '/collection' ||
       path === '/collection/'
     );

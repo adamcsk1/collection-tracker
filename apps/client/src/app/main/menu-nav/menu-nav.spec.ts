@@ -65,6 +65,7 @@ describe('MenuNav', () => {
 
     mainState.setState('collectionFeaturePreferences', {
       books: true,
+      music: true,
       upNext: true,
       wishlist: false,
       tracking: true,
@@ -78,6 +79,7 @@ describe('MenuNav', () => {
 
     mainState.setState('collectionFeaturePreferences', {
       books: false,
+      music: false,
       upNext: false,
       wishlist: true,
       tracking: false,

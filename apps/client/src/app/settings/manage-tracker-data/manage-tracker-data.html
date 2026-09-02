@@ -11,7 +11,7 @@
     (valueChange)="onLibraryChange($event)"
   />
 }
-@if (featurePreferences().tracking || featurePreferences().books) {
+@if (featurePreferences().tracking || featurePreferences().books || featurePreferences().music) {
   <libc-callout data-test-id="tracker-cleanup-info" icon="article">
     {{ translations.messageTrackerCleanup() }}
   </libc-callout>
@@ -47,6 +47,40 @@
     >
       <i class="material-icons" [title]="translations.removeAllTrackedBookData()"> delete_sweep </i>
       {{ translations.removeAllTrackedBookData() }}
+    </button>
+  </div>
+}
+@if (featurePreferences().music) {
+  <h4>{{ translations.music() }}</h4>
+  <div class="actions">
+    <button
+      data-test-id="settings-mark-all-music-completed"
+      type="button"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkMusic()"
+      (click)="onMarkAllMusicAsCompleted()"
+    >
+      <i class="material-icons" aria-hidden="true"> check_circle </i>
+      {{ translations.markAllMusicAsCompleted() }}
+    </button>
+    <button
+      data-test-id="settings-mark-all-music-uncompleted"
+      type="button"
+      class="button-danger"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkMusic()"
+      (click)="onMarkAllMusicAsUncompleted()"
+    >
+      <i class="material-icons" aria-hidden="true"> unpublished </i>
+      {{ translations.markAllMusicAsUncompleted() }}
+    </button>
+    <button
+      data-test-id="settings-remove-all-tracked-music-data"
+      type="button"
+      class="button-danger"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
+      (click)="onRemoveAllTrackedMusicData()"
+    >
+      <i class="material-icons" aria-hidden="true"> delete_sweep </i>
+      {{ translations.removeAllTrackedMusicData() }}
     </button>
   </div>
 }

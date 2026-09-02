@@ -6,6 +6,7 @@ import { ItemDialogActions } from './item-dialog-actions';
 
 const translations: ItemDialogTranslations = {
   actors: signal('Actors'),
+  artists: signal('Artists'),
   authors: signal('Authors'),
   altPoster: signal('Poster image'),
   manageCompletedEpisodes: signal('Manage watched episodes'),
@@ -27,6 +28,7 @@ const translations: ItemDialogTranslations = {
   subjects: signal('Subjects'),
   description: signal('Description'),
   isbn: signal('ISBN'),
+  mbid: signal('MBID'),
   labelMetacriticRate: signal('Metacritic'),
   labelRottenTomatoesRate: signal('Rotten Tomatoes'),
   labelUserRate: signal('User rate'),
@@ -60,6 +62,8 @@ describe('ItemDialogActions', () => {
     fixture.componentRef.setInput('upNext', overrides['upNext'] ?? false);
     fixture.componentRef.setInput('movie', overrides['movie'] ?? true);
     fixture.componentRef.setInput('series', overrides['series'] ?? false);
+    fixture.componentRef.setInput('book', overrides['book'] ?? false);
+    fixture.componentRef.setInput('album', overrides['album'] ?? false);
     fixture.componentRef.setInput('finished', overrides['finished'] ?? false);
     fixture.componentRef.setInput('favorite', overrides['favorite'] ?? false);
     fixture.componentRef.setInput('inTracking', overrides['inTracking'] ?? false);
@@ -156,6 +160,13 @@ describe('ItemDialogActions', () => {
 
     expect(copyToTracking).toHaveBeenCalled();
     expect(queryButton('item-dialog-mark-finished')).toBeNull();
+  });
+
+  it('renders completion and tracking actions for permitted music items', () => {
+    createComponent({ movie: false, album: true });
+
+    expect(getButton('item-dialog-mark-finished')).toBeTruthy();
+    expect(getButton('item-dialog-copy-tracking')).toBeTruthy();
   });
 
   it('renders open in tracking and remove when series is already tracked', () => {

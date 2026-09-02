@@ -103,9 +103,9 @@ export class ListItem {
   };
   public readonly collectionItem = input.required<CollectionItemModel>();
 
-  protected readonly bookProgressText = computed(() => {
+  protected readonly progressText = computed(() => {
     const item = this.collectionItem();
-    if (item.listType !== 'tracking' || item.contentType !== 'book') return null;
+    if (item.listType !== 'tracking' || (item.contentType !== 'book' && item.contentType !== 'album')) return null;
     const current = item.progressCurrent;
     const total = item.progressTotal;
     if (current == null && total == null) return null;
@@ -116,12 +116,12 @@ export class ListItem {
   protected readonly itemMeta = computed(() => {
     const item = this.collectionItem();
     const year = this.listDisplayPreferences().showYear && item.year ? item.year : null;
-    const progress = this.bookProgressText();
+    const progress = this.progressText();
     if (year && progress) return `${year} · ${progress}`;
     return progress ?? year;
   });
   protected readonly itemMetaTestId = computed(() =>
-    this.bookProgressText() ? 'list-item-progress' : 'list-item-year'
+    this.progressText() ? 'list-item-progress' : 'list-item-year'
   );
 
   private getRatingDisplayValue(

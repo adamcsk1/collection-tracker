@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { LinkButton } from '@components/link-button/link-button';
 import { CollectionItemModel } from '../../collection-model';
 import { ItemDialogTranslations } from '../item-form/item-form-model';
@@ -23,9 +23,16 @@ export class ItemDialogDetail {
   public readonly detailTags = input.required<string[]>();
   public readonly tracking = input.required<boolean>();
   public readonly book = input.required<boolean>();
+  public readonly album = input(false);
   public readonly isbn = input.required<string>();
+  public readonly mbid = input('');
   public readonly episodeProgressText = input.required<string>();
-  public readonly showBookProgress = input(false);
-  public readonly bookProgressText = input('');
+  public readonly showProgress = input(false);
+  public readonly progressText = input('');
   public readonly posterImageError = output<void>();
+  protected readonly contributorHeading = computed(() => {
+    if (this.book()) return this.translations().authors();
+    if (this.album()) return this.translations().artists();
+    return this.translations().actors();
+  });
 }

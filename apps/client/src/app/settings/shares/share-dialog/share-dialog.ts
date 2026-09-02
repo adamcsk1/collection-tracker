@@ -125,6 +125,7 @@ export class ShareDialog implements OnInit {
     const labels: Record<CollectionListTypeModel, string> = {
       library: 'Library',
       books: 'Books',
+      music: 'Music',
       wishlist: 'Wishlist',
       'up-next': 'UpNext',
       tracking: 'Tracking',
@@ -134,7 +135,13 @@ export class ShareDialog implements OnInit {
 
   protected contentTypeLabel(contentType: CollectionItemContentTypeModel): string {
     return this.ngxSignalTranslate.translate(
-      contentType === 'movie' ? 'Movies' : contentType === 'series' ? 'Series' : 'Books'
+      contentType === 'movie'
+        ? 'Movies'
+        : contentType === 'series'
+          ? 'Series'
+          : contentType === 'album'
+            ? 'Music'
+            : 'Books'
     );
   }
 

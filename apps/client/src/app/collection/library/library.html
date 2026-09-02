@@ -10,14 +10,20 @@
       (userAcceptSuggestionEvent)="onSearchAccepted()"
     />
   </ng-template>
-  <ct-collection-media-chips [active]="activeMediaChip()" [booksEnabled]="booksEnabled()" />
+  <ct-collection-media-chips
+    [active]="activeMediaChip()"
+    [booksEnabled]="booksEnabled()"
+    [musicEnabled]="musicEnabled()"
+  />
   <ct-list
     [routeSearchText]="querySearch()"
     [routeFilterKey]="queryFilterKey()"
     [dataSource]="collectionDataSource"
     [listType]="'library'"
     [emptyIcon]="emptyIcon()"
-    [showAddButton]="activeMediaChip() !== 'book' || booksEnabled()"
+    [showAddButton]="
+      (activeMediaChip() !== 'book' || booksEnabled()) && (activeMediaChip() !== 'album' || musicEnabled())
+    "
     (randomPick)="onRandomPick()"
     (showFunctions)="onShowFunctions()"
   />

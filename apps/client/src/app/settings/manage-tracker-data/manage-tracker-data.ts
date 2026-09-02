@@ -44,6 +44,10 @@ export class SettingsManageTrackerData implements OnInit {
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
+    music: computed(() => this.ngxSignalTranslate.translate('Music')),
+    markAllMusicAsCompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllMusicAsCompleted')),
+    markAllMusicAsUncompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllMusicAsUncompleted')),
+    removeAllTrackedMusicData: computed(() => this.ngxSignalTranslate.translate('RemoveAllTrackedMusicData')),
   };
   protected readonly libraryOptions = computed(() => [
     { text: this.translations.myLibrary(), value: '' },
@@ -54,7 +58,8 @@ export class SettingsManageTrackerData implements OnInit {
           (grant) =>
             grant.canRead &&
             ((grant.listType === 'library' && (grant.contentType === 'movie' || grant.contentType === 'series')) ||
-              (grant.listType === 'books' && grant.contentType === 'book'))
+              (grant.listType === 'books' && grant.contentType === 'book') ||
+              (grant.listType === 'music' && grant.contentType === 'album'))
         )
       )
       .map((share) => ({
@@ -69,6 +74,7 @@ export class SettingsManageTrackerData implements OnInit {
   protected readonly canMarkMovies = computed(() => this.canReadSelectedScope('library', 'movie'));
   protected readonly canMarkSeries = computed(() => this.canReadSelectedScope('library', 'series'));
   protected readonly canMarkBooks = computed(() => this.canReadSelectedScope('books', 'book'));
+  protected readonly canMarkMusic = computed(() => this.canReadSelectedScope('music', 'album'));
 
   public ngOnInit(): void {
     this.sharesService.loadShares();
@@ -119,11 +125,29 @@ export class SettingsManageTrackerData implements OnInit {
     this.manageTrackerData.removeAllTrackedBookData();
   }
 
+  protected onMarkAllMusicAsCompleted(): void {
+    if (!this.canMarkMusic()) return;
+    this.manageTrackerData.markAllMusicAsCompleted(this.selectedOwnerShareCode() || undefined);
+  }
+
+  protected onMarkAllMusicAsUncompleted(): void {
+    if (!this.canMarkMusic()) return;
+    this.manageTrackerData.markAllMusicAsUncompleted(this.selectedOwnerShareCode() || undefined);
+  }
+
+  protected onRemoveAllTrackedMusicData(): void {
+    if (this.selectedOwnerShareCode()) return;
+    this.manageTrackerData.removeAllTrackedMusicData();
+  }
+
   protected onLibraryChange(selectedValue: SelectDataModel['value']): void {
     this.selectedOwnerShareCode.set(typeof selectedValue === 'string' ? selectedValue : '');
   }
 
-  private canReadSelectedScope(listType: 'library' | 'books', contentType: 'movie' | 'series' | 'book'): boolean {
+  private canReadSelectedScope(
+    listType: 'library' | 'books' | 'music',
+    contentType: 'movie' | 'series' | 'book' | 'album'
+  ): boolean {
     if (!this.selectedOwnerShareCode()) return true;
     return (
       this.selectedShare()?.grants.some(

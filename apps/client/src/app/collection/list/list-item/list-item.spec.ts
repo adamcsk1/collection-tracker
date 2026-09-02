@@ -294,6 +294,22 @@ describe('ListItem', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-year"]')).toBeNull();
   });
 
+  it('shows album listening progress on tracking list cards', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Tracking Album'),
+      listType: 'tracking',
+      contentType: 'album',
+      year: '1973',
+      progressCurrent: 4,
+      progressTotal: 10,
+      watchedAt: null,
+    });
+    fixture.detectChanges();
+
+    const progress = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-progress"]');
+    expect(progress?.textContent?.trim()).toBe('1973 · 4 / 10');
+  });
+
   it('shows book progress without year when year display is disabled', () => {
     mainState.setState('collectionListDisplayPreferences', {
       ...mainState.state.collectionListDisplayPreferences(),
@@ -328,7 +344,7 @@ describe('ListItem', () => {
     });
     fixture.detectChanges();
 
-    expect(component['bookProgressText']()).toBe(expected);
+    expect(component['progressText']()).toBe(expected);
   });
 
   it('renders user rating and handles missing user rating', () => {

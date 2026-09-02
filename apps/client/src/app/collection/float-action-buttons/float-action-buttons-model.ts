@@ -1,7 +1,16 @@
 import { CollectionItemOrderBy, CollectionItemOrderDirection } from '@shared/models/api-model';
 
 export type FloatActionFilter =
-  'movie' | 'series' | 'book' | 'unwatched' | 'favorite' | 'completed' | 'uncompleted' | 'sharedMine' | 'sharedOnly';
+  | 'movie'
+  | 'series'
+  | 'book'
+  | 'album'
+  | 'unwatched'
+  | 'favorite'
+  | 'completed'
+  | 'uncompleted'
+  | 'sharedMine'
+  | 'sharedOnly';
 
 export interface FloatActionButtonsConfig {
   collectionLength: number;

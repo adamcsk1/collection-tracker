@@ -25,6 +25,7 @@ export class SettingsFeatures {
     upNext: computed(() => this.ngxSignalTranslate.translate('UpNext')),
     tracking: computed(() => this.ngxSignalTranslate.translate('Tracking')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
+    music: computed(() => this.ngxSignalTranslate.translate('Music')),
   };
   protected readonly formModel = signal<CollectionFeaturePreferencesModel>(DEFAULT_COLLECTION_FEATURE_PREFERENCES);
   protected readonly form = form(this.formModel);

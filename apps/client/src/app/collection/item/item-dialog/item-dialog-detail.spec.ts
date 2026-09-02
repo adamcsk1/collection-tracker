@@ -17,10 +17,12 @@ const translations: ItemDialogTranslations = {
   labelUserRate: signal('User rate'),
   genre: signal('Genre'),
   actors: signal('Actors'),
+  artists: signal('Artists'),
   authors: signal('Authors'),
   subjects: signal('Subjects'),
   description: signal('Description'),
   isbn: signal('ISBN'),
+  mbid: signal('MBID'),
   tags: signal('Tags'),
   watchedUpTo: signal('Watched up to'),
   plot: signal('Plot'),
@@ -86,7 +88,9 @@ describe('ItemDialogDetail', () => {
     fixture.componentRef.setInput('detailTags', ['#drama']);
     fixture.componentRef.setInput('tracking', true);
     fixture.componentRef.setInput('book', false);
+    fixture.componentRef.setInput('album', false);
     fixture.componentRef.setInput('isbn', '');
+    fixture.componentRef.setInput('mbid', '');
     fixture.componentRef.setInput('episodeProgressText', 'S01E02');
     fixture.detectChanges();
   });
@@ -142,5 +146,36 @@ describe('ItemDialogDetail', () => {
     expect(element.textContent).toContain('Description');
     expect(element.textContent).not.toContain('IMDb');
     expect(element.querySelector('[data-test-id="video"]')).toBeNull();
+  });
+
+  it('shows album metadata without movie ratings, trailer, or episode progress', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...item,
+      IMDbId: undefined,
+      contentType: 'album',
+      listType: 'music',
+      externalProvider: 'musicbrainz',
+      externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+      userRate: null,
+      actors: 'Pink Floyd',
+      plot: 'Studio album',
+    });
+    fixture.componentRef.setInput('book', false);
+    fixture.componentRef.setInput('album', true);
+    fixture.componentRef.setInput('tracking', true);
+    fixture.componentRef.setInput('mbid', 'f509c5ff-ad54-4dde-b61e-24f750965835');
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('[data-test-id="item-dialog-mbid"]')?.textContent).toContain(
+      'f509c5ff-ad54-4dde-b61e-24f750965835'
+    );
+    expect(element.textContent).toContain('Artists');
+    expect(element.textContent).toContain('Description');
+    expect(element.textContent).not.toContain('IMDb');
+    expect(element.textContent).not.toContain('Actors');
+    expect(element.textContent).not.toContain('Plot');
+    expect(element.querySelector('[data-test-id="video"]')).toBeNull();
+    expect(element.querySelector('[data-test-id="item-dialog-episode-progress-section"]')).toBeNull();
   });
 });

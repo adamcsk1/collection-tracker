@@ -24,4 +24,10 @@
     [label]="translations.books()"
     (valueChange)="onChange('books', $event)"
   />
+  <libc-checkbox
+    data-test-id="settings-feature-music"
+    [formField]="form.music"
+    [label]="translations.music()"
+    (valueChange)="onChange('music', $event)"
+  />
 </form>

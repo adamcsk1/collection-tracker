@@ -21,6 +21,7 @@ describe('CollectionMediaChips', () => {
     fixture = TestBed.createComponent(CollectionMediaChips);
     fixture.componentRef.setInput('active', 'all');
     fixture.componentRef.setInput('booksEnabled', true);
+    fixture.componentRef.setInput('musicEnabled', true);
     fixture.detectChanges();
   });
 
@@ -37,6 +38,7 @@ describe('CollectionMediaChips', () => {
     expect(host.querySelector('[data-test-id="collection-media-chip-movie"]')).toBeTruthy();
     expect(host.querySelector('[data-test-id="collection-media-chip-series"]')).toBeTruthy();
     expect(host.querySelector('[data-test-id="collection-media-chip-book"]')).toBeTruthy();
+    expect(host.querySelector('[data-test-id="collection-media-chip-album"]')).toBeTruthy();
     expect(allChip.classList.contains('button-reveal-label')).toBe(true);
     expect(allChip.querySelector('.material-icons')?.textContent?.trim()).toBe('local_library');
     expect(
@@ -49,6 +51,13 @@ describe('CollectionMediaChips', () => {
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('[data-test-id="collection-media-chip-book"]')).toBeNull();
+  });
+
+  it('hides album chip when music feature is disabled', () => {
+    fixture.componentRef.setInput('musicEnabled', false);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('[data-test-id="collection-media-chip-album"]')).toBeNull();
   });
 
   it('navigates with merged type query params', () => {

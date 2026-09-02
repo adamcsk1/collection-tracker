@@ -22,6 +22,7 @@ export interface ItemFormModel {
 
 export interface ItemDialogTranslations {
   actors: Signal<string>;
+  artists: Signal<string>;
   authors: Signal<string>;
   altPoster: Signal<string>;
   delete: Signal<string>;
@@ -32,6 +33,7 @@ export interface ItemDialogTranslations {
   subjects: Signal<string>;
   description: Signal<string>;
   isbn: Signal<string>;
+  mbid: Signal<string>;
   labelMetacriticRate: Signal<string>;
   labelRottenTomatoesRate: Signal<string>;
   labelUserRate: Signal<string>;

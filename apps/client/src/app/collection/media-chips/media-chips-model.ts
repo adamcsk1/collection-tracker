@@ -1,1 +1,1 @@
-export type CollectionMediaChip = 'all' | 'movie' | 'series' | 'book';
+export type CollectionMediaChip = 'all' | 'movie' | 'series' | 'book' | 'album';

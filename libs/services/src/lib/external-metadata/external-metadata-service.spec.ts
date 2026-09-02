@@ -73,6 +73,7 @@ describe('ExternalMetadataService', () => {
         text: 'The Matrix',
         value: directMatrixReference,
         year: '1999',
+        actors: 'Keanu Reeves',
       },
     ]);
     expect(service.getProviderReference(directMatrixReference)).toEqual({
@@ -221,7 +222,7 @@ describe('ExternalMetadataService', () => {
             contentType: 'movie',
             poster: '',
             plot: '',
-            actors: '',
+            actors: 'Keanu Reeves',
             genres: [],
             ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
           },
@@ -237,6 +238,7 @@ describe('ExternalMetadataService', () => {
         text: 'The Matrix',
         value: matrixReference,
         year: '1999',
+        actors: 'Keanu Reeves',
       },
     ]);
     expect(service.getProviderReference(matrixReference)).toEqual({ identitySource: 'omdb', identityId: 'tt0133093' });

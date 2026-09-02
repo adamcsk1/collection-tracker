@@ -5,6 +5,7 @@ import { mergeImdbExternalId } from '@shared/utils/external-metadata-identity-ut
 import { normalizeIMDbRating } from '@shared/utils/external-metadata-ratings-util';
 import { resolveImdbId } from '@shared/utils/imdb-id-util';
 import { extractIsbn13 } from '@shared/utils/isbn-util';
+import { extractMbid } from '@shared/utils/mbid-util';
 import { ItemFormModel } from './item-form-model';
 export type { ItemFormModel } from './item-form-model';
 
@@ -30,10 +31,35 @@ export const buildItemFromForm = (
   options: {
     externalProvider?: ExternalMetadataProviderNameModel;
     externalItemId?: string;
-    externalIds?: { source: 'imdb' | 'isbn' | 'omdb' | 'openlibrary'; id: string }[];
+    externalIds?: { source: 'imdb' | 'isbn' | 'omdb' | 'openlibrary' | 'musicbrainz'; id: string }[];
     favorite?: boolean;
   } = {}
 ): CollectionItemChangeApiModel => {
+  if (formValues.contentType === 'album') {
+    const mbid = extractMbid(options.externalItemId ?? formValues.IMDbId) ?? '';
+    return {
+      title: formValues.title.trim(),
+      IMDbId: undefined,
+      externalProvider: 'musicbrainz',
+      externalItemId: mbid,
+      externalIds: mbid ? [{ source: 'musicbrainz', id: mbid }] : undefined,
+      year: formValues.year,
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: formValues.userRate,
+      image: formValues.image,
+      genre: parseGenreText(formValues.genreText),
+      tags: parseTagText(formValues.tagsText),
+      actors: formValues.actors,
+      plot: formValues.plot,
+      contentType: 'album',
+      favorite: options.favorite ?? false,
+      progressCurrent: formValues.progressCurrent,
+      progressTotal: formValues.progressTotal,
+    };
+  }
+
   if (formValues.contentType === 'book') {
     const isbn = extractIsbn13(options.externalItemId ?? formValues.IMDbId) ?? '';
     return {
@@ -108,3 +134,5 @@ export const buildItemFormFromChange = (item: CollectionItemChangeApiModel): Ite
 export const isImdbIdValid = (imdbId: string): boolean => resolveImdbId(imdbId) !== '';
 
 export const isIsbnValid = (isbn: string): boolean => extractIsbn13(isbn) !== null;
+
+export const isMbidValid = (mbid: string): boolean => extractMbid(mbid) !== null;

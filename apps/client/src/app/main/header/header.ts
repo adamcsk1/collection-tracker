@@ -49,6 +49,9 @@ export class Header {
     if (currentPath.startsWith('/collection/books')) {
       return 'Books';
     }
+    if (currentPath.startsWith('/collection/music')) {
+      return 'Music';
+    }
     if (currentPath.startsWith('/settings')) {
       return 'Settings';
     }

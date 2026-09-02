@@ -49,7 +49,7 @@
           </libc-input>
         }
         <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
-        @if (!book()) {
+        @if (!book() && !album()) {
           <libc-select
             data-test-id="item-dialog-content-type"
             [label]="translations.type()"
@@ -57,7 +57,7 @@
             [options]="contentTypeOptions()"
           />
         }
-        @if (!book()) {
+        @if (!book() && !album()) {
           <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate">
             <ng-container errors>
               @if (formErrors.rate.rateFormat()) {
@@ -103,7 +103,7 @@
         </libc-input>
         <libc-autocomplete
           data-test-id="item-dialog-genre"
-          [label]="book() ? translations.subjects() : translations.genre()"
+          [label]="book() || album() ? translations.subjects() : translations.genre()"
           [hint]="translations.hintSeparateGenres()"
           [formField]="form.genreText"
           ctGenreSuggestions
@@ -117,17 +117,17 @@
         />
         <libc-input
           data-test-id="item-dialog-actors"
-          [label]="book() ? translations.authors() : translations.actors()"
+          [label]="contributorLabel()"
           [formField]="form.actors"
         />
         <libc-textarea
           data-test-id="item-dialog-plot"
           class="full-width"
-          [label]="book() ? translations.description() : translations.plot()"
+          [label]="book() || album() ? translations.description() : translations.plot()"
           [formField]="form.plot"
           [rows]="4"
         />
-        @if (showBookProgress()) {
+        @if (showProgress()) {
           <libc-input
             data-test-id="item-dialog-progress-current"
             type="number"
@@ -170,10 +170,12 @@
         [detailTags]="detailTags()"
         [tracking]="tracking()"
         [book]="book()"
+        [album]="album()"
         [isbn]="isbn()"
+        [mbid]="mbid()"
         [episodeProgressText]="episodeProgressText()"
-        [showBookProgress]="showBookProgress()"
-        [bookProgressText]="bookProgressText()"
+        [showProgress]="showProgress()"
+        [progressText]="progressText()"
         (posterImageError)="onPosterImageError()"
       />
     }
@@ -225,6 +227,7 @@
       [movie]="movie()"
       [series]="series()"
       [book]="book()"
+      [album]="album()"
       [finished]="finished()"
       [favorite]="favorite()"
       [inTracking]="inTracking()"

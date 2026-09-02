@@ -112,7 +112,7 @@ describe('Tracking', () => {
   it('derives initial tracking page state', () => {
     expect(fixture.componentInstance['activeMediaChip']()).toBe('all');
     expect(fixture.componentInstance['emptyIcon']()).toBe('local_library');
-    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book']);
+    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book', 'album']);
     expect(fixture.componentInstance['translations'].messageEmptyTracking()).toBe('Message.EmptyTracking');
     expect(fixture.componentInstance['translations'].messageAddFirstTracking()).toBe('Message.AddFirstTracking');
     expect(fixture.componentInstance['translations'].placeholderSearchInTracking()).toBe(

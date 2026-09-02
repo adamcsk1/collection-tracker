@@ -37,6 +37,7 @@ export class FloatActionButtons implements OnDestroy {
     filterMovie: computed(() => this.ngxSignalTranslate.translate('Movies')),
     filterSeries: computed(() => this.ngxSignalTranslate.translate('Series')),
     filterBook: computed(() => this.ngxSignalTranslate.translate('Books')),
+    filterAlbum: computed(() => this.ngxSignalTranslate.translate('Music')),
     filterUnwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
     filterFavorite: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     filterCompleted: computed(() => this.ngxSignalTranslate.translate('Completed')),
@@ -49,10 +50,14 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
   protected readonly rowFilterActions = computed(() =>
-    this.config().filterActions.filter((filter) => filter === 'movie' || filter === 'series' || filter === 'book')
+    this.config().filterActions.filter(
+      (filter) => filter === 'movie' || filter === 'series' || filter === 'book' || filter === 'album'
+    )
   );
   protected readonly stackedFilterActions = computed(() =>
-    this.config().filterActions.filter((filter) => filter !== 'movie' && filter !== 'series' && filter !== 'book')
+    this.config().filterActions.filter(
+      (filter) => filter !== 'movie' && filter !== 'series' && filter !== 'book' && filter !== 'album'
+    )
   );
   protected readonly showActionSection = computed(
     () => this.config().showAddButton || this.config().showRandomPickButton
@@ -145,6 +150,7 @@ export class FloatActionButtons implements OnDestroy {
       movie: this.translations.filterMovie(),
       series: this.translations.filterSeries(),
       book: this.translations.filterBook(),
+      album: this.translations.filterAlbum(),
       unwatched: this.translations.filterUnwatched(),
       favorite: this.translations.filterFavorite(),
       completed: this.translations.filterCompleted(),
@@ -161,6 +167,7 @@ export class FloatActionButtons implements OnDestroy {
       movie: 'movie',
       series: 'live_tv',
       book: 'menu_book',
+      album: 'album',
       unwatched: 'visibility_off',
       favorite: 'star',
       completed: 'check_circle',

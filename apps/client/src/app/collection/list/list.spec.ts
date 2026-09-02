@@ -330,7 +330,8 @@ describe('List', () => {
       wishlist: false,
       tracking: false,
       books: false,
-      allowedContentTypes: ['movie', 'series', 'book'],
+      music: false,
+      allowedContentTypes: ['movie', 'series', 'book', 'album'],
     });
   });
 
@@ -345,7 +346,8 @@ describe('List', () => {
       wishlist: true,
       tracking: false,
       books: false,
-      allowedContentTypes: ['movie', 'series', 'book'],
+      music: false,
+      allowedContentTypes: ['movie', 'series', 'book', 'album'],
     });
   });
 
@@ -360,7 +362,8 @@ describe('List', () => {
       wishlist: false,
       tracking: true,
       books: false,
-      allowedContentTypes: ['movie', 'series', 'book'],
+      music: false,
+      allowedContentTypes: ['movie', 'series', 'book', 'album'],
     });
   });
 
@@ -729,6 +732,7 @@ describe('List', () => {
       wishlist: false,
       tracking: false,
       books: true,
+      music: false,
       allowedContentTypes: ['book'],
     });
   });

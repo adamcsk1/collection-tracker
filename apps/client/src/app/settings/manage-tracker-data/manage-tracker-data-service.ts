@@ -292,6 +292,74 @@ export class ManageTrackerDataService {
       });
   }
 
+  public markAllMusicAsCompleted(ownerShareCode?: string): void {
+    this.confirm
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMusicAsCompleted'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.blockerLoadingState.patchState('withoutDelay', true);
+        this.blockerLoadingState.patchState('show', true);
+        this.blockerLoadingState.patchState(
+          'message',
+          this.ngxSignalTranslate.translate('Message.MarkingAllMusicAsCompleted')
+        );
+
+        this.api
+          .markAllMusicAsCompleted(ownerShareCode)
+          .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MarkedAllMusicAsCompleted'));
+              this.collection.triggerReload();
+            },
+            error: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState('timeout', 10000);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkingAllMusicAsCompletedWithErrors')
+              );
+            },
+          });
+      });
+  }
+
+  public markAllMusicAsUncompleted(ownerShareCode?: string): void {
+    this.confirm
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMusicAsUncompleted'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.blockerLoadingState.patchState('withoutDelay', true);
+        this.blockerLoadingState.patchState('show', true);
+        this.blockerLoadingState.patchState(
+          'message',
+          this.ngxSignalTranslate.translate('Message.MarkingAllMusicAsUncompleted')
+        );
+
+        this.api
+          .markAllMusicAsUncompleted(ownerShareCode)
+          .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkedAllMusicAsUncompleted')
+              );
+              this.collection.triggerReload();
+            },
+            error: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkingAllMusicAsUncompletedWithErrors')
+              );
+            },
+          });
+      });
+  }
+
   public removeAllTrackedBookData(): void {
     this.confirm
       .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedBookData'))
@@ -318,6 +386,38 @@ export class ManageTrackerDataService {
               this.toastState.setState(
                 'message',
                 this.ngxSignalTranslate.translate('Toast.RemovingTrackedBookDataWithErrors')
+              );
+            },
+          });
+      });
+  }
+
+  public removeAllTrackedMusicData(): void {
+    this.confirm
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedMusicData'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.blockerLoadingState.patchState('withoutDelay', true);
+        this.blockerLoadingState.patchState('show', true);
+        this.blockerLoadingState.patchState(
+          'message',
+          this.ngxSignalTranslate.translate('Message.RemovingTrackedMusicData')
+        );
+
+        this.api
+          .deleteAllMusicItems()
+          .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.RemovedTrackedMusicData'));
+              this.collection.triggerReload();
+            },
+            error: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.RemovingTrackedMusicDataWithErrors')
               );
             },
           });

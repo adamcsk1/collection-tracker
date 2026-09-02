@@ -251,18 +251,22 @@ export class List implements OnDestroy {
     const lockedType =
       activeFilters.includes('book') || listType === 'books'
         ? ('book' as const)
-        : activeFilters.includes('movie')
-          ? ('movie' as const)
-          : activeFilters.includes('series')
-            ? ('series' as const)
-            : undefined;
+        : activeFilters.includes('album') || listType === 'music'
+          ? ('album' as const)
+          : activeFilters.includes('movie')
+            ? ('movie' as const)
+            : activeFilters.includes('series')
+              ? ('series' as const)
+              : undefined;
     const booksEnabled = this.mainState.state.collectionFeaturePreferences().books;
+    const musicEnabled = this.mainState.state.collectionFeaturePreferences().music;
     this.portal.open(NewItemDialog, {
       upNext: listType === 'up-next',
       wishlist: listType === 'wishlist',
       tracking: listType === 'tracking',
       books: lockedType === 'book',
-      allowedContentTypes: getAllowedAddContentTypes(listType, lockedType, booksEnabled),
+      music: lockedType === 'album',
+      allowedContentTypes: getAllowedAddContentTypes(listType, lockedType, booksEnabled, musicEnabled),
     });
   }
 
@@ -518,7 +522,7 @@ export class List implements OnDestroy {
       case 'library': {
         // Media scope is the always-visible chips; float keeps status filters only.
         const active = this.getActiveFilterActions();
-        if (active.includes('book')) return ['favorite', ...sharedFilters];
+        if (active.includes('book') || active.includes('album')) return ['favorite', ...sharedFilters];
         return ['unwatched', 'favorite', ...sharedFilters];
       }
       case 'up-next':
@@ -528,6 +532,7 @@ export class List implements OnDestroy {
       case 'tracking':
         return ['completed', 'uncompleted', ...sharedFilters];
       case 'books':
+      case 'music':
         return ['favorite', ...sharedFilters];
     }
   }
@@ -537,7 +542,8 @@ export class List implements OnDestroy {
     return this.sharesState.state.incoming().some((share) =>
       share.grants.some((grant) => {
         if (!grant.canRead) return false;
-        if (listType === 'library') return grant.listType === 'library' || grant.listType === 'books';
+        if (listType === 'library')
+          return grant.listType === 'library' || grant.listType === 'books' || grant.listType === 'music';
         return grant.listType === listType;
       })
     );
@@ -545,7 +551,11 @@ export class List implements OnDestroy {
 
   private getActiveFilterActions(): FloatActionFilter[] {
     const routeFilterKey = this.routeFilterKey();
-    if (!routeFilterKey) return this.listType() === 'books' ? ['book'] : [];
+    if (!routeFilterKey) {
+      if (this.listType() === 'books') return ['book'];
+      if (this.listType() === 'music') return ['album'];
+      return [];
+    }
 
     try {
       const filters = JSON.parse(routeFilterKey) as {
@@ -559,6 +569,7 @@ export class List implements OnDestroy {
         ...(filters.type === 'movie' ? (['movie'] as const) : []),
         ...(filters.type === 'series' ? (['series'] as const) : []),
         ...(filters.type === 'book' ? (['book'] as const) : []),
+        ...(filters.type === 'album' ? (['album'] as const) : []),
         ...(filters.watched === false ? (['unwatched'] as const) : []),
         ...(filters.favorite === true ? (['favorite'] as const) : []),
         ...(filters.completed === true ? (['completed'] as const) : []),

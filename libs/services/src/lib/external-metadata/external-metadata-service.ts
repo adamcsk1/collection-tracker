@@ -130,6 +130,7 @@ export class ExternalMetadataService {
               text: response.title,
               value,
               year: response.year,
+              ...(response.actors ? { actors: response.actors } : {}),
             },
           ]);
           this._completedSearchText.set(searchText);
@@ -172,6 +173,7 @@ export class ExternalMetadataService {
                 text: responseItem.title,
                 value,
                 year: responseItem.year,
+                ...(responseItem.actors ? { actors: responseItem.actors } : {}),
               });
             }
           }

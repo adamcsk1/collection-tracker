@@ -67,6 +67,10 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./books/books').then((module) => module.Books),
       },
       {
+        path: 'music',
+        loadComponent: () => import('./music/music').then((module) => module.Music),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'library',

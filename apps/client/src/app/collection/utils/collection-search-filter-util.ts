@@ -21,7 +21,7 @@ export const buildCollectionRouteFilters = (queryParams: QueryParamReader): Part
   const shared = queryParams.get('shared');
 
   return {
-    ...(type === 'movie' || type === 'series' || type === 'book' ? { type } : {}),
+    ...(type === 'movie' || type === 'series' || type === 'book' || type === 'album' ? { type } : {}),
     ...(favorite === 'true' ? { favorite: true } : {}),
     ...(watched === 'false' ? { watched: false } : watched === 'true' ? { watched: true } : {}),
     ...(completed === 'false' ? { completed: false } : completed === 'true' ? { completed: true } : {}),

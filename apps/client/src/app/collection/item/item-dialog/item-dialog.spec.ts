@@ -437,6 +437,14 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     expect(component['translations'].edit()).toBe('EditBooksItem');
     expect(component['translations'].delete()).toBe('DeleteFromBooks');
+
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'music', contentType: 'album', externalProvider: 'musicbrainz' })
+    );
+    fixture.detectChanges();
+    expect(component['translations'].edit()).toBe('EditMusicItem');
+    expect(component['translations'].delete()).toBe('DeleteFromMusic');
   });
 
   it('uses incoming share permissions for shared collection items', () => {
@@ -902,6 +910,33 @@ describe('ItemDialog', () => {
       'testhash',
       undefined,
       'books'
+    );
+  });
+
+  it('saves music list item changes against the music list', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'music',
+        contentType: 'album',
+        externalProvider: 'musicbrainz',
+        externalItemId: '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].title().value.set('Updated Album');
+
+    await component['onSaveChanges']();
+
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'musicbrainz',
+      '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      expect.objectContaining({ title: 'Updated Album', contentType: 'album' }),
+      'testhash',
+      undefined,
+      'music'
     );
   });
 
@@ -1403,6 +1438,109 @@ describe('ItemDialog', () => {
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
   });
 
+  it('marks music list albums completed with music source context', async () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'music',
+        contentType: 'album',
+        externalProvider: 'musicbrainz',
+        externalItemId: '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+        ownerShareCode: 'owner-code',
+      })
+    );
+    fixture.detectChanges();
+
+    await component['onMarkAsFinished']();
+
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith(
+      'musicbrainz',
+      '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      'owner-code',
+      'music'
+    );
+  });
+
+  it('moves watch later album items to completed tracking', async () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'up-next',
+        contentType: 'album',
+        ownerShareCode: 'own-code',
+        externalProvider: 'musicbrainz',
+        externalItemId: '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onMoveToFinished']();
+
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith(
+      'musicbrainz',
+      '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      undefined,
+      'up-next'
+    );
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalProvider: 'musicbrainz',
+        externalItemId: '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      }),
+      'own-code',
+      'up-next'
+    );
+  });
+
+  it('moves watch later album items to tracking', async () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'up-next',
+        contentType: 'album',
+        ownerShareCode: 'own-code',
+        externalProvider: 'musicbrainz',
+        externalItemId: '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onMoveToTracking']();
+
+    expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith(
+      'musicbrainz',
+      '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      'up-next'
+    );
+  });
+
+  it('copies music list albums to tracking without deleting the source', async () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'music',
+        contentType: 'album',
+        ownerShareCode: 'owner-code',
+        externalProvider: 'musicbrainz',
+        externalItemId: '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onCopyToTracking']();
+
+    expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith(
+      'musicbrainz',
+      '98e4d2ce-0a1b-4ead-8f9a-39c576f979b2',
+      'music',
+      'owner-code'
+    );
+    expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
+  });
+
   it('does not run tracking actions when the feature is disabled', async () => {
     TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
@@ -1505,6 +1643,45 @@ describe('ItemDialog', () => {
       expect.objectContaining({ listType: 'books', watched: false }),
       undefined,
       'books'
+    );
+  });
+
+  it('marks album as unfinished by clearing completion on the tracking twin', async () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'music',
+        watched: true,
+        tags: [],
+        contentType: 'album',
+        externalProvider: 'musicbrainz',
+        externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+        IMDbId: undefined,
+      })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onMarkAsUnfinished']();
+
+    expect(api.deleteCompletedItemByExternalId).toHaveBeenCalledWith(
+      'musicbrainz',
+      'f509c5ff-ad54-4dde-b61e-24f750965835'
+    );
+    expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
+    expect(collectionService.updateCollectionItem).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ listType: 'tracking', externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835' }),
+      expect.objectContaining({ listType: 'tracking', watched: false, watchedAt: null }),
+      undefined,
+      'tracking'
+    );
+    expect(collectionService.updateCollectionItem).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ listType: 'music' }),
+      expect.objectContaining({ listType: 'music', watched: false }),
+      undefined,
+      'music'
     );
   });
 
@@ -1787,7 +1964,29 @@ describe('ItemDialog', () => {
     );
     fixture.detectChanges();
 
-    expect(component['bookProgressText']()).toBe(expected);
+    expect(component['progressText']()).toBe(expected);
+  });
+
+  it('shows progress fields for tracking albums', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'tracking',
+        contentType: 'album',
+        externalProvider: 'musicbrainz',
+        externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+        IMDbId: undefined,
+        progressCurrent: 4,
+        progressTotal: 10,
+      })
+    );
+    fixture.detectChanges();
+
+    expect(component['showProgress']()).toBe(true);
+    expect(component['progressText']()).toBe('4 / 10');
+    expect(component['translations'].pagesRead()).toBe('TracksPlayed');
+    expect(component['translations'].totalPages()).toBe('TotalTracks');
+    expect(component['translations'].readingProgress()).toBe('ListeningProgress');
   });
 
   it('falls back to Open Library item ID when ISBN identity is unavailable', () => {

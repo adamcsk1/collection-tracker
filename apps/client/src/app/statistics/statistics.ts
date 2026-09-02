@@ -60,6 +60,9 @@ export class Statistics implements OnDestroy {
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
+    music: computed(() => this.ngxSignalTranslate.translate('Music')),
+    listened: computed(() => this.ngxSignalTranslate.translate('Listened')),
+    unlistened: computed(() => this.ngxSignalTranslate.translate('Unlistened')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
     unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
@@ -255,15 +258,26 @@ export class Statistics implements OnDestroy {
     this.persistSelectedTags();
   }
 
-  protected navigateToCollection(type?: 'movie' | 'series' | 'book', filters: Record<string, unknown> = {}): void {
-    const route = type === 'book' ? ['/collection', 'books'] : ['/collection', 'library'];
-    const queryParams = { ...(type && type !== 'book' ? { type } : {}), ...filters };
+  protected navigateToCollection(
+    type?: 'movie' | 'series' | 'book' | 'album',
+    filters: Record<string, unknown> = {}
+  ): void {
+    const route =
+      type === 'book'
+        ? ['/collection', 'books']
+        : type === 'album'
+          ? ['/collection', 'music']
+          : ['/collection', 'library'];
+    const queryParams = { ...(type && type !== 'book' && type !== 'album' ? { type } : {}), ...filters };
     this.closeAfterNavigation(
       this.router.navigate(route, Object.keys(queryParams).length ? { queryParams } : undefined)
     );
   }
 
-  protected navigateToTracking(type: 'movie' | 'series' | 'book', filters: Record<string, unknown> = {}): void {
+  protected navigateToTracking(
+    type: 'movie' | 'series' | 'book' | 'album',
+    filters: Record<string, unknown> = {}
+  ): void {
     this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { type, ...filters } }));
   }
 
@@ -319,6 +333,7 @@ export class Statistics implements OnDestroy {
       movie: 'Movies',
       series: 'Series',
       book: 'Books',
+      album: 'Music',
       watched: 'Watched',
       unwatched: 'Unwatched',
       untracked: 'Untracked',
@@ -326,6 +341,8 @@ export class Statistics implements OnDestroy {
       inProgress: 'InProgress',
       read: 'Read',
       unread: 'Unread',
+      listened: 'Listened',
+      unlistened: 'Unlistened',
     };
     return this.ngxSignalTranslate.translate(translationKeys[key]);
   }

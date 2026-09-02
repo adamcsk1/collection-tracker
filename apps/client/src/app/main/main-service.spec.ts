@@ -91,7 +91,7 @@ describe('MainService', () => {
     service.loadStoredData();
 
     expect(webstorage.getItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES, 'local');
-    expect(mainState.state.collectionFeaturePreferences()).toEqual(preferences);
+    expect(mainState.state.collectionFeaturePreferences()).toEqual({ ...preferences, music: true });
   });
 
   it('hydrates collection feature preferences from the configured session cache', () => {
@@ -112,7 +112,7 @@ describe('MainService', () => {
     service.loadStoredData();
 
     expect(webstorage.getItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES, 'session');
-    expect(mainState.state.collectionFeaturePreferences()).toEqual(preferences);
+    expect(mainState.state.collectionFeaturePreferences()).toEqual({ ...preferences, music: true });
   });
 
   it.each(['not-json', JSON.stringify({ wishlist: false })])(
