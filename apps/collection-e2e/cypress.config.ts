@@ -1,3 +1,4 @@
+import { mkdirSync, rmSync } from 'fs';
 import { defineConfig } from 'cypress';
 
 export default defineConfig({
@@ -13,6 +14,14 @@ export default defineConfig({
       openMode: 0,
     },
     chromeWebSecurity: false,
-    allowCypressEnv: false,
+    setupNodeEvents(on) {
+      on('task', {
+        clearDownloads() {
+          rmSync('cypress/downloads', { recursive: true, force: true });
+          mkdirSync('cypress/downloads', { recursive: true });
+          return null;
+        },
+      });
+    },
   },
 });

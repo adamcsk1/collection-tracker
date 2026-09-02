@@ -26,9 +26,7 @@ const buildTagManagement = (
 });
 
 const clearDownloads = () => {
-  cy.exec(
-    "node -e \"const fs = require('fs'); fs.rmSync('cypress/downloads', { recursive: true, force: true }); fs.mkdirSync('cypress/downloads', { recursive: true });\""
-  );
+  cy.task('clearDownloads');
 };
 
 describe('Export/Import — tag management export and import', () => {
