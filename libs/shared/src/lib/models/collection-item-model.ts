@@ -1,7 +1,7 @@
 import { ExternalItemIdentityModel, ExternalMetadataProviderNameModel } from './external-metadata-provider-model';
 
-export type CollectionListTypeModel = 'library' | 'up-next' | 'wishlist' | 'tracking' | 'books';
-export type CollectionItemContentTypeModel = 'movie' | 'series' | 'book';
+export type CollectionListTypeModel = 'library' | 'up-next' | 'wishlist' | 'tracking' | 'books' | 'music';
+export type CollectionItemContentTypeModel = 'movie' | 'series' | 'book' | 'album';
 export type CollectionItemYearModel = string | null;
 
 export interface CollectionItemModel {

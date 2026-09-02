@@ -9,6 +9,10 @@ import {
 } from '../core/database/repositories/collection';
 import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
 import { copyBookToCompletedByExternalId } from '../core/database/repositories/tracking-book-repository';
+import {
+  copyAlbumToCompletedByExternalId,
+  copyAlbumToTrackingByExternalId,
+} from '../core/database/repositories/tracking-music-repository';
 import { copyMovieToCompletedByExternalId } from '../core/database/repositories/tracking-movie-repository';
 import { canAccessShare } from '../core/database/repositories/share-repository';
 import { copySeriesToTrackingByExternalId } from '../core/database/repositories/tracking-series-repository';
@@ -25,7 +29,12 @@ export const register = (app: FastifyInstance): void => {
     const query = (request.query ?? {}) as Record<string, unknown>;
     if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
     const sourceListType = parseListType(query.sourceListType) ?? 'library';
-    if (sourceListType !== 'up-next' && sourceListType !== 'library' && sourceListType !== 'books') {
+    if (
+      sourceListType !== 'up-next' &&
+      sourceListType !== 'library' &&
+      sourceListType !== 'books' &&
+      sourceListType !== 'music'
+    ) {
       return response.code(400).send();
     }
 
@@ -80,15 +89,25 @@ export const register = (app: FastifyInstance): void => {
               sourceListType,
               moveFromUpNext
             )
-          : copySeriesToTrackingByExternalId(
-              db,
-              request.usernameHash,
-              ownerHash,
-              externalIdentitySource,
-              externalIdentityId,
-              sourceListType,
-              moveFromUpNext
-            );
+          : sourceRow.content_type === 'album'
+            ? (markCompleted ? copyAlbumToCompletedByExternalId : copyAlbumToTrackingByExternalId)(
+                db,
+                request.usernameHash,
+                ownerHash,
+                externalIdentitySource,
+                externalIdentityId,
+                sourceListType,
+                moveFromUpNext
+              )
+            : copySeriesToTrackingByExternalId(
+                db,
+                request.usernameHash,
+                ownerHash,
+                externalIdentitySource,
+                externalIdentityId,
+                sourceListType,
+                moveFromUpNext
+              );
     if (!item) return response.code(404).send();
 
     if (item.contentType === 'series') {

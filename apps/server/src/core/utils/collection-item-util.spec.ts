@@ -131,6 +131,50 @@ describe('collection-item-util', () => {
       ).toBeUndefined();
     });
 
+    it('canonicalizes album MusicBrainz identities and does not store MBID in IMDbId', () => {
+      expect(
+        normalizeItem({
+          ...validItem,
+          IMDbId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+          externalProvider: 'musicbrainz',
+          externalItemId: 'F509C5FF-AD54-4DDE-B61E-24F750965835',
+          contentType: 'album',
+        })
+      ).toEqual({
+        ...validItem,
+        IMDbId: undefined,
+        externalProvider: 'musicbrainz',
+        externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+        externalIds: [{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }],
+        contentType: 'album',
+      });
+    });
+
+    it('rejects invalid MusicBrainz MBIDs', () => {
+      expect(
+        normalizeItem({
+          ...validItem,
+          externalProvider: 'musicbrainz',
+          externalItemId: 'invalid',
+          contentType: 'album',
+        })
+      ).toBeUndefined();
+    });
+
+    it('rejects albums without MusicBrainz identities', () => {
+      expect(normalizeItem({ ...validItem, contentType: 'album' })).toBeUndefined();
+    });
+
+    it('rejects MusicBrainz identities for non-albums', () => {
+      expect(
+        normalizeItem({
+          ...validItem,
+          externalProvider: 'musicbrainz',
+          externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+        })
+      ).toBeUndefined();
+    });
+
     it('returns undefined when a required string field has wrong type', () => {
       expect(normalizeItem({ ...validItem, title: 123 as any })).toBeUndefined();
     });

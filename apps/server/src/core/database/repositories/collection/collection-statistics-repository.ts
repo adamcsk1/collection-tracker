@@ -33,7 +33,7 @@ export const getCollectionStatistics = (
     const trackedCondition = trackerExists();
     const completedCondition = trackerExists('tracker_state.completed_at IS NOT NULL');
     const inProgressCondition = trackerExists(
-      scope === 'book'
+      scope === 'book' || scope === 'album'
         ? 'tracker_state.completed_at IS NULL AND COALESCE(tracker_state.progress_current, 0) > 0'
         : 'tracker_state.completed_at IS NULL'
     );
@@ -101,7 +101,7 @@ export const getCollectionStatistics = (
              FROM collection_items
              WHERE id IN (${matchingItemsSql})
              GROUP BY content_type
-             ORDER BY CASE content_type WHEN 'movie' THEN 1 WHEN 'series' THEN 2 ELSE 3 END`
+                           ORDER BY CASE content_type WHEN 'movie' THEN 1 WHEN 'series' THEN 2 WHEN 'book' THEN 3 ELSE 4 END`
           )
           .all(...queryParts.params) as Array<{ type: CollectionItemTypeFilter; count: number }>)
       : [];
@@ -114,7 +114,8 @@ export const getCollectionStatistics = (
                 COALESCE(SUM(collection_items.favorite = 1), 0) AS favorites,
                 COALESCE(SUM(collection_items.content_type = 'movie'), 0) AS movies,
                 COALESCE(SUM(collection_items.content_type = 'series'), 0) AS series,
-                COALESCE(SUM(collection_items.content_type = 'book'), 0) AS books
+                 COALESCE(SUM(collection_items.content_type = 'book'), 0) AS books,
+                 COALESCE(SUM(collection_items.content_type = 'album'), 0) AS music
          FROM collection_items
          WHERE ${whereSql}`
       )
@@ -167,23 +168,46 @@ export const getCollectionStatistics = (
     };
   }
 
-  const bookSummary = {
+  if (scope === 'book') {
+    const bookSummary = {
+      total: summary.total,
+      favorites: summary.favorites,
+      read: summary.completed,
+      unread: summary.total - summary.completed - summary.in_progress,
+      inProgress: summary.in_progress,
+    };
+    return {
+      scope,
+      summary: bookSummary,
+      charts: {
+        ...commonCharts,
+        mediaTypeCounts: [],
+        statusCounts: [
+          { status: 'read', count: bookSummary.read },
+          { status: 'unread', count: bookSummary.unread },
+          { status: 'inProgress', count: bookSummary.inProgress },
+        ],
+      },
+    };
+  }
+
+  const albumSummary = {
     total: summary.total,
     favorites: summary.favorites,
-    read: summary.completed,
-    unread: summary.total - summary.completed - summary.in_progress,
+    listened: summary.completed,
+    unlistened: summary.total - summary.completed - summary.in_progress,
     inProgress: summary.in_progress,
   };
   return {
     scope,
-    summary: bookSummary,
+    summary: albumSummary,
     charts: {
       ...commonCharts,
       mediaTypeCounts: [],
       statusCounts: [
-        { status: 'read', count: bookSummary.read },
-        { status: 'unread', count: bookSummary.unread },
-        { status: 'inProgress', count: bookSummary.inProgress },
+        { status: 'listened', count: albumSummary.listened },
+        { status: 'unlistened', count: albumSummary.unlistened },
+        { status: 'inProgress', count: albumSummary.inProgress },
       ],
     },
   };

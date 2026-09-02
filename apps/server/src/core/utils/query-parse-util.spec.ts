@@ -74,6 +74,10 @@ describe('query-parse-util', () => {
       expect(parseType('book')).toBe('book');
     });
 
+    it('returns album for "album"', () => {
+      expect(parseType('album')).toBe('album');
+    });
+
     it('returns undefined for other values', () => {
       expect(parseType('game')).toBeUndefined();
       expect(parseType(undefined)).toBeUndefined();
@@ -172,6 +176,10 @@ describe('query-parse-util', () => {
       ).toBe(true);
     });
 
+    it('accepts album type and music list type', () => {
+      expect(isCollectionItemsQueryValid({ type: 'album', listType: 'music' })).toBe(true);
+    });
+
     it.each([
       { search: ['matrix'] },
       { tags: ['drama', 42] },
@@ -205,12 +213,12 @@ describe('query-parse-util', () => {
         tags: 'sci-fi, action',
         genres: 'drama',
         tagMode: 'all',
-        type: 'movie',
-        favorite: 'true',
-        watched: 'true',
-        completed: 'false',
-        shared: 'shared',
-        listType: 'library',
+          type: 'movie',
+          favorite: 'true',
+          watched: 'true',
+          completed: 'false',
+          shared: 'shared',
+          listType: 'library',
         orderBy: 'alphabet',
         orderDirection: 'asc',
       });

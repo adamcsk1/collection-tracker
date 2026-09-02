@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getDatabase } from '../../database';
-import { buildReadableItemScope } from './collection-query';
+import { buildItemWhere, buildReadableItemScope } from './collection-query';
 
 const insertUser = (usernameHash: string): void => {
   getDatabase()
@@ -11,8 +11,8 @@ const insertUser = (usernameHash: string): void => {
 const insertItem = (
   usernameHash: string,
   externalItemId: string,
-  listType: 'library' | 'books',
-  contentType: 'movie' | 'series' | 'book'
+  listType: 'library' | 'books' | 'music' | 'tracking',
+  contentType: 'movie' | 'series' | 'book' | 'album'
 ): void => {
   getDatabase()
     .prepare(
@@ -27,15 +27,15 @@ const insertItem = (
       listType,
       externalItemId,
       externalItemId,
-      `${usernameHash}-${externalItemId}`,
+      `${usernameHash}-${listType}-${externalItemId}`,
       contentType
     );
 };
 
 const insertGrant = (
   ownerUsernameHash: string,
-  listType: 'library' | 'books',
-  contentType: 'movie' | 'series' | 'book',
+  listType: 'library' | 'books' | 'music',
+  contentType: 'movie' | 'series' | 'book' | 'album',
   canRead: 0 | 1
 ): void => {
   const db = getDatabase();
@@ -49,7 +49,7 @@ const insertGrant = (
   ).run(ownerUsernameHash, listType, contentType, canRead);
 };
 
-const selectReadableIds = (shared?: 'mine' | 'shared', type?: 'movie' | 'series' | 'book'): string[] => {
+const selectReadableIds = (shared?: 'mine' | 'shared', type?: 'movie' | 'series' | 'book' | 'album'): string[] => {
   const scope = buildReadableItemScope('viewer', { shared, type });
   return (
     getDatabase()
@@ -78,20 +78,70 @@ describe('collection-query readable scope', () => {
     insertUser('shared-owner');
     insertUser('unreadable-owner');
     insertItem('viewer', 'own-book', 'books', 'book');
+    insertItem('viewer', 'own-album', 'music', 'album');
     insertItem('viewer', 'own-movie', 'library', 'movie');
     insertItem('shared-owner', 'shared-book', 'books', 'book');
+    insertItem('shared-owner', 'shared-album', 'music', 'album');
     insertItem('shared-owner', 'shared-movie', 'library', 'movie');
     insertItem('shared-owner', 'private-series', 'library', 'series');
     insertItem('unreadable-owner', 'unreadable-movie', 'library', 'movie');
     insertGrant('shared-owner', 'books', 'book', 1);
+    insertGrant('shared-owner', 'music', 'album', 1);
     insertGrant('shared-owner', 'library', 'movie', 1);
     insertGrant('shared-owner', 'library', 'series', 0);
     insertGrant('unreadable-owner', 'library', 'movie', 0);
 
-    expect(selectReadableIds()).toEqual(['own-book', 'own-movie', 'shared-book', 'shared-movie']);
-    expect(selectReadableIds('mine')).toEqual(['own-book', 'own-movie']);
-    expect(selectReadableIds('shared')).toEqual(['shared-book', 'shared-movie']);
+    expect(selectReadableIds()).toEqual([
+      'own-album',
+      'own-book',
+      'own-movie',
+      'shared-album',
+      'shared-book',
+      'shared-movie',
+    ]);
+    expect(selectReadableIds('mine')).toEqual(['own-album', 'own-book', 'own-movie']);
+    expect(selectReadableIds('shared')).toEqual(['shared-album', 'shared-book', 'shared-movie']);
     expect(selectReadableIds(undefined, 'book')).toEqual(['own-book', 'shared-book']);
+    expect(selectReadableIds(undefined, 'album')).toEqual(['own-album', 'shared-album']);
+  });
+
+  it('matches folded library albums against completed tracking twins for watched', () => {
+    insertUser('viewer');
+    insertItem('viewer', 'listened-album', 'music', 'album');
+    insertItem('viewer', 'unlistened-album', 'music', 'album');
+    insertItem('viewer', 'listened-album', 'tracking', 'album');
+    const db = getDatabase();
+    const trackingItemId = (
+      db
+        .prepare(`SELECT id FROM collection_items WHERE list_type = 'tracking' AND external_item_id = ?`)
+        .get('listened-album') as { id: number }
+    ).id;
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
+      trackingItemId,
+      '2026-01-01 00:00:00'
+    );
+
+    const watchedScope = buildItemWhere('viewer', { listType: 'library', type: 'album', watched: true });
+    const unwatchedScope = buildItemWhere('viewer', { listType: 'library', type: 'album', watched: false });
+
+    expect(
+      (
+        db
+          .prepare(
+            `SELECT external_item_id FROM collection_items WHERE ${watchedScope.where.join(' AND ')} ORDER BY external_item_id`
+          )
+          .all(...watchedScope.params) as Array<{ external_item_id: string }>
+      ).map(({ external_item_id }) => external_item_id)
+    ).toEqual(['listened-album']);
+    expect(
+      (
+        db
+          .prepare(
+            `SELECT external_item_id FROM collection_items WHERE ${unwatchedScope.where.join(' AND ')} ORDER BY external_item_id`
+          )
+          .all(...unwatchedScope.params) as Array<{ external_item_id: string }>
+      ).map(({ external_item_id }) => external_item_id)
+    ).toEqual(['unlistened-album']);
   });
 
   it.each([undefined, 'shared' as const])('searches collection items by username for shared filter %s', (shared) => {

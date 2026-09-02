@@ -84,7 +84,8 @@ export const register = (app: FastifyInstance): void => {
         targetOwnerHash !== request.usernameHash &&
         !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'movie', 'read') &&
         !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'series', 'read') &&
-        !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'book', 'read')
+        !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'book', 'read') &&
+        !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'album', 'read')
       ) {
         response.code(403).send();
         return;

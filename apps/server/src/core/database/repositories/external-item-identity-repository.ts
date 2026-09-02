@@ -1,4 +1,5 @@
 import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
+import { normalizeMbid } from '@shared/utils/mbid-util';
 import {
   ExternalItemIdentityModel,
   ExternalItemIdentitySourceNameModel,
@@ -18,6 +19,7 @@ const normalizeIdentityId = (source: ExternalItemIdentitySourceNameModel, id: st
   const trimmedId = id.trim();
   if (source === 'imdb' || IMDB_SHAPED_ID.test(trimmedId)) return trimmedId.toLowerCase();
   if (source === 'isbn' || source === 'openlibrary') return normalizeIsbn13(id) ?? '';
+  if (source === 'musicbrainz') return normalizeMbid(trimmedId) ?? trimmedId.toLowerCase();
   return trimmedId;
 };
 

@@ -29,6 +29,7 @@ describe('proxy-external-metadata-providers-api', () => {
         providers: [
           { name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true },
           { name: 'openlibrary', supportsSeasonMetadata: false, supportsDirectImdbId: false },
+          { name: 'musicbrainz', supportsSeasonMetadata: false, supportsDirectImdbId: false },
         ],
       });
     });
@@ -43,7 +44,10 @@ describe('proxy-external-metadata-providers-api', () => {
 
       await handlerPromise();
       expect(response.send).toHaveBeenCalledWith({
-        providers: [{ name: 'openlibrary', supportsSeasonMetadata: false, supportsDirectImdbId: false }],
+        providers: [
+          { name: 'openlibrary', supportsSeasonMetadata: false, supportsDirectImdbId: false },
+          { name: 'musicbrainz', supportsSeasonMetadata: false, supportsDirectImdbId: false },
+        ],
       });
     });
   });

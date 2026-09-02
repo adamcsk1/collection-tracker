@@ -326,6 +326,18 @@ describe('image-proxy fetch responses', () => {
     expect(readdirSync(join(temporaryDataFolder, 'cache'))).toHaveLength(2);
   });
 
+  it('follows a 307 redirect to another public host', async () => {
+    requestState.responses.push(
+      { statusCode: 307, contentType: 'text/plain', location: 'http://archive.example/mbid-front.jpg' },
+      { statusCode: 200, contentType: 'image/jpeg', body: 'jpeg' }
+    );
+    const { fetchAndCacheImageWithDetails } = await import('./image-proxy');
+
+    expect(await fetchAndCacheImageWithDetails('http://coverart.example/release/mbid/front-250')).toEqual({
+      kind: 'fetched',
+    });
+  });
+
   it('rejects a zero-byte image without creating a cache entry', async () => {
     requestState.responses.push({ statusCode: 200, contentType: 'image/jpeg', body: '' });
     const { fetchAndCacheImageWithDetails } = await import('./image-proxy');

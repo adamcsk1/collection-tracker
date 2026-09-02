@@ -207,11 +207,11 @@ describe('change-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ collectionFeaturePreferences: preferences });
+    expect(response.send).toHaveBeenCalledWith({ collectionFeaturePreferences: { ...preferences, music: true } });
     const stored = db
       .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
       .get('user') as { collection_feature_preferences: string };
-    expect(JSON.parse(stored.collection_feature_preferences)).toEqual(preferences);
+    expect(JSON.parse(stored.collection_feature_preferences)).toEqual({ ...preferences, music: true });
   });
 
   it('returns 400 for incomplete collection feature preferences', async () => {

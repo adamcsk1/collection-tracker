@@ -5,10 +5,14 @@ import type {
 } from './collection-item-tag-validation-model';
 import { contentTypeAllowedOnList } from './share-grant-util';
 
-const isOwnershipList = (listType: string): boolean => listType === 'library' || listType === 'books';
+const isOwnershipList = (listType: string): boolean =>
+  listType === 'library' || listType === 'books' || listType === 'music';
 
 const isBookAllowedOnList = (listType: string): boolean =>
   listType === 'books' || listType === 'wishlist' || listType === 'up-next' || listType === 'tracking';
+
+const isAlbumAllowedOnList = (listType: string): boolean =>
+  listType === 'music' || listType === 'wishlist' || listType === 'up-next' || listType === 'tracking';
 
 export const createCollectionItemTagValidation = ({
   contentType,
@@ -25,6 +29,9 @@ export const createCollectionItemTagValidation = ({
   if (contentType === 'book' && !isBookAllowedOnList(listType)) {
     return { kind: 'invalidInternalCollectionTag' };
   }
+  if (contentType === 'album' && !isAlbumAllowedOnList(listType)) {
+    return { kind: 'invalidInternalCollectionTag' };
+  }
   return undefined;
 };
 
@@ -38,6 +45,7 @@ export const changeCollectionItemTagValidation = ({
     existingListType !== 'library' &&
     listType !== 'tracking' &&
     listType !== 'books' &&
+    listType !== 'music' &&
     listType !== 'up-next' &&
     listType !== 'wishlist'
   ) {

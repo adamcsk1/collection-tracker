@@ -488,7 +488,7 @@ describe('collection search APIs', () => {
 
     expect(response.send).toHaveBeenCalledWith({
       scope: 'all',
-      summary: { total: 2, movies: 1, series: 1, books: 0, favorites: 1 },
+      summary: { total: 2, movies: 1, series: 1, books: 0, music: 0, favorites: 1 },
       charts: {
         tagCounts: [
           { tag: '#drama', count: 1 },

@@ -165,6 +165,15 @@ describe('external-item-identity-repository', () => {
     ]);
   });
 
+  it('normalizes mixed-case MusicBrainz MBIDs', () => {
+    expect(
+      normalizeExternalIdentities('musicbrainz', 'F509C5FF-AD54-4DDE-B61E-24F750965835')
+    ).toEqual([{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }]);
+    expect(
+      resolveCanonicalItemId(getDatabase(), 'user', 'musicbrainz', 'F509C5FF-AD54-4DDE-B61E-24F750965835')
+    ).toBe('musicbrainz:f509c5ff-ad54-4dde-b61e-24f750965835');
+  });
+
   it('infers imdb canonical ids from tt-shaped provider ids without externalIds', () => {
     expect(resolveCanonicalItemId(getDatabase(), 'user', 'omdb', 'tt0133093')).toBe('imdb:tt0133093');
   });

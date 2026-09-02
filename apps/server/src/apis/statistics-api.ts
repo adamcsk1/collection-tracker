@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { getCollectionStatistics } from '../core/database/repositories/collection';
 import { jwtGuard } from '../core/jwt';
-import { parseFilters } from '../core/utils/query-parse-util';
+import { parseFilters, parseType } from '../core/utils/query-parse-util';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
@@ -13,7 +13,7 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
       const query = request.query as Record<string, unknown>;
-      if (query.type !== undefined && query.type !== 'movie' && query.type !== 'series' && query.type !== 'book') {
+      if (query.type !== undefined && parseType(query.type) === undefined) {
         return response.code(400).send({ error: 'Invalid media type' });
       }
       const filters = parseFilters(query);

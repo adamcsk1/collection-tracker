@@ -3131,6 +3131,143 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('040_add_music_feature_preference', () => {
+    it('adds music collection constraints without breaking existing relations', async () => {
+      const migrationFile = '040_add_music_feature_preference.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('owner', 'token'), ('user', 'token');
+        INSERT INTO user_settings (username_hash, collection_feature_preferences)
+        VALUES ('user', '{"books":false}');
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower,
+           year, description, image, content_hash, content_type)
+        VALUES ('user', 'openlibrary', '9780132350884', 'openlibrary:9780132350884', 'books', 'Book', 'book',
+                '2008', '', '', 'book-hash', 'book');
+        INSERT INTO collection_item_tracker_state (item_id, progress_current, progress_total)
+        SELECT id, 1, 10 FROM collection_items WHERE content_hash = 'book-hash';
+        INSERT INTO collection_item_genres (item_id, genre)
+        SELECT id, 'Drama' FROM collection_items WHERE content_hash = 'book-hash';
+        INSERT INTO collection_item_tags (item_id, tag)
+        SELECT id, 'owned' FROM collection_items WHERE content_hash = 'book-hash';
+        INSERT INTO collection_item_external_ratings (item_id, source, value)
+        SELECT id, 'imdb', '8.0' FROM collection_items WHERE content_hash = 'book-hash';
+        INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+        SELECT id, 'test-model', 'embed-hash', '[]' FROM collection_items WHERE content_hash = 'book-hash';
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower,
+           year, description, image, content_hash, content_type)
+        VALUES ('user', 'omdb', 'tt123', 'imdb:tt123', 'tracking', 'Series', 'series',
+                '2001', '', '', 'series-hash', 'series');
+        INSERT INTO series_tracking_seasons (item_id, season, episodes)
+        SELECT id, 1, 10 FROM collection_items WHERE content_hash = 'series-hash';
+        INSERT INTO series_completed_episodes (item_id, season, episode)
+        SELECT id, 1, 1 FROM collection_items WHERE content_hash = 'series-hash';
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES ('user', 'owner');
+        INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, scope_mode)
+        VALUES ('user', 'owner', 'books', 'book', 1, 'selected');
+        INSERT INTO user_share_item_selections
+          (owner_username_hash, shared_with_username_hash, collection_item_id)
+        SELECT 'user', 'owner', id FROM collection_items WHERE content_hash = 'book-hash';
+        INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+        VALUES ('user', 'books', 'book', 'owner');
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        JSON.parse(
+          db
+            .prepare("SELECT collection_feature_preferences FROM user_settings WHERE username_hash = 'user'")
+            .pluck()
+            .get() as string
+        )
+      ).toEqual({
+        books: false,
+        music: true,
+      });
+      expect(db.prepare('SELECT progress_current, progress_total FROM collection_item_tracker_state').get()).toEqual({
+        progress_current: 1,
+        progress_total: 10,
+      });
+      expect(db.prepare('SELECT genre FROM collection_item_genres').get()).toEqual({ genre: 'Drama' });
+      expect(db.prepare('SELECT tag FROM collection_item_tags').get()).toEqual({ tag: 'owned' });
+      expect(db.prepare('SELECT source, value FROM collection_item_external_ratings').get()).toEqual({
+        source: 'imdb',
+        value: '8.0',
+      });
+      expect(db.prepare('SELECT embedding_model FROM ai_search_embeddings').get()).toEqual({
+        embedding_model: 'test-model',
+      });
+      expect(db.prepare('SELECT season, episodes FROM series_tracking_seasons').get()).toEqual({
+        season: 1,
+        episodes: 10,
+      });
+      expect(db.prepare('SELECT episode FROM series_completed_episodes').get()).toEqual({ episode: 1 });
+      expect(db.prepare('SELECT collection_item_id FROM user_share_item_selections').get()).toBeDefined();
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      expect(db.pragma('foreign_keys')).toEqual([{ foreign_keys: 1 }]);
+      expect(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%_old'").all()).toEqual([]);
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name IN (?, ?, ?, ?) ORDER BY name")
+          .all(
+            'idx_collection_items_id_owner',
+            'idx_collection_items_list_title_id',
+            'idx_user_share_item_selections_item',
+            'collection_owner_defaults_owner_idx'
+          )
+      ).toEqual([
+        { name: 'collection_owner_defaults_owner_idx' },
+        { name: 'idx_collection_items_id_owner' },
+        { name: 'idx_collection_items_list_title_id' },
+        { name: 'idx_user_share_item_selections_item' },
+      ]);
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_collection_items_id_owner_music_migration'").get()
+      ).toBeUndefined();
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name IN (?, ?, ?) ORDER BY name")
+          .all(
+            'cleanup_item_shares_before_collection_item_delete',
+            'enforce_selected_grant_before_item_selection_insert',
+            'enforce_user_share_relationship_before_grant_insert'
+          )
+      ).toEqual([
+        { name: 'cleanup_item_shares_before_collection_item_delete' },
+        { name: 'enforce_selected_grant_before_item_selection_insert' },
+        { name: 'enforce_user_share_relationship_before_grant_insert' },
+      ]);
+      expect(() =>
+        db.exec(`
+          INSERT INTO collection_items
+            (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower,
+             year, description, image, content_hash, content_type)
+          VALUES ('user', 'musicbrainz', 'f509c5ff-ad54-4dde-b61e-24f750965835',
+                  'musicbrainz:f509c5ff-ad54-4dde-b61e-24f750965835', 'music', 'Album', 'album', '1973', '', '',
+                  'album-hash', 'album');
+          INSERT INTO collection_item_external_ratings (item_id, source, value)
+          VALUES (last_insert_rowid(), 'metacritic', '90');
+          INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+          VALUES ('user', 'music', 'album', 'owner');
+        `)
+      ).not.toThrow();
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+             (username_hash, list_type, title, title_lower, year, description, image, content_hash, content_type)
+           VALUES ('user', 'music', 'Invalid', 'invalid', '', '', '', 'invalid-hash', 'book')`
+          )
+          .run()
+      ).toThrow();
+      db.close();
+    });
+  });
+
   describe('039_add_access_token_lookup_index', () => {
     it('replaces the username index with a restartable composite lookup index', async () => {
       const migrationFile = '039_add_access_token_lookup_index.sql';

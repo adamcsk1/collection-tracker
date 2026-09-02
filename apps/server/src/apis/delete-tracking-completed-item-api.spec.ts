@@ -28,7 +28,7 @@ const insertCompletedItemByExternalId = (
   usernameHash: string,
   externalProvider: string,
   externalItemId: string,
-  contentType: 'movie' | 'book' = 'movie'
+  contentType: 'movie' | 'book' | 'album' = 'movie'
 ) => {
   const db = getDatabase();
   const result = db
@@ -40,7 +40,7 @@ const insertCompletedItemByExternalId = (
     .run(usernameHash, externalProvider, externalItemId, 'tracking', contentType, 'Title', 'title', '', '', '', 'hash');
   db.prepare(
     'INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total) VALUES (?, CURRENT_TIMESTAMP, ?, ?)'
-  ).run(Number(result.lastInsertRowid), contentType === 'book' ? 50 : null, contentType === 'book' ? 100 : null);
+  ).run(Number(result.lastInsertRowid), contentType === 'movie' ? null : 50, contentType === 'movie' ? null : 100);
 };
 
 const buildRouteApp = () =>
@@ -199,6 +199,38 @@ describe('delete-tracking-completed-item-api', () => {
         progress_total: 100,
       })
     );
+  });
+
+  it('clears album completion and keeps the tracking twin with progress', async () => {
+    insertUser('user');
+    insertCompletedItemByExternalId('user', 'musicbrainz', 'f509c5ff-ad54-4dde-b61e-24f750965835', 'album');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: {
+        externalIdentitySource: 'musicbrainz',
+        externalIdentityId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-tracking-completed-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT tracker_state.completed_at, tracker_state.progress_current, tracker_state.progress_total
+           FROM collection_items
+           INNER JOIN collection_item_tracker_state tracker_state ON tracker_state.item_id = collection_items.id
+           WHERE collection_items.username_hash = ? AND collection_items.external_provider = ?
+             AND collection_items.external_item_id = ? AND collection_items.list_type = ?`
+        )
+        .get('user', 'musicbrainz', 'f509c5ff-ad54-4dde-b61e-24f750965835', 'tracking')
+    ).toEqual({ completed_at: null, progress_current: 50, progress_total: 100 });
   });
 
   it('deletes a canonical matching tracking item by stored external identity', async () => {

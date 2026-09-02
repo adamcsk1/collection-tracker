@@ -5,6 +5,7 @@ import {
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { hashText } from '../crypto';
 import { normalizeIsbn13 } from './isbn-util';
+import { normalizeMbid } from '@shared/utils/mbid-util';
 
 const normalizeYear = (year: number | string | null): string | null => {
   if (typeof year === 'number') return Number.isInteger(year) ? `${year}` : `${year}`.replace(/^(\d{4})\.0$/, '$1');
@@ -35,7 +36,7 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     typeof item?.metacriticRate !== 'string' ||
     typeof item?.actors !== 'string' ||
     typeof item?.plot !== 'string' ||
-    (contentType !== 'movie' && contentType !== 'series' && contentType !== 'book') ||
+    (contentType !== 'movie' && contentType !== 'series' && contentType !== 'book' && contentType !== 'album') ||
     typeof favorite !== 'boolean' ||
     !Array.isArray(item?.genre) ||
     !Array.isArray(item?.tags) ||
@@ -61,24 +62,35 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
   if (!isExternalMetadataProviderName(externalProvider)) return;
   if (contentType === 'book' && externalProvider !== 'openlibrary') return;
   if (contentType !== 'book' && externalProvider === 'openlibrary') return;
+  if (contentType === 'album' && externalProvider !== 'musicbrainz') return;
+  if (contentType !== 'album' && externalProvider === 'musicbrainz') return;
   const externalIds = [
     ...(item.externalIds ?? []).flatMap((externalId) => {
       const source = externalId.source.trim().toLowerCase();
-      const id = source === 'isbn' ? (normalizeIsbn13(externalId.id) ?? '') : externalId.id.trim();
+      let id = externalId.id.trim();
+      if (source === 'isbn') id = normalizeIsbn13(externalId.id) ?? '';
+      else if (source === 'musicbrainz') id = normalizeMbid(externalId.id) ?? '';
       return source && id && isExternalItemIdentitySourceName(source) ? [{ source, id }] : [];
     }),
   ];
-  const imdbId = contentType === 'book' ? undefined : item.IMDbId?.trim() || undefined;
+  const imdbId = contentType === 'book' || contentType === 'album' ? undefined : item.IMDbId?.trim() || undefined;
   if (imdbId && !externalIds.some((externalId) => externalId.source === 'imdb' && externalId.id === imdbId)) {
     externalIds.push({ source: 'imdb', id: imdbId });
   }
 
-  const externalItemId =
-    externalProvider === 'openlibrary' ? (normalizeIsbn13(item.externalItemId) ?? '') : item.externalItemId.trim();
+  let externalItemId = item.externalItemId.trim();
+  if (externalProvider === 'openlibrary') externalItemId = normalizeIsbn13(item.externalItemId) ?? '';
+  else if (externalProvider === 'musicbrainz') externalItemId = normalizeMbid(item.externalItemId) ?? '';
   if (externalProvider === 'openlibrary' && externalItemId) {
     const isbnIdentity = { source: 'isbn' as const, id: externalItemId };
     if (!externalIds.some((externalId) => externalId.source === 'isbn' && externalId.id === externalItemId)) {
       externalIds.push(isbnIdentity);
+    }
+  }
+  if (externalProvider === 'musicbrainz' && externalItemId) {
+    const mbidIdentity = { source: 'musicbrainz' as const, id: externalItemId };
+    if (!externalIds.some((externalId) => externalId.source === 'musicbrainz' && externalId.id === externalItemId)) {
+      externalIds.push(mbidIdentity);
     }
   }
 

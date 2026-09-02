@@ -100,7 +100,7 @@ describe('get-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ collectionFeaturePreferences: preferences });
+    expect(response.send).toHaveBeenCalledWith({ collectionFeaturePreferences: { ...preferences, music: true } });
   });
 
   it('omits malformed stored collection feature preferences', async () => {

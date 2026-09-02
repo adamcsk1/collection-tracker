@@ -3,12 +3,12 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 
-type ContentType = 'movie' | 'series' | 'book';
+type ContentType = 'movie' | 'series' | 'book' | 'album';
 
 interface ItemOptions {
   id: string;
   type: ContentType;
-  listType?: 'library' | 'books' | 'tracking' | 'wishlist';
+  listType?: 'library' | 'books' | 'music' | 'tracking' | 'wishlist';
   owner?: string;
   canonicalId?: string;
   year?: string;
@@ -29,8 +29,9 @@ const insertUser = (usernameHash: string): void => {
 const insertItem = (options: ItemOptions): number => {
   const db = getDatabase();
   const owner = options.owner ?? 'user';
-  const listType = options.listType ?? (options.type === 'book' ? 'books' : 'library');
-  const provider = options.type === 'book' ? 'openlibrary' : 'imdb';
+  const listType =
+    options.listType ?? (options.type === 'book' ? 'books' : options.type === 'album' ? 'music' : 'library');
+  const provider = options.type === 'book' ? 'openlibrary' : options.type === 'album' ? 'musicbrainz' : 'imdb';
   const result = db
     .prepare(
       `INSERT INTO collection_items
@@ -118,7 +119,7 @@ describe('statistics-api', () => {
 
     expect(await readStatistics()).toEqual({
       scope: 'all',
-      summary: { total: 3, movies: 1, series: 1, books: 1, favorites: 2 },
+      summary: { total: 3, movies: 1, series: 1, books: 1, music: 0, favorites: 2 },
       charts: {
         tagCounts: [
           { tag: 'shared-tag', count: 2 },
@@ -225,6 +226,34 @@ describe('statistics-api', () => {
           statusCounts: [
             { status: 'read', count: 1 },
             { status: 'unread', count: 2 },
+            { status: 'inProgress', count: 1 },
+          ],
+        }),
+      })
+    );
+  });
+
+  it('keeps listened, in-progress, and unlistened albums mutually exclusive', async () => {
+    insertUser('user');
+    for (const id of ['listened', 'progress', 'zero-progress', 'unlistened']) insertItem({ id, type: 'album' });
+    insertItem({
+      id: 'listened',
+      type: 'album',
+      listType: 'tracking',
+      completedAt: '2026-01-01',
+      progressCurrent: 100,
+    });
+    insertItem({ id: 'progress', type: 'album', listType: 'tracking', progressCurrent: 25 });
+    insertItem({ id: 'zero-progress', type: 'album', listType: 'tracking', progressCurrent: 0 });
+
+    expect(await readStatistics({ type: 'album' })).toEqual(
+      expect.objectContaining({
+        scope: 'album',
+        summary: { total: 4, favorites: 0, listened: 1, unlistened: 2, inProgress: 1 },
+        charts: expect.objectContaining({
+          statusCounts: [
+            { status: 'listened', count: 1 },
+            { status: 'unlistened', count: 2 },
             { status: 'inProgress', count: 1 },
           ],
         }),

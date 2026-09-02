@@ -8,6 +8,7 @@ describe('parseCollectionListType', () => {
     expect(parseCollectionListType('up-next')).toBe('up-next');
     expect(parseCollectionListType('tracking')).toBe('tracking');
     expect(parseCollectionListType('books')).toBe('books');
+    expect(parseCollectionListType('music')).toBe('music');
   });
 
   it('maps legacy list types', () => {

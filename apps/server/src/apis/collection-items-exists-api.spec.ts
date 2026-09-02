@@ -231,6 +231,40 @@ describe('collection-items-exists-api', () => {
     expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
   });
 
+  it('returns false for a missing shared music item when the recipient has album read access', async () => {
+    insertUser('user');
+    insertUser('owner');
+    upsertShare(getDatabase(), 'owner', 'user', [
+      {
+        listType: 'music',
+        contentType: 'album',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+        readMode: 'all',
+      },
+    ]);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: {
+        externalIdentitySource: 'musicbrainz',
+        externalIdentityId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+        listType: 'music',
+        ownerShareCode: getUserShareCode('owner'),
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ exists: false, hash: undefined });
+  });
+
   it('returns selected item existence and denies an unselected sibling', async () => {
     insertUser('user');
     insertUser('owner');

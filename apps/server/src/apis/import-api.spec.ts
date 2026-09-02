@@ -600,6 +600,16 @@ describe('import-api', () => {
             listType: 'books',
             contentType: 'book',
           },
+          {
+            ...item,
+            IMDbId: undefined,
+            externalProvider: 'musicbrainz',
+            externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+            externalIds: [{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }],
+            title: 'Imported Album',
+            listType: 'music',
+            contentType: 'album',
+          },
         ],
         tagManagement: [
           {
@@ -635,7 +645,7 @@ describe('import-api', () => {
     await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({
-      importedCollectionItems: 6,
+      importedCollectionItems: 7,
       importedTagManagement: 2,
       importedTrackingSeasons: 1,
       importedTrackingCompletedEpisodes: 1,
@@ -666,6 +676,18 @@ describe('import-api', () => {
       list_type: 'books',
       content_type: 'book',
     });
+    expect(
+      db
+        .prepare(
+          'SELECT external_item_id, canonical_item_id, list_type, content_type FROM collection_items WHERE external_provider = ?'
+        )
+        .get('musicbrainz')
+    ).toEqual({
+      external_item_id: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+      canonical_item_id: 'musicbrainz:f509c5ff-ad54-4dde-b61e-24f750965835',
+      list_type: 'music',
+      content_type: 'album',
+    });
     expect(db.prepare('SELECT token_hash FROM access_tokens WHERE username_hash = ?').get('user')).toEqual({
       token_hash: 'access-token',
     });
@@ -687,6 +709,7 @@ describe('import-api', () => {
       .get('user') as { collection_feature_preferences: string };
     expect(JSON.parse(importedSettings.collection_feature_preferences)).toEqual({
       books: true,
+      music: true,
       wishlist: false,
       upNext: true,
       tracking: true,
@@ -777,6 +800,7 @@ describe('import-api', () => {
       .get('user') as { collection_feature_preferences: string };
     expect(JSON.parse(importedSettings.collection_feature_preferences)).toEqual({
       books: true,
+      music: true,
       wishlist: true,
       upNext: false,
       tracking: true,
@@ -785,7 +809,9 @@ describe('import-api', () => {
 
   it.each([
     ['book in library', { contentType: 'book', listType: 'library' }],
+    ['album in library', { contentType: 'album', listType: 'library' }],
     ['movie in books list', { contentType: 'movie', listType: 'books' }],
+    ['movie in music list', { contentType: 'movie', listType: 'music' }],
     ['favorite in a non-library list', { favorite: true, listType: 'up-next' }],
     ['image', { image: null }],
     ['title', { title: null }],

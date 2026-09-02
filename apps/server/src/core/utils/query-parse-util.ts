@@ -46,12 +46,12 @@ export const isCollectionItemsQueryValid = (
   isOptionalStringList(query.tags) &&
   isOptionalStringList(query.genres) &&
   isOptionalMember(query.tagMode, ['any', 'all']) &&
-  isOptionalMember(query.type, ['movie', 'series', 'book']) &&
+  isOptionalMember(query.type, ['movie', 'series', 'book', 'album']) &&
   isOptionalQueryBoolean(query.favorite) &&
   isOptionalQueryBoolean(query.watched) &&
   isOptionalQueryBoolean(query.completed) &&
   isOptionalMember(query.shared, ['mine', 'shared']) &&
-  isOptionalMember(query.listType, ['library', 'up-next', 'wishlist', 'tracking', 'books']) &&
+  isOptionalMember(query.listType, ['library', 'up-next', 'wishlist', 'tracking', 'books', 'music']) &&
   isOptionalMember(query.orderBy, ['createdAt', 'alphabet']) &&
   isOptionalMember(query.orderDirection, ['asc', 'desc']) &&
   (query.cursor === undefined || isCursorToken(query.cursor)) &&
@@ -74,7 +74,7 @@ export const parseBoolean = (value: unknown): boolean | undefined => {
 };
 
 export const parseType = (value: unknown): CollectionItemTypeFilter | undefined => {
-  if (value === 'movie' || value === 'series' || value === 'book') return value;
+  if (value === 'movie' || value === 'series' || value === 'book' || value === 'album') return value;
   return;
 };
 

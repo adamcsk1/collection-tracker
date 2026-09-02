@@ -26,7 +26,7 @@ describe('external-metadata-provider-factory', () => {
     process.env = { ...originalEnv };
     delete process.env.OMDB_API_KEY;
 
-    expect(getExternalMetadataProviders().map((provider) => provider.name)).toEqual(['openlibrary']);
+    expect(getExternalMetadataProviders().map((provider) => provider.name)).toEqual(['openlibrary', 'musicbrainz']);
     expect(getDirectImdbExternalMetadataProvider()).toBeNull();
   });
 

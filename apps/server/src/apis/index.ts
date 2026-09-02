@@ -19,6 +19,7 @@ import { register as registerCreateAccessToken } from './create-access-token-api
 import { register as registerCreate } from './create-api';
 import { register as registerDeleteAccessToken } from './delete-access-token-api';
 import { register as registerDeleteBooksItems } from './delete-books-items-api';
+import { register as registerDeleteMusicItems } from './delete-music-items-api';
 import { register as registerDelete } from './delete-api';
 import { register as registerDeleteIncomingUserShare } from './delete-incoming-user-share-api';
 import { register as registerDeleteCompletedItem } from './delete-tracking-completed-item-api';
@@ -41,6 +42,8 @@ import { register as registerMarkAllMoviesCompleted } from './mark-all-movies-co
 import { register as registerMarkAllMoviesUncompleted } from './mark-all-movies-uncompleted-api';
 import { register as registerMarkAllBooksCompleted } from './mark-all-books-completed-api';
 import { register as registerMarkAllBooksUncompleted } from './mark-all-books-uncompleted-api';
+import { register as registerMarkAllMusicCompleted } from './mark-all-music-completed-api';
+import { register as registerMarkAllMusicUncompleted } from './mark-all-music-uncompleted-api';
 import { register as registerProxyAi } from './proxy-ai-query-api';
 import { register as registerProxyAiAvailable } from './proxy-ai-available-api';
 import { register as registerProxyExternalMetadataProviders } from './proxy-external-metadata-providers-api';
@@ -88,9 +91,12 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerMarkAllSeriesUncompleted(app);
   registerMarkAllBooksCompleted(app);
   registerMarkAllBooksUncompleted(app);
+  registerMarkAllMusicCompleted(app);
+  registerMarkAllMusicUncompleted(app);
   registerAddTrackingItem(app);
   registerDeleteCompletedMovies(app);
   registerDeleteBooksItems(app);
+  registerDeleteMusicItems(app);
   registerDeleteCompletedItem(app);
   registerDeleteTrackingItems(app);
   registerRefreshExternalRatings(app);

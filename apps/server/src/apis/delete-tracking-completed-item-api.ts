@@ -7,6 +7,7 @@ import {
   findCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
 import { deleteCompletedBookByExternalId } from '../core/database/repositories/tracking-book-repository';
+import { deleteCompletedAlbumByExternalId } from '../core/database/repositories/tracking-music-repository';
 import { deleteCompletedItemByExternalId } from '../core/database/repositories/tracking-movie-repository';
 import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
 import { jwtGuard } from '../core/jwt';
@@ -32,6 +33,8 @@ export const register = (app: FastifyInstance): void => {
     const externalItemId = existingItem.external_item_id ?? existingItem.imdb_id ?? '';
     if (existingItem.content_type === 'book') {
       deleteCompletedBookByExternalId(db, request.usernameHash, externalProvider, externalItemId);
+    } else if (existingItem.content_type === 'album') {
+      deleteCompletedAlbumByExternalId(db, request.usernameHash, externalProvider, externalItemId);
     } else {
       deleteCompletedItemByExternalId(db, request.usernameHash, externalProvider, externalItemId);
     }

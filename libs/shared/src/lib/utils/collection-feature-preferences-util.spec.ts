@@ -9,6 +9,7 @@ describe('isCollectionFeaturePreferences', () => {
     expect(
       isCollectionFeaturePreferences({
         books: true,
+        music: true,
         wishlist: true,
         upNext: false,
         tracking: false,
@@ -27,6 +28,7 @@ describe('isCollectionFeaturePreferences', () => {
       })
     ).toEqual({
       books: true,
+      music: true,
       wishlist: true,
       upNext: false,
       tracking: true,
@@ -44,6 +46,7 @@ describe('isCollectionFeaturePreferences', () => {
       })
     ).toEqual({
       books: true,
+      music: true,
       wishlist: true,
       upNext: false,
       tracking: true,
@@ -60,6 +63,7 @@ describe('isCollectionFeaturePreferences', () => {
       })
     ).toEqual({
       books: true,
+      music: true,
       wishlist: true,
       upNext: false,
       tracking: true,
@@ -73,6 +77,7 @@ describe('isCollectionFeaturePreferences', () => {
     { wishlist: true, upNext: true, tracking: true },
     {
       books: true,
+      music: true,
       wishlist: true,
       upNext: true,
       tracking: true,
@@ -97,6 +102,7 @@ describe('parseCollectionFeaturePreferences', () => {
       upNext: false,
       tracking: false,
       books: true,
+      music: true,
     });
   });
 
@@ -113,6 +119,7 @@ describe('parseCollectionFeaturePreferences', () => {
       upNext: false,
       tracking: false,
       books: true,
+      music: true,
     });
     expect(
       parseCollectionFeaturePreferences({
@@ -126,6 +133,7 @@ describe('parseCollectionFeaturePreferences', () => {
       upNext: false,
       tracking: false,
       books: true,
+      music: true,
     });
   });
 });

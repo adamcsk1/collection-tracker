@@ -3,7 +3,7 @@ import type { UserShareGrantApiModel } from '../models/api-model';
 import type { SharePermission, ShareScope } from '../models/share-grant-model';
 import { COLLECTION_LIST_TYPES } from '../constants/collection-list-type-const';
 
-const CONTENT_TYPES: readonly CollectionItemContentTypeModel[] = ['movie', 'series', 'book'];
+const CONTENT_TYPES: readonly CollectionItemContentTypeModel[] = ['movie', 'series', 'book', 'album'];
 
 export const contentTypeAllowedOnList = (
   listType: CollectionListTypeModel | string,
@@ -11,8 +11,9 @@ export const contentTypeAllowedOnList = (
 ): boolean => {
   if (listType === 'library') return contentType === 'movie' || contentType === 'series';
   if (listType === 'books') return contentType === 'book';
+  if (listType === 'music') return contentType === 'album';
   if (listType === 'tracking' || listType === 'wishlist' || listType === 'up-next') {
-    return contentType === 'movie' || contentType === 'series' || contentType === 'book';
+    return contentType === 'movie' || contentType === 'series' || contentType === 'book' || contentType === 'album';
   }
   return false;
 };

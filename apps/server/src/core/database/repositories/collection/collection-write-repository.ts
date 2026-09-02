@@ -23,13 +23,13 @@ import {
 } from './collection-read-repository';
 import { CollectionItemRow } from './collection-model';
 
-const isCompleteBookProgress = (progressCurrent: number | null | undefined, progressTotal: number | null | undefined) =>
+const isCompleteProgress = (progressCurrent: number | null | undefined, progressTotal: number | null | undefined) =>
   typeof progressCurrent === 'number' &&
   typeof progressTotal === 'number' &&
   progressTotal >= 1 &&
   progressCurrent === progressTotal;
 
-const isIncompleteBookProgress = (
+const isIncompleteProgress = (
   progressCurrent: number | null | undefined,
   progressTotal: number | null | undefined
 ) =>
@@ -127,7 +127,8 @@ export const insertCollectionItem = (
       const autoComplete =
         (markCompleted ||
           item.contentType === 'movie' ||
-          (item.contentType === 'book' && isCompleteBookProgress(progressCurrent, progressTotal))) &&
+          ((item.contentType === 'book' || item.contentType === 'album') &&
+            isCompleteProgress(progressCurrent, progressTotal))) &&
         !watchedAt;
       db.prepare(
         `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
@@ -217,12 +218,12 @@ export const updateCollectionItemByRow = (
       normalizedListType === 'tracking' &&
       (updatedItem.progressCurrent !== undefined || updatedItem.progressTotal !== undefined)
     ) {
-      const completeBookProgress =
-        updatedItem.contentType === 'book' &&
-        isCompleteBookProgress(updatedItem.progressCurrent, updatedItem.progressTotal);
-      const incompleteBookProgress =
-        updatedItem.contentType === 'book' &&
-        isIncompleteBookProgress(updatedItem.progressCurrent, updatedItem.progressTotal);
+      const completeProgress =
+        (updatedItem.contentType === 'book' || updatedItem.contentType === 'album') &&
+        isCompleteProgress(updatedItem.progressCurrent, updatedItem.progressTotal);
+      const incompleteProgress =
+        (updatedItem.contentType === 'book' || updatedItem.contentType === 'album') &&
+        isIncompleteProgress(updatedItem.progressCurrent, updatedItem.progressTotal);
       db.prepare(
         `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
          VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END, ?, ?)
@@ -236,11 +237,11 @@ export const updateCollectionItemByRow = (
            END`
       ).run(
         existingItem.id,
-        completeBookProgress ? 1 : 0,
+        completeProgress ? 1 : 0,
         updatedItem.progressCurrent ?? null,
         updatedItem.progressTotal ?? null,
-        completeBookProgress ? 1 : 0,
-        incompleteBookProgress ? 1 : 0
+        completeProgress ? 1 : 0,
+        incompleteProgress ? 1 : 0
       );
     }
     if (existingCanonicalItemUseCount === 1) {

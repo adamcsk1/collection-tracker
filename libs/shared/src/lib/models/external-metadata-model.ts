@@ -39,6 +39,7 @@ export interface ExternalMetadataSelectDataModel extends SelectDataModel {
   contentType?: CollectionItemContentTypeModel;
   poster?: string;
   year?: string;
+  actors?: string;
 }
 
 export interface ExternalMetadataProviderModel {

@@ -43,11 +43,15 @@ describe('ai-search-intent-util', () => {
   it('detects unfinished status intents', () => {
     expect(detectAiSearchStatusIntent('unfinished series')).toBe('unfinished');
     expect(detectAiSearchStatusIntent('still watching shows')).toBe('unfinished');
+    expect(detectAiSearchStatusIntent('still listening')).toBe('unfinished');
+    expect(detectAiSearchStatusIntent('currently listening')).toBe('unfinished');
     expect(detectAiSearchStatusIntent('not completed yet')).toBe('unfinished');
   });
 
   it('detects completed and favorite intents', () => {
     expect(detectAiSearchStatusIntent('completed series')).toBe('completed');
+    expect(detectAiSearchStatusIntent('already listened')).toBe('completed');
+    expect(detectAiSearchStatusIntent('done listening')).toBe('completed');
     expect(detectAiSearchStatusIntent('my favorites')).toBe('favorite');
   });
 

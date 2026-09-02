@@ -2,7 +2,7 @@ import { CollectionFeaturePreferencesModel } from '../models/collection-feature-
 
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
-const REQUIRED_KEYS = ['wishlist', 'upNext', 'tracking', 'books'] as const;
+const REQUIRED_KEYS = ['wishlist', 'upNext', 'tracking', 'books', 'music'] as const;
 
 const normalizeFeaturePreferenceRecord = (record: Record<string, unknown>): Record<string, unknown> => {
   const normalized: Record<string, unknown> = { ...record };
@@ -40,6 +40,10 @@ const normalizeFeaturePreferenceRecord = (record: Record<string, unknown>): Reco
   }
   delete normalized['bookTracker'];
 
+  if (!('music' in normalized)) {
+    normalized['music'] = true;
+  }
+
   return normalized;
 };
 
@@ -55,6 +59,7 @@ export const parseCollectionFeaturePreferences = (value: unknown): CollectionFea
     upNext: record['upNext'] as boolean,
     tracking: record['tracking'] as boolean,
     books: record['books'] as boolean,
+    music: record['music'] as boolean,
   };
 };
 

@@ -5,6 +5,7 @@ import {
   CollectionListTypeModel,
 } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
+import { parseType } from '../../../utils/query-parse-util';
 import { CanonicalItemRank } from '../external-item-identity-model';
 import { QueryParts } from './collection-model';
 
@@ -13,7 +14,13 @@ export const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (m
 export const normalizeLimit = (limit: number): number => Math.min(Math.max(Math.floor(limit) || 10, 1), 100);
 
 export const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
-  if (listType === 'up-next' || listType === 'wishlist' || listType === 'tracking' || listType === 'books')
+  if (
+    listType === 'up-next' ||
+    listType === 'wishlist' ||
+    listType === 'tracking' ||
+    listType === 'books' ||
+    listType === 'music'
+  )
     return listType;
   return 'library';
 };
@@ -83,8 +90,17 @@ const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists =
         AND book_finished_filter.content_type = 'book'
         AND book_tracker_state.completed_at IS NOT NULL
     ))
+    OR (${albumContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
+      SELECT 1 FROM collection_items album_finished_filter
+      LEFT JOIN collection_item_tracker_state album_tracker_state ON album_tracker_state.item_id = album_finished_filter.id
+      WHERE album_finished_filter.username_hash = ?
+        AND ${canonicalOrExactIdentityMatch('album_finished_filter')}
+        AND album_finished_filter.list_type = 'tracking'
+        AND album_finished_filter.content_type = 'album'
+        AND album_tracker_state.completed_at IS NOT NULL
+    ))
   )`);
-  queryParts.params.push(usernameHash, usernameHash, usernameHash);
+  queryParts.params.push(usernameHash, usernameHash, usernameHash, usernameHash);
 };
 
 export const canonicalOrExactIdentityMatch = (alias: string): string => `(
@@ -194,24 +210,27 @@ const seriesContentCondition = `collection_items.content_type = 'series'`;
 
 const bookContentCondition = `collection_items.content_type = 'book'`;
 
+const albumContentCondition = `collection_items.content_type = 'album'`;
+
 export const buildReadableItemScope = (
   viewerUsernameHash: string,
   filters: CollectionItemFiltersApiModel | undefined,
-  foldBooksIntoLibrary = true
+  foldCatalogIntoLibrary = true
 ): QueryParts => {
   const listType = normalizeListType(filters?.listType);
   const sharedFilter = filters?.shared;
   const includeMine = sharedFilter !== 'shared';
   const includeShared = sharedFilter !== 'mine';
-  const typeFilter =
-    filters?.type === 'movie' || filters?.type === 'series' || filters?.type === 'book' ? filters.type : undefined;
+  const typeFilter = parseType(filters?.type);
 
   const itemClauses: string[] = [];
   const params: Array<string | number> = [];
 
-  if (listType === 'library' && foldBooksIntoLibrary) {
+  if (listType === 'library' && foldCatalogIntoLibrary) {
     if (typeFilter === 'book') {
       itemClauses.push(`collection_items.list_type = 'books' AND collection_items.content_type = 'book'`);
+    } else if (typeFilter === 'album') {
+      itemClauses.push(`collection_items.list_type = 'music' AND collection_items.content_type = 'album'`);
     } else if (typeFilter === 'movie' || typeFilter === 'series') {
       itemClauses.push(`collection_items.list_type = 'library' AND collection_items.content_type = ?`);
       params.push(typeFilter);
@@ -219,6 +238,7 @@ export const buildReadableItemScope = (
       itemClauses.push(`(
         collection_items.list_type = 'library'
         OR (collection_items.list_type = 'books' AND collection_items.content_type = 'book')
+        OR (collection_items.list_type = 'music' AND collection_items.content_type = 'album')
       )`);
     }
   } else {

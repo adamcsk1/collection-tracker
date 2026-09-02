@@ -26,8 +26,9 @@ const hasCompletedTrackingTwin = (
 ): boolean => {
   if (row.list_type === 'tracking' && row.content_type === 'movie') return row.watched_at !== null;
   if (row.list_type === 'tracking' && row.content_type === 'book') return row.watched_at !== null;
-  if (row.list_type !== 'library' && row.list_type !== 'books') return false;
-  if (row.content_type !== 'movie' && row.content_type !== 'book') return false;
+  if (row.list_type === 'tracking' && row.content_type === 'album') return row.watched_at !== null;
+  if (row.list_type !== 'library' && row.list_type !== 'books' && row.list_type !== 'music') return false;
+  if (row.content_type !== 'movie' && row.content_type !== 'book' && row.content_type !== 'album') return false;
   const externalProvider = row.external_provider;
   const externalItemId = row.external_item_id ?? '';
   return Boolean(

@@ -12,14 +12,19 @@ describe('share-grant-util', () => {
   it('lists only valid share scopes', () => {
     expect(SHAREABLE_SCOPES).toContainEqual({ listType: 'library', contentType: 'movie' });
     expect(SHAREABLE_SCOPES).toContainEqual({ listType: 'books', contentType: 'book' });
+    expect(SHAREABLE_SCOPES).toContainEqual({ listType: 'music', contentType: 'album' });
     expect(SHAREABLE_SCOPES).not.toContainEqual({ listType: 'library', contentType: 'book' });
     expect(SHAREABLE_SCOPES).not.toContainEqual({ listType: 'books', contentType: 'movie' });
+    expect(SHAREABLE_SCOPES).not.toContainEqual({ listType: 'music', contentType: 'book' });
   });
 
   it('validates content types per list', () => {
     expect(contentTypeAllowedOnList('library', 'movie')).toBe(true);
     expect(contentTypeAllowedOnList('library', 'book')).toBe(false);
     expect(contentTypeAllowedOnList('tracking', 'book')).toBe(true);
+    expect(contentTypeAllowedOnList('music', 'album')).toBe(true);
+    expect(contentTypeAllowedOnList('tracking', 'album')).toBe(true);
+    expect(contentTypeAllowedOnList('library', 'album')).toBe(false);
     expect(isValidShareScope('wishlist', 'series')).toBe(true);
     expect(isValidShareScope('library', 'book')).toBe(false);
   });

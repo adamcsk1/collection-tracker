@@ -279,7 +279,10 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
     typeof value['actors'] === 'string' &&
     typeof value['plot'] === 'string' &&
     (value['hash'] === undefined || typeof value['hash'] === 'string') &&
-    (value['contentType'] === 'movie' || value['contentType'] === 'series' || value['contentType'] === 'book') &&
+    (value['contentType'] === 'movie' ||
+      value['contentType'] === 'series' ||
+      value['contentType'] === 'book' ||
+      value['contentType'] === 'album') &&
     typeof value['favorite'] === 'boolean' &&
     typeof value['listType'] === 'string' &&
     parseListType(value['listType']) !== undefined &&

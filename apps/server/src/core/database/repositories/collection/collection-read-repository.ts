@@ -150,7 +150,7 @@ const toAiSearchItem = (
     if (apiItem.contentType === 'movie') {
       watchStatus = completed ? 'watched' : 'unwatched';
       progressPercent = completed ? 100 : 0;
-    } else if (apiItem.contentType === 'book') {
+    } else if (apiItem.contentType === 'book' || apiItem.contentType === 'album') {
       watchStatus = completed ? 'completed' : 'unfinished';
       const progressCurrent = apiItem.progressCurrent;
       const progressTotal = apiItem.progressTotal;

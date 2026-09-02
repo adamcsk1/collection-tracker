@@ -4,7 +4,7 @@ import type { ExternalItemIdentityModel } from '../external-metadata-provider-mo
 
 export type CollectionItemApiModel = CollectionItemModel & Required<Pick<CollectionItemModel, 'ownerShareCode'>>;
 
-export type CollectionItemTypeFilter = 'movie' | 'series' | 'book';
+export type CollectionItemTypeFilter = 'movie' | 'series' | 'book' | 'album';
 export type CollectionItemTagMode = 'any' | 'all';
 export type CollectionItemOrderBy = 'createdAt' | 'alphabet';
 export type CollectionItemOrderDirection = 'asc' | 'desc';
@@ -14,8 +14,12 @@ export type CollectionItemSharedFilter = 'mine' | 'shared';
 export type MovieCollectionStatisticsStatus = 'watched' | 'unwatched';
 export type SeriesCollectionStatisticsStatus = 'untracked' | 'completed' | 'inProgress';
 export type BookCollectionStatisticsStatus = 'read' | 'unread' | 'inProgress';
+export type AlbumCollectionStatisticsStatus = 'listened' | 'unlistened' | 'inProgress';
 export type CollectionStatisticsStatus =
-  MovieCollectionStatisticsStatus | SeriesCollectionStatisticsStatus | BookCollectionStatisticsStatus;
+  | MovieCollectionStatisticsStatus
+  | SeriesCollectionStatisticsStatus
+  | BookCollectionStatisticsStatus
+  | AlbumCollectionStatisticsStatus;
 
 export interface CollectionItemFiltersApiModel {
   search?: string;
@@ -102,11 +106,17 @@ export interface BookCollectionStatisticsChartsApiModel extends CommonCollection
   statusCounts: Array<{ status: BookCollectionStatisticsStatus; count: number }>;
 }
 
+export interface AlbumCollectionStatisticsChartsApiModel extends CommonCollectionStatisticsChartsApiModel {
+  mediaTypeCounts: [];
+  statusCounts: Array<{ status: AlbumCollectionStatisticsStatus; count: number }>;
+}
+
 export interface AllCollectionStatisticsSummaryApiModel {
   total: number;
   movies: number;
   series: number;
   books: number;
+  music: number;
   favorites: number;
 }
 
@@ -134,6 +144,14 @@ export interface BookCollectionStatisticsSummaryApiModel {
   inProgress: number;
 }
 
+export interface AlbumCollectionStatisticsSummaryApiModel {
+  total: number;
+  favorites: number;
+  listened: number;
+  unlistened: number;
+  inProgress: number;
+}
+
 export type CollectionStatisticsApiResponseModel =
   | { scope: 'all'; summary: AllCollectionStatisticsSummaryApiModel; charts: AllCollectionStatisticsChartsApiModel }
   | {
@@ -146,7 +164,12 @@ export type CollectionStatisticsApiResponseModel =
       summary: SeriesCollectionStatisticsSummaryApiModel;
       charts: SeriesCollectionStatisticsChartsApiModel;
     }
-  | { scope: 'book'; summary: BookCollectionStatisticsSummaryApiModel; charts: BookCollectionStatisticsChartsApiModel };
+  | { scope: 'book'; summary: BookCollectionStatisticsSummaryApiModel; charts: BookCollectionStatisticsChartsApiModel }
+  | {
+      scope: 'album';
+      summary: AlbumCollectionStatisticsSummaryApiModel;
+      charts: AlbumCollectionStatisticsChartsApiModel;
+    };
 
 export type CollectionItemChangeApiModel = Pick<
   CollectionItemModel,

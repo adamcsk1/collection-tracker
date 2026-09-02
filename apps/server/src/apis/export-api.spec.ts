@@ -129,7 +129,7 @@ describe('export-api', () => {
         theme: 'dark',
         animatedBackground: false,
         language: 'en',
-        collectionFeaturePreferences: featurePreferences,
+        collectionFeaturePreferences: { ...featurePreferences, music: true },
       },
       collectionItems: expect.arrayContaining([
         expect.objectContaining({

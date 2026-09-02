@@ -170,6 +170,48 @@ describe('collection-write-repository', () => {
     );
   });
 
+  it('marks tracking albums complete from updated content type and equal progress', () => {
+    const db = getDatabase();
+    const albumItem: CollectionItemChangeApiModel = {
+      image: '',
+      title: 'Progress Album',
+      genre: [],
+      externalProvider: 'musicbrainz',
+      externalItemId: 'f509c5ff-ad54-4dde-b61e-24f750965835',
+      externalIds: [{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }],
+      tags: [],
+      year: '1973',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'album',
+      favorite: false,
+    };
+    insertCollectionItem(db, 'user', 'album-hash-1', albumItem, 'tracking', undefined, undefined, 4, 10);
+
+    const result = updateCollectionItemByExternalId(
+      db,
+      'user',
+      'musicbrainz',
+      'f509c5ff-ad54-4dde-b61e-24f750965835',
+      'album-hash-2',
+      { ...albumItem, progressCurrent: 10, progressTotal: 10 },
+      'tracking'
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        contentType: 'album',
+        progressCurrent: 10,
+        progressTotal: 10,
+        watchedAt: expect.any(String),
+      })
+    );
+  });
+
   it('does not apply book completion rules when updated content type is not book', () => {
     const db = getDatabase();
     insertCollectionItem(db, 'user', 'hash-1', item, 'tracking');

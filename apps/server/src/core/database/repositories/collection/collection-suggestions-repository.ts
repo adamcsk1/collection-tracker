@@ -86,12 +86,12 @@ export const findTagSuggestions = (
   query: string,
   limit: number,
   listType: CollectionListTypeModel = 'library',
-  foldBooksIntoLibrary = false
+  foldCatalogIntoLibrary = false
 ): string[] => {
   const lowerQuery = query.trim().toLowerCase();
   if (!lowerQuery) return [];
 
-  const scope = buildReadableItemScope(viewerUsernameHash, { listType }, foldBooksIntoLibrary);
+  const scope = buildReadableItemScope(viewerUsernameHash, { listType }, foldCatalogIntoLibrary);
   const rows = db
     .prepare(
       `SELECT tag, COUNT(*) as count

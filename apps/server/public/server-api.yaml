@@ -315,10 +315,12 @@ components:
     CollectionFeaturePreferences:
       type: object
       description: Collection features shown in navigation and connected actions. All features are enabled when omitted.
-      required: [books, wishlist, upNext, tracking]
+      required: [books, music, wishlist, upNext, tracking]
       additionalProperties: false
       properties:
         books:
+          type: boolean
+        music:
           type: boolean
         wishlist:
           type: boolean
@@ -360,14 +362,14 @@ components:
             listType:
               enum: [wishlist, up-next, tracking]
             contentType:
-              enum: [movie, series, book]
+              enum: [movie, series, book, album]
       properties:
         listType:
           type: string
-          enum: [library, books, wishlist, up-next, tracking]
+          enum: [library, books, music, wishlist, up-next, tracking]
         contentType:
           type: string
-          enum: [movie, series, book]
+          enum: [movie, series, book, album]
         ownerUserShareCode:
           type: string
           minLength: 1
@@ -431,7 +433,7 @@ components:
               enum: [wishlist, up-next, tracking]
             contentType:
               type: string
-              enum: [movie, series, book]
+              enum: [movie, series, book, album]
       properties:
         canRead:
           type: boolean
@@ -599,7 +601,7 @@ components:
           description: Legacy IMDb-compatible identifier.
         externalProvider:
           type: string
-          enum: [omdb, openlibrary]
+          enum: [omdb, openlibrary, musicbrainz]
           description: External metadata provider that owns `externalItemId`, such as `omdb`.
         externalItemId:
           type: string
@@ -639,35 +641,35 @@ components:
           type: string
         listType:
           type: string
-          enum: [library, up-next, wishlist, tracking, books]
+          enum: [library, up-next, wishlist, tracking, books, music]
           description: >-
-            Logical list containing the item. Owned books use `books`. Books are also allowed on
-            `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
+            Logical list containing the item. Owned books use `books`, and owned albums use `music`. Books and albums
+            are also allowed on `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
         contentType:
           type: string
-          enum: [movie, series, book]
+          enum: [movie, series, book, album]
           description: >-
-            Item media type. `library` is movie/series only. `tracking` accepts movie, series, and book.
-            `books` is book only. Wishlist/up-next accept all three.
+            Item media type. `library` is movie/series only. `tracking`, `wishlist`, and `up-next` accept movie, series,
+            book, and album. `books` is book only, and `music` is album only.
         favorite:
           type: boolean
-          description: Whether the item is marked as a favorite. Allowed on ownership lists (`library`, `books`) only.
+          description: Whether the item is marked as a favorite. Allowed on ownership lists (`library`, `books`, `music`) only.
         watched:
           type: boolean
           description: >-
             Whether the authenticated viewer has a completed tracking twin for this ownership item
-            (movies and books).
+            (movies, books, and albums).
         watchedAt:
           type: ['string', 'null']
           description: Timestamp when a tracker item was completed. For series this is set only while completed.
         progressCurrent:
           type: ['integer', 'null']
           minimum: 0
-          description: Optional book reading progress (pages read) on tracking items.
+          description: Optional reading or listening progress on tracking books and albums.
         progressTotal:
           type: ['integer', 'null']
           minimum: 1
-          description: Optional book total pages on tracking items.
+          description: Optional total pages or tracks on tracking books and albums.
         ownerShareCode:
           type: string
           description: Share code of the item owner, including items owned by the authenticated user.
@@ -706,7 +708,7 @@ components:
           description: Legacy IMDb-compatible identifier. For OMDb-backed items this matches `externalItemId`.
         externalProvider:
           type: string
-          enum: [omdb, openlibrary]
+          enum: [omdb, openlibrary, musicbrainz]
         externalItemId:
           type: string
         externalIds:
@@ -738,10 +740,10 @@ components:
           type: string
         contentType:
           type: string
-          enum: [movie, series, book]
+          enum: [movie, series, book, album]
           description: >-
-            `library` accepts movie and series, `books` accepts book, and `wishlist`, `up-next`, and `tracking`
-            accept all content types.
+            `library` accepts movie and series, `books` accepts book, `music` accepts album, and `wishlist`, `up-next`,
+            and `tracking` accept all content types.
         favorite:
           type: boolean
         progressCurrent:
@@ -833,7 +835,7 @@ components:
               enum: [any, all]
             type:
               type: string
-              enum: [movie, series, book]
+              enum: [movie, series, book, album]
             watched:
               type: boolean
             completed:
@@ -846,7 +848,7 @@ components:
               description: Filter to own items only, shared items only, or omit for both.
             listType:
               type: string
-              enum: [library, up-next, wishlist, tracking, books]
+              enum: [library, up-next, wishlist, tracking, books, music]
           description: >-
             Filters applied before matching. Results always preserve the first rank of each matched identity;
             general collection order controls are not supported by this operation.
@@ -914,6 +916,7 @@ components:
         - $ref: '#/components/schemas/MovieCollectionStatisticsResponse'
         - $ref: '#/components/schemas/SeriesCollectionStatisticsResponse'
         - $ref: '#/components/schemas/BookCollectionStatisticsResponse'
+        - $ref: '#/components/schemas/AlbumCollectionStatisticsResponse'
 
     CommonCollectionStatisticsCharts:
       type: object
@@ -966,7 +969,7 @@ components:
                 type: object
                 required: [type, count]
                 properties:
-                  type: { type: string, enum: [movie, series, book] }
+                  type: { type: string, enum: [movie, series, book, album] }
                   count: { type: integer }
             statusCounts:
               type: array
@@ -1036,6 +1039,13 @@ components:
         status: { type: string, enum: [read, unread, inProgress] }
         count: { type: integer }
 
+    AlbumCollectionStatisticsStatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status: { type: string, enum: [listened, unlistened, inProgress] }
+        count: { type: integer }
+
     AllCollectionStatisticsResponse:
       type: object
       required: [scope, summary, charts]
@@ -1043,12 +1053,13 @@ components:
         scope: { type: string, const: all }
         summary:
           type: object
-          required: [total, movies, series, books, favorites]
+          required: [total, movies, series, books, music, favorites]
           properties:
             total: { type: integer }
             movies: { type: integer }
             series: { type: integer }
             books: { type: integer }
+            music: { type: integer }
             favorites: { type: integer }
         charts: { $ref: '#/components/schemas/AllCollectionStatisticsCharts' }
 
@@ -1100,6 +1111,33 @@ components:
             inProgress: { type: integer }
         charts: { $ref: '#/components/schemas/BookCollectionStatisticsCharts' }
 
+    AlbumCollectionStatisticsCharts:
+      allOf:
+        - $ref: '#/components/schemas/CommonCollectionStatisticsCharts'
+        - $ref: '#/components/schemas/SpecificCollectionStatisticsCharts'
+        - type: object
+          properties:
+            statusCounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/AlbumCollectionStatisticsStatusCount'
+
+    AlbumCollectionStatisticsResponse:
+      type: object
+      required: [scope, summary, charts]
+      properties:
+        scope: { type: string, const: album }
+        summary:
+          type: object
+          required: [total, favorites, listened, unlistened, inProgress]
+          properties:
+            total: { type: integer }
+            favorites: { type: integer }
+            listened: { type: integer }
+            unlistened: { type: integer }
+            inProgress: { type: integer }
+        charts: { $ref: '#/components/schemas/AlbumCollectionStatisticsCharts' }
+
     CreateRequest:
       allOf:
         - $ref: '#/components/schemas/CollectionItemChange'
@@ -1112,11 +1150,11 @@ components:
                 have create permission for the exact `listType` and `contentType`. Defaults to the authenticated user.
             listType:
               type: string
-              enum: [library, up-next, wishlist, tracking, books]
+              enum: [library, up-next, wishlist, tracking, books, music]
               default: library
               description: >-
                 Target list. Defaults to `library`. `library` accepts movies and series, `books` accepts books only,
-                and `wishlist`, `up-next`, and `tracking` accept movies, series, and books.
+                `music` accepts albums only, and `wishlist`, `up-next`, and `tracking` accept all content types.
 
     CreateResponse:
       type: object
@@ -1290,7 +1328,7 @@ components:
       properties:
         provider:
           type: string
-          enum: [omdb, openlibrary]
+          enum: [omdb, openlibrary, musicbrainz]
         providerItemId:
           type: string
         externalIds:
@@ -1304,7 +1342,7 @@ components:
           type: string
         contentType:
           type: string
-          enum: [movie, series, book]
+          enum: [movie, series, book, album]
         poster:
           type: string
         plot:
@@ -1333,7 +1371,7 @@ components:
         source:
           type: string
           maxLength: 64
-          enum: [omdb, openlibrary, imdb, isbn]
+          enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         id:
           type: string
           maxLength: 512
@@ -1353,7 +1391,7 @@ components:
       properties:
         name:
           type: string
-          enum: [omdb, openlibrary]
+          enum: [omdb, openlibrary, musicbrainz]
           description: Configured external metadata provider identifier.
         supportsSeasonMetadata:
           type: boolean
@@ -1382,7 +1420,7 @@ components:
             - Which are sci-fi movies?
         listType:
           type: string
-          enum: [library, up-next, wishlist, tracking, books]
+          enum: [library, up-next, wishlist, tracking, books, music]
           description: Collection list to search within.
 
     AiQueryResponse:
@@ -1559,7 +1597,7 @@ components:
         externalProvider:
           type: string
           maxLength: 64
-          enum: [omdb, openlibrary]
+          enum: [omdb, openlibrary, musicbrainz]
           description: External metadata provider that owns the canonical item identity.
         externalItemId:
           type: string
@@ -1582,8 +1620,8 @@ components:
         listType:
           type: string
           description: >-
-            Logical list containing the item. Owned books use `books`. Books are also allowed on
-            `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
+            Logical list containing the item. Owned books use `books`, and owned albums use `music`. Books and albums
+            are also allowed on `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
         watchedAt:
           type: ['string', 'null']
           maxLength: 64
@@ -1608,13 +1646,13 @@ components:
           properties:
             listType:
               type: string
-              enum: [library, watchlist, up-next, wishlist, tracking, books]
+              enum: [library, watchlist, up-next, wishlist, tracking, books, music]
             contentType:
               type: string
-              enum: [movie, series, book]
+              enum: [movie, series, book, album]
               description: >-
-                Item media type. `library` is movie/series only. `tracking` accepts movie, series, and book.
-                `books` is book only. Wishlist/up-next accept all three.
+                Item media type. `library` is movie/series only. `tracking`, `wishlist`, and `up-next` accept movie,
+                series, book, and album. `books` is book only, and `music` is album only.
             favorite:
               type: boolean
 
@@ -1625,7 +1663,7 @@ components:
           properties:
             listType:
               type: string
-              enum: [library, up-next, wishlist, tracking, books]
+              enum: [library, up-next, wishlist, tracking, books, music]
 
     ImportUserSettingsV9:
       type: object
@@ -2566,7 +2604,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [movie, series, book]
+            enum: [movie, series, book, album]
         - name: favorite
           in: query
           schema:
@@ -2589,7 +2627,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, up-next, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books, music]
             default: library
         - name: orderBy
           in: query
@@ -2627,8 +2665,8 @@ paths:
         Creates a structured item in the requested `listType`. External provider identity and locally resolved
         canonical identity must be unique within the target list. Custom tags must not use reserved system or virtual
         tags. Optionally pass `targetOwnerShareCode` to create in another owner's list when exact create permission
-        exists. `library` stores movies and series; `books` stores owned books; `wishlist`, `up-next`, and `tracking`
-        accept movies, series, and books. Favorites are allowed only on `library` and `books`.
+        exists. `library` stores movies and series; `books` stores owned books; `music` stores owned albums; and
+        `wishlist`, `up-next`, and `tracking` accept all content types. Favorites are allowed only on ownership lists.
       tags: [Collection]
       requestBody:
         required: true
@@ -2720,7 +2758,7 @@ paths:
           description: List to search suggestions within. Defaults to `library`.
           schema:
             type: string
-            enum: [library, up-next, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books, music]
       responses:
         '200':
           description: Search suggestions.
@@ -2756,7 +2794,7 @@ paths:
           description: External identity source name. Required with `externalIdentityId` unless `imdbId` is used.
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: query
           required: false
@@ -2781,7 +2819,7 @@ paths:
           description: List to check. Defaults to `library`.
           schema:
             type: string
-            enum: [library, up-next, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books, music]
             default: library
       responses:
         '200':
@@ -3017,6 +3055,74 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /collection-items/actions/mark-music-completed:
+    post:
+      operationId: markAllMusicAsCompleted
+      summary: Mark all albums as completed
+      description: >-
+        Copies every uncompleted album from the selected owner's music list into the authenticated user's tracking as
+        completed. When `ownerShareCode` is provided, the exact `music`/`album` scope requires read permission and the
+        shared owner's items are not modified.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional owner share code for using a readable shared music scope as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /collection-items/actions/mark-music-uncompleted:
+    post:
+      operationId: markAllMusicAsUncompleted
+      summary: Mark all albums as uncompleted
+      description: >-
+        Clears completed status for authenticated-user tracking albums corresponding to albums in the selected owner's
+        music list. Tracking items are kept. When `ownerShareCode` is provided, the exact `music`/`album` scope requires
+        read permission and the shared owner's items are not modified.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional owner share code for using a readable shared music scope as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /collection-items/actions/refresh-images:
     post:
       operationId: refreshImages
@@ -3147,18 +3253,18 @@ paths:
       summary: Get collection statistics
       description: >-
         Returns statistics for the authenticated viewer's default readable library scope, folding readable books-list
-        books into library movies and series. Omit `type` for an all-media summary, or provide `movie`, `series`, or
-        `book` for that media scope. Tracking statuses use the current viewer's tracking items matched by canonical or
-        exact external identity. Media-type chart counts are available only in all-media scope; status chart counts are
-        available only in a specific media scope.
+        books and music-list albums into library movies and series. Omit `type` for an all-media summary, or provide
+        `movie`, `series`, `book`, or `album` for that media scope. Tracking statuses use the current viewer's tracking
+        items matched by canonical or exact external identity. Media-type chart counts are available only in all-media
+        scope; status chart counts are available only in a specific media scope.
       tags: [Collection]
       parameters:
         - name: type
           in: query
-          description: Media scope. Omit for all movies, series, and books.
+          description: Media scope. Omit for all movies, series, books, and albums.
           schema:
             type: string
-            enum: [movie, series, book]
+            enum: [movie, series, book, album]
       responses:
         '200':
           description: Collection statistics.
@@ -3221,6 +3327,28 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /collection-items/music:
+    delete:
+      operationId: deleteAllMusicItems
+      summary: Remove all music list data
+      description: Deletes every music list item owned by the authenticated user. This affects only the user's own music list data and cannot remove or change shared library owner items.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of music list items deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /collection-items/tracking:
     delete:
       operationId: deleteAllTrackingItems
@@ -3256,7 +3384,7 @@ paths:
           description: External identity source identifier.
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3275,7 +3403,7 @@ paths:
           description: List containing the item. Defaults to `library`.
           schema:
             type: string
-            enum: [library, up-next, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books, music]
             default: library
       requestBody:
         required: true
@@ -3320,7 +3448,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3342,7 +3470,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, up-next, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books, music]
             default: library
       responses:
         '204':
@@ -3374,7 +3502,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3384,7 +3512,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, up-next, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books, music]
             default: library
       responses:
         '200':
@@ -3419,7 +3547,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3429,7 +3557,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, up-next, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books, music]
             default: library
       requestBody:
         required: true
@@ -3465,10 +3593,10 @@ paths:
       operationId: addTrackingItemByExternalId
       summary: Add an item to tracking by external identity
       description: >-
-        Copies a movie, series, or book into the authenticated user's tracking list using canonical provider identity.
+        Copies a movie, series, book, or album into the authenticated user's tracking list using canonical provider identity.
         Movies are always completed. Series are added in progress (season metadata fetched when available).
-        Books are in progress unless `markCompleted=true`. When `ownerShareCode` is supplied, the source can be a
-        shared `library`, `up-next`, or `books` list and requires read permission for the source item's exact
+        Books and albums are in progress unless `markCompleted=true`. When `ownerShareCode` is supplied, the source can be a
+        shared `library`, `up-next`, `books`, or `music` list and requires read permission for the source item's exact
         list/content scope. The source owner's item is not modified, except an authenticated user's own `up-next`
         source is moved to tracking.
       tags: [Collection]
@@ -3478,7 +3606,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3489,7 +3617,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, up-next, books]
+            enum: [library, up-next, books, music]
             default: library
         - name: markCompleted
           in: query
@@ -3497,7 +3625,7 @@ paths:
           schema:
             type: boolean
             default: false
-          description: When true, mark the tracking item completed (required for completed books; movies always complete).
+          description: When true, mark the tracking item completed (required for completed books and albums; movies always complete).
         - name: ownerShareCode
           in: query
           required: false
@@ -3529,8 +3657,8 @@ paths:
       operationId: deleteCompletedTrackingItemByExternalId
       summary: Clear completion on a tracking twin by external identity
       description: >-
-        Marks the authenticated user's movie or book tracking twin unfinished by clearing completed_at.
-        Movie twins are then removed from tracking. Book twins stay on tracking as unfinished so reading
+        Marks the authenticated user's movie, book, or album tracking twin unfinished by clearing completed_at.
+        Movie twins are then removed from tracking. Book and album twins stay on tracking as unfinished so
         progress is preserved. Series tracking rows are not handled by this endpoint.
       tags: [Collection]
       parameters:
@@ -3539,7 +3667,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3547,7 +3675,7 @@ paths:
             type: string
       responses:
         '204':
-          description: Completion cleared (movie twin pruned; book twin kept unfinished).
+          description: Completion cleared (movie twin pruned; book and album twins kept unfinished).
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3573,7 +3701,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3615,7 +3743,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3667,7 +3795,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3711,7 +3839,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3754,7 +3882,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3792,7 +3920,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3834,7 +3962,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -3917,7 +4045,7 @@ paths:
           description: Known external metadata provider name to search. When omitted, the server aggregates all configured providers. Unknown names return 400; known but unconfigured providers return 503.
           schema:
             type: string
-            enum: [omdb, openlibrary]
+            enum: [omdb, openlibrary, musicbrainz]
       responses:
         '200':
           description: External metadata search results.
@@ -3953,7 +4081,7 @@ paths:
           description: External identity source returned by search results, or `imdb` for direct IMDb ID lookup.
           schema:
             type: string
-            enum: [omdb, openlibrary, imdb, isbn]
+            enum: [omdb, openlibrary, musicbrainz, imdb, isbn]
         - name: externalIdentityId
           in: query
           required: true
@@ -3992,8 +4120,9 @@ paths:
       description: >-
         Returns source image URLs from `background.config.json` that are already in the image proxy cache.
         Unauthenticated. Suitable as the `url` query value for GET /images/proxy. After startup the server resolves
-        IMDb IDs through the configured movie metadata provider and caches missing posters. Missing provider credentials
-        yield an empty list.
+        IMDb IDs, ISBNs, and MusicBrainz release MBIDs, writes source URLs to `posters` in that config, and caches
+        missing posters. Restart reuses saved `posters` without calling OMDb again for unchanged IDs. Missing OMDb
+        credentials skip IMDb posters only.
       tags: [Image Proxy]
       responses:
         '200':

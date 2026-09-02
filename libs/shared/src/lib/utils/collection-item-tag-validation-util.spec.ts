@@ -95,6 +95,24 @@ describe('collection item tag validation util', () => {
         listType: 'tracking',
       })
     ).toEqual({ kind: 'invalidNonLibraryTag' });
+    expect(
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'album', listType: 'music' })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'album', listType: 'tracking' })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'album', listType: 'wishlist' })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'album', listType: 'up-next' })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'album', listType: 'library' })
+    ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'music' })).toEqual({
+      kind: 'invalidInternalCollectionTag',
+    });
   });
 
   it('validates change item list constraints', () => {
@@ -205,6 +223,38 @@ describe('collection item tag validation util', () => {
         favorite: true,
         listType: 'books',
         existingListType: 'books',
+      })
+    ).toBeUndefined();
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        contentType: 'album',
+        listType: 'music',
+        existingListType: 'music',
+      })
+    ).toBeUndefined();
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        contentType: 'album',
+        listType: 'tracking',
+        existingListType: 'tracking',
+      })
+    ).toBeUndefined();
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        listType: 'music',
+        existingListType: 'music',
+      })
+    ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        contentType: 'album',
+        favorite: true,
+        listType: 'music',
+        existingListType: 'music',
       })
     ).toBeUndefined();
   });

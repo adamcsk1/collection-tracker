@@ -152,6 +152,19 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
     const sql = readFileSync(filePath, 'utf-8');
 
     try {
+      if (file === '040_add_music_feature_preference.sql') {
+        db.pragma('foreign_keys = OFF');
+        try {
+          db.transaction(() => {
+            db.exec(sql);
+            db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
+          })();
+        } finally {
+          db.pragma('foreign_keys = ON');
+        }
+        appliedIds.add(file);
+        continue;
+      }
       if (file === '038_add_collection_owner_defaults.sql') {
         db.transaction(() => {
           db.exec(sql);

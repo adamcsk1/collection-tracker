@@ -7,6 +7,7 @@ export interface AllSummaryRow extends BaseSummaryRow {
   movies: number;
   series: number;
   books: number;
+  music: number;
 }
 
 export interface SpecificSummaryRow extends BaseSummaryRow {

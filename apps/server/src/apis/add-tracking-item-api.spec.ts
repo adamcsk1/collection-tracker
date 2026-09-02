@@ -3,7 +3,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
-import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
 import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
 import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
@@ -323,6 +323,108 @@ describe('add-tracking-item-api', () => {
         .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
         .get('user', 'tt-1', 'up-next')
     ).toBeUndefined();
+  });
+
+  it('copies an own music album to tracking as uncompleted', async () => {
+    insertUser('user');
+    insertItem('user', 'album-1', ['#album'], 'music', 'album');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'album-1' },
+      query: { sourceListType: 'music', markCompleted: false },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-tracking-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        externalItemId: 'album-1',
+        listType: 'tracking',
+        contentType: 'album',
+        watched: false,
+      }),
+    });
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT list_type FROM collection_items WHERE username_hash = ? AND external_item_id = ? ORDER BY list_type'
+        )
+        .all('user', 'album-1')
+    ).toEqual([{ list_type: 'music' }, { list_type: 'tracking' }]);
+  });
+
+  it('copies a readable shared music album to requester tracking as uncompleted', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertShare(getDatabase(), 'owner', 'user', [
+      {
+        listType: 'music',
+        contentType: 'album',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+        readMode: 'all',
+      },
+    ]);
+    insertItem('owner', 'album-1', ['#album'], 'music', 'album');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'album-1' },
+      query: { sourceListType: 'music', ownerShareCode: getUserShareCode('owner'), markCompleted: false },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-tracking-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ externalItemId: 'album-1', listType: 'tracking', watched: false }),
+    });
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT username_hash, list_type FROM collection_items WHERE external_item_id = ? ORDER BY username_hash'
+        )
+        .all('album-1')
+    ).toEqual([
+      { username_hash: 'owner', list_type: 'music' },
+      { username_hash: 'user', list_type: 'tracking' },
+    ]);
+  });
+
+  it('moves an own up-next album to tracking as uncompleted', async () => {
+    insertUser('user');
+    insertItem('user', 'album-1', ['#album'], 'up-next', 'album');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'album-1' },
+      query: { sourceListType: 'up-next', markCompleted: false },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-tracking-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ externalItemId: 'album-1', listType: 'tracking', watched: false }),
+    });
+    expect(
+      getDatabase()
+        .prepare('SELECT list_type FROM collection_items WHERE username_hash = ? AND external_item_id = ?')
+        .all('user', 'album-1')
+    ).toEqual([{ list_type: 'tracking' }]);
   });
 
   it('removes watch later series when it already exists in tracking', async () => {

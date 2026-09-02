@@ -44,12 +44,12 @@ const isCollectionItemFilters = (value: unknown): value is CollectionItemFilters
     (filters.tags === undefined || isStringArray(filters.tags, MAX_COLLECTION_FILTER_TAGS)) &&
     (filters.genres === undefined || isStringArray(filters.genres, MAX_COLLECTION_FILTER_GENRES)) &&
     isOptionalMember(filters.tagMode, ['any', 'all']) &&
-    isOptionalMember(filters.type, ['movie', 'series', 'book']) &&
+    isOptionalMember(filters.type, ['movie', 'series', 'book', 'album']) &&
     (filters.watched === undefined || typeof filters.watched === 'boolean') &&
     (filters.completed === undefined || typeof filters.completed === 'boolean') &&
     (filters.favorite === undefined || typeof filters.favorite === 'boolean') &&
     isOptionalMember(filters.shared, ['mine', 'shared']) &&
-    isOptionalMember(filters.listType, ['library', 'up-next', 'wishlist', 'tracking', 'books'])
+    isOptionalMember(filters.listType, ['library', 'up-next', 'wishlist', 'tracking', 'books', 'music'])
   );
 };
 

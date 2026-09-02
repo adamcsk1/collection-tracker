@@ -2,6 +2,7 @@ import { CollectionFeaturePreferencesModel } from '../models/collection-feature-
 
 export const DEFAULT_COLLECTION_FEATURE_PREFERENCES: CollectionFeaturePreferencesModel = {
   books: true,
+  music: true,
   wishlist: true,
   upNext: true,
   tracking: true,

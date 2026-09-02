@@ -6,6 +6,7 @@ export const COLLECTION_LIST_TYPES: readonly CollectionListTypeModel[] = [
   'up-next',
   'tracking',
   'books',
+  'music',
 ] as const;
 
 /** Legacy list_type values rewritten to current types (migration / older payloads). */
