@@ -313,7 +313,7 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 });
 
-describe('Item dialog — url', () => {
+describe('Item dialog — url', { testIsolation: false }, () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Url Test Movie', 'movie', 'tt7000091'));
@@ -350,6 +350,7 @@ describe('Item dialog — url', () => {
 
     cy.go('back');
     CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('include', '#/collection/library');
     cy.url().should('not.include', 'item=');
   });
 
@@ -377,11 +378,12 @@ describe('Item dialog — url', () => {
 
     cy.go('back');
     CollectionPage.getItemDialogShellHost().should('not.exist');
+    cy.url().should('include', '#/collection/library');
     cy.url().should('not.include', 'item=');
   });
 });
 
-describe('Item dialog — tracking url', () => {
+describe('Item dialog — tracking url', { testIsolation: false }, () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/collection-items', {
@@ -407,7 +409,7 @@ describe('Item dialog — tracking url', () => {
   });
 });
 
-describe('Item dialog — books url', () => {
+describe('Item dialog — books url', { testIsolation: false }, () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/collection-items', buildBooksItem('Url Test Book', '9780306406195'));

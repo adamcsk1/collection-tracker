@@ -54,6 +54,15 @@ const reloadAndExpectPersistedTitle = (title: string, expectedItemCount = 1) => 
   CollectionPage.getListItems().should('have.length', expectedItemCount).and('contain.text', title);
 };
 
+const closeOpenDialogThenClickFirstItem = () => {
+  cy.get('body').then(($body) => {
+    if ($body.find('[data-test-id="dialog-overlay"]').length) {
+      CollectionPage.closeDialogByOverlay();
+    }
+  });
+  CollectionPage.getListItemImages().first().click();
+};
+
 const waitForItemsRequestIncluding = (expectedUrlParts: string[]): Cypress.Chainable<Interception> => {
   return cy.wait('@getItems').then((interception) => {
     const requestUrl = interception.request.url;
@@ -926,9 +935,8 @@ describe('Collection — tracking series', () => {
     cy.request('PUT', '/api/v1/collection-items/omdb/tt8200001/tracking/seasons', {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.reload();
-
-    CollectionPage.getListItemImages().first().click();
+    reloadAndExpectPersistedTitle(seriesTitle);
+    closeOpenDialogThenClickFirstItem();
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
     CollectionPage.getCompletedEpisodesEpisodeCheckbox().eq(0).check();
@@ -940,8 +948,8 @@ describe('Collection — tracking series', () => {
     CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
 
-    cy.reload();
-    CollectionPage.getListItemImages().first().click();
+    reloadAndExpectPersistedTitle(seriesTitle);
+    closeOpenDialogThenClickFirstItem();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
 

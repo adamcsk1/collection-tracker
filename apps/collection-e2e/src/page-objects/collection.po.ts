@@ -223,6 +223,7 @@ export const CollectionPage = {
       isPrimary: true,
       clientX: 100,
       clientY: 100,
+      force: true,
     });
     cy.wait(dialogActionHoldDuration);
   },
