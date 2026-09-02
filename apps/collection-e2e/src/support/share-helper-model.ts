@@ -1,5 +1,5 @@
-export type ShareListType = 'library' | 'books' | 'wishlist' | 'up-next' | 'tracking';
-export type ShareContentType = 'movie' | 'series' | 'book';
+export type ShareListType = 'library' | 'books' | 'music' | 'wishlist' | 'up-next' | 'tracking';
+export type ShareContentType = 'movie' | 'series' | 'book' | 'album';
 export type SharePermissionKey = 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete';
 export type ShareReadMode = 'none' | 'selected' | 'all';
 export type ShareGrantReadMode = Exclude<ShareReadMode, 'none'>;

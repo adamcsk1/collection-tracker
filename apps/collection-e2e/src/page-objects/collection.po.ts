@@ -82,7 +82,8 @@ export const CollectionPage = {
     cy.visit(`/client/#/collection/books?${query}`);
     cy.reload();
   },
-  getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book') => cy.getByTestId(`collection-media-chip-${chip}`),
+  getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book' | 'album') =>
+    cy.getByTestId(`collection-media-chip-${chip}`),
 
   // Search
   getSearchInput: () => getFloatSearchInput('collection-search'),
@@ -264,7 +265,7 @@ export const CollectionPage = {
   getItemDialogMetacriticRateInput: () => getItemDialog().find('[data-test-id="item-dialog-metacritic-rate"] input'),
   getItemDialogUserRateInput: () => getItemDialog().find('[data-test-id="item-dialog-user-rate"] input'),
   getItemDialogEpisodeProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-episode-progress-chip"]'),
-  getItemDialogBookProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-book-progress-chip"]'),
+  getItemDialogProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-progress-chip"]'),
   getItemDialogProgressCurrentInput: () => getItemDialog().find('[data-test-id="item-dialog-progress-current"] input'),
   getItemDialogProgressTotalInput: () => getItemDialog().find('[data-test-id="item-dialog-progress-total"] input'),
   getItemDialogCompletedChip: () => getItemDialog().find('[data-test-id="item-dialog-completed-chip"]'),

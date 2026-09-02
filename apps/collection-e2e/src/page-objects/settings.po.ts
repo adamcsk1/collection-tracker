@@ -57,6 +57,7 @@ export const SettingsPage = {
   getFeatureUpNextCheckbox: () => cy.getByTestId('settings-feature-up-next').find('input[type="checkbox"]'),
   getFeatureTrackingCheckbox: () => cy.getByTestId('settings-feature-tracking').find('input[type="checkbox"]'),
   getFeatureBooksCheckbox: () => cy.getByTestId('settings-feature-books').find('input[type="checkbox"]'),
+  getFeatureMusicCheckbox: () => cy.getByTestId('settings-feature-music').find('input[type="checkbox"]'),
 
   // Media refresh page
   getMediaRefreshLibrarySelect: () => cy.getByTestId('settings-media-refresh-library').find('select'),
@@ -76,6 +77,7 @@ export const SettingsPage = {
   getRemoveAllTrackedMovieDataButton: () => cy.getByTestId('settings-remove-all-tracked-movie-data').scrollIntoView(),
   getRemoveAllTrackedSeriesDataButton: () => cy.getByTestId('settings-remove-all-tracked-series-data').scrollIntoView(),
   getRemoveAllTrackedBookDataButton: () => cy.getByTestId('settings-remove-all-tracked-book-data').scrollIntoView(),
+  getRemoveAllTrackedMusicDataButton: () => cy.getByTestId('settings-remove-all-tracked-music-data').scrollIntoView(),
 
   // Account Actions page
   getAccountActionsSection: () => cy.getByTestId('settings-account-actions'),

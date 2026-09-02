@@ -1,5 +1,5 @@
 export type ItemType = 'movie' | 'series';
-export type ListType = 'library' | 'up-next' | 'wishlist' | 'tracking' | 'books';
+export type ListType = 'library' | 'up-next' | 'wishlist' | 'tracking' | 'books' | 'music';
 
 export interface CollectionItemFixture {
   image: string;

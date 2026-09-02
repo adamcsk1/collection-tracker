@@ -7,7 +7,7 @@ export {};
 let authCookieHeader = '';
 let requestIpSuffix = 1;
 
-const collectionListTypes = ['library', 'up-next', 'wishlist', 'tracking', 'books'] as const;
+const collectionListTypes = ['library', 'up-next', 'wishlist', 'tracking', 'books', 'music'] as const;
 const defaultUserSettings = {
   theme: 'system',
   animatedBackground: true,
@@ -21,6 +21,7 @@ const defaultUserSettings = {
   },
   collectionFeaturePreferences: {
     books: true,
+    music: true,
     wishlist: true,
     upNext: true,
     tracking: true,

@@ -1190,7 +1190,7 @@ describe('Collection — unified tracking gaps', () => {
     cy.getByTestId('list-item-progress').should('contain.text', '10 / 100');
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '10 / 100');
+    CollectionPage.getItemDialogProgressChip().should('contain.text', '10 / 100');
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogProgressCurrentInput().clear().type('55');
@@ -1198,7 +1198,7 @@ describe('Collection — unified tracking gaps', () => {
     CollectionPage.getItemDialogSaveButton().click();
     cy.wait('@updateBookProgress').its('response.statusCode').should('eq', 200);
 
-    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '55 / 200');
+    CollectionPage.getItemDialogProgressChip().should('contain.text', '55 / 200');
     CollectionPage.closeActiveDialogByOverlay();
     cy.getByTestId('list-item-progress').should('contain.text', '55 / 200');
   });
@@ -1229,7 +1229,7 @@ describe('Collection — unified tracking gaps', () => {
       expect(response?.body?.data.item?.watchedAt).to.be.a('string').and.not.be.empty;
     });
 
-    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '100 / 100');
+    CollectionPage.getItemDialogProgressChip().should('contain.text', '100 / 100');
     CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.getListItemProgress().should('contain.text', '100 / 100');
     CollectionPage.getTrackingCompletedBadges().should('have.length', 1);
@@ -1260,7 +1260,7 @@ describe('Collection — unified tracking gaps', () => {
       expect(response?.body?.data.item?.watchedAt).to.equal(null);
     });
 
-    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '100 / 200');
+    CollectionPage.getItemDialogProgressChip().should('contain.text', '100 / 200');
     CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.getListItemProgress().should('contain.text', '100 / 200');
     CollectionPage.getTrackingCompletedBadges().should('have.length', 0);
@@ -1309,7 +1309,7 @@ describe('Collection — unified tracking gaps', () => {
       expect(response?.body?.data.item?.progressTotal).to.equal(200);
     });
 
-    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '150 / 200');
+    CollectionPage.getItemDialogProgressChip().should('contain.text', '150 / 200');
     CollectionPage.closeActiveDialogByOverlay();
     cy.getByTestId('list-item-progress').should('contain.text', '150 / 200');
   });
