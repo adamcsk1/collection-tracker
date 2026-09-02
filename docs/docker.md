@@ -61,7 +61,7 @@ docker buildx build --load -t collection-tracker .
 docker run --rm -p 3001:3001 -e APP_UID=$(id -u) -e APP_GID=$(id -g) -v ${PWD}/.data:/data collection-tracker
 ```
 
-> `OMDB_API_KEY` in `/data/.env` enables the OMDb external metadata provider. Optional `OMDB_API_URL` overrides its endpoint; when omitted or empty, it defaults to `https://www.omdbapi.com/`. OMDb requests time out after 10 seconds. Open Library book metadata needs no API key; optional `OPENLIBRARY_API_URL` overrides its default `https://openlibrary.org/` endpoint. Without an OMDb key, movie and series metadata operations remain unavailable while book search continues to work.
+> `OMDB_API_KEY` in `/data/.env` enables the OMDb external metadata provider. Optional `OMDB_API_URL` overrides its endpoint; when omitted or empty, it defaults to `https://www.omdbapi.com/`. OMDb requests time out after 10 seconds. Open Library book metadata needs no API key; optional `OPENLIBRARY_API_URL` overrides its default `https://openlibrary.org/` endpoint. MusicBrainz album metadata needs no API key; optional `MUSICBRAINZ_API_URL` overrides `https://musicbrainz.org/ws/2/` and optional `COVERARTARCHIVE_API_URL` overrides `https://coverartarchive.org/`. Without an OMDb key, movie and series metadata operations remain unavailable while book and music search continue to work.
 
 AI search uses Ollama. Install Ollama on the host and run:
 
@@ -97,7 +97,7 @@ Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "
 
 The Docker default uses `host.docker.internal` so the container can reach Ollama running on the Docker host. Docker Compose maps that name to the host gateway for Linux hosts.
 
-`/data/background.config.json` is created with default IMDb IDs when missing and is never overwritten. Edit it to change the animated poster background. Without `OMDB_API_KEY`, the public background list stays empty.
+`/data/background.config.json` is created with default IMDb IDs when missing. Edit `imdbIds`, `isbnIds`, and `mbids` to change the animated poster background; the server may write a `posters` map of resolved source URLs and does not replace the ID arrays. Without `OMDB_API_KEY`, IMDb posters are skipped; book and album covers still resolve.
 
 ## Environment Variables
 

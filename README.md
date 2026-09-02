@@ -108,7 +108,7 @@ See [Docker deployment](./docs/docker.md) for GHCR tags, runtime variables, Olla
 
 ## Environment
 
-The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. Animated backgrounds read IMDb IDs from `.data/background.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates those files from [apps/server/scripts](./apps/server/scripts) when they are missing.
+The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. Animated backgrounds read IMDb IDs, ISBNs, and MusicBrainz release MBIDs from `.data/background.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates those files from [apps/server/scripts](./apps/server/scripts) when they are missing.
 
 `JWT_SECRET` and `COOKIE_SECRET` must be non-empty, and `SALT` must be explicitly configured. Keep `SALT` unchanged after users or data have been created because it participates in persisted hashes. Docker generates and persists all three values when it creates `/data/.env` on first start; it never replaces an existing file.
 
@@ -139,6 +139,8 @@ OMDB_API_KEY="your_omdb_api_key"
 `OMDB_API_KEY` is optional for startup. Set it to enable the OMDb external metadata provider used by metadata search, IMDb ID import, image refresh, rating refresh, and season metadata refresh. `OMDB_API_URL` can override the provider endpoint; when it is omitted or empty, the server uses `https://www.omdbapi.com/`.
 
 Book metadata uses Open Library and requires no API key. `OPENLIBRARY_API_URL` can override its endpoint; when omitted or empty, the server uses `https://openlibrary.org/`.
+
+Music metadata uses MusicBrainz and Cover Art Archive and requires no API key. `MUSICBRAINZ_API_URL` can override its endpoint; when omitted or empty, the server uses `https://musicbrainz.org/ws/2/`. `COVERARTARCHIVE_API_URL` can override Cover Art Archive; when omitted or empty, the server uses `https://coverartarchive.org/`.
 
 Ollama config example (`.data/ollama.config.json`):
 
