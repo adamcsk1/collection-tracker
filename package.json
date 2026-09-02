@@ -32,6 +32,7 @@
     "format:affected": "npm run nx -- affected --target=format",
     "format:check": "npm run nx -- run-many --target=format-check --projects=client,components,services,shared,server,login,health,dev-proxy",
     "format:check:affected": "npm run nx -- affected --target=format-check",
+    "bump-version": "node ./scripts/bump-version.js",
     "release": "node ./scripts/create-release.js",
     "check-i18n": "node scripts/check-i18n.js",
     "sort-i18n": "node scripts/sort-i18n.js",

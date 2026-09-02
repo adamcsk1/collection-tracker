@@ -4,6 +4,13 @@ const { createHash, randomUUID } = require('crypto');
 const { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } = require('fs');
 const { basename, join } = require('path');
 const { spawnSync } = require('child_process');
+const {
+  assertVersionFilesMatch,
+  getGitStatus,
+  hasVersionTag,
+  readPackageVersion,
+  versionTag,
+} = require('./bump-version');
 
 const rootFolder = join(__dirname, '..');
 const distFolder = join(rootFolder, 'dist');
@@ -12,36 +19,28 @@ const dockerFile = join(rootFolder, 'Dockerfile');
 const dockerComposeFile = join(rootFolder, 'docker-compose.yml');
 const dockerReadme = join(rootFolder, 'docs', 'docker.md');
 const releaseFolder = join(rootFolder, 'release');
-const packageJsonFile = join(rootFolder, 'package.json');
-const packageLockFile = join(rootFolder, 'package-lock.json');
 const clientAboutFile = join(rootFolder, 'apps', 'client', 'src', 'app', 'about', 'about.ts');
 const androidFolder = join(rootFolder, 'android');
-const androidBuildFile = join(androidFolder, 'app', 'build.gradle.kts');
 const androidReleaseApkFolder = join(androidFolder, 'app', 'build', 'outputs', 'apk', 'release');
 const androidSdkBuildToolsFolder = process.env.LOCALAPPDATA
   ? join(process.env.LOCALAPPDATA, 'Android', 'Sdk', 'build-tools')
   : '';
-const helpHint = 'Run npm run release -- -- --help for usage.';
+const helpHint = 'Run npm run release -- --help for usage.';
 
 let appVersion = '';
 let webReleaseName = '';
 let webReleaseFolder = '';
 let webZipFile = '';
-let tagVersionAfterRelease = false;
 
 const formatHelp = () => `Usage:
   npm run release -- [options]
 
 Options:
-  --bump <major|minor|patch>  Bump package, lockfile, and Android version before building.
-  --no-commit                 Do not commit or tag the version bump. Requires --bump.
   -h, --help                  Show this help.
 
 Examples:
   npm run release
-  npm run release -- -- --help
-  npm run release -- --bump patch
-  npm run release -- --bump minor --no-commit
+  npm run release -- --help
 `;
 
 const formatCommandPart = (part) => {
@@ -64,72 +63,18 @@ DISABLE_REGISTRATION=0
 OMDB_API_KEY=""`;
 
 const parseArguments = (args = process.argv.slice(2)) => {
-  const options = { bump: '', help: false, noCommit: false };
+  const options = { help: false };
 
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-    if (arg === '--') {
-      continue;
-    }
+  for (const arg of args) {
+    if (arg === '--') continue;
     if (arg === '--help' || arg === '-h') {
       options.help = true;
-      continue;
-    }
-    if (arg === '--bump') {
-      const bump = args[index + 1];
-      if (!bump || bump.startsWith('--')) {
-        throw new Error(`--bump must be followed by major, minor, or patch. ${helpHint}`);
-      }
-      if (!['major', 'minor', 'patch'].includes(bump)) {
-        throw new Error(`--bump must be followed by major, minor, or patch. Received: ${bump}. ${helpHint}`);
-      }
-      options.bump = bump;
-      index += 1;
-      continue;
-    }
-    if (arg === '--no-commit') {
-      options.noCommit = true;
       continue;
     }
     throw new Error(`Unknown release argument: ${arg}. ${helpHint}`);
   }
 
-  if (options.help) return options;
-
-  if (options.noCommit && !options.bump) {
-    throw new Error(`--no-commit can only be used with --bump. ${helpHint}`);
-  }
-
   return options;
-};
-
-const readJsonFile = (file) => JSON.parse(readFileSync(file, 'utf-8'));
-
-const writeJsonFile = (file, data) => {
-  writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
-};
-
-const bumpVersion = (version, bump) => {
-  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
-  if (!match) throw new Error(`Cannot bump non-semver version: ${version}`);
-
-  const [, majorValue, minorValue, patchValue] = match;
-  let major = Number(majorValue);
-  let minor = Number(minorValue);
-  let patch = Number(patchValue);
-
-  if (bump === 'major') {
-    major += 1;
-    minor = 0;
-    patch = 0;
-  } else if (bump === 'minor') {
-    minor += 1;
-    patch = 0;
-  } else {
-    patch += 1;
-  }
-
-  return `${major}.${minor}.${patch}`;
 };
 
 const setReleasePaths = (version) => {
@@ -137,79 +82,6 @@ const setReleasePaths = (version) => {
   webReleaseName = `collection-tracker-${appVersion}`;
   webReleaseFolder = join(releaseFolder, webReleaseName);
   webZipFile = join(releaseFolder, `${webReleaseName}.zip`);
-};
-
-const getGitStatus = () => {
-  const result = spawnSync('git', ['status', '--porcelain'], {
-    cwd: rootFolder,
-    encoding: 'utf-8',
-    shell: false,
-  });
-  if (result.error) throw result.error;
-  if (result.status !== 0)
-    throw new Error(createCommandFailureMessage('git', ['status', '--porcelain'], rootFolder, result.status));
-  return result.stdout.trim();
-};
-
-const assertCleanGitStatus = () => {
-  const status = getGitStatus();
-  if (status) {
-    throw new Error(
-      `Cannot create a version bump commit with a dirty git status. Commit or stash changes first, or use --no-commit.\n${status}`
-    );
-  }
-};
-
-const assertVersionTagMissing = (version) => {
-  const result = spawnSync('git', ['rev-parse', '--verify', '--quiet', `refs/tags/${version}`], {
-    cwd: rootFolder,
-    shell: false,
-    stdio: 'ignore',
-  });
-  if (result.error) throw result.error;
-  if (result.status === 0) throw new Error(`Git tag ${version} already exists.`);
-};
-
-const updateVersionFiles = (version) => {
-  console.log(`Updating version files to ${version}`);
-
-  const packageJson = readJsonFile(packageJsonFile);
-  packageJson.version = version;
-  writeJsonFile(packageJsonFile, packageJson);
-
-  const packageLock = readJsonFile(packageLockFile);
-  packageLock.version = version;
-  packageLock.packages[''].version = version;
-  writeJsonFile(packageLockFile, packageLock);
-
-  const androidBuild = readFileSync(androidBuildFile, 'utf-8');
-  const updatedAndroidBuild = androidBuild.replace(/versionName = "\d+\.\d+\.\d+"/, `versionName = "${version}"`);
-  if (updatedAndroidBuild === androidBuild)
-    throw new Error(`Could not update Android versionName in ${androidBuildFile}`);
-  writeFileSync(androidBuildFile, updatedAndroidBuild);
-};
-
-const getVersionFromFile = (file, pattern, label) => {
-  const match = pattern.exec(readFileSync(file, 'utf-8'));
-  if (!match) throw new Error(`Could not read ${label} version from ${file}`);
-  return match[1];
-};
-
-const assertVersionFilesMatch = (version) => {
-  const packageLock = readJsonFile(packageLockFile);
-  const versions = [
-    ['package-lock.json', packageLock.version],
-    ['package-lock.json packages root', packageLock.packages[''].version],
-    ['Android versionName', getVersionFromFile(androidBuildFile, /versionName = "(\d+\.\d+\.\d+)"/, 'Android')],
-  ];
-
-  for (const [label, foundVersion] of versions) {
-    if (foundVersion !== version) {
-      throw new Error(
-        `${label} version ${foundVersion} does not match package.json version ${version}. Run release with --bump or update versions before packaging.`
-      );
-    }
-  }
 };
 
 const getCommandOutput = (command, args) => {
@@ -268,36 +140,25 @@ const withClientAboutBuildInfo = (file, buildInfo, callback) => {
   }
 };
 
-const commitVersionBump = (version) => {
-  run('git', ['add', packageJsonFile, packageLockFile, androidBuildFile], { label: 'Staging version bump files' });
-  run('git', ['commit', '-m', `chore(release): bump version to ${version}`], { label: 'Committing version bump' });
-};
-
-const tagVersion = (version) => {
-  run('git', ['tag', version], { label: `Tagging release ${version}` });
-};
-
-const prepareVersion = (options) => {
-  console.log('Preparing release version');
-  const currentVersion = readJsonFile(packageJsonFile).version;
-  if (!options.bump) {
-    assertVersionFilesMatch(currentVersion);
-    setReleasePaths(currentVersion);
+const tagReleaseVersion = (version) => {
+  const tag = versionTag(version);
+  const status = getGitStatus();
+  if (status) {
+    console.warn(`Skipping git tag ${tag}: working tree is dirty.`);
     return;
   }
-
-  if (!options.noCommit) assertCleanGitStatus();
-
-  const nextVersion = bumpVersion(currentVersion, options.bump);
-  if (!options.noCommit) assertVersionTagMissing(nextVersion);
-  updateVersionFiles(nextVersion);
-  setReleasePaths(nextVersion);
-  console.log(`Version bumped from ${currentVersion} to ${nextVersion}`);
-
-  if (!options.noCommit) {
-    commitVersionBump(nextVersion);
-    tagVersionAfterRelease = true;
+  if (hasVersionTag(version)) {
+    console.log(`Git tag ${tag} already exists.`);
+    return;
   }
+  run('git', ['tag', tag], { label: `Tagging release ${tag}` });
+};
+
+const prepareVersion = () => {
+  console.log('Preparing release version');
+  const currentVersion = readPackageVersion();
+  assertVersionFilesMatch(currentVersion);
+  setReleasePaths(currentVersion);
 };
 
 const resolveApkSigner = () => {
@@ -453,7 +314,7 @@ const createRelease = () => {
     return;
   }
 
-  prepareVersion(options);
+  prepareVersion();
   withClientAboutBuildInfo(clientAboutFile, getClientAboutReleaseBuildInfo(), runNpmBuild);
   console.log('Staging release folder');
   recreateFolder(releaseFolder);
@@ -461,10 +322,7 @@ const createRelease = () => {
   createAndroidRelease();
   createZip(webReleaseFolder, webZipFile);
   writeHashFiles(webZipFile);
-
-  if (tagVersionAfterRelease) {
-    tagVersion(appVersion);
-  }
+  tagReleaseVersion(appVersion);
 
   console.log(`Web release created at ${webReleaseFolder}`);
   console.log(`Web archive created at ${webZipFile}`);
@@ -480,7 +338,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  bumpVersion,
   createCommandFailureMessage,
   formatBuildDate,
   formatCommand,

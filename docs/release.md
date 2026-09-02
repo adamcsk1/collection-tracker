@@ -1,6 +1,6 @@
 # Release
 
-`npm run release` builds the web apps, server, and Android wrapper, then writes versioned artifacts under `release/`.
+`npm run release` builds the web apps, server, and Android wrapper, then writes versioned artifacts under `release/`. Bump the version in a separate step with `npm run bump-version` before packaging when you want a new version.
 
 ## Artifacts
 
@@ -16,20 +16,22 @@ Release packaging clears the existing `release/` folder before writing new artif
 
 ## Version Bumps
 
-Use `--bump` to update the app and Android versions before packaging:
+Use `npm run bump-version` to update the app and Android versions before packaging:
 
 ```bash
-npm run release -- --bump patch
-npm run release -- --bump minor
-npm run release -- --bump major
+npm run bump-version -- patch
+npm run bump-version -- minor
+npm run bump-version -- major
+npm run release
 ```
 
-Bump releases require a clean git status and create the version bump commit before packaging so build metadata points at the release commit. The commit message is `chore(release): bump version to X.Y.Z`. After artifacts are successfully created, the release script creates the `X.Y.Z` git tag.
+Bump requires a clean git status and creates the version bump commit so build metadata points at the release commit. The commit message is `chore(release): bump version to X.Y.Z`. After artifacts are successfully created, `npm run release` creates the `vX.Y.Z` git tag when the worktree is clean and that tag does not already exist.
 
-Use `--no-commit` to bump local version files without creating the release commit or tag. This mode can run with a dirty worktree:
+Use `--no-commit` to bump local version files without creating the release commit. This mode can run with a dirty worktree. `npm run release` then skips the git tag because the worktree is dirty:
 
 ```bash
-npm run release -- --bump patch --no-commit
+npm run bump-version -- patch --no-commit
+npm run release
 ```
 
 ## Android Signing

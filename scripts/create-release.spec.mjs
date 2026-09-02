@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const {
-  bumpVersion,
   createCommandFailureMessage,
   formatBuildDate,
   formatCommand,
@@ -74,22 +73,19 @@ describe('create-release argument helpers', () => {
     const help = formatHelp();
 
     expect(help).toContain('Usage:');
-    expect(help).toContain('--bump <major|minor|patch>');
-    expect(help).toContain('--no-commit');
-    expect(help).toContain('npm run release -- -- --help');
-    expect(help).toContain('npm run release -- --bump patch');
+    expect(help).toContain('-h, --help');
+    expect(help).toContain('npm run release -- --help');
+    expect(help).not.toContain('--bump');
   });
 
-  it('parses help and release bump options', () => {
-    expect(parseArguments(['--help'])).toEqual({ bump: '', help: true, noCommit: false });
-    expect(parseArguments(['--', '--help'])).toEqual({ bump: '', help: true, noCommit: false });
-    expect(parseArguments(['--bump', 'minor', '--no-commit'])).toEqual({ bump: 'minor', help: false, noCommit: true });
+  it('parses help options', () => {
+    expect(parseArguments(['--help'])).toEqual({ help: true });
+    expect(parseArguments(['--', '--help'])).toEqual({ help: true });
+    expect(parseArguments([])).toEqual({ help: false });
   });
 
-  it('reports missing or unsupported bump values with usage guidance', () => {
-    expect(() => parseArguments(['--bump'])).toThrow('--bump must be followed by major, minor, or patch');
-    expect(() => parseArguments(['--bump', 'weekly'])).toThrow('Received: weekly');
-    expect(() => parseArguments(['--unknown'])).toThrow('Run npm run release -- -- --help for usage.');
+  it('reports unknown arguments with usage guidance', () => {
+    expect(() => parseArguments(['--unknown'])).toThrow('Run npm run release -- --help for usage.');
   });
 });
 
@@ -107,10 +103,3 @@ describe('create-release command helpers', () => {
   });
 });
 
-describe('create-release version helpers', () => {
-  it('bumps semantic versions', () => {
-    expect(bumpVersion('1.2.3', 'patch')).toBe('1.2.4');
-    expect(bumpVersion('1.2.3', 'minor')).toBe('1.3.0');
-    expect(bumpVersion('1.2.3', 'major')).toBe('2.0.0');
-  });
-});
