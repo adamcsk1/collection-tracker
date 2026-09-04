@@ -163,7 +163,7 @@ components:
 
     HealthDiagnosticsResponse:
       type: object
-      required: [status, memory, cpu, disk, load, frontend, ai]
+      required: [status, memory, cpu, disk, load, frontend, metadata, ai]
       properties:
         status:
           type: string
@@ -199,6 +199,13 @@ components:
             avg15m:
               type: number
         frontend:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [up, down]
+        metadata:
           type: object
           required: [status]
           properties:
@@ -2114,7 +2121,7 @@ tags:
   - name: Collection
     description: CRUD operations for structured collection items.
   - name: External Metadata Proxy
-    description: Proxy endpoints for external metadata providers. OMDb is used when `OMDB_API_KEY` is configured; Open Library is always available for book metadata.
+    description: Proxy endpoints for external metadata providers. The server forwards these requests to the metadata provider service. OMDb is listed when that service has `OMDB_API_KEY` or an `omdb` replacement; Open Library and MusicBrainz are available by default.
   - name: Image Proxy
     description: Cached proxy for external images, plus the public animated-background URL list.
   - name: AI Proxy

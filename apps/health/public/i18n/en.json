@@ -20,6 +20,7 @@
   "Message.HealthDiagnosticsError": "Could not load authenticated health diagnostics. Please try again.",
   "Message.HealthDiagnosticsUnauthorized": "Sign in to view authenticated health diagnostics.",
   "Message.Loading": "Loading",
+  "Metadata": "Metadata",
   "NavigateToLogin": "Go to login page",
   "ResetInput": "Reset input",
   "Retry": "Retry",

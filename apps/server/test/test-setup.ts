@@ -1,3 +1,7 @@
+process.env.METADATA_SERVICE_URL ??= 'http://metadata.test/';
+process.env.METADATA_SERVICE_READY_ATTEMPTS ??= '1';
+process.env.METADATA_SERVICE_READY_DELAY_MS ??= '0';
+
 import { initializeDatabase } from '../src/core/database/database';
 import { runMigrations } from '../src/core/database/migrations';
 import { mkdtempSync } from 'fs';
@@ -27,7 +31,15 @@ const tables = [
   'users',
 ];
 
-beforeEach(() => {
+beforeEach(async () => {
+  try {
+    const factory = await import('../src/core/external-metadata/external-metadata-provider-factory');
+    if (typeof factory.setAvailableExternalMetadataProviders === 'function') {
+      factory.setAvailableExternalMetadataProviders(['omdb', 'openlibrary', 'musicbrainz']);
+    }
+  } catch {
+    // Specs that mock the factory omit this helper.
+  }
   for (const table of tables) {
     try {
       db.prepare(`DELETE FROM ${table}`).run();

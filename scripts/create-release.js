@@ -16,6 +16,7 @@ const rootFolder = join(__dirname, '..');
 const distFolder = join(rootFolder, 'dist');
 const dockerFolder = join(rootFolder, 'docker');
 const dockerFile = join(rootFolder, 'Dockerfile');
+const metadataDockerFile = join(rootFolder, 'Dockerfile.metadata-provider');
 const dockerComposeFile = join(rootFolder, 'docker-compose.yml');
 const dockerReadme = join(rootFolder, 'docs', 'docker.md');
 const releaseFolder = join(rootFolder, 'release');
@@ -63,8 +64,9 @@ const minimalEnv = `JWT_SECRET="${randomUUID().toString('hex').replace(/-/g, '')
 COOKIE_SECRET="${randomUUID().toString('hex').replace(/-/g, '')}"
 SALT="${randomUUID().toString('hex').replace(/-/g, '')}"
 USER_LIMIT=1
-DISABLE_REGISTRATION=0
-OMDB_API_KEY=""`;
+DISABLE_REGISTRATION=0`;
+
+const metadataEnv = `OMDB_API_KEY=""`;
 
 const parseArguments = (args = process.argv.slice(2)) => {
   const options = { help: false };
@@ -252,13 +254,16 @@ const createWebRelease = () => {
   console.log('Copying web release files');
   recreateFolder(webReleaseFolder);
   mkdirSync(join(webReleaseFolder, 'data'), { recursive: true });
+  mkdirSync(join(webReleaseFolder, 'metadata'), { recursive: true });
 
   cpSync(distFolder, join(webReleaseFolder, 'dist'), { recursive: true });
   cpSync(dockerFolder, join(webReleaseFolder, 'docker'), { recursive: true });
   cpSync(dockerReadme, join(webReleaseFolder, 'README.md'));
   cpSync(dockerFile, join(webReleaseFolder, 'Dockerfile'));
+  cpSync(metadataDockerFile, join(webReleaseFolder, 'Dockerfile.metadata-provider'));
   cpSync(dockerComposeFile, join(webReleaseFolder, 'docker-compose.yml'));
   writeFileSync(join(webReleaseFolder, 'data', '.env'), minimalEnv);
+  writeFileSync(join(webReleaseFolder, 'metadata', '.env'), metadataEnv);
 };
 
 const findAndroidApks = () => {

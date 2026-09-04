@@ -3,79 +3,77 @@ import {
   getDirectImdbExternalMetadataProvider,
   getExternalMetadataProviderByName,
   getExternalMetadataProviders,
+  getMetadataServiceUrl,
+  loadExternalMetadataProviders,
+  resetExternalMetadataProviderCache,
+  setAvailableExternalMetadataProviders,
 } from './external-metadata-provider-factory';
-import { DEFAULT_OMDB_API_URL } from './providers/omdb-const';
-import { DEFAULT_OPENLIBRARY_API_URL } from './providers/openlibrary-const';
+
+vi.mock('../argv/argv', () => ({ getArgv: () => ({ dataFolder: '.data', debug: false, metadataServiceUrl: '' }) }));
 
 describe('external-metadata-provider-factory', () => {
   const originalEnv = process.env;
 
   afterEach(() => {
     process.env = originalEnv;
+    resetExternalMetadataProviderCache();
     vi.unstubAllGlobals();
   });
 
-  it('returns the OMDb provider when OMDB_API_KEY is set', () => {
-    process.env = { ...originalEnv, OMDB_API_KEY: 'key' };
+  it('builds HTTP clients for the metadata service', () => {
+    process.env = { ...originalEnv, METADATA_SERVICE_URL: 'http://metadata.test/' };
 
+    expect(getMetadataServiceUrl()).toBe('http://metadata.test/');
     expect(getExternalMetadataProviderByName('omdb')?.name).toBe('omdb');
     expect(getDirectImdbExternalMetadataProvider()?.name).toBe('omdb');
   });
 
-  it('always returns the public Open Library provider', () => {
-    process.env = { ...originalEnv };
-    delete process.env.OMDB_API_KEY;
+  it('omits OMDb until the metadata service lists it', () => {
+    process.env = { ...originalEnv, METADATA_SERVICE_URL: 'http://metadata.test/' };
+    setAvailableExternalMetadataProviders(['openlibrary', 'musicbrainz']);
 
     expect(getExternalMetadataProviders().map((provider) => provider.name)).toEqual(['openlibrary', 'musicbrainz']);
     expect(getDirectImdbExternalMetadataProvider()).toBeNull();
   });
 
-  it.each([undefined, '', '   ', '  https://books.example/api/  ', '  https://books.example/api  '])(
-    'uses the configured Open Library URL or its default when OPENLIBRARY_API_URL is %s',
-    async (openLibraryApiUrl) => {
-      process.env = { ...originalEnv };
-      delete process.env.OMDB_API_KEY;
-      if (openLibraryApiUrl === undefined) delete process.env.OPENLIBRARY_API_URL;
-      else process.env.OPENLIBRARY_API_URL = openLibraryApiUrl;
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ docs: [] }) } as Response));
-
-      await getExternalMetadataProviderByName('openlibrary')?.search('query');
-
-      const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
-      const expectedUrl = new URL(openLibraryApiUrl?.trim() || DEFAULT_OPENLIBRARY_API_URL);
-      expect(requestUrl.origin).toBe(expectedUrl.origin);
-      expect(requestUrl.pathname).toBe(`${expectedUrl.pathname.replace(/\/$/, '')}/search.json`);
-    }
-  );
-
-  it('uses the trimmed OMDB_API_URL override', async () => {
-    process.env = {
-      ...originalEnv,
-      OMDB_API_KEY: 'key',
-      OMDB_API_URL: '  https://metadata.example.com/omdb/  ',
-    };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ Search: [] }) } as Response));
+  it('searches through the metadata service contract', async () => {
+    process.env = { ...originalEnv, METADATA_SERVICE_URL: 'http://metadata.test/' };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: { results: [] } }), {
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    );
 
     await getExternalMetadataProviderByName('omdb')?.search('query');
 
-    const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
-    expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('https://metadata.example.com/omdb/');
+    expect(vi.mocked(fetch).mock.calls[0][0].toString()).toBe('http://metadata.test/v1/omdb/search?s=query');
   });
 
-  it.each([undefined, '', '   '])('uses the default OMDb URL when OMDB_API_URL is %s', async (omdbApiUrl) => {
-    process.env = { ...originalEnv, OMDB_API_KEY: 'key' };
-    if (omdbApiUrl === undefined) {
-      delete process.env.OMDB_API_URL;
-    } else {
-      process.env.OMDB_API_URL = omdbApiUrl;
-    }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ Search: [] }) } as Response));
+  it('loads available providers from the metadata service', async () => {
+    process.env = { ...originalEnv, METADATA_SERVICE_URL: 'http://metadata.test/' };
+    delete process.env.OMDB_API_KEY;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: {
+              providers: [
+                { name: 'omdb', supportsDirectImdbId: true, supportsSeasonMetadata: true },
+                { name: 'openlibrary', supportsDirectImdbId: false, supportsSeasonMetadata: false },
+              ],
+            },
+          }),
+          { headers: { 'content-type': 'application/json' } }
+        )
+      )
+    );
 
-    await getExternalMetadataProviderByName('omdb')?.search('query');
+    await loadExternalMetadataProviders();
 
-    const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
-    const defaultUrl = new URL(DEFAULT_OMDB_API_URL);
-    expect(requestUrl.origin).toBe(defaultUrl.origin);
-    expect(requestUrl.pathname).toBe(defaultUrl.pathname);
+    expect(getExternalMetadataProviders().map((provider) => provider.name)).toEqual(['omdb', 'openlibrary']);
   });
 });

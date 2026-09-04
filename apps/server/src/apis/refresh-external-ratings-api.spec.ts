@@ -6,6 +6,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
 import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
 import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
+import { metadataServiceItem, metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
+import { setAvailableExternalMetadataProviders } from '../core/external-metadata/external-metadata-provider-factory';
+
+const ratingsResponse = (
+  providerItemId: string,
+  imdbRating: string,
+  extraRatings: { source: string; value: string }[] = []
+) =>
+  metadataServiceResponse(
+    metadataServiceItem(providerItemId, {
+      ratings: [{ source: 'Internet Movie Database', value: imdbRating }, ...extraRatings],
+    })
+  );
 
 vi.mock('../core/logger', () => ({
   debugLog: vi.fn(),
@@ -98,17 +111,12 @@ describe('refresh-external-ratings-api', () => {
     insertItem('tt-1');
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'tt-1',
-          imdbRating: '8.4',
-          Ratings: [
-            { Source: 'Rotten Tomatoes', Value: '96%' },
-            { Source: 'Metacritic', Value: '85/100' },
-          ],
-        }),
-      }))
+      vi.fn(async () =>
+        ratingsResponse('tt-1', '8.4', [
+          { source: 'Rotten Tomatoes', value: '96%' },
+          { source: 'Metacritic', value: '85/100' },
+        ])
+      )
     );
 
     const response = mockResponse();
@@ -133,17 +141,12 @@ describe('refresh-external-ratings-api', () => {
     insertItem('tt-1', 'hash', 'user', '8.4', '96%', '85/100');
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'tt-1',
-          imdbRating: '8.4',
-          Ratings: [
-            { Source: 'Rotten Tomatoes', Value: '96%' },
-            { Source: 'Metacritic', Value: '85/100' },
-          ],
-        }),
-      }))
+      vi.fn(async () =>
+        ratingsResponse('tt-1', '8.4', [
+          { source: 'Rotten Tomatoes', value: '96%' },
+          { source: 'Metacritic', value: '85/100' },
+        ])
+      )
     );
 
     const response = mockResponse();
@@ -162,6 +165,7 @@ describe('refresh-external-ratings-api', () => {
     insertUser();
     insertItem('tt-1');
     delete process.env.OMDB_API_KEY;
+    setAvailableExternalMetadataProviders(['openlibrary', 'musicbrainz']);
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
@@ -198,19 +202,12 @@ describe('refresh-external-ratings-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
   });
 
-  it('does not update ratings when the provider returns a different-cased item ID', async () => {
+  it('updates ratings when the provider returns a different-cased item ID', async () => {
     insertUser();
     insertItem('tt-1');
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'TT-1',
-          imdbRating: '9.9',
-          Ratings: [{ Source: 'Rotten Tomatoes', Value: '100%' }],
-        }),
-      }))
+      vi.fn(async () => ratingsResponse('TT-1', '9.9', [{ source: 'Rotten Tomatoes', value: '100%' }]))
     );
 
     const response = mockResponse();
@@ -222,8 +219,11 @@ describe('refresh-external-ratings-api', () => {
 
     await handlerPromise();
 
-    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
-    expect(getRatings('tt-1')).toEqual([{ source: 'imdb', value: '7.0' }]);
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    expect(getRatings('tt-1')).toEqual([
+      { source: 'imdb', value: '9.9' },
+      { source: 'rotten-tomatoes', value: '100%' },
+    ]);
   });
 
   it('refreshes a shared library when the user has update permission and ignores non-library items', async () => {
@@ -235,14 +235,7 @@ describe('refresh-external-ratings-api', () => {
     insertItem('tt-shared-watchlist', 'watchlist-hash', 'owner', '7.0', '', '', 'up-next');
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'tt-shared',
-          imdbRating: '9.0',
-          Ratings: [{ Source: 'Rotten Tomatoes', Value: '99%' }],
-        }),
-      }))
+      vi.fn(async () => ratingsResponse('tt-shared', '9.0', [{ source: 'Rotten Tomatoes', value: '99%' }]))
     );
 
     const response = mockResponse();
@@ -309,14 +302,7 @@ describe('refresh-external-ratings-api', () => {
     insertItem('tt-watchlist', 'hash', 'user', '7.0', '', '', 'up-next');
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'tt-watchlist',
-          imdbRating: '8.0',
-          Ratings: [],
-        }),
-      }))
+      vi.fn(async () => ratingsResponse('tt-watchlist', '8.0'))
     );
 
     const response = mockResponse();
@@ -336,14 +322,9 @@ describe('refresh-external-ratings-api', () => {
     insertUser();
     insertBookItem('9780140328721');
     insertItem('tt-movie', 'movie-hash');
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => ({
-      ok: true,
-      json: async () => ({
-        imdbID: String(input).includes('tt-movie') ? 'tt-movie' : 'unknown',
-        imdbRating: '8.0',
-        Ratings: [],
-      }),
-    }));
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) =>
+      ratingsResponse(String(input).includes('tt-movie') ? 'tt-movie' : 'unknown', '8.0')
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     const response = mockResponse();
@@ -381,10 +362,7 @@ describe('refresh-external-ratings-api', () => {
         readMode: 'all',
       },
     ]);
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({ imdbID: 'tt-movie', imdbRating: '8.0', Ratings: [] }),
-    }));
+    const fetchMock = vi.fn(async () => ratingsResponse('tt-movie', '8.0'));
     vi.stubGlobal('fetch', fetchMock);
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
@@ -414,10 +392,7 @@ describe('refresh-external-ratings-api', () => {
         permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: false },
       },
     ]);
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({ imdbID: 'tt-selected', imdbRating: '9.0', Ratings: [] }),
-    }));
+    const fetchMock = vi.fn(async () => ratingsResponse('tt-selected', '9.0'));
     vi.stubGlobal('fetch', fetchMock);
     const response = mockResponse();
     const { app, handlerPromise } = buildApp(

@@ -20,6 +20,7 @@ const healthData: HealthDiagnosticsApiResponseModel = {
   disk: { usedPercent: 60 },
   load: { avg1m: 0.5, avg5m: 0.3, avg15m: 0.2 },
   frontend: { status: 'up' },
+  metadata: { status: 'up' },
   ai: { status: 'up' },
 };
 
@@ -214,6 +215,18 @@ describe('Main component', () => {
       'Severity: Status.Ok',
       'Severity: Status.Ok',
     ]);
+  });
+
+  it('renders the metadata metric with a material icon and stable status selector', () => {
+    const fixture = TestBed.createComponent(Main);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="health-metadata-card"] .material-icons')?.textContent.trim()
+    ).toBe('cloud');
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="health-metadata-status"]')?.getAttribute('data-status')
+    ).toBe('up');
   });
 
   it('renders the AI metric with a material icon and stable status selector', () => {

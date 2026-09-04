@@ -48,7 +48,7 @@ const importApi = async (dataFolder: string, lookupAddress = '203.0.113.10') => 
     };
   });
 
-  vi.doMock('../core/argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
+  vi.doMock('../core/argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false, metadataServiceUrl: '' }) }));
   vi.doMock('dns/promises', () => {
     const lookup = vi.fn(async (hostname: string) => {
       if (hostname === 'localhost' || hostname.endsWith('.localhost')) {

@@ -15,6 +15,7 @@ You are the architecture advisor for the Collection Tracker — a TypeScript wor
 | `apps/health`     | Server health dashboard                        |
 | `apps/login`      | Authentication UI                              |
 | `apps/server`     | Fastify REST API                               |
+| `apps/metadata-provider` | Built-in and replacement metadata adapters |
 | `apps/dev-proxy`  | Local dev gateway on localhost:4200            |
 | `apps/collection-e2e` | Cypress E2E tests                         |
 | `libs/components` | Standalone Angular UI components               |
@@ -45,6 +46,7 @@ Standalone root-level projects:
 @client/*        → apps/client/src/app/*
 @health/*        → apps/health/src/app/*
 @login/*         → apps/login/src/app/*
+@metadata-provider/* → apps/metadata-provider/src/*
 @server/*        → apps/server/src/*
 @components/*    → libs/components/src/lib/*
 @services/*      → libs/services/src/lib/*

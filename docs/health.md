@@ -2,7 +2,7 @@
 
 Source: [`apps/health`](../apps/health)
 
-`apps/health` is a lightweight Angular dashboard that loads server health metrics from the API on page initialization and shows status, memory, CPU, disk, load averages, frontend availability, and AI availability.
+`apps/health` is a lightweight Angular dashboard that loads server health metrics from the API on page initialization and shows status, memory, CPU, disk, load averages, frontend availability, metadata-provider availability, and AI availability.
 
 ## Data Source
 

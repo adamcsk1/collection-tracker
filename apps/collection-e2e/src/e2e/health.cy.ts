@@ -39,6 +39,11 @@ describe('Health page', () => {
       HealthPage.getCpuCard().should('be.visible').and('contain.text', '%');
     });
 
+    it('shows the metadata status card', () => {
+      HealthPage.getMetadataCard().should('be.visible');
+      HealthPage.getMetadataStatus().should('have.attr', 'data-status').and('match', /^(up|down)$/);
+    });
+
     it('shows the AI status card', () => {
       HealthPage.getAiCard().should('be.visible');
       HealthPage.getAiStatus().should('have.attr', 'data-status').and('match', /^(up|down)$/);

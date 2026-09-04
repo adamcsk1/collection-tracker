@@ -131,23 +131,38 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         env:
           SMOKE_TAG: collection-tracker:smoke-${{ github.event.workflow_run.head_sha }}
-        run: docker buildx build --load -t "$SMOKE_TAG" .
+          METADATA_SMOKE_TAG: collection-tracker-metadata-provider:smoke-${{ github.event.workflow_run.head_sha }}
+        run: |
+          docker buildx build --load -t "$SMOKE_TAG" .
+          docker buildx build --load -f Dockerfile.metadata-provider -t "$METADATA_SMOKE_TAG" .
 
       - name: Test Docker lifecycle
         if: steps.gate.outputs.ready == 'true'
         env:
           DOCKER_LIFECYCLE_IMAGE: collection-tracker:smoke-${{ github.event.workflow_run.head_sha }}
+          DOCKER_LIFECYCLE_METADATA_IMAGE: collection-tracker-metadata-provider:smoke-${{ github.event.workflow_run.head_sha }}
         run: bash scripts/docker-lifecycle-test.sh
 
       - name: Smoke test trusted proxy handling
         if: steps.gate.outputs.ready == 'true'
         env:
           SMOKE_TAG: collection-tracker:smoke-${{ github.event.workflow_run.head_sha }}
+          METADATA_SMOKE_TAG: collection-tracker-metadata-provider:smoke-${{ github.event.workflow_run.head_sha }}
         run: |
-          mkdir -p smoke-data
+          mkdir -p smoke-data smoke-metadata
           docker network create collection-tracker-trusted-proxy-smoke > /dev/null
-          trap 'docker logs collection-tracker-untrusted-proxy-smoke 2>/dev/null || true; docker logs collection-tracker-trusted-proxy-smoke 2>/dev/null || true; docker rm --force collection-tracker-untrusted-proxy-smoke collection-tracker-trusted-proxy-smoke 2>/dev/null || true; docker network rm collection-tracker-trusted-proxy-smoke 2>/dev/null || true; rm -rf smoke-data' EXIT
+          trap 'docker logs collection-tracker-untrusted-proxy-smoke 2>/dev/null || true; docker logs collection-tracker-trusted-proxy-smoke 2>/dev/null || true; docker logs collection-tracker-metadata-smoke 2>/dev/null || true; docker rm --force collection-tracker-untrusted-proxy-smoke collection-tracker-trusted-proxy-smoke collection-tracker-metadata-smoke 2>/dev/null || true; docker network rm collection-tracker-trusted-proxy-smoke 2>/dev/null || true; rm -rf smoke-data smoke-metadata' EXIT
           trusted_proxy_cidr=$(docker network inspect collection-tracker-trusted-proxy-smoke --format '{{(index .IPAM.Config 0).Subnet}}')
+
+          docker run \
+            --detach \
+            --name collection-tracker-metadata-smoke \
+            --network collection-tracker-trusted-proxy-smoke \
+            --network-alias metadata-provider \
+            --env APP_UID=$(id -u) \
+            --env APP_GID=$(id -g) \
+            --volume "$PWD/smoke-metadata:/data" \
+            "$METADATA_SMOKE_TAG"
 
           docker run \
             --detach \
@@ -157,6 +172,7 @@ jobs:
             --add-host=host.docker.internal:host-gateway \
             --env APP_UID=$(id -u) \
             --env APP_GID=$(id -g) \
+            --env METADATA_SERVICE_URL=http://metadata-provider:3002 \
             --volume "$PWD/smoke-data:/data" \
             "$SMOKE_TAG"
 
@@ -195,6 +211,7 @@ jobs:
             --env APP_UID=$(id -u) \
             --env APP_GID=$(id -g) \
             --env TRUSTED_PROXY_CIDRS="$trusted_proxy_cidr" \
+            --env METADATA_SERVICE_URL=http://metadata-provider:3002 \
             --volume "$PWD/smoke-data:/data" \
             "$SMOKE_TAG"
 
@@ -286,6 +303,17 @@ jobs:
             type=raw,value=sha-${{ github.event.workflow_run.head_sha }}
             type=raw,value=${{ steps.version.outputs.tag }},enable=${{ steps.version.outputs.tag != '' }}
 
+      - name: Extract metadata-provider Docker metadata
+        if: steps.gate.outputs.ready == 'true'
+        id: metadata_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-metadata-provider
+          tags: |
+            type=raw,value=latest
+            type=raw,value=sha-${{ github.event.workflow_run.head_sha }}
+            type=raw,value=${{ steps.version.outputs.tag }},enable=${{ steps.version.outputs.tag != '' }}
+
       - name: Build and push Docker image
         if: steps.gate.outputs.ready == 'true'
         uses: docker/build-push-action@v6
@@ -294,3 +322,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push metadata-provider Docker image
+        if: steps.gate.outputs.ready == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.metadata-provider
+          push: true
+          tags: ${{ steps.metadata_meta.outputs.tags }}
+          labels: ${{ steps.metadata_meta.outputs.labels }}

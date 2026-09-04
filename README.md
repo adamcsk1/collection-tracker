@@ -22,6 +22,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - `apps/health`: server health status dashboard — memory, CPU, disk, load, and frontend status
 - `apps/login`: authentication-only application for sign-up and sign-in
 - `apps/server`: API, authentication, and SQLite persistence
+- `apps/metadata-provider`: OMDb, Open Library, MusicBrainz, and replacement metadata adapters
 - `apps/dev-proxy`: single-origin development gateway on `http://localhost:4200`
 - `apps/collection-e2e`: Cypress smoke-test project
 - `libs/components`: shared standalone Angular UI components
@@ -44,7 +45,7 @@ npm install
 npm start
 ```
 
-`npm start` bootstraps `.data/.env` when needed and starts the local development stack:
+`npm start` bootstraps `.data/.env` when needed and starts the local development stack. Local development shares `.data/.env` between the server and metadata-provider. Docker Compose keeps app secrets in `.data/.env` and provider secrets such as `OMDB_API_KEY` in `.metadata/.env`.
 
 - gateway: `http://localhost:4200/`
 - login: `http://localhost:4200/login/`
@@ -77,6 +78,29 @@ Use a deployment compose file like this:
 
 ```yaml
 services:
+  metadata-provider:
+    image: ghcr.io/adamcsk1/collection-tracker-metadata-provider:latest
+    restart: unless-stopped
+    environment:
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - ./.metadata:/data
+    networks:
+      - metadata
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3002/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
   collection-tracker:
     image: ghcr.io/adamcsk1/collection-tracker:latest
     container_name: collection-tracker
@@ -91,10 +115,19 @@ services:
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
+      METADATA_SERVICE_URL: http://metadata-provider:3002
     volumes:
       - ./.data:/data
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    networks:
+      - default
+      - metadata
+    depends_on:
+      metadata-provider:
+        condition: service_healthy
+networks:
+  metadata:
 ```
 
 On Linux hosts, start it with your user and group IDs so `./.data` remains writable by your user:
@@ -108,7 +141,7 @@ See [Docker deployment](./docs/docker.md) for GHCR tags, runtime variables, Olla
 
 ## Environment
 
-The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. Animated backgrounds read IMDb IDs, ISBNs, and MusicBrainz release MBIDs from `.data/background.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates those files from [apps/server/scripts](./apps/server/scripts) when they are missing.
+The server reads runtime configuration from `.data/.env` by default, including `METADATA_SERVICE_URL`. Local `npm start` also starts `apps/metadata-provider` on `http://127.0.0.1:3002` and shares that same `.data/.env` for `OMDB_API_KEY`. Docker Compose keeps provider secrets in `./.metadata/.env`; copy a non-empty `OMDB_API_KEY` there because the app `.data/.env` value is unused in containers. AI search reads Ollama settings from `.data/ollama.config.json`. Animated backgrounds read IMDb IDs, ISBNs, and MusicBrainz release MBIDs from `.data/background.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates those files from [apps/server/scripts](./apps/server/scripts) when they are missing.
 
 `JWT_SECRET` and `COOKIE_SECRET` must be non-empty, and `SALT` must be explicitly configured. Keep `SALT` unchanged after users or data have been created because it participates in persisted hashes. Docker generates and persists all three values when it creates `/data/.env` on first start; it never replaces an existing file.
 
@@ -136,11 +169,13 @@ DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
 ```
 
-`OMDB_API_KEY` is optional for startup. Set it to enable the OMDb external metadata provider used by metadata search, IMDb ID import, image refresh, rating refresh, and season metadata refresh. `OMDB_API_URL` can override the provider endpoint; when it is omitted or empty, the server uses `https://www.omdbapi.com/`.
+`OMDB_API_KEY` is optional for metadata-provider startup. Set it to enable OMDb search, IMDb ID import, image refresh, rating refresh, and season metadata refresh. `OMDB_API_URL` can override the provider endpoint; when it is omitted or empty, the metadata provider uses `https://www.omdbapi.com/`.
 
-Book metadata uses Open Library and requires no API key. `OPENLIBRARY_API_URL` can override its endpoint; when omitted or empty, the server uses `https://openlibrary.org/`.
+Book metadata uses Open Library and requires no API key. `OPENLIBRARY_API_URL` can override its endpoint; when omitted or empty, the metadata provider uses `https://openlibrary.org/`.
 
-Music metadata uses MusicBrainz and Cover Art Archive and requires no API key. `MUSICBRAINZ_API_URL` can override its endpoint; when omitted or empty, the server uses `https://musicbrainz.org/ws/2/`. `COVERARTARCHIVE_API_URL` can override Cover Art Archive; when omitted or empty, the server uses `https://coverartarchive.org/`.
+Music metadata uses MusicBrainz and Cover Art Archive and requires no API key. `MUSICBRAINZ_API_URL` can override its endpoint; when omitted or empty, the metadata provider uses `https://musicbrainz.org/ws/2/`. `COVERARTARCHIVE_API_URL` can override Cover Art Archive; when omitted or empty, the metadata provider uses `https://coverartarchive.org/`.
+
+Deployments can replace any built-in metadata adapter through the metadata provider `external-metadata.config.json`. Replacements implement the normalized [external metadata provider contract](./docs/external-metadata-provider-contract.md). Omitted provider slots continue using the built-in adapters.
 
 Ollama config example (`.data/ollama.config.json`):
 

@@ -1,8 +1,8 @@
 import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/tracking-const';
 import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
-import { debugLog } from '../../logger';
-import { ExternalMetadataSeasonProvider } from '../external-metadata-provider';
+import { ExternalMetadataSeasonProvider } from '../core/external-metadata-provider';
+import { debugLog } from '../core/logger';
 import { DEFAULT_OMDB_API_URL, OMDB_REQUEST_TIMEOUT_MS } from './omdb-const';
 import {
   OMDbResponseItemModel,

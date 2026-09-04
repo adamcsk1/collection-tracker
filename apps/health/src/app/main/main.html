@@ -119,6 +119,20 @@
             </span>
           </li>
 
+          <li data-test-id="health-metadata-card" class="card metric-card">
+            <div class="metric-header">
+              <span class="material-icons metric-icon" aria-hidden="true">cloud</span>
+              <span class="metric-title">{{ translations.metadata() }}</span>
+            </div>
+            <span
+              data-test-id="health-metadata-status"
+              class="service-status"
+              [attr.data-status]="data.metadata.status"
+            >
+              {{ statusLabel(data.metadata.status) }}
+            </span>
+          </li>
+
           <li data-test-id="health-ai-card" class="card metric-card">
             <div class="metric-header">
               <span class="material-icons metric-icon" aria-hidden="true">psychology</span>

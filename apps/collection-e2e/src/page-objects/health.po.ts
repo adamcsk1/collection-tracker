@@ -7,6 +7,8 @@ export const HealthPage = {
   getMetricsGrid: () => cy.getByTestId('health-metrics-grid'),
   getMemoryCard: () => cy.getByTestId('health-memory-card'),
   getCpuCard: () => cy.getByTestId('health-cpu-card'),
+  getMetadataCard: () => cy.getByTestId('health-metadata-card'),
+  getMetadataStatus: () => cy.getByTestId('health-metadata-status'),
   getAiCard: () => cy.getByTestId('health-ai-card'),
   getAiStatus: () => cy.getByTestId('health-ai-status'),
 };

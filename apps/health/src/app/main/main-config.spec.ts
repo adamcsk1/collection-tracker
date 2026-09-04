@@ -35,6 +35,7 @@ describe('health mainConfig', () => {
       disk: { usedPercent: 60 },
       load: { avg1m: 0.5, avg5m: 0.3, avg15m: 0.2 },
       frontend: { status: 'up' },
+      metadata: { status: 'up' },
       ai: { status: 'up' },
     };
     httpTestingController.expectOne('https://api.test/users/me/health').flush({ data: diagnostics });

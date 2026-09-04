@@ -40,6 +40,7 @@ export class Main implements OnInit {
     load5min: computed(() => this.ngxSignalTranslate.translate('Load.5min')),
     load15min: computed(() => this.ngxSignalTranslate.translate('Load.15min')),
     frontend: computed(() => this.ngxSignalTranslate.translate('Frontend')),
+    metadata: computed(() => this.ngxSignalTranslate.translate('Metadata')),
     ai: computed(() => this.ngxSignalTranslate.translate('Ai')),
     diagnosticsError: computed(() => this.ngxSignalTranslate.translate('Message.HealthDiagnosticsError')),
     diagnosticsUnauthorized: computed(() => this.ngxSignalTranslate.translate('Message.HealthDiagnosticsUnauthorized')),

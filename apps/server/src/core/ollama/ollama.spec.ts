@@ -13,7 +13,7 @@ describe('ollama config', () => {
       writeFileSync(join(dataFolder, 'ollama.config.json'), JSON.stringify(config), { encoding: 'utf-8' });
     }
 
-    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
+    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false, metadataServiceUrl: '' }) }));
 
     return import('./ollama');
   };

@@ -13,3 +13,14 @@ export const fetchSeriesSeasonMetadata = async (
   const provider = getExternalMetadataProviderByName(externalProvider);
   return provider && hasSeasonMetadata(provider) ? provider.getSeriesSeasons(externalItemId) : [];
 };
+
+export const tryFetchSeriesSeasonMetadata = async (
+  externalProvider: string,
+  externalItemId: string
+): Promise<TrackingSeasonMetadataModel[]> => {
+  try {
+    return await fetchSeriesSeasonMetadata(externalProvider, externalItemId);
+  } catch {
+    return [];
+  }
+};

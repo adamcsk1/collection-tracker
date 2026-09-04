@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
 import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
 import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
+import { metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
@@ -399,10 +400,7 @@ describe('create-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}, {}] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 3 }] }))
     );
     insertUser();
     const response = mockResponse();

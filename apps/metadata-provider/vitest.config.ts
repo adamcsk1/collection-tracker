@@ -1,0 +1,27 @@
+import { resolve } from 'node:path';
+import { defineConfig } from 'vitest/config';
+import { coverageExclude } from '../../vitest.coverage-exclude';
+
+export default defineConfig({
+  root: __dirname,
+  cacheDir: '../../node_modules/.vitest/apps/metadata-provider',
+  resolve: {
+    tsconfigPaths: true,
+  },
+  test: {
+    globals: true,
+    environment: 'node',
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
+    setupFiles: [resolve(__dirname, '../../vitest.setup.ts')],
+    reporters: ['default', 'verbose'],
+    coverage: {
+      enabled: true,
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      reportsDirectory: '../../coverage/apps/metadata-provider',
+      exclude: [...coverageExclude],
+    },
+  },
+});

@@ -2,27 +2,36 @@
 set -euo pipefail
 
 IMAGE=${DOCKER_LIFECYCLE_IMAGE:-}
+METADATA_IMAGE=${DOCKER_LIFECYCLE_METADATA_IMAGE:-}
 BUILT_IMAGE=false
 CONTAINER_NAME="collection-tracker-lifecycle-${$}"
+METADATA_CONTAINER_NAME="collection-tracker-lifecycle-metadata-${$}"
+NETWORK_NAME="collection-tracker-lifecycle-${$}"
 VOLUME_NAME="collection-tracker-lifecycle-${$}"
+METADATA_VOLUME_NAME="collection-tracker-lifecycle-metadata-${$}"
 TEMP_DIR=''
 
 cleanup() {
   status=$?
   trap - EXIT INT TERM
 
-  if [ "$status" -ne 0 ] && docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+  if [ "$status" -ne 0 ]; then
     echo "Docker lifecycle test failed. Container logs:" >&2
     docker logs "$CONTAINER_NAME" >&2 || true
+    docker logs "$METADATA_CONTAINER_NAME" >&2 || true
   fi
 
   docker rm --force "$CONTAINER_NAME" >/dev/null 2>&1 || true
+  docker rm --force "$METADATA_CONTAINER_NAME" >/dev/null 2>&1 || true
+  docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
   docker volume rm --force "$VOLUME_NAME" >/dev/null 2>&1 || true
+  docker volume rm --force "$METADATA_VOLUME_NAME" >/dev/null 2>&1 || true
   if [ -n "$TEMP_DIR" ]; then
     rm -rf "$TEMP_DIR" || true
   fi
   if [ "$BUILT_IMAGE" = true ]; then
     docker image rm "$IMAGE" >/dev/null 2>&1 || true
+    docker image rm "$METADATA_IMAGE" >/dev/null 2>&1 || true
   fi
 
   exit "$status"
@@ -39,29 +48,55 @@ fi
 
 if [ -z "$IMAGE" ]; then
   IMAGE="collection-tracker:lifecycle-${$}"
+  METADATA_IMAGE="collection-tracker-metadata-provider:lifecycle-${$}"
   BUILT_IMAGE=true
 
   if docker buildx version >/dev/null 2>&1; then
     docker buildx build --load --tag "$IMAGE" .
+    docker buildx build --load -f Dockerfile.metadata-provider --tag "$METADATA_IMAGE" .
   else
     DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1} docker build --tag "$IMAGE" .
+    DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1} docker build -f Dockerfile.metadata-provider --tag "$METADATA_IMAGE" .
   fi
-elif ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-  echo "Docker lifecycle image does not exist locally: $IMAGE" >&2
-  exit 1
+else
+  if [ -z "$METADATA_IMAGE" ]; then
+    METADATA_IMAGE="${IMAGE}-metadata"
+  fi
+  if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    echo "Docker lifecycle image does not exist locally: $IMAGE" >&2
+    exit 1
+  fi
+  if ! docker image inspect "$METADATA_IMAGE" >/dev/null 2>&1; then
+    echo "Docker lifecycle metadata image does not exist locally: $METADATA_IMAGE" >&2
+    exit 1
+  fi
 fi
 
 TEMP_DIR=$(mktemp -d)
+docker network create "$NETWORK_NAME" >/dev/null
 docker volume create "$VOLUME_NAME" >/dev/null
+docker volume create "$METADATA_VOLUME_NAME" >/dev/null
 
 start_container() {
   docker run \
     --detach \
+    --name "$METADATA_CONTAINER_NAME" \
+    --network "$NETWORK_NAME" \
+    --network-alias metadata-provider \
+    --env "APP_UID=$(id -u)" \
+    --env "APP_GID=$(id -g)" \
+    --volume "$METADATA_VOLUME_NAME:/data" \
+    "$METADATA_IMAGE" >/dev/null
+
+  docker run \
+    --detach \
     --name "$CONTAINER_NAME" \
+    --network "$NETWORK_NAME" \
     --publish '127.0.0.1::3001' \
     --add-host=host.docker.internal:host-gateway \
     --env "APP_UID=$(id -u)" \
     --env "APP_GID=$(id -g)" \
+    --env METADATA_SERVICE_URL=http://metadata-provider:3002 \
     --volume "$VOLUME_NAME:/data" \
     "$IMAGE" >/dev/null
 
@@ -117,8 +152,8 @@ test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}'
   "$BASE_URL/api/v1/auth/sign-in")" = 204
 
 docker exec "$CONTAINER_NAME" cat /data/.env > "$TEMP_DIR/.env.initial"
-docker stop --time 20 "$CONTAINER_NAME" >/dev/null
-docker rm "$CONTAINER_NAME" >/dev/null
+docker stop --time 20 "$CONTAINER_NAME" "$METADATA_CONTAINER_NAME" >/dev/null
+docker rm "$CONTAINER_NAME" "$METADATA_CONTAINER_NAME" >/dev/null
 
 start_container
 
@@ -129,7 +164,7 @@ test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}'
   --data "$SIGN_IN_PAYLOAD" \
   "$BASE_URL/api/v1/auth/sign-in")" = 204
 
-docker stop --time 20 "$CONTAINER_NAME" >/dev/null
-docker rm "$CONTAINER_NAME" >/dev/null
+docker stop --time 20 "$CONTAINER_NAME" "$METADATA_CONTAINER_NAME" >/dev/null
+docker rm "$CONTAINER_NAME" "$METADATA_CONTAINER_NAME" >/dev/null
 
 echo 'Docker lifecycle integration test passed.'

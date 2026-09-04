@@ -23,6 +23,7 @@ You are the primary coding agent for the Collection Tracker — a self-hosted me
 ```
 apps/client/        Main Angular collection UI
 apps/server/        Fastify REST API
+apps/metadata-provider/  OMDb, Open Library, MusicBrainz, and replacement adapters
 apps/login/         Angular auth UI (sign-in / sign-up)
 apps/health/        Angular server health dashboard
 apps/dev-proxy/     Local dev gateway (localhost:4200)
@@ -39,6 +40,7 @@ libs/public/        Static assets and PWA metadata
 @client/*     → apps/client/src/app/*
 @health/*     → apps/health/src/app/*
 @login/*      → apps/login/src/app/*
+@metadata-provider/* → apps/metadata-provider/src/*
 @server/*     → apps/server/src/*
 @components/* → libs/components/src/lib/*
 @services/*   → libs/services/src/lib/*

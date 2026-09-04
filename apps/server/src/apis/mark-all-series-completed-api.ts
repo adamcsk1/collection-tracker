@@ -20,7 +20,7 @@ import { findAccessibleShareItemIds } from '../core/database/repositories/share-
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
-import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
+import { tryFetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
 const completedEpisodesEqual = (
@@ -57,7 +57,7 @@ export const register = (app: FastifyInstance): void => {
     const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
 
     for (const item of insertedItems) {
-      const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
+      const seasons = await tryFetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
       if (!seasons.length) continue;
 
       replaceTrackingSeasonsByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId, seasons);

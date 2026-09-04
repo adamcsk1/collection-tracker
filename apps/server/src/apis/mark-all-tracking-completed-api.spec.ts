@@ -3,6 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { insertTrackingItem } from '../../test/mocks/tracking-item-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
 
 describe('mark-all-tracking-completed-api', () => {
   afterEach(() => {
@@ -55,10 +56,7 @@ describe('mark-all-tracking-completed-api', () => {
     vi.stubEnv('OMDB_API_KEY', 'key');
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 2 }] }))
     );
     const itemId = insertTrackingItem();
     const response = mockResponse();
@@ -96,10 +94,7 @@ describe('mark-all-tracking-completed-api', () => {
     vi.stubEnv('OMDB_API_KEY', 'key');
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 2 }] }))
     );
     insertTrackingItem();
     const response = mockResponse();
@@ -127,6 +122,9 @@ describe('mark-all-tracking-completed-api', () => {
 
   it('returns 400 when no season metadata exists', async () => {
     vi.stubEnv('OMDB_API_KEY', '');
+    const { setAvailableExternalMetadataProviders } =
+      await import('../core/external-metadata/external-metadata-provider-factory');
+    setAvailableExternalMetadataProviders(['openlibrary', 'musicbrainz']);
     insertTrackingItem();
     const response = mockResponse();
     const request: any = {

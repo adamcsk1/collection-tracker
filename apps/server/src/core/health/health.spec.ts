@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vite
 vi.mock('node:timers/promises', () => ({ setTimeout: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('node:os', () => ({ cpus: vi.fn(), totalmem: vi.fn(), freemem: vi.fn(), loadavg: vi.fn() }));
 vi.mock('node:fs', () => ({ statfsSync: vi.fn() }));
-vi.mock('../argv/argv', () => ({ getArgv: vi.fn().mockReturnValue({ dataFolder: '/data', debug: false }) }));
+vi.mock('../argv/argv', () => ({
+  getArgv: vi.fn().mockReturnValue({ dataFolder: '/data', debug: false, metadataServiceUrl: '' }),
+}));
 vi.mock('../ollama/ollama', () => ({ validateOllamaConnection: vi.fn().mockResolvedValue(undefined) }));
 
 const makeCpu = (times: { user: number; nice: number; sys: number; idle: number; irq: number }) => ({
@@ -24,6 +26,7 @@ describe('health', () => {
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, body: { cancel: vi.fn().mockResolvedValue(undefined) } })
     );
+    vi.stubEnv('METADATA_SERVICE_URL', 'http://metadata.test/');
     vi.mocked(validateOllamaConnection).mockResolvedValue(undefined);
     (os.cpus as Mock).mockReturnValue([healthyCpu]);
     (os.totalmem as Mock).mockReturnValue(1000);
@@ -54,9 +57,14 @@ describe('health', () => {
       disk: { usedPercent: 50 },
       load: { avg1m: 1.23, avg5m: 0.57, avg15m: 0.89 },
       frontend: { status: 'up' },
+      metadata: { status: 'up' },
       ai: { status: 'up' },
     });
     expect(fetch).toHaveBeenCalledWith('http://127.0.0.1:3001/collection-tracker/', expect.any(Object));
+    expect(fetch).toHaveBeenCalledWith(
+      expect.objectContaining({ href: 'http://metadata.test/health' }),
+      expect.any(Object)
+    );
     expect(fs.statfsSync).toHaveBeenCalledWith('/data');
   });
 
@@ -83,6 +91,28 @@ describe('health', () => {
     await expect(getHealth()).resolves.toEqual(expect.objectContaining({ status: expectedStatus }));
   });
 
+  it('reports metadata failures as an overall error while frontend stays up', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/health') && url.includes('metadata.test')) {
+          throw new Error('metadata down');
+        }
+        return { ok: true, body: { cancel: vi.fn().mockResolvedValue(undefined) } };
+      })
+    );
+    const { getHealth } = await import('./health');
+
+    await expect(getHealth()).resolves.toEqual(
+      expect.objectContaining({
+        status: 'error',
+        frontend: { status: 'up' },
+        metadata: { status: 'down' },
+      })
+    );
+  });
+
   it('reports frontend failures as an overall error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Connection refused')));
     const { getHealth } = await import('./health');
@@ -100,7 +130,7 @@ describe('health', () => {
     await expect(getHealth()).resolves.toEqual(
       expect.objectContaining({ status: 'error', frontend: { status: 'down' } })
     );
-    expect(cancel).toHaveBeenCalledOnce();
+    expect(cancel).toHaveBeenCalledTimes(2);
   });
 
   it('reports disk failures as unavailable without failing overall health', async () => {
@@ -122,13 +152,13 @@ describe('health', () => {
 
   it('coalesces concurrent checks and caches results for five seconds', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(1000);
-    let resolveFetch!: (value: { ok: boolean; body: { cancel: () => Promise<void> } }) => void;
+    const fetchResolvers: Array<(value: { ok: boolean; body: { cancel: () => Promise<void> } }) => void> = [];
     vi.stubGlobal(
       'fetch',
       vi.fn(
         () =>
           new Promise<{ ok: boolean; body: { cancel: () => Promise<void> } }>((resolve) => {
-            resolveFetch = resolve;
+            fetchResolvers.push(resolve);
           })
       )
     );
@@ -136,18 +166,20 @@ describe('health', () => {
 
     const first = getHealth();
     const second = getHealth();
-    expect(fetch).toHaveBeenCalledOnce();
-    resolveFetch({ ok: true, body: { cancel: vi.fn().mockResolvedValue(undefined) } });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    for (const resolveFetch of fetchResolvers) {
+      resolveFetch({ ok: true, body: { cancel: vi.fn().mockResolvedValue(undefined) } });
+    }
     await Promise.all([first, second]);
 
     await getHealth();
-    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledTimes(2);
     expect(os.cpus).toHaveBeenCalledTimes(2);
 
     vi.mocked(Date.now).mockReturnValue(6001);
     vi.mocked(fetch).mockResolvedValue(new Response());
     await getHealth();
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(4);
     expect(os.cpus).toHaveBeenCalledTimes(4);
   });
 });

@@ -45,7 +45,7 @@ describe('logger', () => {
   });
 
   it('skips debug logs when debug flag is false', async () => {
-    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false, metadataServiceUrl: '' });
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     await debugLog('hidden');
@@ -56,7 +56,7 @@ describe('logger', () => {
   });
 
   it('writes error logs', async () => {
-    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false, metadataServiceUrl: '' });
 
     await errorLog('boom');
 
@@ -68,7 +68,7 @@ describe('logger', () => {
   });
 
   it('echoes debug logs when LOG_LEVEL is DEBUG even without debug flag', async () => {
-    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false, metadataServiceUrl: '' });
     process.env.LOG_LEVEL = 'DEBUG';
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
@@ -85,7 +85,7 @@ describe('logger', () => {
   });
 
   it('echoes info logs when LOG_LEVEL is DEBUG even without debug flag', async () => {
-    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false, metadataServiceUrl: '' });
     process.env.LOG_LEVEL = 'debug';
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 

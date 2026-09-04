@@ -4,7 +4,7 @@
   "projectType": "application",
   "sourceRoot": "apps/collection-e2e/src",
   "tags": ["type:app", "scope:e2e"],
-  "implicitDependencies": ["client", "health", "login", "server"],
+  "implicitDependencies": ["client", "health", "login", "server", "metadata-provider"],
   "targets": {
     "typecheck": {
       "executor": "nx:run-commands",

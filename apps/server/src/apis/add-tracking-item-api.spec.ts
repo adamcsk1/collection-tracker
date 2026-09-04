@@ -6,6 +6,7 @@ import { getUserShareCode } from '../core/database/repositories/user-repository'
 import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
 import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
 import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
+import { metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
 
 const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -52,10 +53,7 @@ describe('add-tracking-item-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 2 }] }))
     );
     insertUser('user');
     insertItem('user', 'tt-1', ['#series', '#watchlist']);
@@ -117,10 +115,7 @@ describe('add-tracking-item-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 2 }] }))
     );
     insertUser('user');
     insertItem('user', 'tt-1', ['#series'], 'library');
@@ -166,10 +161,7 @@ describe('add-tracking-item-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 2 }] }))
     );
     insertUser('user');
     insertItem('user', 'tt-1', ['#series'], 'library');

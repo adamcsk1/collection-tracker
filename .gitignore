@@ -69,6 +69,8 @@ android/app/debug/
 
 # Development folders
 .data
+.metadata
+apps/collection-e2e/env-metadata
 
 # Mempalace
 entities.json

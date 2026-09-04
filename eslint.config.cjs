@@ -1,38 +1,39 @@
 // @ts-check
-const typescriptParser = require("@typescript-eslint/parser");
-const tsPlugin = require("@typescript-eslint/eslint-plugin");
-const angular = require("angular-eslint");
-const css = require("@eslint/css");
+const typescriptParser = require('@typescript-eslint/parser');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
+const angular = require('angular-eslint');
+const css = require('@eslint/css');
 
 const crossProjectRelativeImportPatterns = [
   {
     group: [
-      "**/apps/**",
-      "**/libs/**",
-      "../**/client/**",
-      "../**/collection-e2e/**",
-      "../**/dev-proxy/**",
-      "../**/health/**",
-      "../**/login/**",
-      "../**/server/**",
-      "../**/components/**",
-      "../**/public/**",
-      "../**/services/**",
-      "../**/shared/**",
+      '**/apps/**',
+      '**/libs/**',
+      '../**/client/**',
+      '../**/collection-e2e/**',
+      '../**/dev-proxy/**',
+      '../**/health/**',
+      '../**/login/**',
+      '../**/metadata-provider/**',
+      '../**/server/**',
+      '../**/components/**',
+      '../**/public/**',
+      '../**/services/**',
+      '../**/shared/**',
     ],
-    message: "Use declared @alias/* paths for cross-project imports.",
+    message: 'Use declared @alias/* paths for cross-project imports.',
   },
 ];
 
 /** @param {string[]} aliasPatterns */
 const noRestrictedImports = (...aliasPatterns) => [
-  "error",
+  'error',
   {
     patterns: [
       ...crossProjectRelativeImportPatterns,
       {
         group: aliasPatterns,
-        message: "This project must not import from that app or library boundary.",
+        message: 'This project must not import from that app or library boundary.',
       },
     ],
   },
@@ -40,18 +41,18 @@ const noRestrictedImports = (...aliasPatterns) => [
 
 module.exports = [
   ...angular.configs.tsRecommended,
-  ...angular.configs.templateRecommended.map((config) => ({ ...config, files: ["**/*.html"] })),
+  ...angular.configs.templateRecommended.map((config) => ({ ...config, files: ['**/*.html'] })),
   {
-    ignores: [".cache/", ".git/", "node_modules/", ".angular/", ".nx/", "dist"],
+    ignores: ['.cache/', '.git/', 'node_modules/', '.angular/', '.nx/', 'dist'],
   },
   {
     files: [
-      "apps/client/**/*.ts",
-      "apps/health/**/*.ts",
-      "apps/login/**/*.ts",
-      "libs/components/**/*.ts",
-      "libs/services/**/*.ts",
-      "libs/shared/**/*.ts",
+      'apps/client/**/*.ts',
+      'apps/health/**/*.ts',
+      'apps/login/**/*.ts',
+      'libs/components/**/*.ts',
+      'libs/services/**/*.ts',
+      'libs/shared/**/*.ts',
     ],
     languageOptions: {
       parser: typescriptParser,
@@ -61,83 +62,105 @@ module.exports = [
       },
     },
     plugins: {
-      "@typescript-eslint": tsPlugin,
+      '@typescript-eslint': tsPlugin,
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      "@angular-eslint/directive-selector": [
-        "warn",
+      '@angular-eslint/directive-selector': [
+        'warn',
         {
-          type: "attribute",
-          prefix: ["ct", "he", "libc", "lo"],
-          style: "camelCase",
+          type: 'attribute',
+          prefix: ['ct', 'he', 'libc', 'lo'],
+          style: 'camelCase',
         },
       ],
-      "@angular-eslint/component-selector": [
-        "warn",
+      '@angular-eslint/component-selector': [
+        'warn',
         {
-          type: "element",
-          prefix: ["ct", "he", "libc", "lo"],
-          style: "kebab-case",
+          type: 'element',
+          prefix: ['ct', 'he', 'libc', 'lo'],
+          style: 'kebab-case',
         },
       ],
-      "import/order": "off",
-      "@typescript-eslint/no-explicit-any": ["off"],
-      "@typescript-eslint/member-ordering": 0,
-      "@typescript-eslint/explicit-member-accessibility": [
-        "error",
+      'import/order': 'off',
+      '@typescript-eslint/no-explicit-any': ['off'],
+      '@typescript-eslint/member-ordering': 0,
+      '@typescript-eslint/explicit-member-accessibility': [
+        'error',
         {
-          accessibility: "explicit",
+          accessibility: 'explicit',
           overrides: {
-            constructors: "no-public",
+            constructors: 'no-public',
           },
         },
       ],
-      "@typescript-eslint/naming-convention": 0,
-      "@angular-eslint/no-host-metadata-property": "off",
-      "@angular-eslint/no-output-on-prefix": "off",
-      "@typescript-eslint/ban-types": "off",
-      "@typescript-eslint/no-inferrable-types": "off",
-      "no-restricted-imports": ["error", { patterns: crossProjectRelativeImportPatterns }],
+      '@typescript-eslint/naming-convention': 0,
+      '@angular-eslint/no-host-metadata-property': 'off',
+      '@angular-eslint/no-output-on-prefix': 'off',
+      '@typescript-eslint/ban-types': 'off',
+      '@typescript-eslint/no-inferrable-types': 'off',
+      'no-restricted-imports': ['error', { patterns: crossProjectRelativeImportPatterns }],
     },
   },
   {
-    files: ["apps/client/**/*.ts"],
-    rules: { "no-restricted-imports": noRestrictedImports("@health/*", "@login/*", "@server/*") },
-  },
-  {
-    files: ["apps/health/**/*.ts"],
-    rules: { "no-restricted-imports": noRestrictedImports("@client/*", "@login/*", "@server/*") },
-  },
-  {
-    files: ["apps/login/**/*.ts"],
-    rules: { "no-restricted-imports": noRestrictedImports("@client/*", "@health/*", "@server/*") },
-  },
-  {
-    files: ["libs/components/**/*.ts"],
-    rules: { "no-restricted-imports": noRestrictedImports("@client/*", "@health/*", "@login/*", "@server/*") },
-  },
-  {
-    files: ["libs/services/**/*.ts"],
+    files: ['apps/client/**/*.ts'],
     rules: {
-      "no-restricted-imports": noRestrictedImports("@client/*", "@health/*", "@login/*", "@server/*", "@components/*"),
+      'no-restricted-imports': noRestrictedImports('@health/*', '@login/*', '@metadata-provider/*', '@server/*'),
     },
   },
   {
-    files: ["libs/shared/**/*.ts", "libs/public/**/*.ts"],
+    files: ['apps/health/**/*.ts'],
     rules: {
-      "no-restricted-imports": noRestrictedImports(
-        "@client/*",
-        "@health/*",
-        "@login/*",
-        "@server/*",
-        "@components/*",
-        "@services/*"
+      'no-restricted-imports': noRestrictedImports('@client/*', '@login/*', '@metadata-provider/*', '@server/*'),
+    },
+  },
+  {
+    files: ['apps/login/**/*.ts'],
+    rules: {
+      'no-restricted-imports': noRestrictedImports('@client/*', '@health/*', '@metadata-provider/*', '@server/*'),
+    },
+  },
+  {
+    files: ['libs/components/**/*.ts'],
+    rules: {
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@health/*',
+        '@login/*',
+        '@metadata-provider/*',
+        '@server/*'
       ),
     },
   },
   {
-    files: ["apps/server/**/*.ts"],
+    files: ['libs/services/**/*.ts'],
+    rules: {
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@health/*',
+        '@login/*',
+        '@metadata-provider/*',
+        '@server/*',
+        '@components/*'
+      ),
+    },
+  },
+  {
+    files: ['libs/shared/**/*.ts', 'libs/public/**/*.ts'],
+    rules: {
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@health/*',
+        '@login/*',
+        '@metadata-provider/*',
+        '@server/*',
+        '@components/*',
+        '@services/*'
+      ),
+    },
+  },
+  {
+    files: ['apps/server/**/*.ts'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -146,49 +169,90 @@ module.exports = [
       },
     },
     plugins: {
-      "@typescript-eslint": tsPlugin,
+      '@typescript-eslint': tsPlugin,
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      "import/order": "off",
-      "@typescript-eslint/no-explicit-any": ["off"],
-      "@typescript-eslint/member-ordering": 0,
-      "@typescript-eslint/explicit-member-accessibility": [
-        "error",
+      'import/order': 'off',
+      '@typescript-eslint/no-explicit-any': ['off'],
+      '@typescript-eslint/member-ordering': 0,
+      '@typescript-eslint/explicit-member-accessibility': [
+        'error',
         {
-          accessibility: "explicit",
+          accessibility: 'explicit',
           overrides: {
-            constructors: "no-public",
+            constructors: 'no-public',
           },
         },
       ],
-      "@typescript-eslint/naming-convention": 0,
-      "@typescript-eslint/ban-types": "off",
-      "@typescript-eslint/no-inferrable-types": "off",
-      "no-restricted-imports": noRestrictedImports(
-        "@client/*",
-        "@health/*",
-        "@login/*",
-        "@components/*",
-        "@services/*",
-        "@public/*"
+      '@typescript-eslint/naming-convention': 0,
+      '@typescript-eslint/ban-types': 'off',
+      '@typescript-eslint/no-inferrable-types': 'off',
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@health/*',
+        '@login/*',
+        '@metadata-provider/*',
+        '@components/*',
+        '@services/*',
+        '@public/*'
       ),
     },
   },
   {
-    files: ["**/*.css"],
+    files: ['apps/metadata-provider/**/*.ts'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+        projectService: true,
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      ...tsPlugin.configs.recommended.rules,
+      'import/order': 'off',
+      '@typescript-eslint/no-explicit-any': ['off'],
+      '@typescript-eslint/member-ordering': 0,
+      '@typescript-eslint/explicit-member-accessibility': [
+        'error',
+        {
+          accessibility: 'explicit',
+          overrides: {
+            constructors: 'no-public',
+          },
+        },
+      ],
+      '@typescript-eslint/naming-convention': 0,
+      '@typescript-eslint/ban-types': 'off',
+      '@typescript-eslint/no-inferrable-types': 'off',
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@health/*',
+        '@login/*',
+        '@server/*',
+        '@components/*',
+        '@services/*',
+        '@public/*'
+      ),
+    },
+  },
+  {
+    files: ['**/*.css'],
     plugins: { css: css.default },
-    language: "css/css",
+    language: 'css/css',
     rules: {
       ...css.default.configs.recommended.rules,
-      "css/no-important": "off",
-      "css/no-invalid-properties": ["error", { allowUnknownVariables: true }],
-      "css/use-baseline": [
-        "error",
+      'css/no-important': 'off',
+      'css/no-invalid-properties': ['error', { allowUnknownVariables: true }],
+      'css/use-baseline': [
+        'error',
         {
-          available: "newly",
-          allowProperties: ["accent-color", "resize"],
-          allowSelectors: ["host-context"],
+          available: 'newly',
+          allowProperties: ['accent-color', 'resize'],
+          allowSelectors: ['host-context'],
         },
       ],
     },

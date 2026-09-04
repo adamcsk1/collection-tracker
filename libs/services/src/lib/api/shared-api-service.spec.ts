@@ -45,6 +45,7 @@ describe('SharedApiService', () => {
       disk: { usedPercent: 60 },
       load: { avg1m: 0.5, avg5m: 0.3, avg15m: 0.2 },
       frontend: { status: 'up' as const },
+      metadata: { status: 'up' as const },
       ai: { status: 'up' as const },
     };
     const promise = lastValueFrom(service.getHealthDiagnostics());

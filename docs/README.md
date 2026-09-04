@@ -5,6 +5,7 @@ This directory contains the maintained project documentation. The root [`README.
 ## Features
 
 - [Default collection owners](./default-collection-owners.md)
+- [External metadata provider contract](./external-metadata-provider-contract.md)
 
 ## Development
 
@@ -16,6 +17,7 @@ This directory contains the maintained project documentation. The root [`README.
 - [Health](./health.md)
 - [Login](./login.md)
 - [Server](./server.md)
+- [Metadata provider](./metadata-provider.md)
 - [Server API reference](../apps/server/public/server-api.yaml)
 - [Development proxy](./dev-proxy.md)
 - [Collection E2E](./collection-e2e.md)

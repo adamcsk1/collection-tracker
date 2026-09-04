@@ -1,12 +1,45 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setAvailableExternalMetadataProviders } from '../core/external-metadata/external-metadata-provider-factory';
+
+const item = {
+  providerItemId: 'tt0133093',
+  externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+  title: 'The Matrix',
+  year: '1999',
+  contentType: 'movie',
+  poster: 'https://images.test/matrix.jpg',
+  plot: 'plot',
+  actors: 'actors',
+  genres: ['Sci-Fi', 'Action'],
+  ratings: [
+    { source: 'Rotten Tomatoes', value: '83%' },
+    { source: 'Internet Movie Database', value: '8.7' },
+  ],
+};
+
+const bookItem = {
+  providerItemId: '9780306406157',
+  externalIds: [{ source: 'isbn', id: '9780306406157' }],
+  title: 'The Book',
+  year: '1965',
+  contentType: 'book',
+  poster: '',
+  plot: '',
+  actors: '',
+  genres: [],
+  ratings: [],
+};
+
+const jsonResponse = (data: unknown): Response =>
+  new Response(JSON.stringify({ data }), { headers: { 'content-type': 'application/json' } });
 
 describe('proxy-get-external-metadata-item-api', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnv, METADATA_SERVICE_URL: 'http://metadata.test/' };
     vi.stubGlobal('fetch', vi.fn());
   });
 
@@ -18,56 +51,26 @@ describe('proxy-get-external-metadata-item-api', () => {
   });
 
   describe('GET /external-metadata/items', () => {
-    it('proxies item query to the configured provider and returns normalized result', async () => {
+    it('proxies item query to the metadata service and returns normalized result', async () => {
       process.env.OMDB_API_KEY = 'test-key';
       const response = mockResponse();
       const request: any = { query: { externalIdentitySource: 'omdb', externalIdentityId: 'tt0133093' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            imdbID: 'tt0133093',
-            imdbRating: '8.7',
-            Ratings: [{ Source: 'Rotten Tomatoes', Value: '83%' }],
-            Title: 'The Matrix',
-            Year: '1999',
-            Type: 'movie',
-            Poster: 'poster',
-            Plot: 'plot',
-            Actors: 'actors',
-            Genre: 'Sci-Fi, Action',
-          }),
-      } as any);
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(item));
 
       const { register } = await import('./proxy-get-external-metadata-item-api');
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('i=tt0133093'),
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('apikey=test-key'),
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
-      expect(response.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          provider: 'omdb',
-          providerItemId: 'tt0133093',
-          title: 'The Matrix',
-          genres: ['Sci-Fi', 'Action'],
-          ratings: expect.arrayContaining([
-            { source: 'Rotten Tomatoes', value: '83%' },
-            { source: 'Internet Movie Database', value: '8.7' },
-          ]),
-        })
-      );
+      expect(vi.mocked(fetch).mock.calls[0][0].toString()).toBe('http://metadata.test/v1/omdb/items/tt0133093');
+      expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ provider: 'omdb', title: 'The Matrix' }));
     });
 
     it('returns 503 when no external metadata provider is configured', async () => {
       delete process.env.OMDB_API_KEY;
+      const { setAvailableExternalMetadataProviders: setProviders } =
+        await import('../core/external-metadata/external-metadata-provider-factory');
+      setProviders(['openlibrary', 'musicbrainz']);
       const response = mockResponse();
       const request: any = { query: { externalIdentitySource: 'omdb', externalIdentityId: 'tt0133093' } };
       const { app, handlerPromise } = buildApp(request, response);
@@ -110,10 +113,7 @@ describe('proxy-get-external-metadata-item-api', () => {
       const response = mockResponse();
       const request: any = { query: { externalIdentitySource: 'omdb', externalIdentityId: 'tt0000000' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ Response: 'False', Error: 'Movie not found!' }),
-      } as any);
+      vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 404 }));
 
       const { register } = await import('./proxy-get-external-metadata-item-api');
       register(app);
@@ -127,7 +127,7 @@ describe('proxy-get-external-metadata-item-api', () => {
       const response = mockResponse();
       const request: any = { query: { externalIdentitySource: 'omdb', externalIdentityId: 'tt0133093' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({ ok: false, status: 503 } as any);
+      vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 503 }));
 
       const { register } = await import('./proxy-get-external-metadata-item-api');
       register(app);
@@ -141,30 +141,13 @@ describe('proxy-get-external-metadata-item-api', () => {
       const response = mockResponse();
       const request: any = { query: { externalIdentitySource: 'imdb', externalIdentityId: 'tt0133093' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            imdbID: 'tt0133093',
-            imdbRating: '8.7',
-            Title: 'The Matrix',
-            Year: '1999',
-            Type: 'movie',
-            Poster: 'poster',
-            Plot: 'plot',
-            Actors: 'actors',
-            Genre: 'Sci-Fi, Action',
-          }),
-      } as any);
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(item));
 
       const { register } = await import('./proxy-get-external-metadata-item-api');
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('i=tt0133093'),
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
+      expect(vi.mocked(fetch).mock.calls[0][0].toString()).toBe('http://metadata.test/v1/omdb/items/by-imdb/tt0133093');
       expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ provider: 'omdb', title: 'The Matrix' }));
     });
 
@@ -172,19 +155,14 @@ describe('proxy-get-external-metadata-item-api', () => {
       const response = mockResponse();
       const request: any = { query: { externalIdentitySource: 'isbn', externalIdentityId: '0-306-40615-2' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ title: 'The Book', publish_date: '1965' }),
-      } as any);
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(bookItem));
 
       const { register } = await import('./proxy-get-external-metadata-item-api');
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith(
-        'https://openlibrary.org/isbn/9780306406157.json',
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      expect(vi.mocked(fetch).mock.calls[0][0].toString()).toBe(
+        'http://metadata.test/v1/openlibrary/items/9780306406157'
       );
       expect(response.send).toHaveBeenCalledWith(
         expect.objectContaining({

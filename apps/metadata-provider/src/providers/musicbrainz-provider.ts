@@ -1,6 +1,6 @@
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import { extractBarcode, extractMbid, normalizeMbid } from '@shared/utils/mbid-util';
-import { ExternalMetadataProvider } from '../external-metadata-provider';
+import { ExternalMetadataProvider } from '../core/external-metadata-provider';
 import {
   DEFAULT_COVER_ART_ARCHIVE_URL,
   DEFAULT_MUSICBRAINZ_API_URL,

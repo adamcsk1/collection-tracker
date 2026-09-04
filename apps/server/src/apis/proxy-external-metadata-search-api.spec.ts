@@ -1,12 +1,29 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setAvailableExternalMetadataProviders } from '../core/external-metadata/external-metadata-provider-factory';
+
+const item = {
+  providerItemId: 'tt0133093',
+  externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+  title: 'The Matrix',
+  year: '1999',
+  contentType: 'movie',
+  poster: 'https://images.test/matrix.jpg',
+  plot: 'plot',
+  actors: 'actors',
+  genres: ['Action'],
+  ratings: [{ source: 'IMDb', value: '8.7' }],
+};
+
+const jsonResponse = (data: unknown): Response =>
+  new Response(JSON.stringify({ data }), { headers: { 'content-type': 'application/json' } });
 
 describe('proxy-external-metadata-search-api', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnv, METADATA_SERVICE_URL: 'http://metadata.test/' };
     vi.stubGlobal('fetch', vi.fn());
   });
 
@@ -18,56 +35,42 @@ describe('proxy-external-metadata-search-api', () => {
   });
 
   describe('GET /external-metadata/search', () => {
-    it('proxies search query to the configured provider and returns normalized results', async () => {
+    it('proxies search query to the metadata service and returns normalized results', async () => {
       process.env.OMDB_API_KEY = 'test-key';
       const response = mockResponse();
       const request: any = { query: { s: 'Matrix' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ Search: [{ imdbID: 'tt0133093', Title: 'The Matrix', Type: 'movie' }] }),
-      } as any);
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ results: [item] }));
 
       const { register } = await import('./proxy-external-metadata-search-api');
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('s=Matrix'),
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('apikey=test-key'),
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      expect(vi.mocked(fetch).mock.calls.some(([url]) => url.toString().includes('/v1/omdb/search?s=Matrix'))).toBe(
+        true
       );
       expect(response.send).toHaveBeenCalledWith({
-        results: [
-          expect.objectContaining({
-            provider: 'omdb',
-            providerItemId: 'tt0133093',
-            title: 'The Matrix',
-            contentType: 'movie',
-          }),
-        ],
+        results: [expect.objectContaining({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' })],
       });
     });
 
     it('uses public Open Library when no credentialed provider is configured', async () => {
       delete process.env.OMDB_API_KEY;
+      const { setAvailableExternalMetadataProviders: setProviders } =
+        await import('../core/external-metadata/external-metadata-provider-factory');
+      setProviders(['openlibrary', 'musicbrainz']);
       const response = mockResponse();
       const request: any = { query: { s: 'Matrix' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({ ok: true, json: () => Promise.resolve({ docs: [] }) } as any);
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ results: [] }));
 
       const { register } = await import('./proxy-external-metadata-search-api');
       register(app);
 
       await handlerPromise();
-      const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
-      expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('https://openlibrary.org/search.json');
-      expect(requestUrl.searchParams.get('q')).toBe('Matrix');
-      expect(requestUrl.searchParams.get('limit')).toBe('20');
-      expect(requestUrl.searchParams.get('fields')).toContain('editions.isbn');
+      const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0].toString());
+      expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('http://metadata.test/v1/openlibrary/search');
+      expect(requestUrl.searchParams.get('s')).toBe('Matrix');
       expect(response.send).toHaveBeenCalledWith({ results: [] });
     });
 
@@ -115,10 +118,7 @@ describe('proxy-external-metadata-search-api', () => {
       const response = mockResponse();
       const request: any = { query: { s: 'Matrix', provider: 'omdb' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ Search: [{ imdbID: 'tt0133093', Title: 'The Matrix', Type: 'movie' }] }),
-      } as any);
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ results: [item] }));
 
       const { register } = await import('./proxy-external-metadata-search-api');
       register(app);
@@ -131,6 +131,9 @@ describe('proxy-external-metadata-search-api', () => {
 
     it('returns 503 when a known provider is requested but not configured', async () => {
       delete process.env.OMDB_API_KEY;
+      const { setAvailableExternalMetadataProviders: setProviders } =
+        await import('../core/external-metadata/external-metadata-provider-factory');
+      setProviders(['openlibrary', 'musicbrainz']);
       const response = mockResponse();
       const request: any = { query: { s: 'Matrix', provider: 'omdb' } };
       const { app, handlerPromise } = buildApp(request, response);
@@ -147,7 +150,7 @@ describe('proxy-external-metadata-search-api', () => {
       const response = mockResponse();
       const request: any = { query: { s: 'Matrix' } };
       const { app, handlerPromise } = buildApp(request, response);
-      vi.mocked(fetch).mockResolvedValue({ ok: false, status: 503 } as any);
+      vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 503 }));
 
       const { register } = await import('./proxy-external-metadata-search-api');
       register(app);

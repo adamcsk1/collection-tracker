@@ -65,6 +65,9 @@ export interface HealthDiagnosticsApiResponseModel extends HealthApiResponseMode
   frontend: {
     status: 'up' | 'down';
   };
+  metadata: {
+    status: 'up' | 'down';
+  };
   ai: {
     status: 'up' | 'down';
   };

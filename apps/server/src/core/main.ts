@@ -20,9 +20,33 @@ import { apiResponseHook } from './utils/api-response-util';
 import { validateEnvironment } from './utils/environment-util';
 import { getRequestPath } from './utils/request-url-util';
 import { warmBackgroundImages } from './background/background';
+import { loadExternalMetadataProviders } from './external-metadata/external-metadata-provider-factory';
+
+const DEFAULT_METADATA_SERVICE_READY_ATTEMPTS = 30;
+const DEFAULT_METADATA_SERVICE_READY_DELAY_MS = 1_000;
 
 export const logIncomingRequest = async (request: Pick<FastifyRequest, 'url'>): Promise<void> => {
   await debugLog(`Incoming request: ${getRequestPath(request.url)}`);
+};
+
+const waitForMetadataService = async (): Promise<void> => {
+  const parsedAttempts = Number(process.env.METADATA_SERVICE_READY_ATTEMPTS);
+  const parsedDelayMs = Number(process.env.METADATA_SERVICE_READY_DELAY_MS);
+  const attempts =
+    Number.isInteger(parsedAttempts) && parsedAttempts > 0 ? parsedAttempts : DEFAULT_METADATA_SERVICE_READY_ATTEMPTS;
+  const delayMs =
+    Number.isFinite(parsedDelayMs) && parsedDelayMs >= 0 ? parsedDelayMs : DEFAULT_METADATA_SERVICE_READY_DELAY_MS;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      await loadExternalMetadataProviders();
+      return;
+    } catch (error: unknown) {
+      lastError = error;
+      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('metadata service is unavailable');
 };
 
 export const main = async () => {
@@ -33,6 +57,7 @@ export const main = async () => {
 
     dotenv.config({ path: `${dataFolder}/.env`, override: true });
     validateEnvironment();
+    await waitForMetadataService();
 
     initializeFolders(dataFolder);
 

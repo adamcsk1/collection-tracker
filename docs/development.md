@@ -18,9 +18,9 @@ The tradeoff is that `npm run cypress:chrome` and `npm run cypress:firefox` do m
 
 ## Docker Lifecycle Verification
 
-`npm run test:docker-lifecycle` builds the applications and a Docker image, starts it with a temporary named data volume, verifies first-start secret/config/database creation and sign-up/sign-in, recreates the container, and verifies credentials and persisted data still work. Run it from a shell with Bash, Docker, `curl`, and standard Unix utilities available. Set `DOCKER_LIFECYCLE_IMAGE` to an existing local image to skip the image build performed by the lifecycle script.
+`npm run test:docker-lifecycle` builds the applications and both Docker images, starts the app and metadata-provider on a private network with temporary named volumes, verifies first-start secret/config/database creation and sign-up/sign-in, recreates the containers, and verifies credentials and persisted data still work. Run it from a shell with Bash, Docker, `curl`, and standard Unix utilities available. Set `DOCKER_LIFECYCLE_IMAGE` and `DOCKER_LIFECYCLE_METADATA_IMAGE` to existing local images to skip those builds.
 
-The GHCR publish workflow runs the same lifecycle script against its smoke-test image before publishing.
+The GHCR publish workflow runs the same lifecycle script against its smoke-test images before publishing.
 
 ## Development Proxy Verification
 

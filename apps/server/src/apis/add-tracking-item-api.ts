@@ -18,7 +18,7 @@ import { canAccessShare } from '../core/database/repositories/share-repository';
 import { copySeriesToTrackingByExternalId } from '../core/database/repositories/tracking-series-repository';
 import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
-import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
+import { tryFetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { parseListType } from '../core/utils/query-parse-util';
@@ -111,7 +111,7 @@ export const register = (app: FastifyInstance): void => {
     if (!item) return response.code(404).send();
 
     if (item.contentType === 'series') {
-      const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
+      const seasons = await tryFetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
       if (seasons.length) {
         replaceTrackingSeasonsByExternalId(
           db,

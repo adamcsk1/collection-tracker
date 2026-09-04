@@ -1,6 +1,6 @@
 # Docker Deployment
 
-The Docker image serves the built Angular applications with Nginx and runs the built Node server in the same container.
+Docker Compose runs two images: the app image serves the built Angular applications with Nginx and the Node server, and a private metadata-provider image owns OMDb, Open Library, MusicBrainz, and replacement adapters.
 
 ## GHCR Image
 
@@ -9,9 +9,9 @@ i18n, lint, test, and typecheck workflows all pass for the same commit.
 
 Published tags:
 
-- `ghcr.io/adamcsk1/collection-tracker:latest` for the latest successful main branch image
-- `ghcr.io/adamcsk1/collection-tracker:sha-<commit-sha>` for a commit-pinned image
-- `ghcr.io/adamcsk1/collection-tracker:vX.Y.Z` when that commit has a matching `vX.Y.Z` git tag
+- `ghcr.io/adamcsk1/collection-tracker:latest` and `ghcr.io/adamcsk1/collection-tracker-metadata-provider:latest` for the latest successful main branch images
+- `ghcr.io/adamcsk1/collection-tracker:sha-<commit-sha>` and `ghcr.io/adamcsk1/collection-tracker-metadata-provider:sha-<commit-sha>` for commit-pinned images
+- `ghcr.io/adamcsk1/collection-tracker:vX.Y.Z` and `ghcr.io/adamcsk1/collection-tracker-metadata-provider:vX.Y.Z` when that commit has a matching `vX.Y.Z` git tag
 
 For public packages, Docker can pull the image anonymously. For private packages, log in first:
 
@@ -19,18 +19,7 @@ For public packages, Docker can pull the image anonymously. For private packages
 docker login ghcr.io
 ```
 
-Pull and run the latest image directly:
-
-```bash
-docker pull ghcr.io/adamcsk1/collection-tracker:latest
-docker run --rm \
-  -p 3001:3001 \
-  --add-host=host.docker.internal:host-gateway \
-  -e APP_UID=$(id -u) \
-  -e APP_GID=$(id -g) \
-  -v ${PWD}/.data:/data \
-  ghcr.io/adamcsk1/collection-tracker:latest
-```
+Pull the app and metadata-provider images and run them with Compose. The app image no longer includes built-in metadata adapters.
 
 ## Runtime Layout
 
@@ -39,7 +28,8 @@ docker run --rm \
 - The client application is served from `/client/`.
 - The health application is served from `/health/`.
 - `/api/` is proxied to the Node server on `127.0.0.1:3000`.
-- `/data` is the writable volume for `.env`, `ollama.config.json`, `background.config.json`, the SQLite database, logs, and image cache files.
+- `/data` on the app container is the writable volume for `.env`, `ollama.config.json`, `background.config.json`, the SQLite database, logs, and image cache files.
+- `/data` on the metadata-provider container (`./.metadata` on the host) holds provider-only `.env` values such as `OMDB_API_KEY` and optional `external-metadata.config.json`. That port is not published. Existing app `./.data/.env` values for `OMDB_API_KEY` are unused; copy a non-empty key into `./.metadata/.env` and restart both containers.
 
 When `/data/.env` does not exist, the container creates it with independent cryptographically random `JWT_SECRET`, `COOKIE_SECRET`, and `SALT` values and mode `0600`. The file is reused unchanged on later starts. An existing file missing `JWT_SECRET`, `COOKIE_SECRET`, or `SALT` causes startup to fail rather than silently rotating credentials.
 
@@ -53,16 +43,18 @@ The image expects existing build artifacts:
 - `dist/apps/health/browser`
 - `dist/apps/login/browser`
 - `dist/apps/server`
+- `dist/apps/metadata-provider`
 
 ## Build And Run
 
 ```bash
 npm run build
-docker buildx build --load -t collection-tracker .
-docker run --rm -p 3001:3001 -e APP_UID=$(id -u) -e APP_GID=$(id -g) -v ${PWD}/.data:/data collection-tracker
+docker compose up -d --build
 ```
 
-> `OMDB_API_KEY` in `/data/.env` enables the OMDb external metadata provider. Optional `OMDB_API_URL` overrides its endpoint; when omitted or empty, it defaults to `https://www.omdbapi.com/`. OMDb requests time out after 10 seconds. Open Library book metadata needs no API key; optional `OPENLIBRARY_API_URL` overrides its default `https://openlibrary.org/` endpoint. MusicBrainz album metadata needs no API key; optional `MUSICBRAINZ_API_URL` overrides `https://musicbrainz.org/ws/2/` and optional `COVERARTARCHIVE_API_URL` overrides `https://coverartarchive.org/`. Without an OMDb key, movie and series metadata operations remain unavailable while book and music search continue to work.
+> `OMDB_API_KEY` in the metadata-provider `/data/.env` enables the built-in OMDb adapter. Optional `OMDB_API_URL` overrides its endpoint; when omitted or empty, it defaults to `https://www.omdbapi.com/`. Open Library and MusicBrainz need no API key. Without an OMDb key, movie and series metadata operations remain unavailable unless the `omdb` slot is replaced; book and music search continue to work.
+
+Optional metadata-provider `/data/external-metadata.config.json` can replace any built-in adapter with a service implementing the [normalized provider contract](./external-metadata-provider-contract.md). Custom header values are read from variables in that same provider `.env`. Restart the metadata-provider container after changing provider configuration.
 
 AI search uses Ollama. Install Ollama on the host and run:
 
@@ -112,6 +104,7 @@ The Docker default uses `host.docker.internal` so the container can reach Ollama
 | `APP_PORT`            | `3001`                   | Host port mapped to the container's nginx listener.                                                              |
 | `APP_UID`             | `1000`                   | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |
 | `APP_GID`             | `1000`                   | Runtime group ID used for writable files. Set to `$(id -g)` on Linux hosts so `./.data` remains user-accessible. |
+| `METADATA_SERVICE_URL` | `http://metadata-provider:3002` | App-container URL for the private metadata provider. Not published. |
 
 ## Docker Compose (Recommended for VPS)
 
@@ -132,7 +125,9 @@ This will:
 
 - Build the image if it doesn't exist (or run `docker compose up -d --build` to force a rebuild)
 - Map host port `3001` (override with `APP_PORT` env var, e.g. `APP_PORT=8080 docker compose up -d`)
-- Mount `./.data` on the host to `/data` in the container
+- Mount `./.data` on the host to `/data` in the app container
+- Mount `./.metadata` on the host to `/data` in the metadata-provider container
+- Keep the metadata provider on a private Compose network without publishing its port
 - Run the app with `APP_UID`/`APP_GID` for writable mounted files
 - Configure AI search with `./.data/ollama.config.json`
 - Automatically restart the container unless you stop it manually
@@ -149,6 +144,29 @@ For deployment from the prebuilt GHCR image, use a compose file without a `build
 
 ```yaml
 services:
+  metadata-provider:
+    image: ghcr.io/adamcsk1/collection-tracker-metadata-provider:latest
+    restart: unless-stopped
+    environment:
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - ./.metadata:/data
+    networks:
+      - metadata
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3002/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
   collection-tracker:
     image: ghcr.io/adamcsk1/collection-tracker:latest
     container_name: collection-tracker
@@ -163,10 +181,19 @@ services:
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
+      METADATA_SERVICE_URL: http://metadata-provider:3002
     volumes:
       - ./.data:/data
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    networks:
+      - default
+      - metadata
+    depends_on:
+      metadata-provider:
+        condition: service_healthy
+networks:
+  metadata:
 ```
 
 Start it on Linux hosts with your current user and group IDs:
@@ -211,5 +238,5 @@ This is the recommended deployment model for secure cookie handling, TLS certifi
 - The runtime image is based on `node:26.0.0-slim`.
 - The image proxy permits four concurrent uncached fetches and queues up to 32 more for 10 seconds. Queue saturation or wait timeout returns `503 Service Unavailable` with `Retry-After` guidance; only actual per-IP rate limiting returns `429 Too Many Requests`. It applies one 30-second deadline across DNS resolution and all redirects, rejects empty images, and limits each image to 10 MiB. It evicts least-recently-accessed entries to keep the cache within 512 MiB including estimated metadata/filesystem overhead and 10,000 entries. These limits are fixed; only the per-IP request rate is configurable.
 - [`docker/entrypoint.sh`](../docker/entrypoint.sh) prepares the mounted `/data` volume and then drops privileges to the configured non-root `APP_UID`/`APP_GID`.
-- Run `npm run test:docker-lifecycle` from a Bash environment with Docker available to verify first start, generated secrets, authentication, restart, and data persistence. `DOCKER_LIFECYCLE_IMAGE=<local-image>` reuses an existing image.
+- Run `npm run test:docker-lifecycle` from a Bash environment with Docker available to verify first start, generated secrets, authentication, restart, and data persistence. `DOCKER_LIFECYCLE_IMAGE` and `DOCKER_LIFECYCLE_METADATA_IMAGE` reuse existing local images.
 - Release packaging details are covered in [Release packaging](./release.md).

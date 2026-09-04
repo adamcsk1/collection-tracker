@@ -1,0 +1,32 @@
+FROM node:26.0.0-slim AS runtime
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gosu && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY dist/apps/metadata-provider/ /app/metadata-provider/
+
+WORKDIR /app/metadata-provider
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; \
+  elif [ -f package.json ]; then npm install --omit=dev; \
+  else echo "No package.json in metadata-provider dist." && exit 1; fi
+
+RUN groupadd -r app && useradd -r -g app app && \
+  mkdir -p /data && \
+  chown -R app:app /app /data && \
+  chmod 700 /data
+
+WORKDIR /app
+COPY docker/metadata-provider-start.sh /app/start.sh
+COPY docker/metadata-provider-entrypoint.sh /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/start.sh /app/entrypoint.sh && chmod +x /app/start.sh /app/entrypoint.sh
+
+ENV NODE_ENV=production \
+  HOST=0.0.0.0 \
+  METADATA_PROVIDER_PORT=3002
+
+EXPOSE 3002
+HEALTHCHECK --interval=5s --timeout=3s --retries=12 --start-period=10s \
+  CMD node -e "fetch('http://127.0.0.1:3002/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+USER root
+ENTRYPOINT ["/app/entrypoint.sh"]

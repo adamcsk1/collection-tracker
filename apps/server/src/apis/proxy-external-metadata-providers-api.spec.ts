@@ -1,6 +1,7 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setAvailableExternalMetadataProviders } from '../core/external-metadata/external-metadata-provider-factory';
 
 describe('proxy-external-metadata-providers-api', () => {
   const originalEnv = process.env;
@@ -36,6 +37,9 @@ describe('proxy-external-metadata-providers-api', () => {
 
     it('returns Open Library when no credentialed provider is configured', async () => {
       delete process.env.OMDB_API_KEY;
+      const { setAvailableExternalMetadataProviders: setProviders } =
+        await import('../core/external-metadata/external-metadata-provider-factory');
+      setProviders(['openlibrary', 'musicbrainz']);
       const response = mockResponse();
       const { app, handlerPromise } = buildApp({}, response);
 

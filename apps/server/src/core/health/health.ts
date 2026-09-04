@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import { setTimeout } from 'node:timers/promises';
 import { getArgv } from '../argv/argv';
+import { getMetadataServiceUrl } from '../external-metadata/external-metadata-provider-factory';
 import { validateOllamaConnection } from '../ollama/ollama';
 
 const HEALTH_CACHE_TTL_MS = 5_000;
@@ -53,6 +54,19 @@ const checkAiStatus = async (): Promise<HealthDiagnosticsApiResponseModel['ai']>
   }
 };
 
+const checkMetadataStatus = async (): Promise<HealthDiagnosticsApiResponseModel['metadata']> => {
+  try {
+    const response = await fetch(new URL('health', getMetadataServiceUrl()), {
+      signal: AbortSignal.timeout(3000),
+      redirect: 'error',
+    });
+    await response.body?.cancel();
+    return { status: response.ok ? 'up' : 'down' };
+  } catch {
+    return { status: 'down' };
+  }
+};
+
 const getDiskUsedPercent = (): HealthDiagnosticsApiResponseModel['disk'] => {
   try {
     const stats = fs.statfsSync(getArgv().dataFolder);
@@ -68,9 +82,10 @@ const deriveStatus = (
   memoryUsedPercent: number,
   cpuUsagePercent: number,
   disk: HealthDiagnosticsApiResponseModel['disk'],
-  frontendStatus: HealthDiagnosticsApiResponseModel['frontend']['status']
+  frontendStatus: HealthDiagnosticsApiResponseModel['frontend']['status'],
+  metadataStatus: HealthDiagnosticsApiResponseModel['metadata']['status']
 ): HealthDiagnosticsApiResponseModel['status'] => {
-  if (frontendStatus === 'down') return 'error';
+  if (frontendStatus === 'down' || metadataStatus === 'down') return 'error';
   if (memoryUsedPercent > 95 || cpuUsagePercent > 95 || (disk !== null && disk.usedPercent > 95)) return 'error';
   if (memoryUsedPercent > 80 || cpuUsagePercent > 80 || (disk !== null && disk.usedPercent > 80)) return 'warn';
   return 'ok';
@@ -80,16 +95,17 @@ const collectHealth = async (): Promise<HealthDiagnosticsApiResponseModel> => {
   const totalMemory = os.totalmem();
   const freeMemory = os.freemem();
   const [avg1m, avg5m, avg15m] = os.loadavg();
-  const [cpuUsagePercent, frontend, ai] = await Promise.all([
+  const [cpuUsagePercent, frontend, metadata, ai] = await Promise.all([
     getCpuUsagePercent(),
     checkFrontendStatus(),
+    checkMetadataStatus(),
     checkAiStatus(),
   ]);
   const memoryUsedPercent = Math.round(((totalMemory - freeMemory) / totalMemory) * 1000) / 10;
   const disk = getDiskUsedPercent();
 
   return {
-    status: deriveStatus(memoryUsedPercent, cpuUsagePercent, disk, frontend.status),
+    status: deriveStatus(memoryUsedPercent, cpuUsagePercent, disk, frontend.status, metadata.status),
     memory: { usedPercent: memoryUsedPercent },
     cpu: { usagePercent: cpuUsagePercent },
     disk,
@@ -99,6 +115,7 @@ const collectHealth = async (): Promise<HealthDiagnosticsApiResponseModel> => {
       avg15m: Math.round(avg15m * 100) / 100,
     },
     frontend,
+    metadata,
     ai,
   };
 };

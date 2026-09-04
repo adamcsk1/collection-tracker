@@ -51,7 +51,7 @@ Do not commit keystores or signing passwords. When these variables are omitted, 
 
 ## GitHub Actions
 
-A default-branch commit tagged `vX.Y.Z` (matching `package.json`) publishes a GitHub Release after Android, Cypress (Chrome and Firefox), Format, i18n, Lint, Test, Typecheck, and Docker GHCR image publish are all green. The GHCR image for that commit is also tagged `vX.Y.Z`.
+A default-branch commit tagged `vX.Y.Z` (matching `package.json`) publishes a GitHub Release after Android, Cypress (Chrome and Firefox), Format, i18n, Lint, Test, Typecheck, and Docker GHCR image publish are all green. The app and metadata-provider GHCR images for that commit are also tagged `vX.Y.Z`.
 
 ```bash
 npm run bump-version -- patch

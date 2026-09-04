@@ -36,7 +36,7 @@ Review the changed files provided. Check each one against the rules below and re
 
 ### Workspace boundaries
 - Shared code belongs in `libs/` — not duplicated across apps
-- Respect project boundaries: `apps/client`, `apps/server`, `libs/components`, `libs/services`, `libs/shared`, `libs/public`
+- Respect project boundaries: `apps/client`, `apps/server`, `apps/metadata-provider`, `libs/components`, `libs/services`, `libs/shared`, `libs/public`
 
 ### Android
 - Android wrapper code belongs under `android/` and should not be coupled to web apps or server internals

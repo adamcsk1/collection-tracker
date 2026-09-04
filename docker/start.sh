@@ -67,6 +67,10 @@ if [ ! -f "$ENTRY" ]; then
 fi
 
 # Ensure .env exists in data folder; generate persistent secrets on first start
+if [ -f "/data/.env" ] && grep -Eq '^OMDB_API_KEY=.+' /data/.env && ! grep -Eq '^OMDB_API_KEY=$' /data/.env; then
+  echo "WARN: OMDB_API_KEY in /data/.env is unused. Copy it to the metadata-provider data folder (.metadata/.env)."
+fi
+
 if [ ! -f "/data/.env" ]; then
   echo "INFO: /data/.env not found. Creating secure defaults."
   JWT_SECRET=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")
@@ -77,7 +81,6 @@ if [ ! -f "/data/.env" ]; then
 HOST=0.0.0.0
 PORT=3000
 CORS_ORIGIN=*
-OMDB_API_KEY=
 JWT_SECRET=$JWT_SECRET
 COOKIE_SECRET=$COOKIE_SECRET
 SALT=$SALT
@@ -151,7 +154,7 @@ fi
 NODE_ENV=${NODE_ENV:-production} \
 HOST=${HOST:-0.0.0.0} \
 PORT=${PORT:-3000} \
-node "${ENTRY}" --dataFolder=/data &
+node "${ENTRY}" --dataFolder=/data --metadataServiceUrl="${METADATA_SERVICE_URL:-http://metadata-provider:3002}" &
 NODE_PID=$!
 
 echo "Node server started with PID ${NODE_PID} on ${HOST}:${PORT}"

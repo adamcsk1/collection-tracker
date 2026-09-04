@@ -1,0 +1,41 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "metadata-provider",
+  "projectType": "application",
+  "sourceRoot": "apps/metadata-provider/src",
+  "tags": ["type:app", "scope:node"],
+  "implicitDependencies": ["shared"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/metadata-provider"],
+      "options": { "command": "node apps/metadata-provider/scripts/build-metadata-provider.js" }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": { "command": "node dist/apps/metadata-provider/bootstrap.js --debug=true" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --config apps/metadata-provider/vitest.config.ts" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint --config eslint.config.cjs apps/metadata-provider/**/*.ts" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit -p apps/metadata-provider/tsconfig.app.json" }
+    },
+    "typecheck-spec": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit -p apps/metadata-provider/tsconfig.spec.json" }
+    },
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write apps/metadata-provider" } },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": { "command": "prettier --check apps/metadata-provider" }
+    }
+  }
+}

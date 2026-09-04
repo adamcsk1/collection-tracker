@@ -11,10 +11,11 @@ const seedAndVisit = (items: ReturnType<typeof buildCollectionItem>[]) => {
 
 describe('AI search - floating button', () => {
   beforeEach(() => {
-    cy.autoLogin();
     cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
+    cy.autoLogin();
+    cy.wait('@aiAvailable');
   });
 
   it('shows the AI search button in the float bar', () => {
@@ -34,10 +35,11 @@ describe('AI search - floating button', () => {
 
 describe('AI search - input interaction', () => {
   beforeEach(() => {
-    cy.autoLogin();
     cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
+    cy.autoLogin();
+    cy.wait('@aiAvailable');
   });
 
   it('opens the AI search dialog when the AI button is clicked', () => {
@@ -61,10 +63,11 @@ describe('AI search - filtering', () => {
   const movieC = buildCollectionItem('Action Gamma', 'movie', 'tt1000003');
 
   beforeEach(() => {
-    cy.autoLogin();
     cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
+    cy.autoLogin();
+    cy.wait('@aiAvailable');
     seedAndVisit([movieA, movieB, movieC]);
   });
 
@@ -125,10 +128,11 @@ describe('AI search - watchlist list', () => {
   const movieA = buildCollectionItem('Sci-Fi Alpha', 'movie', 'tt2000001');
 
   beforeEach(() => {
-    cy.autoLogin();
     cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
+    cy.autoLogin();
+    cy.wait('@aiAvailable');
     cy.request('POST', '/api/v1/collection-items', { ...movieA, listType: 'up-next' });
     CollectionPage.visitUpNext();
   });

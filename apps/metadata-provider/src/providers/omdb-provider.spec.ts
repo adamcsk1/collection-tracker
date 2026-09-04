@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_OMDB_API_URL, OMDB_REQUEST_TIMEOUT_MS } from './omdb-const';
 import { OmdbExternalMetadataProvider } from './omdb-provider';
 
-vi.mock('../../logger', () => ({
+vi.mock('../core/logger', () => ({
   debugLog: vi.fn(),
 }));
 

@@ -13,6 +13,7 @@
       "@login/*": ["./apps/login/src/app/*"],
       "@components/*": ["./libs/components/src/lib/*"],
       "@public/*": ["./libs/public/src/lib/*"],
+      "@metadata-provider/*": ["./apps/metadata-provider/src/*"],
       "@server/*": ["./apps/server/src/*"],
       "@services/*": ["./libs/services/src/lib/*"],
       "@shared/*": ["./libs/shared/src/lib/*"]

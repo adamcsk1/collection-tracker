@@ -9,6 +9,7 @@ describe('background images', () => {
   let getCachedImage: ReturnType<typeof vi.fn>;
   let fetchAndCacheImage: ReturnType<typeof vi.fn>;
   let getItemByImdbId: ReturnType<typeof vi.fn>;
+  let getItem: ReturnType<typeof vi.fn>;
 
   const importBackground = async (config?: object | string) => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-background-'));
@@ -23,11 +24,17 @@ describe('background images', () => {
     getCachedImage = vi.fn(async () => null);
     fetchAndCacheImage = vi.fn(async () => true);
     getItemByImdbId = vi.fn(async (imdbId: string) => ({ poster: `https://images.example/${imdbId}.jpg` }));
+    getItem = vi.fn(async (providerItemId: string) => ({
+      poster: providerItemId.startsWith('978')
+        ? `https://covers.openlibrary.org/b/isbn/${providerItemId}-L.jpg?default=false`
+        : `https://coverartarchive.org/release/${providerItemId}/front-500`,
+    }));
 
-    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
+    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false, metadataServiceUrl: '' }) }));
     vi.doMock('../image/image-proxy', () => ({ getCachedImage, fetchAndCacheImage }));
     vi.doMock('../external-metadata/external-metadata-provider-factory', () => ({
       getDirectImdbExternalMetadataProvider: () => ({ getItemByImdbId }),
+      getExternalMetadataProviderByName: () => ({ getItem }),
     }));
     vi.doMock('../logger', () => ({ debugLog: vi.fn() }));
 
@@ -77,10 +84,11 @@ describe('background images', () => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-background-'));
     getCachedImage = vi.fn(async () => null);
     fetchAndCacheImage = vi.fn(async () => true);
-    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
+    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false, metadataServiceUrl: '' }) }));
     vi.doMock('../image/image-proxy', () => ({ getCachedImage, fetchAndCacheImage }));
     vi.doMock('../external-metadata/external-metadata-provider-factory', () => ({
       getDirectImdbExternalMetadataProvider: () => null,
+      getExternalMetadataProviderByName: () => null,
     }));
     vi.doMock('../logger', () => ({ debugLog: vi.fn() }));
     const { warmBackgroundImages, getCachedBackgroundImageUrls } = await import('./background');
@@ -159,10 +167,11 @@ describe('background images', () => {
     getCachedImage = vi.fn(async () => ({ contentType: 'image/jpeg', buffer: Buffer.from('img') }));
     fetchAndCacheImage = vi.fn(async () => true);
     getItemByImdbId = vi.fn(async (imdbId: string) => ({ poster: `https://images.example/${imdbId}.jpg` }));
-    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
+    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false, metadataServiceUrl: '' }) }));
     vi.doMock('../image/image-proxy', () => ({ getCachedImage, fetchAndCacheImage }));
     vi.doMock('../external-metadata/external-metadata-provider-factory', () => ({
       getDirectImdbExternalMetadataProvider: () => ({ getItemByImdbId }),
+      getExternalMetadataProviderByName: () => ({ getItem }),
     }));
     vi.doMock('../logger', () => ({ debugLog: vi.fn() }));
     const restarted = await import('./background');
@@ -186,6 +195,8 @@ describe('background images', () => {
 
     expect(getBackgroundImdbIds()).toEqual([]);
     expect(getItemByImdbId).not.toHaveBeenCalled();
+    expect(getItem).toHaveBeenCalledWith('9780306406157');
+    expect(getItem).toHaveBeenCalledWith('f509c5ff-ad54-4dde-b61e-24f750965835');
     expect(fetchAndCacheImage).not.toHaveBeenCalled();
     expect(await getCachedBackgroundImageUrls()).toEqual([
       'https://covers.openlibrary.org/b/isbn/9780306406157-L.jpg?default=false',
@@ -202,10 +213,15 @@ describe('background images', () => {
     );
     getCachedImage = vi.fn(async () => ({ contentType: 'image/jpeg', buffer: Buffer.from('img') }));
     fetchAndCacheImage = vi.fn(async () => true);
-    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
+    getItem = vi.fn(async (providerItemId: string) => ({
+      poster: `https://covers.openlibrary.org/b/isbn/${providerItemId}-L.jpg?default=false`,
+    }));
+    vi.doMock('../argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false, metadataServiceUrl: '' }) }));
     vi.doMock('../image/image-proxy', () => ({ getCachedImage, fetchAndCacheImage }));
     vi.doMock('../external-metadata/external-metadata-provider-factory', () => ({
       getDirectImdbExternalMetadataProvider: () => null,
+      getExternalMetadataProviderByName: (providerName: string) =>
+        providerName === 'openlibrary' ? { getItem } : null,
     }));
     vi.doMock('../logger', () => ({ debugLog: vi.fn() }));
     const { warmBackgroundImages, getCachedBackgroundImageUrls } = await import('./background');
@@ -213,6 +229,7 @@ describe('background images', () => {
     await warmBackgroundImages();
 
     expect(fetchAndCacheImage).not.toHaveBeenCalled();
+    expect(getItem).toHaveBeenCalledWith('9780306406157');
     expect(await getCachedBackgroundImageUrls()).toEqual([
       'https://covers.openlibrary.org/b/isbn/9780306406157-L.jpg?default=false',
     ]);

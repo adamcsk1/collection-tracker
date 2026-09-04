@@ -1,4 +1,33 @@
 services:
+  metadata-provider:
+    build:
+      context: .
+      dockerfile: Dockerfile.metadata-provider
+    image: collection-tracker-metadata-provider:latest
+    container_name: collection-tracker-metadata-provider
+    environment:
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - ./.metadata:/data
+    networks:
+      - metadata
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3002/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
   app:
     build:
       context: .
@@ -13,10 +42,21 @@ services:
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
+      METADATA_SERVICE_URL: http://metadata-provider:3002
     ports:
       - '${APP_PORT:-3001}:3001'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     volumes:
       - ./.data:/data
+    networks:
+      - default
+      - metadata
+    depends_on:
+      metadata-provider:
+        condition: service_healthy
     restart: unless-stopped
+
+networks:
+  metadata:
+    driver: bridge

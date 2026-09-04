@@ -2,6 +2,8 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { metadataServiceItem, metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
+import { setAvailableExternalMetadataProviders } from '../core/external-metadata/external-metadata-provider-factory';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
@@ -30,6 +32,7 @@ describe('import-collection-items-api', () => {
   });
 
   it('counts IMDb IDs as errors when the default provider is unavailable', async () => {
+    setAvailableExternalMetadataProviders(['openlibrary', 'musicbrainz']);
     insertUser('user');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', body: { source: 'tt0000001' } };
@@ -78,22 +81,17 @@ describe('import-collection-items-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            imdbID: 'tt0000001',
-            Type: 'movie',
-            Title: 'Fetched Movie',
-            Year: '2024',
-            imdbRating: '7.1',
-            Plot: 'Plot',
-            Poster: 'poster.jpg',
-            Actors: 'Actor',
-            Genre: 'Drama',
-            Ratings: [],
-          }),
-      })
+      vi.fn().mockResolvedValueOnce(
+        metadataServiceResponse(
+          metadataServiceItem('tt0000001', {
+            title: 'Fetched Movie',
+            year: '2024',
+            plot: 'Plot',
+            actors: 'Actor',
+            ratings: [{ source: 'Internet Movie Database', value: '7.1' }],
+          })
+        )
+      )
     );
     insertUser('user');
     const response = mockResponse();

@@ -3,6 +3,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { metadataServiceItem, metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
 import {
   MAX_FULL_IMPORT_ACTORS_LENGTH,
   MAX_FULL_IMPORT_CANONICAL_ITEM_ID_LENGTH,
@@ -1888,23 +1889,22 @@ describe('import-api', () => {
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              Title: 'Fetched Movie',
-              Year: '2020',
-              imdbID: 'tt0000002',
-              Type: 'movie',
-              Poster: 'poster.jpg',
-              Genre: 'Action, Adventure',
-              Actors: 'Actor One',
-              Plot: 'Fetched plot',
-              imdbRating: '8.5',
-              Ratings: [{ Source: 'Rotten Tomatoes', Value: '90%' }],
-            }),
-        })
-        .mockResolvedValueOnce({ ok: false, status: 404, json: () => Promise.resolve({}) })
+        .mockResolvedValueOnce(
+          metadataServiceResponse(
+            metadataServiceItem('tt0000002', {
+              title: 'Fetched Movie',
+              year: '2020',
+              plot: 'Fetched plot',
+              actors: 'Actor One',
+              genres: ['Action', 'Adventure'],
+              ratings: [
+                { source: 'Internet Movie Database', value: '8.5' },
+                { source: 'Rotten Tomatoes', value: '90%' },
+              ],
+            })
+          )
+        )
+        .mockResolvedValueOnce(metadataServiceResponse(null, 404))
     );
     insertUser('user');
     const db = getDatabase();
@@ -1984,13 +1984,7 @@ describe('import-api', () => {
 
   it('counts malformed OMDb item responses as import errors', async () => {
     process.env.OMDB_API_KEY = 'key';
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ imdbID: 'tt0000004', Type: null, Title: 'Malformed Movie' }),
-      })
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(metadataServiceResponse({ title: 'Malformed Movie' })));
     insertUser('user');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', body: { source: 'tt0000004' } };
@@ -2011,22 +2005,18 @@ describe('import-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            Title: 'Wrong Movie',
-            Year: '2020',
-            imdbID: 'tt0000006',
-            Type: 'movie',
-            Poster: 'poster.jpg',
-            Genre: 'Action',
-            Actors: 'Actor One',
-            Plot: 'Fetched plot',
-            imdbRating: '8.5',
-            Ratings: [],
-          }),
-      })
+      vi.fn().mockResolvedValueOnce(
+        metadataServiceResponse(
+          metadataServiceItem('tt0000006', {
+            title: 'Wrong Movie',
+            year: '2020',
+            plot: 'Fetched plot',
+            actors: 'Actor One',
+            genres: ['Action'],
+            ratings: [{ source: 'Internet Movie Database', value: '8.5' }],
+          })
+        )
+      )
     );
     insertUser('user');
     const response = mockResponse();

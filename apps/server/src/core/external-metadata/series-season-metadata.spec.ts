@@ -30,4 +30,22 @@ describe('fetchSeriesSeasonMetadata', () => {
 
     await expect(fetchSeriesSeasonMetadata('test', 'tt-series')).resolves.toEqual([]);
   });
+
+  it('propagates season lookup failures', async () => {
+    vi.doMock('./external-metadata-provider-factory', () => ({
+      getExternalMetadataProviderByName: () => ({
+        name: 'omdb',
+        search: vi.fn(),
+        getItem: vi.fn(),
+        getSeriesSeasons: vi.fn(async () => {
+          throw new Error('replacement failed');
+        }),
+      }),
+    }));
+
+    const { fetchSeriesSeasonMetadata, tryFetchSeriesSeasonMetadata } = await import('./series-season-metadata');
+
+    await expect(fetchSeriesSeasonMetadata('omdb', 'tt-series')).rejects.toThrow('replacement failed');
+    await expect(tryFetchSeriesSeasonMetadata('omdb', 'tt-series')).resolves.toEqual([]);
+  });
 });

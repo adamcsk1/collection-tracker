@@ -5,6 +5,7 @@ import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { insertShare } from '../../test/mocks/share-mock';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
 
 describe('refresh-tracking-seasons-api', () => {
   afterEach(() => {
@@ -19,12 +20,9 @@ describe('refresh-tracking-seasons-api', () => {
     process.env.OMDB_API_KEY = 'key';
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '2' }) })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }, { Title: 'Episode 2' }] }),
-      })
-      .mockRejectedValueOnce(new Error('season failed'));
+      .mockResolvedValue(
+        metadataServiceResponse({ seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Episode 2'] }] })
+      );
     vi.stubGlobal('fetch', fetchMock);
     const response = mockResponse();
     const request: any = {
@@ -53,8 +51,7 @@ describe('refresh-tracking-seasons-api', () => {
     process.env.OMDB_API_KEY = 'key';
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) });
+      .mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] }));
     vi.stubGlobal('fetch', fetchMock);
     const response = mockResponse();
     const request: any = {
@@ -67,10 +64,7 @@ describe('refresh-tracking-seasons-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('i=tt-series'),
-      expect.objectContaining({ signal: expect.any(AbortSignal) })
-    );
+    expect(fetchMock.mock.calls[0][0].toString()).toContain('/v1/omdb/items/tt-series/seasons');
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] })
     );
@@ -96,10 +90,7 @@ describe('refresh-tracking-seasons-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] }))
     );
     const response = mockResponse();
     const request: any = {
@@ -179,10 +170,7 @@ describe('refresh-tracking-seasons-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] }))
     );
     const response = mockResponse();
     const request: any = {
@@ -215,11 +203,9 @@ describe('refresh-tracking-seasons-api', () => {
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }, { Title: 'Episode 2' }] }),
-        })
+        .mockResolvedValue(
+          metadataServiceResponse({ seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Episode 2'] }] })
+        )
     );
     const response = mockResponse();
     const request: any = {
@@ -250,10 +236,7 @@ describe('refresh-tracking-seasons-api', () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) })
+      vi.fn().mockResolvedValue(metadataServiceResponse({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] }))
     );
     const response = mockResponse();
     const request: any = {

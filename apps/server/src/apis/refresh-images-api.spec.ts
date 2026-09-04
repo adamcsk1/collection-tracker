@@ -6,6 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
 import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
 import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
+import { metadataServiceItem, metadataServiceResponse } from '../../test/mocks/metadata-service-response-mock';
+import { setAvailableExternalMetadataProviders } from '../core/external-metadata/external-metadata-provider-factory';
+
+const posterResponse = (providerItemId: string, poster: string) =>
+  metadataServiceResponse(metadataServiceItem(providerItemId, { poster }));
 
 vi.mock('../core/logger', () => ({
   debugLog: vi.fn(),
@@ -94,13 +99,7 @@ describe('refresh-images-api', () => {
     fetchAndCacheImageResult = false;
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'tt-1',
-          Poster: 'https://images.example/new-poster.jpg',
-        }),
-      }))
+      vi.fn(async () => posterResponse('tt-1', 'https://images.example/new-poster.jpg'))
     );
 
     vi.doMock('../core/image/image-proxy', () => ({
@@ -131,13 +130,7 @@ describe('refresh-images-api', () => {
     fetchAndCacheImageResult = false;
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'tt-1',
-          Poster: 'https://images.example/broken.jpg',
-        }),
-      }))
+      vi.fn(async () => posterResponse('tt-1', 'https://images.example/broken.jpg'))
     );
 
     vi.doMock('../core/image/image-proxy', () => ({
@@ -155,20 +148,14 @@ describe('refresh-images-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
   });
 
-  it('does not update the image when the provider returns a different-cased item ID', async () => {
+  it('updates the image when the provider returns a different-cased item ID', async () => {
     insertUser();
     insertItem('tt-1', 'https://images.example/broken.jpg');
 
     fetchAndCacheImageResult = false;
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'TT-1',
-          Poster: 'https://images.example/wrong-poster.jpg',
-        }),
-      }))
+      vi.fn(async () => posterResponse('TT-1', 'https://images.example/wrong-poster.jpg'))
     );
 
     vi.doMock('../core/image/image-proxy', () => ({
@@ -184,14 +171,14 @@ describe('refresh-images-api', () => {
 
     await handlerPromise();
 
-    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
     expect(
       (
         getDatabase().prepare('SELECT image FROM collection_items WHERE external_item_id = ?').get('tt-1') as {
           image: string;
         }
       ).image
-    ).toBe('https://images.example/broken.jpg');
+    ).toBe('https://images.example/wrong-poster.jpg');
   });
 
   it('increments errors when OMDb API key is missing', async () => {
@@ -200,6 +187,7 @@ describe('refresh-images-api', () => {
 
     fetchAndCacheImageResult = false;
     delete process.env.OMDB_API_KEY;
+    setAvailableExternalMetadataProviders(['openlibrary', 'musicbrainz']);
 
     vi.doMock('../core/image/image-proxy', () => ({
       fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
@@ -234,13 +222,7 @@ describe('refresh-images-api', () => {
     fetchAndCacheImageResult = false;
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          imdbID: 'tt-shared',
-          Poster: 'https://images.example/shared-new.jpg',
-        }),
-      }))
+      vi.fn(async () => posterResponse('tt-shared', 'https://images.example/shared-new.jpg'))
     );
 
     vi.doMock('../core/image/image-proxy', () => ({
@@ -360,10 +342,7 @@ describe('refresh-images-api', () => {
     ]);
     const imageMock = vi.fn(async () => false);
     vi.doMock('../core/image/image-proxy', () => ({ fetchAndCacheImage: imageMock }));
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({ imdbID: 'tt-selected', Poster: 'selected-new.jpg' }),
-    }));
+    const fetchMock = vi.fn(async () => posterResponse('tt-selected', 'https://images.example/selected-new.jpg'));
     vi.stubGlobal('fetch', fetchMock);
     const response = mockResponse();
     const { app, handlerPromise } = buildApp(
@@ -382,7 +361,7 @@ describe('refresh-images-api', () => {
       getDatabase().prepare('SELECT external_item_id, image FROM collection_items ORDER BY external_item_id').all()
     ).toEqual([
       { external_item_id: 'tt-hidden', image: 'hidden-broken.jpg' },
-      { external_item_id: 'tt-selected', image: 'selected-new.jpg' },
+      { external_item_id: 'tt-selected', image: 'https://images.example/selected-new.jpg' },
     ]);
   });
 
@@ -396,23 +375,16 @@ describe('refresh-images-api', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.includes('9780140328721') || url.includes('isbn/')) {
-          return {
-            ok: true,
-            json: async () => ({
+        if (url.includes('9780140328721')) {
+          return metadataServiceResponse(
+            metadataServiceItem('9780140328721', {
+              contentType: 'book',
               title: 'Book Title',
-              publish_date: '2000',
-              covers: [12345],
-            }),
-          };
+              poster: 'https://covers.openlibrary.org/b/id/12345-L.jpg?default=false',
+            })
+          );
         }
-        return {
-          ok: true,
-          json: async () => ({
-            imdbID: 'tt-watchlist',
-            Poster: 'https://images.example/watchlist-new.jpg',
-          }),
-        };
+        return posterResponse('tt-watchlist', 'https://images.example/watchlist-new.jpg');
       })
     );
 

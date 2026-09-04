@@ -4,9 +4,10 @@ import { resolveImdbId } from '@shared/utils/imdb-id-util';
 import { normalizeIsbn13 } from '@shared/utils/isbn-util';
 import { normalizeMbid } from '@shared/utils/mbid-util';
 import { getArgv } from '../argv/argv';
-import { getDirectImdbExternalMetadataProvider } from '../external-metadata/external-metadata-provider-factory';
-import { DEFAULT_COVER_ART_ARCHIVE_URL } from '../external-metadata/providers/musicbrainz-const';
-import { DEFAULT_OPENLIBRARY_COVER_URL } from '../external-metadata/providers/openlibrary-const';
+import {
+  getDirectImdbExternalMetadataProvider,
+  getExternalMetadataProviderByName,
+} from '../external-metadata/external-metadata-provider-factory';
 import { fetchAndCacheImage, getCachedImage } from '../image/image-proxy';
 import { debugLog } from '../logger';
 import {
@@ -30,21 +31,11 @@ const getConfigPath = (): string => join(getArgv().dataFolder, BACKGROUND_CONFIG
 
 const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value);
 
-const getCoverArtArchiveUrl = (): string => {
-  const coverUrl = process.env.COVERARTARCHIVE_API_URL?.trim() || DEFAULT_COVER_ART_ARCHIVE_URL;
-  const normalized = new URL(coverUrl);
-  normalized.pathname = `${normalized.pathname.replace(/\/$/, '')}/`;
-  return normalized.href;
+const posterFromItem = (item: { poster?: string } | null): string => {
+  const poster = item?.poster?.trim() ?? '';
+  if (!poster || poster.toUpperCase() === 'N/A' || !isHttpUrl(poster)) return '';
+  return poster;
 };
-
-const getOpenLibraryCoverUrl = (isbn: string): string => {
-  const url = new URL(`b/isbn/${isbn}-L.jpg`, DEFAULT_OPENLIBRARY_COVER_URL);
-  url.searchParams.set('default', 'false');
-  return url.href;
-};
-
-const getMusicBrainzCoverUrl = (mbid: string): string =>
-  new URL(`release/${mbid}/front-500`, getCoverArtArchiveUrl()).href;
 
 const addIdentities = (
   values: unknown,
@@ -132,15 +123,18 @@ const writePosters = (nextPosters: Record<string, string>): void => {
 };
 
 const resolvePoster = async (identity: BackgroundIdentity): Promise<string> => {
-  if (identity.kind === 'isbn') return getOpenLibraryCoverUrl(identity.id);
-  if (identity.kind === 'mbid') return getMusicBrainzCoverUrl(identity.id);
+  if (identity.kind === 'isbn') {
+    const provider = getExternalMetadataProviderByName('openlibrary');
+    return provider ? posterFromItem(await provider.getItem(identity.id)) : '';
+  }
+  if (identity.kind === 'mbid') {
+    const provider = getExternalMetadataProviderByName('musicbrainz');
+    return provider ? posterFromItem(await provider.getItem(identity.id)) : '';
+  }
 
   const provider = getDirectImdbExternalMetadataProvider();
   if (!provider?.getItemByImdbId) return '';
-  const item = await provider.getItemByImdbId(identity.id);
-  const poster = item?.poster?.trim() ?? '';
-  if (!poster || poster.toUpperCase() === 'N/A' || !isHttpUrl(poster)) return '';
-  return poster;
+  return posterFromItem(await provider.getItemByImdbId(identity.id));
 };
 
 const runWarm = async (): Promise<void> => {

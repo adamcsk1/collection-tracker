@@ -15,14 +15,24 @@ describe('getArgv', () => {
     process.argv = ['node', 'script'];
     const { getArgv } = await import('./argv');
 
-    expect(getArgv()).toEqual({ dataFolder: '.data', debug: false });
+    expect(getArgv()).toEqual({ dataFolder: '.data', debug: false, metadataServiceUrl: '' });
   });
 
   it('parses dataFolder and debug flags', async () => {
-    process.argv = ['node', 'script', '--dataFolder=/tmp/data', '--debug=true'];
+    process.argv = [
+      'node',
+      'script',
+      '--dataFolder=/tmp/data',
+      '--debug=true',
+      '--metadataServiceUrl=http://127.0.0.1:3002',
+    ];
     const { getArgv } = await import('./argv');
 
-    expect(getArgv()).toEqual({ dataFolder: '/tmp/data', debug: true });
+    expect(getArgv()).toEqual({
+      dataFolder: '/tmp/data',
+      debug: true,
+      metadataServiceUrl: 'http://127.0.0.1:3002',
+    });
   });
 
   it('returns the same object reference on subsequent calls (memoized)', async () => {
@@ -34,6 +44,6 @@ describe('getArgv', () => {
     const second = getArgv();
 
     expect(second).toBe(first);
-    expect(second).toEqual({ dataFolder: '/tmp/data', debug: true });
+    expect(second).toEqual({ dataFolder: '/tmp/data', debug: true, metadataServiceUrl: '' });
   });
 });

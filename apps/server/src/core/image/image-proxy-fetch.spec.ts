@@ -145,7 +145,11 @@ describe('image-proxy fetch responses', () => {
 
   beforeEach(() => {
     temporaryDataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
-    vi.mocked(getArgv).mockReturnValue({ dataFolder: temporaryDataFolder, debug: false });
+    vi.mocked(getArgv).mockReturnValue({
+      dataFolder: temporaryDataFolder,
+      debug: false,
+      metadataServiceUrl: '',
+    });
     requestState.lookup.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
     requestState.largeFilePath = undefined;
     requestState.largeFileSize = undefined;
