@@ -1,4 +1,4 @@
-import { ExternalMetadataSeasonProvider } from '../external-metadata-provider';
+import { ExternalMetadataSeasonProvider } from '../models/external-metadata-runtime-model';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createNormalizedHttpExternalMetadataProvider } from './normalized-http-provider';
 

@@ -44,7 +44,7 @@ Issue description and why it matters. Suggested fix.
 - Never allow `@ts-ignore`, `@ts-expect-error`, `ignoreDeprecations`, or path-alias hacks. The root cause must be fixed.
 - Parameter names must be descriptive. Do not allow single-letter or unclear abbreviated names except `a`/`b` in sort comparators and `arg`/`args`/`argv` in CLI argument handling.
 - `tsconfig.json` must not use `baseUrl`. Path aliases must use explicit `./` prefixes.
-- Cross-project imports must use declared aliases such as `@client/*`, `@server/*`, `@components/*`, `@services/*`, `@shared/*`, or `@public/*`.
+- Cross-project imports must use declared aliases such as `@client/*`, `@server/*`, `@components/*`, `@services/*`, `@shared/*`, `@node/*`, or `@public/*`.
 - Relative imports are acceptable within the same app or library.
 - Do not allow `any` or unsafe casts when a precise project model or narrow type can be used.
 - Interfaces and type aliases belong in `*-model.ts` files, except signal-store state interfaces and store-only type aliases, which must stay in the matching `*-store.ts` file.
@@ -164,7 +164,7 @@ type(scope): short imperative summary
 - Summary must be imperative, lowercase after the colon, no trailing period, and no more than 72 characters.
 - Body should explain why, not what.
 - Allowed types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`.
-- Common scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`, `tsconfig`, `build`, `ai`, `git`, `vscode`, `hooks`, `i18n`.
+- Common scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `node`, `public`, `dev-proxy`, `tsconfig`, `build`, `ai`, `git`, `vscode`, `hooks`, `i18n`.
 - Markdown should use backtick code spans for inline code, not backslash-wrapped text.
 
 ## Non-Issues

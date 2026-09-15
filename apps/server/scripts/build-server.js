@@ -23,6 +23,7 @@ const serverDependencyNames = [
 const resolveTsPath = (specifier) => {
   const aliases = [
     ['@server/', 'apps/server/src/'],
+    ['@node/', 'libs/node/src/lib/'],
     ['@shared/', 'libs/shared/src/lib/'],
   ];
   const match = aliases.find(([alias]) => specifier.startsWith(alias));
@@ -36,7 +37,7 @@ const resolveTsPath = (specifier) => {
 const tsPathAliasPlugin = {
   name: 'ts-path-aliases',
   setup(build) {
-    build.onResolve({ filter: /^@(server|shared)\// }, (importArgs) => {
+    build.onResolve({ filter: /^@(server|shared|node)\// }, (importArgs) => {
       const path = resolveTsPath(importArgs.path);
       return path ? { path } : undefined;
     });

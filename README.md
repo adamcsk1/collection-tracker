@@ -28,6 +28,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - `libs/components`: shared standalone Angular UI components
 - `libs/services`: shared Angular services and signal stores
 - `libs/shared`: models, constants, styles, animations, and utilities
+- `libs/node`: Node-only shared runtime used by the server and metadata-provider
 - `libs/public`: shared static assets and PWA metadata
 - `android`: native Android WebView wrapper for deployed Collection Tracker instances
 

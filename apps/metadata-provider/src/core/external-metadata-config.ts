@@ -1,9 +1,10 @@
+import { ExternalMetadataProviderReplacementConfig } from '@node/models/external-metadata-config-model';
 import { EXTERNAL_METADATA_PROVIDER_NAMES } from '@shared/models/external-metadata-provider-model';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { getArgv } from './argv';
 import { EXTERNAL_METADATA_CONFIG_FILE_NAME, EXTERNAL_METADATA_CONFIG_VERSION } from './external-metadata-config-const';
-import { ExternalMetadataConfig, ExternalMetadataProviderReplacementConfig } from './external-metadata-config-model';
+import { ExternalMetadataConfig } from './external-metadata-config-model';
 
 const ENVIRONMENT_VARIABLE_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const BLOCKED_HEADER_NAMES = new Set([

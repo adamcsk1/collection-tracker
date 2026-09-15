@@ -4,7 +4,7 @@
   "projectType": "application",
   "sourceRoot": "apps/metadata-provider/src",
   "tags": ["type:app", "scope:node"],
-  "implicitDependencies": ["shared"],
+  "implicitDependencies": ["shared", "node"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",

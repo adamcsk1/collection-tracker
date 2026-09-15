@@ -27,6 +27,7 @@ This directory contains the maintained project documentation. The root [`README.
 - [Components](./components.md)
 - [Services](./services.md)
 - [Shared](./shared.md)
+- [Node](./node.md)
 - [Public assets](./public-assets.md)
 
 ## Delivery

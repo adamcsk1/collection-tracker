@@ -1,4 +1,5 @@
-import { ExternalMetadataProvider } from './external-metadata-provider';
+import { ExternalMetadataProvider } from '@node/models/external-metadata-runtime-model';
+import { createNormalizedHttpExternalMetadataProvider } from '@node/utils/normalized-http-provider';
 import { getExternalMetadataConfig } from './external-metadata-config';
 import { DEFAULT_OMDB_API_URL } from '../providers/omdb-const';
 import { OmdbExternalMetadataProvider } from '../providers/omdb-provider';
@@ -6,7 +7,6 @@ import { DEFAULT_MUSICBRAINZ_API_URL, DEFAULT_COVER_ART_ARCHIVE_URL } from '../p
 import { MusicBrainzExternalMetadataProvider } from '../providers/musicbrainz-provider';
 import { DEFAULT_OPENLIBRARY_API_URL } from '../providers/openlibrary-const';
 import { OpenLibraryExternalMetadataProvider } from '../providers/openlibrary-provider';
-import { createNormalizedHttpExternalMetadataProvider } from '../providers/normalized-http-provider';
 
 export const getExternalMetadataProviderByName = (providerName: string): ExternalMetadataProvider | null => {
   return getExternalMetadataProviders().find((provider) => provider.name === providerName) ?? null;

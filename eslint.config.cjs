@@ -17,6 +17,7 @@ const crossProjectRelativeImportPatterns = [
       '../**/metadata-provider/**',
       '../**/server/**',
       '../**/components/**',
+      '../**/node/**',
       '../**/public/**',
       '../**/services/**',
       '../**/shared/**',
@@ -105,19 +106,37 @@ module.exports = [
   {
     files: ['apps/client/**/*.ts'],
     rules: {
-      'no-restricted-imports': noRestrictedImports('@health/*', '@login/*', '@metadata-provider/*', '@server/*'),
+      'no-restricted-imports': noRestrictedImports(
+        '@health/*',
+        '@login/*',
+        '@metadata-provider/*',
+        '@node/*',
+        '@server/*'
+      ),
     },
   },
   {
     files: ['apps/health/**/*.ts'],
     rules: {
-      'no-restricted-imports': noRestrictedImports('@client/*', '@login/*', '@metadata-provider/*', '@server/*'),
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@login/*',
+        '@metadata-provider/*',
+        '@node/*',
+        '@server/*'
+      ),
     },
   },
   {
     files: ['apps/login/**/*.ts'],
     rules: {
-      'no-restricted-imports': noRestrictedImports('@client/*', '@health/*', '@metadata-provider/*', '@server/*'),
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@health/*',
+        '@metadata-provider/*',
+        '@node/*',
+        '@server/*'
+      ),
     },
   },
   {
@@ -128,6 +147,7 @@ module.exports = [
         '@health/*',
         '@login/*',
         '@metadata-provider/*',
+        '@node/*',
         '@server/*'
       ),
     },
@@ -140,6 +160,7 @@ module.exports = [
         '@health/*',
         '@login/*',
         '@metadata-provider/*',
+        '@node/*',
         '@server/*',
         '@components/*'
       ),
@@ -153,9 +174,51 @@ module.exports = [
         '@health/*',
         '@login/*',
         '@metadata-provider/*',
+        '@node/*',
         '@server/*',
         '@components/*',
         '@services/*'
+      ),
+    },
+  },
+  {
+    files: ['libs/node/**/*.ts'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+        projectService: true,
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      ...tsPlugin.configs.recommended.rules,
+      'import/order': 'off',
+      '@typescript-eslint/no-explicit-any': ['off'],
+      '@typescript-eslint/member-ordering': 0,
+      '@typescript-eslint/explicit-member-accessibility': [
+        'error',
+        {
+          accessibility: 'explicit',
+          overrides: {
+            constructors: 'no-public',
+          },
+        },
+      ],
+      '@typescript-eslint/naming-convention': 0,
+      '@typescript-eslint/ban-types': 'off',
+      '@typescript-eslint/no-inferrable-types': 'off',
+      'no-restricted-imports': noRestrictedImports(
+        '@client/*',
+        '@health/*',
+        '@login/*',
+        '@metadata-provider/*',
+        '@server/*',
+        '@components/*',
+        '@services/*',
+        '@public/*'
       ),
     },
   },

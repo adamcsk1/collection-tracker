@@ -1,8 +1,8 @@
+import { ExternalMetadataProvider } from '@node/models/external-metadata-runtime-model';
+import { createNormalizedHttpExternalMetadataProvider } from '@node/utils/normalized-http-provider';
 import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { isExternalMetadataProviderName } from '@shared/utils/external-metadata-provider-util';
 import { getArgv } from '../argv/argv';
-import { ExternalMetadataProvider } from './external-metadata-provider';
-import { createNormalizedHttpExternalMetadataProvider } from './providers/normalized-http-provider';
 
 const DEFAULT_PROVIDER_NAMES: ExternalMetadataProviderNameModel[] = ['openlibrary', 'musicbrainz'];
 

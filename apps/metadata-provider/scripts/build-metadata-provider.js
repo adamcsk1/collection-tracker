@@ -7,7 +7,10 @@ const packageJson = require(join(root, 'package.json'));
 const dependencyNames = ['dotenv', 'fastify'];
 
 const resolveTsPath = (specifier) => {
-  const aliases = [['@shared/', 'libs/shared/src/lib/']];
+  const aliases = [
+    ['@node/', 'libs/node/src/lib/'],
+    ['@shared/', 'libs/shared/src/lib/'],
+  ];
   const match = aliases.find(([alias]) => specifier.startsWith(alias));
   if (!match) return null;
 
@@ -19,7 +22,7 @@ const resolveTsPath = (specifier) => {
 const tsPathAliasPlugin = {
   name: 'ts-path-aliases',
   setup(build) {
-    build.onResolve({ filter: /^@shared\// }, (importArgs) => {
+    build.onResolve({ filter: /^@(shared|node)\// }, (importArgs) => {
       const path = resolveTsPath(importArgs.path);
       return path ? { path } : undefined;
     });

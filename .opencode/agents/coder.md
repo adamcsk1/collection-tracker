@@ -31,6 +31,7 @@ apps/collection-e2e/  Cypress E2E tests
 libs/components/    Shared Angular UI components
 libs/services/      Angular services and signal stores
 libs/shared/        Models, constants, styles, animations, utilities
+libs/node/          Node-only shared runtime for server apps
 libs/public/        Static assets and PWA metadata
 ```
 
@@ -43,6 +44,7 @@ libs/public/        Static assets and PWA metadata
 @metadata-provider/* → apps/metadata-provider/src/*
 @server/*     → apps/server/src/*
 @components/* → libs/components/src/lib/*
+@node/*       → libs/node/src/lib/*
 @services/*   → libs/services/src/lib/*
 @shared/*     → libs/shared/src/lib/*
 @public/*     → libs/public/src/lib/*

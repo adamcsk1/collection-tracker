@@ -21,6 +21,7 @@ You are the architecture advisor for the Collection Tracker — a TypeScript wor
 | `libs/components` | Standalone Angular UI components               |
 | `libs/services`   | Angular services and signal stores             |
 | `libs/shared`     | Models, constants, styles, animations, utils   |
+| `libs/node`       | Node-only shared runtime for server apps       |
 | `libs/public`     | Static assets and PWA metadata                 |
 
 Standalone root-level projects:
@@ -49,6 +50,7 @@ Standalone root-level projects:
 @metadata-provider/* → apps/metadata-provider/src/*
 @server/*        → apps/server/src/*
 @components/*    → libs/components/src/lib/*
+@node/*          → libs/node/src/lib/*
 @services/*      → libs/services/src/lib/*
 @shared/*        → libs/shared/src/lib/*
 @public/*        → libs/public/src/lib/*

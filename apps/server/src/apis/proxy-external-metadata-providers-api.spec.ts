@@ -1,7 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setAvailableExternalMetadataProviders } from '../core/external-metadata/external-metadata-provider-factory';
 
 describe('proxy-external-metadata-providers-api', () => {
   const originalEnv = process.env;

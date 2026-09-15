@@ -59,6 +59,7 @@ Collection pages use signed cursor pagination with a maximum limit of `100` and 
 | `libs/components` | Standalone Angular UI components                 |
 | `libs/services`   | Angular services and signal stores               |
 | `libs/shared`     | Models, constants, styles, animations, utilities |
+| `libs/node`       | Node-only shared runtime for server apps         |
 | `libs/public`     | Static assets and PWA metadata                   |
 
 ## TypeScript Path Aliases
@@ -70,6 +71,7 @@ Collection pages use signed cursor pagination with a maximum limit of `100` and 
 @metadata-provider/* -> apps/metadata-provider/src/*
 @server/*     -> apps/server/src/*
 @components/* -> libs/components/src/lib/*
+@node/*       -> libs/node/src/lib/*
 @services/*   -> libs/services/src/lib/*
 @shared/*     -> libs/shared/src/lib/*
 @public/*     -> libs/public/src/lib/*
@@ -151,7 +153,7 @@ Format: `type(scope): short imperative summary`.
 
 Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`.
 
-Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`, `tsconfig`, `build`, `ai`, `git`, `vscode`, `hooks`, `i18n`.
+Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `node`, `public`, `dev-proxy`, `tsconfig`, `build`, `ai`, `git`, `vscode`, `hooks`, `i18n`.
 
 ## Code Conventions
 

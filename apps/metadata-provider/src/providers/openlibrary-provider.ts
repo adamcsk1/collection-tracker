@@ -1,7 +1,7 @@
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import { parseGenreText } from '@shared/utils/collection-item-text-util';
 import { extractIsbn13, normalizeIsbn13 } from '@shared/utils/isbn-util';
-import { ExternalMetadataProvider } from '../core/external-metadata-provider';
+import { ExternalMetadataProvider } from '@node/models/external-metadata-runtime-model';
 import { DEFAULT_OPENLIBRARY_API_URL, DEFAULT_OPENLIBRARY_COVER_URL } from './openlibrary-const';
 import {
   OpenLibraryAuthorModel,

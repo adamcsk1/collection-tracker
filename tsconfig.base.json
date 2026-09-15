@@ -15,6 +15,7 @@
       "@public/*": ["./libs/public/src/lib/*"],
       "@metadata-provider/*": ["./apps/metadata-provider/src/*"],
       "@server/*": ["./apps/server/src/*"],
+      "@node/*": ["./libs/node/src/lib/*"],
       "@services/*": ["./libs/services/src/lib/*"],
       "@shared/*": ["./libs/shared/src/lib/*"]
     }

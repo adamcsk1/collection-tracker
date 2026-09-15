@@ -7,8 +7,8 @@ import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadat
 import { resolveImdbId } from '@shared/utils/imdb-id-util';
 import { normalizeIsbn13 } from '@shared/utils/isbn-util';
 import { normalizeMbid } from '@shared/utils/mbid-util';
-import { ExternalMetadataProvider, ExternalMetadataSeasonProvider } from '../external-metadata-provider';
-import { ExternalMetadataProviderReplacementConfig } from '../external-metadata-config-model';
+import { ExternalMetadataProviderReplacementConfig } from '../models/external-metadata-config-model';
+import { ExternalMetadataProvider, ExternalMetadataSeasonProvider } from '../models/external-metadata-runtime-model';
 import {
   NORMALIZED_PROVIDER_MAX_ACTORS_LENGTH,
   NORMALIZED_PROVIDER_MAX_EPISODE_TITLE_LENGTH,
@@ -25,7 +25,7 @@ import {
   NORMALIZED_PROVIDER_MAX_TITLE_LENGTH,
   NORMALIZED_PROVIDER_MAX_YEAR_LENGTH,
   NORMALIZED_PROVIDER_REQUEST_TIMEOUT_MS,
-} from './normalized-http-provider-const';
+} from '../constants/normalized-http-provider-const';
 
 const CONTENT_TYPES_BY_PROVIDER: Record<ExternalMetadataProviderNameModel, CollectionItemContentTypeModel[]> = {
   omdb: ['movie', 'series'],

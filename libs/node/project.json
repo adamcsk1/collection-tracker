@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "node",
+  "projectType": "library",
+  "sourceRoot": "libs/node/src",
+  "tags": ["type:lib", "scope:node"],
+  "implicitDependencies": ["shared"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --config libs/node/vitest.config.ts" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint --config eslint.config.cjs libs/node/src/**/*.ts" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit -p libs/node/tsconfig.lib.json" }
+    },
+    "typecheck-spec": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit -p libs/node/tsconfig.spec.json" }
+    },
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write libs/node" } },
+    "format-check": { "executor": "nx:run-commands", "options": { "command": "prettier --check libs/node" } }
+  }
+}
