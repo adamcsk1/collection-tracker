@@ -5,6 +5,7 @@ import { registerAllApis } from '../apis';
 import { getArgv } from './argv';
 import { getExternalMetadataConfig } from './external-metadata-config';
 import { errorLog, infoLog } from './logger';
+import { registerRequestLogging } from './request-logging';
 
 const DEFAULT_PORT = 3002;
 
@@ -16,6 +17,7 @@ export const main = async (): Promise<void> => {
     getExternalMetadataConfig();
 
     const app = fastify({ logger: false });
+    registerRequestLogging(app);
     registerAllApis(app);
 
     const port = Number(process.env.METADATA_PROVIDER_PORT || DEFAULT_PORT);

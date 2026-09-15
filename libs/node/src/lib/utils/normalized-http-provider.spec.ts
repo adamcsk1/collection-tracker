@@ -61,6 +61,17 @@ describe('normalized HTTP external metadata provider', () => {
     await expect(provider.search('matrix')).rejects.toThrow('unsupported content type');
   });
 
+  it('accepts empty posters', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ results: [{ ...item, poster: '' }] })));
+    const provider = createNormalizedHttpExternalMetadataProvider('omdb', {
+      baseUrl: 'https://metadata.test/v1/',
+    });
+
+    await expect(provider.search('matrix')).resolves.toEqual({
+      results: [{ ...item, provider: 'omdb', poster: '' }],
+    });
+  });
+
   it('rejects non-HTTP poster URLs', async () => {
     vi.stubGlobal(
       'fetch',

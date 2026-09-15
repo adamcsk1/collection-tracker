@@ -4037,7 +4037,7 @@ paths:
     get:
       operationId: proxyExternalMetadataSearch
       summary: Search external metadata by title or provider identity
-      description: Searches the requested external metadata provider, or all configured providers when provider is omitted. Provider credentials are never exposed to the client.
+      description: Searches the requested external metadata provider, or all configured providers when provider is omitted. The built-in OMDb adapter returns empty results for overly broad searches (Too many results); refine the search text to obtain matches. Provider credentials are never exposed to the client.
       tags: [External Metadata Proxy]
       parameters:
         - name: s

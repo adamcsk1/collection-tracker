@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getExternalMetadataConfig: vi.fn(),
   listen: vi.fn(async () => undefined),
   registerAllApis: vi.fn(),
+  registerRequestLogging: vi.fn(),
 }));
 
 vi.mock('dotenv', () => ({ default: { config: mocks.dotenvConfig } }));
@@ -22,6 +23,7 @@ vi.mock('./external-metadata-config', () => ({
   getExternalMetadataConfig: mocks.getExternalMetadataConfig,
 }));
 vi.mock('./logger', () => ({ errorLog: mocks.errorLog, infoLog: vi.fn() }));
+vi.mock('./request-logging', () => ({ registerRequestLogging: mocks.registerRequestLogging }));
 
 import { main } from './main';
 
@@ -46,6 +48,7 @@ describe('main', () => {
     await main();
 
     expect(mocks.listen).toHaveBeenCalledWith({ port: 3002, host: '127.0.0.1' });
+    expect(mocks.registerRequestLogging).toHaveBeenCalledOnce();
   });
 
   it('stops startup when external metadata config is invalid', async () => {

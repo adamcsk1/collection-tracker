@@ -14,6 +14,18 @@ The server waits for `GET /v1/providers` at `METADATA_SERVICE_URL` (default `htt
 
 Compose runs a second image on a private `metadata` network. The metadata port is not published. Provider secrets live in `./.metadata`, not the app `./.data` volume.
 
+## Search and Diagnostics
+
+OMDb's `Too many results.` response produces an empty search result so users can continue typing a more specific title. Unavailable OMDb posters (`N/A`) are returned as empty strings so a missing image does not fail the whole search. Authentication, quota, network, timeout, and unsafe poster URL failures remain errors.
+
+Local `npm start` already enables provider debug logging with `--debug=true`. `LOG_LEVEL=DEBUG` also enables it. Restart `npm start` after source changes to rebuild and restart the provider.
+
+Provider logs are written to `<dataFolder>/logs/metadata-provider-YYYY-MM-DD.txt` (UTC date), with a `metadata-provider` label. Locally this is `.data/logs`; Docker Compose persists them under `.metadata/logs`. Info and error messages are always saved; debug messages require debug mode. File-write failures do not fail requests.
+
+Request failures include the route template, local request ID, duration, and a safe diagnostic reason. Debug completion logs also include HTTP status. Server search failures are saved in the existing `.data/logs/log-YYYY-MM-DD.txt`, including individual failures during multi-provider searches. Request IDs are local to each service; correlate the two logs by timestamp, provider, and operation.
+
+Search text, credentials, headers, upstream URLs, and raw response bodies are omitted. Only known error messages are logged verbatim; unexpected error text is replaced with a safe category.
+
 ## Contract
 
 The service implements the [normalized provider contract](./external-metadata-provider-contract.md) at:

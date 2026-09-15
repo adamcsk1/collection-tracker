@@ -2,7 +2,8 @@ import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/track
 import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import { ExternalMetadataSeasonProvider } from '@node/models/external-metadata-runtime-model';
-import { debugLog } from '../core/logger';
+import { describeMetadataError } from '@node/utils/metadata-error-util';
+import { debugLog, errorLog } from '../core/logger';
 import { DEFAULT_OMDB_API_URL, OMDB_REQUEST_TIMEOUT_MS } from './omdb-const';
 import {
   OMDbResponseItemModel,
@@ -36,11 +37,11 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
       const data = await this.fetchJson<OMDbResponseItemModel>({ i: providerItemId });
       if (isOmdbErrorResponse(data)) return null;
       const item = this.toExternalMetadataItem(data);
-      await debugLog(`[${providerItemId}] ${this.name} fetch ${item ? 'succeeded' : 'returned no usable item'}`);
+      await debugLog(`${this.name} item fetch ${item ? 'succeeded' : 'returned no usable item'}`);
       return item;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      await debugLog(`[${providerItemId}] ${this.name} fetch error: ${message}`);
+      const message = describeMetadataError(error);
+      await debugLog(`${this.name} item fetch error: ${message}`);
       throw error;
     }
   }
@@ -69,13 +70,15 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
               .map((episode) => (typeof episode.Title === 'string' ? episode.Title : ''));
             seasons.push({ season, episodes: Math.min(episodes, MAX_SERIES_EPISODES), titles });
           }
-        } catch {
+        } catch (error) {
           // External season data is best-effort; keep any other successful seasons.
+          await errorLog(`omdb season fetch season=${season} error=${describeMetadataError(error)}`);
         }
       }
 
       return seasons;
-    } catch {
+    } catch (error) {
+      await errorLog(`omdb series info fetch error=${describeMetadataError(error)}`);
       return [];
     }
   }
@@ -94,6 +97,10 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
     const data = (await response.json()) as T & { Error?: string; Response?: string };
     if (data.Response === 'False') {
       const message = data.Error ?? `${this.name} returned an error`;
+      if (params.s !== undefined && message === 'Too many results.') {
+        await debugLog('omdb search returned too many results; refine the search text');
+        return { error: message };
+      }
       if (message.toLowerCase().includes('not found')) return { error: message };
       throw new Error(message);
     }
@@ -114,7 +121,7 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
       title: this.getString(item.Title),
       year: this.getString(item.Year),
       contentType,
-      poster: this.getString(item.Poster),
+      poster: this.getPoster(item.Poster),
       plot: this.getString(item.Plot),
       actors: this.getString(item.Actors),
       genres: this.getString(item.Genre)
@@ -134,6 +141,11 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
       ratings.push({ source: 'Internet Movie Database', value: imdbRating });
     }
     return ratings;
+  }
+
+  private getPoster(value: unknown): string {
+    const poster = this.getString(value).trim();
+    return !poster || poster.toUpperCase() === 'N/A' ? '' : poster;
   }
 
   private getString(value: unknown): string {
