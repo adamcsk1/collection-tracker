@@ -28,6 +28,8 @@ Search text, credentials, headers, upstream URLs, and raw response bodies are om
 
 ## Contract
 
+To replace a built-in adapter with your own HTTP service, follow [How to write a replacement](./external-metadata-provider-contract.md#how-to-write-a-replacement).
+
 The service implements the [normalized provider contract](./external-metadata-provider-contract.md) at:
 
 - `GET /health`

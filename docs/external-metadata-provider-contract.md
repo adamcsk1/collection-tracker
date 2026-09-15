@@ -2,6 +2,26 @@
 
 Collection Tracker can replace its built-in OMDb, Open Library, or MusicBrainz adapter with a deployment-wide HTTP provider. Custom providers implement this normalized contract; they do not run inside the Collection Tracker process.
 
+## How to write a replacement
+
+A replacement is a separate HTTP service. Collection Tracker does not load plugins or run your code. You implement the endpoints below, then point the metadata provider at that service.
+
+You can replace only the `omdb`, `openlibrary`, and `musicbrainz` slots. There is no way to register a fourth provider name. A TMDB or other catalog must occupy one of those slots and keep that slot's identity scheme: IMDb IDs for `omdb`, ISBN-13 for `openlibrary`, and MusicBrainz release MBIDs for `musicbrainz`. Existing collection items, paste lookup, refresh, and duplicate merge all assume those identifiers.
+
+1. Serve `GET /search?s=` and `GET /items/{id}` under your `baseUrl`. An `omdb` replacement must also serve `GET /items/by-imdb/{id}` and `GET /items/{id}/seasons`.
+2. Return JSON with a `{ "data": ... }` envelope, an `application/json` or `+json` content type, at most 2 MiB, and at most 20 search results.
+3. Use `""` for a missing poster. Do not return `"N/A"` or a non-HTTP(S) URL; one invalid poster fails the whole search.
+4. Return `404` when an item does not exist. Broad searches with no useful hits should return `{ "data": { "results": [] } }`. Other failures surface in the app as `502`.
+5. Keep season numbers unique. Stay within 50 seasons and 100 episodes per season.
+6. Create `external-metadata.config.json` in the metadata-provider data folder: `.data` for local `npm start`, `./.metadata` for Docker Compose. Put header secrets in that folder's `.env` and reference them with `header.valueEnv`. Do not put secrets in the JSON file.
+7. Restart the metadata provider, then the app, so the app reloads `GET /v1/providers`.
+
+The app container never calls your service. Only the metadata provider does.
+
+For local `npm start`, `baseUrl` may be another process on `127.0.0.1`. Docker Compose puts the metadata provider on a private `metadata` network and does not publish port `3002`. Your service must be on that network, reachable as `host.docker.internal`, or a public HTTPS URL.
+
+`GET /v1/providers` confirms that the slot is available, but it does not distinguish a replacement from the built-in adapter. Verify the replacement by performing a search or item lookup and confirming that the request reaches your service. Search, item lookup, imports, image refresh, rating refresh, tracking season refresh, and missing background-poster resolution then use your service. Collection Tracker does not fall back to the built-in adapter if the replacement is down or returns invalid data.
+
 ## Configuration
 
 Create `external-metadata.config.json` in the metadata provider data folder (`.data` for local `npm start`, `./.metadata` for Docker Compose):
@@ -156,8 +176,7 @@ Response:
 }
 ```
 
-`titles` is optional. Season and episode counts must remain within Collection Tracker's supported series limits.
-Season numbers must be unique within the response.
+`titles` is optional. Season numbers must be unique. Use at most 50 seasons and 100 episodes per season.
 
 ## Operational Behavior
 
