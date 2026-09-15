@@ -1,20 +1,11 @@
+import { createFileLogger } from '@node/utils/file-logger';
 import { getArgv } from './argv';
 
-const isDebugEnabled = (): boolean => getArgv().debug || process.env.LOG_LEVEL?.toUpperCase() === 'DEBUG';
+const { debugLog, errorLog, infoLog } = createFileLogger({
+  getDataFolder: () => getArgv().dataFolder,
+  isDebugEnabled: () => getArgv().debug || process.env.LOG_LEVEL?.toUpperCase() === 'DEBUG',
+  filePrefix: 'metadata-provider',
+  label: 'metadata-provider',
+});
 
-const formatLogMessage = (level: string, message: string): string =>
-  `[ ${level} ][ ${new Date().toISOString()} ] ${message}`;
-
-export const infoLog = async (message: string): Promise<void> => {
-  const formatted = formatLogMessage('info', message);
-  if (isDebugEnabled()) console.log(formatted);
-};
-
-export const errorLog = async (message: string): Promise<void> => {
-  console.error(formatLogMessage('error', message));
-};
-
-export const debugLog = async (message: string): Promise<void> => {
-  if (!isDebugEnabled()) return;
-  console.log(formatLogMessage('debug', message));
-};
+export { debugLog, errorLog, infoLog };

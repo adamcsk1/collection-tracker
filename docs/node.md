@@ -6,9 +6,9 @@ Source: [`libs/node`](../libs/node)
 
 ## Contents
 
-- `models/`: runtime provider interfaces and replacement HTTP client config
+- `models/`: runtime provider interfaces, replacement HTTP client config, and file-logger config
 - `constants/`: normalized HTTP provider limits and timeouts
-- `utils/`: normalized HTTP metadata client and season-capability type guard
+- `utils/`: normalized HTTP metadata client, season-capability type guard, shared file logger, and safe metadata-error diagnostics
 
 ## Integration Notes
 
@@ -16,6 +16,7 @@ Source: [`libs/node`](../libs/node)
 - DTOs and identity helpers stay in `libs/shared`.
 - Built-in OMDb, Open Library, and MusicBrainz adapters stay in `apps/metadata-provider`.
 - Server and metadata-provider factories keep their own provider lists and call `createNormalizedHttpExternalMetadataProvider` for HTTP slots.
+- Server and metadata-provider loggers call `createFileLogger`. The server writes `log-YYYY-MM-DD.txt` with no service label; the metadata provider writes `metadata-provider-YYYY-MM-DD.txt` labelled `metadata-provider`. Argv parsing stays in each app.
 
 ## Important Paths
 
