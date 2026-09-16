@@ -1,4 +1,3 @@
-import { API_PREFIX } from '@shared/constants/api-const';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
@@ -37,12 +36,6 @@ describe('delete-user-share-api', () => {
 
     const { register } = await import('./delete-user-share-api');
     register(app);
-
-    expect(app.delete).toHaveBeenCalledWith(
-      `${API_PREFIX}/users/me/shares/:sharedWithUserShareCode`,
-      expect.anything(),
-      expect.anything()
-    );
 
     await handlerPromise();
 

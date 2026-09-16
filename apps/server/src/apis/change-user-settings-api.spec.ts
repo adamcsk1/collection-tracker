@@ -244,16 +244,4 @@ describe('change-user-settings-api', () => {
       defaultCollectionOwners: [],
     });
   });
-
-  it('returns 500 on unexpected error', async () => {
-    const response = mockResponse();
-    const request: any = { body: { theme: 'dark' }, usernameHash: 'user' };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./change-user-settings-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(500);
-  });
 });

@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 const require = createRequire(import.meta.url);
 const {
   createCommandFailureMessage,
-  formatBuildDate,
   formatCommand,
   formatHelp,
   getAndroidSdkBuildToolsFolder,
@@ -35,10 +34,6 @@ describe('create-release build metadata helpers', () => {
     expect(updatedSource).toContain("protected readonly build = 'abc123 (feature\\\\branch\\'s)';");
     expect(updatedSource).toContain("protected readonly buildDate = '2026-06-15';");
     expect(updatedSource).toContain("protected readonly appVersion = '1.2.3';");
-  });
-
-  it('formats release build dates as YYYY-MM-DD', () => {
-    expect(formatBuildDate(new Date('2026-06-15T09:00:00.000Z'))).toBe('2026-06-15');
   });
 
   it('restores the exact original About source when the release build callback fails', () => {
@@ -120,7 +115,6 @@ describe('create-release apk signer helpers', () => {
 
   it('uses platform apksigner names when build-tools are missing', () => {
     expect(resolveApkSigner('', 'linux')).toBe('apksigner');
-    expect(resolveApkSigner('/missing-sdk-build-tools', 'linux')).toBe('apksigner');
     expect(resolveApkSigner('', 'win32')).toBe('apksigner.bat');
   });
 

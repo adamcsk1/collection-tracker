@@ -55,19 +55,6 @@ describe('Series metadata dialog', () => {
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
   });
 
-  it('reopens the item dialog when the metadata dialog is closed without saving', () => {
-    CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogManageSeriesMetadataButton().click();
-
-    CollectionPage.getSeriesMetadataAddButton().click();
-    CollectionPage.closeActiveDialogByOverlay();
-
-    CollectionPage.getItemDialogHost().should('be.visible');
-    CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
-  });
-
   it('removes stored season metadata', () => {
     cy.request('PUT', `/api/v1/collection-items/omdb/${imdbId}/tracking/seasons`, {
       seasons: [

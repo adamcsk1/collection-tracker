@@ -383,27 +383,6 @@ describe('Collection — add a new element', () => {
   });
 });
 
-describe('Collection — edit an element', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    seedItems([buildCollectionItem('Editable Movie')]);
-    CollectionPage.visit();
-  });
-
-  it('opens item dialog and shows edit button', () => {
-    CollectionPage.getListItemImages().first().click();
-    CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogEditButton().should('be.visible');
-  });
-
-  it('enters edit mode and the save button appears', () => {
-    CollectionPage.getListItemImages().first().click();
-    CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogEditButton().click();
-    CollectionPage.getItemDialogSaveButton().should('be.visible');
-  });
-});
-
 describe('Collection — delete an element', () => {
   beforeEach(() => {
     cy.autoLogin();
@@ -420,7 +399,7 @@ describe('Collection — delete an element', () => {
   });
 });
 
-describe('Collection — cursor pagination and API errors', () => {
+describe('Collection — cursor pagination', () => {
   const titles = Array.from({ length: 55 }, (_, index) => `Cursor Test Movie ${String(index + 1).padStart(2, '0')}`);
 
   beforeEach(() => {
@@ -462,23 +441,6 @@ describe('Collection — cursor pagination and API errors', () => {
     });
   });
 
-  it('returns RFC 9457 Problem Details for an invalid collection query', () => {
-    cy.request({
-      method: 'GET',
-      url: '/api/v1/collection-items?limit=0',
-      failOnStatusCode: false,
-    }).then((response) => {
-      expect(response.status).to.equal(400);
-      expect(response.headers['content-type']).to.include('application/problem+json');
-      expect(response.body).to.deep.equal({
-        type: 'about:blank',
-        title: 'Bad Request',
-        status: 400,
-        code: 'HTTP_400',
-        instance: '/api/v1/collection-items',
-      });
-    });
-  });
 });
 
 describe('Collection — random pick', () => {

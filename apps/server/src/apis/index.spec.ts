@@ -88,11 +88,6 @@ describe('registered API contract', () => {
     vi.unstubAllGlobals();
   });
 
-  it('registers all routes without conflicts', async () => {
-    expect(() => registerAllApis(app)).not.toThrow();
-    await app.ready();
-  });
-
   it('keeps registered methods and paths in parity with OpenAPI', async () => {
     registerAllApis(app);
     await app.ready();

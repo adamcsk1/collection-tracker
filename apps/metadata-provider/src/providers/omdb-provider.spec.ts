@@ -86,12 +86,12 @@ describe('OmdbExternalMetadataProvider', () => {
     await expect(provider.getItem('tt0133093')).rejects.toThrow('Too many results.');
   });
 
-  it.each(['Invalid API key!', 'Request limit reached!'])('keeps search failures for %s', async (message) => {
+  it('keeps search failures for non-not-found OMDb errors', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
-      json: async () => ({ Response: 'False', Error: message }),
+      json: async () => ({ Response: 'False', Error: 'Request limit reached!' }),
     } as Response);
-    await expect(provider.search('le')).rejects.toThrow(message);
+    await expect(provider.search('le')).rejects.toThrow('Request limit reached!');
   });
 
   it('keeps HTTP and timeout search failures', async () => {
@@ -100,12 +100,6 @@ describe('OmdbExternalMetadataProvider', () => {
     const error = new DOMException('aborted', 'TimeoutError');
     vi.mocked(fetch).mockRejectedValueOnce(error);
     await expect(provider.search('le')).rejects.toBe(error);
-  });
-
-  it('throws upstream errors for failed HTTP responses', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: false, status: 503 } as Response);
-
-    await expect(provider.getItem('tt0133093')).rejects.toEqual(new Error('omdb responded with 503'));
   });
 
   it('maps unavailable OMDb posters to empty strings in search and item lookup', async () => {

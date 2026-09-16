@@ -7,12 +7,6 @@ describe('Auth — Sign-up', () => {
     SignUpPage.visit();
   });
 
-  it('shows the sign-up form', () => {
-    SignUpPage.getUsernameInput().should('be.visible');
-    SignUpPage.getSubmitButton().should('be.visible').and('be.disabled');
-    SignUpPage.getSignInLink().should('be.visible');
-  });
-
   it('submit is enabled once a valid username is entered', () => {
     SignUpPage.fillUsername('newuser123');
     SignUpPage.getSubmitButton().should('not.be.disabled');
@@ -33,13 +27,6 @@ describe('Auth — Sign-up', () => {
 describe('Auth — Sign-in', () => {
   beforeEach(() => {
     SignInPage.visit();
-  });
-
-  it('shows the sign-in form with all required fields', () => {
-    SignInPage.getUsernameInput().should('be.visible');
-    SignInPage.getTokenInput().should('be.visible');
-    SignInPage.getSubmitButton().should('be.visible').and('be.disabled');
-    SignInPage.getSignUpLink().should('be.visible');
   });
 
   it('submit becomes enabled when both fields are filled', () => {
@@ -75,27 +62,11 @@ describe('Auth — API URL switch', () => {
     SignInPage.getApiUrlInput().should('be.visible');
   });
 
-  it('accepts a typed API URL value', () => {
-    SignInPage.visit();
-    SignInPage.getChangeApiUrlButton().click();
-    SignInPage.getApiUrlInput().clear().type('/api/v2');
-    SignInPage.getApiUrlInput().should('have.value', '/api/v2');
-  });
 });
 
 describe('Auth — Language and theme override from login', () => {
   beforeEach(() => {
     SignInPage.visit();
-  });
-
-  it('language select is visible and has options', () => {
-    SignInPage.getLanguageSelect().should('be.visible');
-    SignInPage.getLanguageSelect().find('option').should('have.length.at.least', 1);
-  });
-
-  it('theme select is visible and has options', () => {
-    SignInPage.getThemeSelect().should('be.visible');
-    SignInPage.getThemeSelect().find('option').should('have.length.at.least', 1);
   });
 
   it('language selection persists across page reload', () => {

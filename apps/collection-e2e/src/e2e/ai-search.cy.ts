@@ -9,30 +9,6 @@ const seedAndVisit = (items: ReturnType<typeof buildCollectionItem>[]) => {
   CollectionPage.visit();
 };
 
-describe('AI search - floating button', () => {
-  beforeEach(() => {
-    cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
-      'aiAvailable'
-    );
-    cy.autoLogin();
-    cy.wait('@aiAvailable');
-  });
-
-  it('shows the AI search button in the float bar', () => {
-    CollectionPage.getAiSearchButton().should('be.visible');
-  });
-
-  it('keeps standard search available alongside AI search', () => {
-    CollectionPage.getAiSearchButton().should('be.visible');
-    CollectionPage.getSearchInput().should('be.visible');
-  });
-
-  it('opens the AI search dialog from the floating button', () => {
-    CollectionPage.openAiSearchDialog();
-    CollectionPage.getAiSearchTextarea().should('be.visible');
-  });
-});
-
 describe('AI search - input interaction', () => {
   beforeEach(() => {
     cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
@@ -40,12 +16,6 @@ describe('AI search - input interaction', () => {
     );
     cy.autoLogin();
     cy.wait('@aiAvailable');
-  });
-
-  it('opens the AI search dialog when the AI button is clicked', () => {
-    CollectionPage.openAiSearchDialog();
-    CollectionPage.getAiSearchTextarea().should('be.visible');
-    CollectionPage.getAiSearchSendButton().should('be.visible');
   });
 
   it('closes the dialog when send is clicked', () => {
@@ -137,13 +107,12 @@ describe('AI search - watchlist list', () => {
     CollectionPage.visitUpNext();
   });
 
-  it('shows the AI button and sends watchlist listType', () => {
+  it('sends watchlist listType', () => {
     cy.intercept('POST', '/api/v1/ai/matches', {
       statusCode: 200,
       body: { data: { matchedIds: ['tt2000001'] } },
     }).as('aiQuery');
 
-    CollectionPage.getAiSearchButton().should('be.visible');
     CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('sci-fi');
     CollectionPage.getAiSearchSendButton().click();

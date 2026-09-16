@@ -66,15 +66,6 @@ describe('Main component', () => {
     expect(apiState.state.apiUrl()).toBe('https://stored-api');
   });
 
-  it('starts in loading state with no health data', () => {
-    const fixture = TestBed.createComponent(Main);
-    const component = fixture.componentInstance;
-
-    expect(component['loading']()).toBe(true);
-    expect(component['diagnostics']()).toBeNull();
-    expect(component['publicStatus']()).toBeNull();
-  });
-
   it('fetches health data once on init and updates signals', () => {
     const fixture = TestBed.createComponent(Main);
     const component = fixture.componentInstance;

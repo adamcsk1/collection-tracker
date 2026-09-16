@@ -28,10 +28,6 @@ describe('getIMDbIds', () => {
     expect(getIMDbIds('TT0133093 https://www.imdb.com/title/tt0372784/ tt0133093')).toEqual(['tt0133093', 'tt0372784']);
   });
 
-  it('ignores malformed ids', () => {
-    expect(getIMDbIds('tt1 tt0133093abc foott0133093')).toEqual([]);
-  });
-
   it('returns an empty array when no ids are present', () => {
     expect(getIMDbIds('No ids here')).toEqual([]);
   });

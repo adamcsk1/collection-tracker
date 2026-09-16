@@ -143,20 +143,4 @@ describe('share-grant-util', () => {
       expect.objectContaining({ listType: 'tracking', contentType: 'series', canRead: true }),
     ]);
   });
-
-  it('preserves selected mode', () => {
-    expect(
-      normalizeShareGrants([
-        {
-          listType: 'library',
-          contentType: 'series',
-          canRead: true,
-          canCreate: false,
-          canUpdate: false,
-          canDelete: false,
-          readMode: 'selected',
-        },
-      ])
-    ).toEqual([expect.objectContaining({ listType: 'library', contentType: 'series', readMode: 'selected' })]);
-  });
 });

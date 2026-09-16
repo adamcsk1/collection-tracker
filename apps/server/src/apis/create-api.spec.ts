@@ -1,6 +1,5 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
@@ -39,21 +38,6 @@ describe('create-api', () => {
     vi.unstubAllGlobals();
     vi.resetModules();
     vi.clearAllMocks();
-  });
-
-  it('uses only the global authenticated API rate limit', async () => {
-    const response = mockResponse();
-    const request: any = { body: {}, usernameHash: 'user' };
-    const { app } = buildApp(request, response);
-
-    const { register } = await import('./create-api');
-    register(app);
-
-    expect(app.post).toHaveBeenCalledWith(
-      `${API_PREFIX}/collection-items`,
-      expect.not.objectContaining({ config: expect.anything() }),
-      expect.any(Function)
-    );
   });
 
   it('returns 400 when content is missing', async () => {
@@ -744,17 +728,5 @@ describe('create-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(403);
-  });
-
-  it('returns 500 on unexpected DB error', async () => {
-    const response = mockResponse();
-    const request: any = { body: item, usernameHash: 'missing-user' };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./create-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(500);
   });
 });

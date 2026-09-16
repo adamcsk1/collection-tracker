@@ -94,38 +94,4 @@ describe('get-tag-management-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith([]);
   });
-
-  it('returns empty array when tag management storage is null', async () => {
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user' };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./get-tag-management-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith([]);
-  });
-
-  it('returns empty array when DB has no rows', async () => {
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user' };
-    const { app, handlerPromise } = buildApp(request, response);
-    const { register } = await import('./get-tag-management-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith([]);
-  });
-
-  it('returns empty array when DB user is absent', async () => {
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user' };
-    const { app, handlerPromise } = buildApp(request, response);
-    const { register } = await import('./get-tag-management-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith([]);
-  });
 });

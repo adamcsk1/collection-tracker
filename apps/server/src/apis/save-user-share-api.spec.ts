@@ -1,4 +1,3 @@
-import { API_PREFIX } from '@shared/constants/api-const';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
@@ -53,8 +52,6 @@ describe('save-user-share-api', () => {
 
     const { register } = await import('./save-user-share-api');
     register(app);
-
-    expect(app.post).toHaveBeenCalledWith(`${API_PREFIX}/users/me/shares`, expect.anything(), expect.anything());
 
     await handlerPromise();
 

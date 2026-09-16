@@ -132,15 +132,4 @@ describe('get-user-settings-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({});
   });
-
-  it('returns empty object when caller has no DB row', async () => {
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user' };
-    const { app, handlerPromise } = buildApp(request, response);
-    const { register } = await import('./get-user-settings-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({});
-  });
 });

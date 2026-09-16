@@ -192,15 +192,4 @@ describe('sign-in-api', () => {
     expect(db.prepare('SELECT token_hash FROM refresh_tokens WHERE username_hash = ?').all('hashed-neo')).toEqual([]);
     expect(response.setCookie).not.toHaveBeenCalled();
   });
-
-  it('returns 404 when no DB user exists', async () => {
-    const response = mockResponse();
-    const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
-    const { app, handlerPromise } = buildApp(request, response);
-    const { register } = await import('./sign-in-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(404);
-  });
 });

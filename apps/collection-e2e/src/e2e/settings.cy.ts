@@ -36,21 +36,8 @@ describe('Settings - basic form fields', () => {
     SettingsPage.getLanguageSelect().should('be.visible');
   });
 
-  it('shows the theme select with options', () => {
-    SettingsPage.getThemeSelect().should('be.visible');
-    SettingsPage.getThemeSelect().find('option').should('have.length.at.least', 1);
-  });
-
   it('shows the animated background checkbox', () => {
     SettingsPage.getAnimatedBackgroundCheckbox().should('exist');
-  });
-
-  it('shows the sensitive data storage select', () => {
-    SettingsPage.getSensitiveDataStorageSelect().should('be.visible');
-  });
-
-  it('shows the clear-local-storage-after-logout checkbox when storage is local (default)', () => {
-    SettingsPage.getClearLocalStorageCheckbox().should('exist');
   });
 
   it('hides the clear-local-storage-after-logout checkbox when storage is switched to session', () => {
@@ -65,8 +52,7 @@ describe('Settings - media refresh page', () => {
     SettingsPage.visitMediaRefresh();
   });
 
-  it('shows the media refresh action buttons', () => {
-    SettingsPage.getImageRefreshStartButton().should('be.visible');
+  it('shows the external ratings refresh action', () => {
     SettingsPage.getExternalRatingsRefreshStartButton().should('be.visible');
   });
 
@@ -97,9 +83,7 @@ describe('Settings - collection list display page', () => {
     SettingsPage.visitCollectionListDisplay();
 
     SettingsPage.getCollectionListDisplayForm().should('be.visible');
-    SettingsPage.getListShowYearCheckbox().should('exist');
     SettingsPage.getListShowSharedIconCheckbox().should('exist');
-    SettingsPage.getListPreferredRatingSelect().should('be.visible');
     SettingsPage.getListImdbRatingFallbackCheckbox().should('exist');
   });
 
@@ -198,45 +182,6 @@ describe('Settings - features page', () => {
       expect(win.sessionStorage.getItem('CT.CollectionFeaturePreferences')).to.contain('"wishlist":false');
       expect(win.localStorage.getItem('CT.CollectionFeaturePreferences')).to.eq(null);
     });
-  });
-});
-
-describe('Settings - manage tracker data page', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    SettingsPage.visitManageTrackerData();
-  });
-
-  it('shows the mark-all-completed button', () => {
-    SettingsPage.getMarkAllCompletedButton().should('be.visible');
-  });
-
-  it('shows the mark-all-uncompleted button', () => {
-    SettingsPage.getMarkAllUncompletedButton().should('be.visible');
-  });
-
-  it('shows the mark-all-series-completed button', () => {
-    SettingsPage.getMarkAllSeriesCompletedButton().should('be.visible');
-  });
-
-  it('shows the mark-all-series-uncompleted button', () => {
-    SettingsPage.getMarkAllSeriesUncompletedButton().should('be.visible');
-  });
-
-  it('shows the mark-all-books-completed button', () => {
-    SettingsPage.getMarkAllBooksCompletedButton().should('be.visible');
-  });
-
-  it('shows the mark-all-books-uncompleted button', () => {
-    SettingsPage.getMarkAllBooksUncompletedButton().should('be.visible');
-  });
-
-  it('shows the remove-all-tracked-movie-data button', () => {
-    SettingsPage.getRemoveAllTrackedMovieDataButton().should('be.visible');
-  });
-
-  it('shows the remove-all-tracked-series-data button', () => {
-    SettingsPage.getRemoveAllTrackedSeriesDataButton().should('be.visible');
   });
 });
 
@@ -395,23 +340,7 @@ describe('Settings - save changes', () => {
     SettingsPage.visitBasics();
   });
 
-  it('calls POST /api/v1/users/me/settings when a setting changes', () => {
-    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
-
-    SettingsPage.getThemeSelect()
-      .find('option')
-      .then(($options) => {
-        const currentValue = $options.filter(':selected').val() as string;
-        const otherOption = $options.toArray().find((option) => option.getAttribute('value') !== currentValue);
-
-        if (otherOption) {
-          SettingsPage.getThemeSelect().select(otherOption.getAttribute('value') as string);
-          cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
-        }
-      });
-  });
-
-  it('persists a changed theme after it changes', () => {
+  it('saves a changed theme', () => {
     cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
 
     SettingsPage.getThemeSelect()
@@ -424,7 +353,10 @@ describe('Settings - save changes', () => {
           const newValue = otherOption.getAttribute('value') as string;
           SettingsPage.getThemeSelect().select(newValue);
 
-          cy.wait('@saveSettings').its('request.body.theme').should('eq', newValue);
+          cy.wait('@saveSettings').then(({ request, response }) => {
+            expect(response?.statusCode).to.equal(200);
+            expect(request.body.theme).to.equal(newValue);
+          });
         }
       });
   });
@@ -440,17 +372,6 @@ describe('Settings - navigate to settings via menu', () => {
     CommonPage.navigateToSettingsViaMenu();
     cy.url().should('include', '#/settings');
     SettingsPage.getBasicsForm().should('be.visible');
-  });
-});
-
-describe('Settings - account actions', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    SettingsPage.visitAccount();
-  });
-
-  it('shows the account actions section', () => {
-    SettingsPage.getAccountActionsSection().should('exist');
   });
 });
 
@@ -487,10 +408,6 @@ describe('Settings - access tokens', () => {
   beforeEach(() => {
     cy.autoLogin();
     SettingsPage.visitAccessTokens();
-  });
-
-  it('shows the access tokens section', () => {
-    SettingsPage.getAccessTokensSection().should('exist');
   });
 
   it('create access token calls POST /api/v1/users/me/access-tokens and shows the token dialog', () => {

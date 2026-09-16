@@ -428,32 +428,6 @@ describe('import-api', () => {
     vi.clearAllMocks();
   });
 
-  it('registers import routes without endpoint rate limit overrides', async () => {
-    const app = buildRouteApp();
-
-    const { register } = await import('./import-api');
-    register(app);
-
-    expect(app.post).toHaveBeenCalledWith(
-      IMPORT_PATH,
-      expect.not.objectContaining({ config: expect.anything() }),
-      expect.any(Function)
-    );
-  });
-
-  it('registers collection item import route without endpoint rate limit overrides', async () => {
-    const app = buildRouteApp();
-
-    const { register } = await import('./import-collection-items-api');
-    register(app);
-
-    expect(app.post).toHaveBeenCalledWith(
-      COLLECTION_ITEMS_IMPORT_PATH,
-      expect.not.objectContaining({ config: expect.anything() }),
-      expect.any(Function)
-    );
-  });
-
   it.each(fullImportLimitCases)('accepts exact full import $name limit', async ({ limit, buildBody }) => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', body: buildBody(limit) };

@@ -6,14 +6,6 @@ describe('redirectToLogin', () => {
     vi.resetModules();
   });
 
-  it('does not throw when navigation is triggered', async () => {
-    // jsdom does not support actual navigation but does not throw either;
-    // the function's try/catch ensures callers are never affected by any
-    // environment-level restriction on window.location.assign.
-    const { redirectToLogin } = await import('./redirect-to-login-util');
-    expect(() => redirectToLogin()).not.toThrow();
-  });
-
   it('prepends the deployment base path to the login URL', async () => {
     const { getLoginUrl } = await import('./redirect-to-login-util');
     const base = document.createElement('base');

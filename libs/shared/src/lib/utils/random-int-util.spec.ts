@@ -1,14 +1,14 @@
+import { afterEach, vi } from 'vitest';
 import { randomInt } from './random-int-util';
 
 describe('randomInt', () => {
-  it('returns values within the inclusive range', () => {
-    const min = 3;
-    const max = 5;
+  afterEach(() => vi.restoreAllMocks());
 
-    for (let i = 0; i < 50; i++) {
-      const value = randomInt(min, max);
-      expect(value).toBeGreaterThanOrEqual(min);
-      expect(value).toBeLessThanOrEqual(max);
-    }
+  it('returns integer values at both inclusive boundaries', () => {
+    vi.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.999999).mockReturnValueOnce(0.5);
+
+    expect(randomInt(3, 5)).toBe(3);
+    expect(randomInt(3, 5)).toBe(5);
+    expect(Number.isInteger(randomInt(3, 5))).toBe(true);
   });
 });

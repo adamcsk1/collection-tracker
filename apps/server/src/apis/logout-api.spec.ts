@@ -5,7 +5,7 @@ import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@server/core/crypto', () => ({
-  hashText: vi.fn(() => 'hashed-token'),
+  hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
 
 describe('logout-api', () => {
@@ -29,7 +29,7 @@ describe('logout-api', () => {
     ).run('user', 'hashed-token', 'now', 'agent', null);
     db.prepare(
       'INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
-    ).run('user', 'hashed-token', 'now', 'agent', null);
+    ).run('user', 'hashed-refresh', 'now', 'agent', null);
 
     const { register } = await import('./logout-api');
     register(app);
@@ -39,6 +39,8 @@ describe('logout-api', () => {
     expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_TOKEN, { path: '/' });
     expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN, { path: '/' });
     expect(response.code).toHaveBeenCalledWith(204);
+    expect(db.prepare('SELECT token_hash FROM access_tokens WHERE username_hash = ?').all('user')).toEqual([]);
+    expect(db.prepare('SELECT token_hash FROM refresh_tokens WHERE username_hash = ?').all('user')).toEqual([]);
   });
 
   it('returns 204 when token rows are already absent', async () => {

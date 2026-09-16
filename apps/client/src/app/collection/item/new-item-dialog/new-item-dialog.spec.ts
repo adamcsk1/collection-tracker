@@ -78,24 +78,6 @@ describe('NewItemDialog component', () => {
     fixture.detectChanges();
   });
 
-  it('starts in search mode', () => {
-    expect(component['mode']()).toBe('search');
-  });
-
-  it('configures stable Search and Manual tab options', () => {
-    expect(component['modeTabs']()).toEqual([
-      expect.objectContaining({ value: 'search', dataTestId: 'new-item-search-mode' }),
-      expect.objectContaining({ value: 'manual', dataTestId: 'new-item-manual-mode' }),
-    ]);
-  });
-
-  it('exposes translated labels used by dialog modes and validation', () => {
-    expect(component['translations'].titleNewCollectionItem()).toBe('Title.NewCollectionItem');
-    expect(component['translations'].titleNewBooksItem()).toBe('Title.NewBooksItem');
-    expect(component['translations'].titleNewTrackingItem()).toBe('Title.NewTrackingItem');
-    expect(component['translations'].validationProgressRange()).toBe('Validation.ProgressRange');
-  });
-
   it('reports each expected validation error for invalid form values', () => {
     component['searchForm'].userRate().value.set(-1);
     component['searchForm'].progressCurrent().value.set(2);

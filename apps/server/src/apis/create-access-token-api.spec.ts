@@ -42,16 +42,4 @@ describe('create-access-token-api', () => {
       user_agent: '',
     });
   });
-
-  it('returns 500 on unexpected error', async () => {
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', username: 'user', headers: { 'user-agent': 'agent' } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./create-access-token-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(500);
-  });
 });

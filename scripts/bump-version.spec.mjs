@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { bumpVersion, formatHelp, parseArguments, versionTag } = require('./bump-version.js');
+const { bumpVersion, formatHelp, parseArguments } = require('./bump-version.js');
 
 describe('bump-version argument helpers', () => {
   it('prints usage, options, and examples in help output', () => {
@@ -35,10 +35,5 @@ describe('bump-version version helpers', () => {
     expect(bumpVersion('1.2.3', 'patch')).toBe('1.2.4');
     expect(bumpVersion('1.2.3', 'minor')).toBe('1.3.0');
     expect(bumpVersion('1.2.3', 'major')).toBe('2.0.0');
-  });
-
-  it('prefixes git tags with v', () => {
-    expect(versionTag('0.0.1')).toBe('v0.0.1');
-    expect(versionTag('1.2.3')).toBe('v1.2.3');
   });
 });

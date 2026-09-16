@@ -69,17 +69,21 @@ describe('Main component (client)', () => {
     fixture.detectChanges();
   });
 
-  it('toggles the spinner based on API load status', () => {
+  it('toggles the spinner based on API load status', async () => {
     apiState.setState('loadNetworkStatus', 'pending');
-    spinnerState.setState('show', true);
+    await fixture.whenStable();
     expect(spinnerState.state.show()).toBe(true);
 
     apiState.setState('loadNetworkStatus', 'finished');
-    spinnerState.setState('show', false);
+    await fixture.whenStable();
     expect(spinnerState.state.show()).toBe(false);
 
+    apiState.setState('loadNetworkStatus', 'pending');
+    await fixture.whenStable();
+    expect(spinnerState.state.show()).toBe(true);
+
     apiState.setState('loadNetworkStatus', 'error');
-    spinnerState.setState('show', false);
+    await fixture.whenStable();
     expect(spinnerState.state.show()).toBe(false);
   });
 
