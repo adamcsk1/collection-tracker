@@ -1106,12 +1106,6 @@ describe('Collection — unified tracking gaps', () => {
     cy.autoLogin();
   });
 
-  it('redirects the legacy finished route to tracking', () => {
-    CollectionPage.visitFinishedRedirect();
-    cy.url().should('include', '#/collection/tracking');
-    cy.url().should('not.include', '#/collection/finished');
-  });
-
   it('filters tracking items with media chips', () => {
     cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Chip Movie', 'movie', 'tt8500001'),

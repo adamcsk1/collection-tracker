@@ -367,7 +367,7 @@ describe('collection search APIs', () => {
       }
     );
     const existsResponse = await callRoute(registerExists, 'get', '/api/v1/collection-items/exists', {
-      query: { imdbId: 'tt-alien' },
+      query: { externalIdentitySource: 'imdb', externalIdentityId: 'tt-alien' },
       usernameHash: 'user',
     });
 

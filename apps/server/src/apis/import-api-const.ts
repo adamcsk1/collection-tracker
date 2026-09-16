@@ -10,7 +10,7 @@ export const MAX_FULL_IMPORT_TRACKING_SEASONS = MAX_SERIES_SEASONS;
 export const MAX_FULL_IMPORT_EPISODE_TITLES = MAX_SERIES_EPISODES;
 export const MAX_FULL_IMPORT_COMPLETED_EPISODES = 5_000;
 
-// Full imports accept historical exports and provider metadata, so these limits are intentionally
+// Full imports accept provider metadata, so these limits are intentionally
 // larger than typical values while preventing one field from consuming the 50 MiB request budget.
 export const MAX_FULL_IMPORT_TITLE_LENGTH = 1_024;
 export const MAX_FULL_IMPORT_PLOT_LENGTH = 65_536;

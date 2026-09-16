@@ -6,10 +6,8 @@ import { getDatabase } from '../core/database/database';
 import {
   collectionCanonicalItemExistsInList,
   collectionExternalItemExistsInList,
-  collectionItemExistsInList,
   findCollectionItemByCanonicalItemId,
   findCollectionItemByExternalId,
-  findCollectionItemByImdbId,
 } from '../core/database/repositories/collection';
 import {
   normalizeExternalIdentities,
@@ -27,7 +25,6 @@ export const register = (app: FastifyInstance): void => {
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const query = request.query as Record<string, unknown>;
-      const imdbId = query.imdbId;
       const externalIdentitySource =
         typeof query.externalIdentitySource === 'string' ? query.externalIdentitySource.trim() : '';
       const externalIdentityId = typeof query.externalIdentityId === 'string' ? query.externalIdentityId.trim() : '';
@@ -37,8 +34,8 @@ export const register = (app: FastifyInstance): void => {
       if (
         externalIds === null ||
         hasPartialExternalIdentity ||
-        (hasExternalIdentity && !isExternalItemIdentitySourceName(externalIdentitySource)) ||
-        ((typeof imdbId !== 'string' || !imdbId.trim()) && !hasExternalIdentity)
+        !hasExternalIdentity ||
+        !isExternalItemIdentitySourceName(externalIdentitySource)
       ) {
         response.code(400).send();
         return;
@@ -55,13 +52,16 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      const canonicalItemId = hasExternalIdentity
-        ? resolveCanonicalItemId(db, targetOwnerHash, externalIdentitySource, externalIdentityId, externalIds)
-        : null;
-      const existingItem = canonicalItemId
-        ? (findCollectionItemByCanonicalItemId(db, targetOwnerHash, canonicalItemId, listType) ??
-          findCollectionItemByExternalId(db, targetOwnerHash, externalIdentitySource, externalIdentityId, listType))
-        : findCollectionItemByImdbId(db, targetOwnerHash, imdbId as string, listType);
+      const canonicalItemId = resolveCanonicalItemId(
+        db,
+        targetOwnerHash,
+        externalIdentitySource,
+        externalIdentityId,
+        externalIds
+      );
+      const existingItem =
+        findCollectionItemByCanonicalItemId(db, targetOwnerHash, canonicalItemId, listType) ??
+        findCollectionItemByExternalId(db, targetOwnerHash, externalIdentitySource, externalIdentityId, listType);
 
       if (
         existingItem &&
@@ -93,16 +93,14 @@ export const register = (app: FastifyInstance): void => {
 
       const exists = existingItem
         ? true
-        : canonicalItemId
-          ? collectionCanonicalItemExistsInList(db, [targetOwnerHash], canonicalItemId, listType) ||
-            collectionExternalItemExistsInList(
-              db,
-              [targetOwnerHash],
-              externalIdentitySource,
-              externalIdentityId,
-              listType
-            )
-          : collectionItemExistsInList(db, [targetOwnerHash], imdbId as string, listType);
+        : collectionCanonicalItemExistsInList(db, [targetOwnerHash], canonicalItemId, listType) ||
+          collectionExternalItemExistsInList(
+            db,
+            [targetOwnerHash],
+            externalIdentitySource,
+            externalIdentityId,
+            listType
+          );
 
       response.send({
         exists,

@@ -1,23 +1,10 @@
 import {
   changeCollectionItemTagValidation,
   createCollectionItemTagValidation,
-  filterDisplayTags,
-  filterEditableTags,
 } from './collection-item-tag-validation-util';
 
 const baseCreateInput = { contentType: 'movie' as const, favorite: false };
 const baseChangeInput = { contentType: 'movie' as const, favorite: false, requesterIsOwner: true };
-const formerSystemTags = [
-  '#completed',
-  '#favorite',
-  '#watchlist',
-  '#wishlist',
-  '#movie',
-  '#series',
-  '#unwatched',
-  '#uncompleted',
-  '#episode-s01e02',
-];
 
 describe('collection item tag validation util', () => {
   it('validates create item list constraints', () => {
@@ -257,10 +244,5 @@ describe('collection item tag validation util', () => {
         existingListType: 'music',
       })
     ).toBeUndefined();
-  });
-
-  it('returns all editable and display tags', () => {
-    expect(filterEditableTags(formerSystemTags)).toEqual(formerSystemTags);
-    expect(filterDisplayTags(formerSystemTags)).toEqual(formerSystemTags);
   });
 });

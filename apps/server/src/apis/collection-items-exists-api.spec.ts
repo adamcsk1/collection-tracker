@@ -106,7 +106,10 @@ describe('collection-items-exists-api', () => {
   it('returns true when item exists', async () => {
     insertUserAndItem();
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001' } };
+    const request: any = {
+      usernameHash: 'user',
+      query: { externalIdentitySource: 'imdb', externalIdentityId: 'tt001' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');
@@ -173,7 +176,10 @@ describe('collection-items-exists-api', () => {
   it('returns false when item does not exist', async () => {
     insertUserAndItem();
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { imdbId: 'tt999' } };
+    const request: any = {
+      usernameHash: 'user',
+      query: { externalIdentitySource: 'imdb', externalIdentityId: 'tt999' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');
@@ -187,7 +193,10 @@ describe('collection-items-exists-api', () => {
     insertUser('user');
     insertTypedItem('user', 'tt001', 'up-next');
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', listType: 'up-next' } };
+    const request: any = {
+      usernameHash: 'user',
+      query: { externalIdentitySource: 'imdb', externalIdentityId: 'tt001', listType: 'up-next' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');
@@ -201,7 +210,10 @@ describe('collection-items-exists-api', () => {
     insertUser('user');
     insertTypedItem('user', 'tt001', 'wishlist');
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', listType: 'wishlist' } };
+    const request: any = {
+      usernameHash: 'user',
+      query: { externalIdentitySource: 'imdb', externalIdentityId: 'tt001', listType: 'wishlist' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');
@@ -220,7 +232,11 @@ describe('collection-items-exists-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      query: { imdbId: 'tt-shared', ownerShareCode: getUserShareCode('owner') },
+      query: {
+        externalIdentitySource: 'imdb',
+        externalIdentityId: 'tt-shared',
+        ownerShareCode: getUserShareCode('owner'),
+      },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -287,7 +303,11 @@ describe('collection-items-exists-api', () => {
     const selectedApp = buildApp(
       {
         usernameHash: 'user',
-        query: { imdbId: 'tt-selected', ownerShareCode: getUserShareCode('owner') },
+        query: {
+          externalIdentitySource: 'imdb',
+          externalIdentityId: 'tt-selected',
+          ownerShareCode: getUserShareCode('owner'),
+        },
       },
       selectedResponse
     );
@@ -299,7 +319,11 @@ describe('collection-items-exists-api', () => {
     const hiddenApp = buildApp(
       {
         usernameHash: 'user',
-        query: { imdbId: 'tt-hidden', ownerShareCode: getUserShareCode('owner') },
+        query: {
+          externalIdentitySource: 'imdb',
+          externalIdentityId: 'tt-hidden',
+          ownerShareCode: getUserShareCode('owner'),
+        },
       },
       hiddenResponse
     );
@@ -317,7 +341,12 @@ describe('collection-items-exists-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      query: { imdbId: 'tt-watchlist', listType: 'up-next', ownerShareCode: getUserShareCode('owner') },
+      query: {
+        externalIdentitySource: 'imdb',
+        externalIdentityId: 'tt-watchlist',
+        listType: 'up-next',
+        ownerShareCode: getUserShareCode('owner'),
+      },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -337,7 +366,12 @@ describe('collection-items-exists-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      query: { imdbId: 'tt-wishlist', listType: 'wishlist', ownerShareCode: getUserShareCode('owner') },
+      query: {
+        externalIdentitySource: 'imdb',
+        externalIdentityId: 'tt-wishlist',
+        listType: 'wishlist',
+        ownerShareCode: getUserShareCode('owner'),
+      },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -348,7 +382,7 @@ describe('collection-items-exists-api', () => {
     expect(response.code).toHaveBeenCalledWith(403);
   });
 
-  it('returns 400 when imdbId is missing', async () => {
+  it('returns 400 when identity is missing', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };
     const { app, handlerPromise } = buildApp(request, response);
@@ -360,9 +394,12 @@ describe('collection-items-exists-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when imdbId is empty string', async () => {
+  it('returns 400 when identity is empty', async () => {
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { imdbId: '  ' } };
+    const request: any = {
+      usernameHash: 'user',
+      query: { externalIdentitySource: 'imdb', externalIdentityId: '  ' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');
@@ -372,9 +409,9 @@ describe('collection-items-exists-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when external identity is partial even with an imdbId fallback', async () => {
+  it('returns 400 when external identity is partial', async () => {
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', externalIdentitySource: 'omdb' } };
+    const request: any = { usernameHash: 'user', query: { externalIdentitySource: 'omdb' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');

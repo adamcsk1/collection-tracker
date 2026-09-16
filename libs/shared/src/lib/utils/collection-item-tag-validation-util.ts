@@ -61,7 +61,3 @@ export const changeCollectionItemTagValidation = ({
   }
   return undefined;
 };
-
-export const filterEditableTags = (tags: readonly string[]): string[] => [...tags];
-
-export const filterDisplayTags = (tags: readonly string[]): string[] => [...tags];

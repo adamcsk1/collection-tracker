@@ -100,7 +100,7 @@ const tagConfig = {
 
 const buildImportBody = () => ({
   type: 'collection-tracker-export',
-  version: 10,
+  version: 11,
   userSettings: {},
   collectionItems: [] as unknown[],
   tagManagement: [] as unknown[],
@@ -382,20 +382,10 @@ const fullImportStringLimitCases: Array<{
     }),
   },
   {
-    name: 'legacy owner share code',
-    limit: MAX_FULL_IMPORT_SHARE_CODE_LENGTH,
-    buildBody: (value) => ({
-      ...buildImportBody(),
-      userSettings: { defaultLibraryOwnerShareCode: value },
-      collectionItems: [item, item],
-    }),
-  },
-  {
     name: 'owner share code',
     limit: MAX_FULL_IMPORT_SHARE_CODE_LENGTH,
     buildBody: (value) => ({
       ...buildImportBody(),
-      version: 11,
       userSettings: {
         defaultCollectionOwners: [{ listType: 'library', contentType: 'movie', ownerUserShareCode: value }],
       },
@@ -567,7 +557,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {
           theme: 'dark',
           animatedBackground: false,
@@ -737,13 +727,13 @@ describe('import-api', () => {
     ).toEqual({ completed_at: '2026-05-06 00:00:00' });
   });
 
-  it('returns 400 for unsupported full import versions', async () => {
+  it.each([2, 5, 9, 10])('returns 400 for unsupported full import version %s', async (version) => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version,
         userSettings: {},
         collectionItems: [item],
         tagManagement: [],
@@ -758,54 +748,6 @@ describe('import-api', () => {
     await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
-  });
-
-  it('accepts version 9 imports and rewrites watchlist list types and prefs', async () => {
-    insertUser();
-    const response = mockResponse();
-    const request: any = {
-      usernameHash: 'user',
-      body: {
-        type: 'collection-tracker-export',
-        version: 9,
-        userSettings: {
-          theme: 'dark',
-          animatedBackground: false,
-          language: 'en',
-          collectionFeaturePreferences: {
-            wishlist: true,
-            watchlist: false,
-            tracking: true,
-            books: true,
-          },
-        },
-        collectionItems: [{ ...item, listType: 'watchlist', IMDbId: 'tt0000999', externalItemId: 'tt0000999' }],
-        tagManagement: [],
-        trackingData: {},
-      },
-    };
-    const app = buildRouteApp();
-
-    const { register } = await import('./import-api');
-    register(app);
-
-    await getPostHandler(app, IMPORT_PATH)!(request, response);
-
-    expect(response.send).toHaveBeenCalled();
-    const db = getDatabase();
-    expect(db.prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000999')).toEqual({
-      list_type: 'up-next',
-    });
-    const importedSettings = db
-      .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
-      .get('user') as { collection_feature_preferences: string };
-    expect(JSON.parse(importedSettings.collection_feature_preferences)).toEqual({
-      books: true,
-      music: true,
-      wishlist: true,
-      upNext: false,
-      tracking: true,
-    });
   });
 
   it.each([
@@ -844,7 +786,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [{ ...item, ...itemChanges }],
         tagManagement: [],
@@ -867,7 +809,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [
           item,
@@ -900,7 +842,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [
           {
@@ -940,7 +882,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [
           {
@@ -987,7 +929,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [
           {
@@ -1012,30 +954,6 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 for legacy export version 5', async () => {
-    insertUser('user');
-    const response = mockResponse();
-    const request: any = {
-      usernameHash: 'user',
-      body: {
-        type: 'collection-tracker-export',
-        version: 5,
-        userSettings: {},
-        collectionItems: [item],
-        tagManagement: [],
-        trackingData: {},
-      },
-    };
-    const app = buildRouteApp();
-
-    const { register } = await import('./import-api');
-    register(app);
-
-    await getPostHandler(app, IMPORT_PATH)!(request, response);
-
-    expect(response.code).toHaveBeenCalledWith(400);
-  });
-
   it('returns 400 for external identity provider fields', async () => {
     insertUser('user');
     const response = mockResponse();
@@ -1043,7 +961,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [
           {
@@ -1074,7 +992,7 @@ describe('import-api', () => {
         usernameHash: 'user',
         body: {
           type: 'collection-tracker-export',
-          version: 10,
+          version: 11,
           userSettings: {},
           collectionItems: [{ ...item, canonicalItemId }],
           tagManagement: [],
@@ -1099,7 +1017,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [{ ...watchingItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -1137,7 +1055,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [{ ...watchedItem, watchedAt: 'not-a-date' }],
         tagManagement: [],
@@ -1159,7 +1077,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [{ ...watchedItem, watchedAt: '2026-02-31 00:00:00' }],
         tagManagement: [],
@@ -1190,7 +1108,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [{ ...watchedItem, watchedAt }],
         tagManagement: [],
@@ -1220,7 +1138,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: watchedTimestamps.map((watchedAt, index) => ({
           ...watchedItem,
@@ -1254,7 +1172,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [{ ...watchedItem, ...progressChanges }],
         tagManagement: [],
@@ -1277,7 +1195,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [{ ...watchingItem, watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -1322,7 +1240,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
@@ -1335,31 +1253,6 @@ describe('import-api', () => {
     register(app);
 
     await getPostHandler(app, IMPORT_PATH)!(request, response);
-    expect(response.code).toHaveBeenCalledWith(400);
-  });
-
-  it.each([
-    [11, { defaultLibraryOwnerShareCode: 'legacy-owner' }],
-    [10, { defaultCollectionOwners: [] }],
-  ])('rejects settings fields from another import version for version %s', async (version, userSettings) => {
-    const response = mockResponse();
-    const request: any = {
-      usernameHash: 'user',
-      body: {
-        type: 'collection-tracker-export',
-        version,
-        userSettings,
-        collectionItems: [],
-        tagManagement: [],
-        trackingData: {},
-      },
-    };
-    const app = buildRouteApp();
-
-    const { register } = await import('./import-api');
-    register(app);
-    await getPostHandler(app, IMPORT_PATH)!(request, response);
-
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -1413,52 +1306,15 @@ describe('import-api', () => {
     ).toEqual([{ list_type: 'tracking', content_type: 'series', owner_username_hash: 'owner' }]);
   });
 
-  it.each([9, 10])('converts a version %s legacy owner into valid exact-scope defaults', async (version) => {
-    insertUser('user');
-    insertUser('owner');
-    const db = getDatabase();
-    db.prepare('INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)').run(
-      'owner',
-      'user'
-    );
-    db.prepare(
-      `INSERT INTO user_share_grants
-       (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, can_create, scope_mode)
-       VALUES ('owner', 'user', 'library', 'movie', 1, 1, 'all')`
-    ).run();
-    const response = mockResponse();
-    const request: any = {
-      usernameHash: 'user',
-      body: {
-        type: 'collection-tracker-export',
-        version,
-        userSettings: { defaultLibraryOwnerShareCode: getUserShareCode('owner') },
-        collectionItems: [],
-        tagManagement: [],
-        trackingData: {},
-      },
-    };
-    const app = buildRouteApp();
-
-    const { register } = await import('./import-api');
-    register(app);
-    await getPostHandler(app, IMPORT_PATH)!(request, response);
-
-    expect(
-      db.prepare('SELECT list_type, content_type, owner_username_hash FROM collection_owner_defaults').all()
-    ).toEqual([{ list_type: 'library', content_type: 'movie', owner_username_hash: 'owner' }]);
-  });
-
   it.each([
     ['non-object settings', null],
     ['unknown setting', { unknown: true }],
+    ['legacy owner share code', { defaultLibraryOwnerShareCode: 'owner' }],
     ['theme type', { theme: 1 }],
     ['theme value', { theme: 'sepia' }],
     ['animated background', { animatedBackground: 'false' }],
     ['language type', { language: 1 }],
     ['language value', { language: 'xx' }],
-    ['default owner type', { defaultLibraryOwnerShareCode: 1 }],
-    ['blank default owner', { defaultLibraryOwnerShareCode: '   ' }],
     ['default owners type', { defaultCollectionOwners: null }],
     [
       'default owners duplicate scope',
@@ -1531,7 +1387,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: caseName.startsWith('default owners') ? 11 : 10,
+        version: 11,
         userSettings,
         collectionItems: [],
         tagManagement: [],
@@ -1553,7 +1409,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {
           collectionFeaturePreferences: {
             wishlist: true,
@@ -1581,7 +1437,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [],
         tagManagement: [
@@ -1658,7 +1514,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [],
         tagManagement: [tagManagementEntry],
@@ -1681,7 +1537,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
         collectionItems: [],
         tagManagement: [
@@ -1720,7 +1576,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [watchingItem],
         tagManagement: [],
@@ -1766,7 +1622,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [watchingItem],
         tagManagement: [],
@@ -1834,7 +1690,7 @@ describe('import-api', () => {
         usernameHash: 'user',
         body: {
           type: 'collection-tracker-export',
-          version: 10,
+          version: 11,
           userSettings: {},
           collectionItems: [watchingItem],
           tagManagement: [],
@@ -1862,7 +1718,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: 11,
         userSettings: {},
         collectionItems: [watchingItem],
         tagManagement: [],

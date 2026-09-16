@@ -11,17 +11,6 @@ describe('parseCollectionListType', () => {
     expect(parseCollectionListType('music')).toBe('music');
   });
 
-  it('maps legacy list types', () => {
-    expect(parseCollectionListType('watch-later')).toBe('up-next');
-    expect(parseCollectionListType('watchlist')).toBe('up-next');
-    expect(parseCollectionListType('series-tracker')).toBe('tracking');
-    expect(parseCollectionListType('movie-tracker')).toBe('tracking');
-    expect(parseCollectionListType('book-tracker')).toBe('books');
-    expect(parseCollectionListType('watching')).toBe('tracking');
-    expect(parseCollectionListType('watched')).toBe('tracking');
-    expect(parseCollectionListType('finished')).toBe('tracking');
-  });
-
   it('rejects invalid values', () => {
     expect(parseCollectionListType(undefined)).toBeUndefined();
     expect(parseCollectionListType(null)).toBeUndefined();

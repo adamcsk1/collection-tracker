@@ -116,7 +116,7 @@ deleting an item, or changing its physical scope removes obsolete selections and
 
 ## Import And Export
 
-- Current collection data exports use `collection-tracker-export` version 11. Import also accepts versions 9 and 10, including legacy `watchlist` conversion.
+- Current collection data exports use `collection-tracker-export` version 11. Import accepts version 11 only.
 - Version 11 exports are complete import documents: `GET /api/v1/users/me/export` includes `type`, `version`, settings, items, tag management, and tracking season / completed-episode data.
 - Full imports allow at most 10,000 collection items, 1,000 tag configurations, and 10,000 tracking-data properties. Each item allows at most 100 genres, 100 tags, and 20 external identities. Each tracking entry allows at most 50 seasons and 5,000 completed episodes, with at most 100 episode titles per season. String limits are 65,536 characters for plots; 16,384 for actors; 8,192 for images; 2,048 for tracking-data keys; 1,024 for titles, cached titles, canonical item IDs, and episode titles; 512 for external identity IDs, provider item IDs, and legacy IMDb IDs; 256 for tags, genres, and share codes; 128 for exported hashes; and 64 for identity sources, providers, years, rating text, completion timestamps, and tag colors. A structurally valid document above any count or string limit returns `413 Payload Too Large` before normalization, hashing, or database access; malformed documents return `400 Bad Request`.
 - Series episode progress is stored in `series_completed_episodes` and exposed under `/api/v1/collection-items/{externalIdentitySource}/{externalIdentityId}/tracking/completed-episodes`.

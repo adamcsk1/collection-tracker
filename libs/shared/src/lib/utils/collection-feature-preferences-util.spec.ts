@@ -17,59 +17,6 @@ describe('isCollectionFeaturePreferences', () => {
     ).toBe(true);
   });
 
-  it('accepts legacy watching/watched keys via parse normalization', () => {
-    expect(
-      parseCollectionFeaturePreferences({
-        books: true,
-        wishlist: true,
-        upNext: false,
-        watched: true,
-        watching: false,
-      })
-    ).toEqual({
-      books: true,
-      music: true,
-      wishlist: true,
-      upNext: false,
-      tracking: true,
-    });
-  });
-
-  it('accepts fully mappable legacy tracker keys', () => {
-    expect(
-      parseCollectionFeaturePreferences({
-        bookTracker: true,
-        wishlist: true,
-        watchLater: false,
-        movieTracker: true,
-        seriesTracker: false,
-      })
-    ).toEqual({
-      books: true,
-      music: true,
-      wishlist: true,
-      upNext: false,
-      tracking: true,
-    });
-  });
-
-  it('merges finished pref into tracking when tracking missing', () => {
-    expect(
-      parseCollectionFeaturePreferences({
-        books: true,
-        wishlist: true,
-        upNext: false,
-        tracking: true,
-      })
-    ).toEqual({
-      books: true,
-      music: true,
-      wishlist: true,
-      upNext: false,
-      tracking: true,
-    });
-  });
-
   it.each([
     null,
     [],
@@ -94,37 +41,6 @@ describe('parseCollectionFeaturePreferences', () => {
       parseCollectionFeaturePreferences({
         wishlist: true,
         upNext: false,
-        tracking: false,
-        books: true,
-      })
-    ).toEqual({
-      wishlist: true,
-      upNext: false,
-      tracking: false,
-      books: true,
-      music: true,
-    });
-  });
-
-  it('maps watchlist and hyphenated up-next keys to upNext', () => {
-    expect(
-      parseCollectionFeaturePreferences({
-        wishlist: true,
-        watchlist: false,
-        tracking: false,
-        books: true,
-      })
-    ).toEqual({
-      wishlist: true,
-      upNext: false,
-      tracking: false,
-      books: true,
-      music: true,
-    });
-    expect(
-      parseCollectionFeaturePreferences({
-        wishlist: true,
-        'up-next': false,
         tracking: false,
         books: true,
       })

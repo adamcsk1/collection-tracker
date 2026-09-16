@@ -23,46 +23,6 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./tracking/tracking').then((module) => module.Tracking),
       },
       {
-        path: 'watchlist',
-        redirectTo: 'up-next',
-        pathMatch: 'full',
-      },
-      {
-        path: 'watch-later',
-        redirectTo: 'up-next',
-        pathMatch: 'full',
-      },
-      {
-        path: 'watching',
-        redirectTo: 'tracking',
-        pathMatch: 'full',
-      },
-      {
-        path: 'watched',
-        redirectTo: 'tracking',
-        pathMatch: 'full',
-      },
-      {
-        path: 'finished',
-        redirectTo: 'tracking',
-        pathMatch: 'full',
-      },
-      {
-        path: 'movie-tracker',
-        redirectTo: 'tracking',
-        pathMatch: 'full',
-      },
-      {
-        path: 'series-tracker',
-        redirectTo: 'tracking',
-        pathMatch: 'full',
-      },
-      {
-        path: 'book-tracker',
-        redirectTo: 'books',
-        pathMatch: 'full',
-      },
-      {
         path: 'books',
         loadComponent: () => import('./books/books').then((module) => module.Books),
       },

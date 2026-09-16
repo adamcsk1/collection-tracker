@@ -236,13 +236,12 @@ export const upsertUserSettings = (
   const run = db.transaction(() => {
     db.prepare(
       `INSERT INTO user_settings
-       (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences, collection_feature_preferences)
-       VALUES (?, ?, ?, ?, NULL, ?, ?)
+       (username_hash, theme, animated_background, language, collection_list_display_preferences, collection_feature_preferences)
+       VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(username_hash) DO UPDATE SET
          theme = excluded.theme,
          animated_background = excluded.animated_background,
          language = excluded.language,
-         default_library_owner_share_code = NULL,
          collection_list_display_preferences = excluded.collection_list_display_preferences,
          collection_feature_preferences = excluded.collection_feature_preferences`
     ).run(

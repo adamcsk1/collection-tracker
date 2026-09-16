@@ -380,34 +380,6 @@ export const searchCollectionItems = (
   };
 };
 
-export const collectionItemExistsInList = (
-  db: Database.Database,
-  usernameHashes: string[],
-  imdbId: string,
-  listType: CollectionListTypeModel = 'library'
-): boolean => {
-  const row = db
-    .prepare(
-      `SELECT 1
-       FROM collection_items
-       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-         AND list_type = ?
-         AND (
-           (external_provider = 'imdb' AND external_item_id = ?)
-           OR EXISTS (
-             SELECT 1 FROM external_item_identities imdb_identity
-             WHERE imdb_identity.username_hash = collection_items.username_hash
-               AND imdb_identity.canonical_item_id = collection_items.canonical_item_id
-               AND imdb_identity.external_provider = 'imdb'
-               AND imdb_identity.external_item_id = ?
-           )
-         )
-       LIMIT 1`
-    )
-    .get(...usernameHashes, normalizeListType(listType), imdbId, imdbId);
-  return !!row;
-};
-
 export const collectionExternalItemExistsInList = (
   db: Database.Database,
   usernameHashes: string[],

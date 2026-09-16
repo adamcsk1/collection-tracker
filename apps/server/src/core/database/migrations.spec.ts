@@ -1938,8 +1938,8 @@ describe('runMigrations', () => {
           VALUES (1, 'imdb', '8.0'), (1, 'rotten-tomatoes', '95%'), (1, 'metacritic', '80/100');
         INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
         INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#movie'), (1, 'custom');
-        INSERT INTO user_settings (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences)
-          VALUES ('user1', 'dark', 1, 'en', 'share-abc', '{"grid":true}');
+        INSERT INTO user_settings (username_hash, theme, animated_background, language, collection_list_display_preferences)
+          VALUES ('user1', 'dark', 1, 'en', '{"grid":true}');
         INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight)
           VALUES ('user1', '#movie', '#ff0000', 1, 0, 1, 10);
         INSERT INTO user_shares (owner_username_hash, shared_with_username_hash)
@@ -3268,6 +3268,33 @@ describe('runMigrations', () => {
           )
           .run()
       ).toThrow();
+      db.close();
+    });
+  });
+
+  describe('041_drop_default_library_owner_share_code', () => {
+    it('drops default_library_owner_share_code and keeps remaining settings', async () => {
+      const migrationFile = '041_drop_default_library_owner_share_code.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token'), ('owner', 'owner-token');
+        INSERT INTO user_settings (username_hash, theme, default_library_owner_share_code)
+        VALUES ('user', 'dark', 'leftover');
+        INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+        VALUES ('user', 'library', 'movie', 'owner');
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      const columns = db.prepare('PRAGMA table_info(user_settings)').all() as Array<{ name: string }>;
+      expect(columns.map((column) => column.name)).not.toContain('default_library_owner_share_code');
+      expect(db.prepare("SELECT theme FROM user_settings WHERE username_hash = 'user'").get()).toEqual({
+        theme: 'dark',
+      });
+      expect(
+        db.prepare('SELECT list_type, content_type, owner_username_hash FROM collection_owner_defaults').all()
+      ).toEqual([{ list_type: 'library', content_type: 'movie', owner_username_hash: 'owner' }]);
       db.close();
     });
   });

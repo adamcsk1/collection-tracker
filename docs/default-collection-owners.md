@@ -8,5 +8,5 @@ The server stores relational owner identities and exposes share codes only throu
 revoking a share, or deleting an owner removes affected defaults. Migration 038 converts valid legacy default-library
 settings into separate movie and series defaults.
 
-Settings API requests replace the complete `defaultCollectionOwners` array. Export schema version 11 uses this array;
-imports still accept versions 9 and 10, including the legacy `defaultLibraryOwnerShareCode` setting.
+Settings API requests replace the complete `defaultCollectionOwners` array. Export and import schema version 11 use
+this array.

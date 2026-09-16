@@ -35,7 +35,6 @@ import { SeriesSeasonMetadataDialog } from '../../tracking/series-season-metadat
 import { CompletedEpisodesDialog } from '../../tracking/completed-episodes-dialog/completed-episodes-dialog';
 import { getProxyImageUrl } from '@shared/utils/proxy-image-url-util';
 import { formatTrackingEpisode } from '../../tracking/utils/tracking-progress-util';
-import { filterDisplayTags } from '../../validators/tag-validators';
 import {
   buildItemFormFromChange,
   validateOptionalIMDbRateFormat,
@@ -354,7 +353,7 @@ export class ItemDialog implements OnInit {
     const last = episodes[episodes.length - 1];
     return { season: last.season, episode: last.episode };
   });
-  protected readonly detailTags = computed(() => filterDisplayTags(this.collectionItem().tags));
+  protected readonly detailTags = computed(() => this.collectionItem().tags);
   protected readonly episodeProgressText = computed(() => {
     return formatTrackingEpisode(this.lastCompletedEpisode()) ?? this.translations.fallbackNotAvailable();
   });

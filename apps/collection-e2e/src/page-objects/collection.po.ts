@@ -54,9 +54,6 @@ export const CollectionPage = {
   visitTracking: () => {
     cy.visit('/client/#/collection/tracking');
   },
-  visitFinishedRedirect: () => {
-    cy.visit('/client/#/collection/finished');
-  },
   visitUpNext: () => {
     cy.visit('/client/#/collection/up-next');
   },

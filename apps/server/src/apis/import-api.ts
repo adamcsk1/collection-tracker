@@ -103,7 +103,7 @@ const isDefaultCollectionOwners = (value: unknown): boolean => {
   });
 };
 
-const isUserSettings = (value: unknown, importVersion: number): value is UserSettingsApiResponseModel => {
+const isUserSettings = (value: unknown): value is UserSettingsApiResponseModel => {
   if (!isPlainObject(value)) return false;
   return Object.entries(value).every(([key, setting]) => {
     switch (key) {
@@ -113,13 +113,8 @@ const isUserSettings = (value: unknown, importVersion: number): value is UserSet
         return typeof setting === 'boolean';
       case 'language':
         return typeof setting === 'string' && isAllowedValue(setting, LANGUAGES);
-      case 'defaultLibraryOwnerShareCode':
-        return (
-          importVersion < EXPORT_VERSION &&
-          (setting === null || (typeof setting === 'string' && setting.trim().length > 0))
-        );
       case 'defaultCollectionOwners':
-        return importVersion === EXPORT_VERSION && isDefaultCollectionOwners(setting);
+        return isDefaultCollectionOwners(setting);
       case 'collectionListDisplayPreferences':
         return isCollectionListDisplayPreferences(setting);
       case 'collectionFeaturePreferences':
@@ -294,19 +289,12 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
   );
 };
 
-const SUPPORTED_IMPORT_VERSIONS = new Set([9, 10, EXPORT_VERSION]);
-
 const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   if (!isPlainObject(value)) return false;
-  const importVersion = value['version'];
-  if (
-    value['type'] !== EXPORT_TYPE ||
-    typeof importVersion !== 'number' ||
-    !SUPPORTED_IMPORT_VERSIONS.has(importVersion)
-  ) {
+  if (value['type'] !== EXPORT_TYPE || value['version'] !== EXPORT_VERSION) {
     return false;
   }
-  if (!isUserSettings(value['userSettings'], importVersion)) return false;
+  if (!isUserSettings(value['userSettings'])) return false;
   if (!Array.isArray(value['collectionItems']) || !value['collectionItems'].every(isCollectionItem)) {
     return false;
   }
@@ -336,11 +324,8 @@ const isUserImportOverLimit = (importData: ImportedUserRequestModel): boolean =>
     return true;
   }
 
-  const importSettings = importData.userSettings as UserSettingsApiResponseModel & {
-    defaultLibraryOwnerShareCode?: string | null;
-  };
+  const importSettings = importData.userSettings;
   if (
-    (importSettings.defaultLibraryOwnerShareCode?.length ?? 0) > MAX_FULL_IMPORT_SHARE_CODE_LENGTH ||
     (importSettings.defaultCollectionOwners ?? []).some(
       (ownerDefault) => ownerDefault.ownerUserShareCode.length > MAX_FULL_IMPORT_SHARE_CODE_LENGTH
     ) ||
@@ -517,23 +502,12 @@ export const register = (app: FastifyInstance): void => {
       const normalizedFeaturePreferences = parseCollectionFeaturePreferences(
         importData.userSettings.collectionFeaturePreferences
       );
-      const importedSettings = { ...importData.userSettings } as UserSettingsApiResponseModel & {
-        defaultLibraryOwnerShareCode?: string | null;
-      };
-      const legacyDefaultOwner = importedSettings.defaultLibraryOwnerShareCode;
-      delete importedSettings.defaultLibraryOwnerShareCode;
-      if (legacyDefaultOwner && !importedSettings.defaultCollectionOwners) {
-        importedSettings.defaultCollectionOwners = [
-          { listType: 'library', contentType: 'movie', ownerUserShareCode: legacyDefaultOwner },
-          { listType: 'library', contentType: 'series', ownerUserShareCode: legacyDefaultOwner },
-        ];
-      }
       const userSettings = normalizedFeaturePreferences
         ? {
-            ...importedSettings,
+            ...importData.userSettings,
             collectionFeaturePreferences: normalizedFeaturePreferences,
           }
-        : importedSettings;
+        : importData.userSettings;
 
       const normalizedItems = importData.collectionItems.map((item) => {
         const normalizedItem = normalizeItem(toCollectionItemChange(item));
