@@ -1,6 +1,6 @@
 interface OMDbResponseRatingModel {
-  Source?: unknown;
-  Value?: unknown;
+  Source?: string;
+  Value?: string;
 }
 
 export interface OmdbSeriesInfoResponse {
@@ -18,18 +18,18 @@ export interface OmdbErrorResponse {
 export interface OMDbResponseItemModel {
   Error?: string;
   Response?: string;
-  imdbID?: unknown;
-  imdbRating?: unknown;
+  imdbID?: string;
+  imdbRating?: string;
   Ratings?: OMDbResponseRatingModel[];
-  Plot?: unknown;
-  Poster?: unknown;
-  Type?: unknown;
-  Title?: unknown;
-  Year?: unknown;
-  Director?: unknown;
-  Genre?: unknown;
-  Actors?: unknown;
-  totalSeasons?: unknown;
+  Plot?: string;
+  Poster?: string;
+  Type?: string;
+  Title?: string;
+  Year?: string;
+  Director?: string;
+  Genre?: string;
+  Actors?: string;
+  totalSeasons?: string;
 }
 
 export interface OMDbResponseModel {

@@ -7,7 +7,7 @@ import {
   MUSICBRAINZ_REQUEST_INTERVAL_MS,
   MUSICBRAINZ_USER_AGENT,
 } from './musicbrainz-const';
-import { MusicBrainzReleaseModel } from './musicbrainz-model';
+import { MusicBrainzReleaseModel, MusicBrainzSearchResponseModel } from './musicbrainz-model';
 
 const FETCH_TIMEOUT_MS = 10_000;
 const SEARCH_LIMIT = 20;
@@ -55,10 +55,10 @@ export class MusicBrainzExternalMetadataProvider implements ExternalMetadataProv
     url.searchParams.set('query', barcode ? `barcode:${barcode}` : this.toAlbumSearchQuery(searchText));
     url.searchParams.set('fmt', 'json');
     url.searchParams.set('limit', `${SEARCH_LIMIT}`);
-    const data = await this.fetchJson<unknown>(url);
-    const releases = this.isObject(data) ? data.releases : undefined;
+    const data = await this.fetchJson<MusicBrainzSearchResponseModel>(url);
+    const releases = Array.isArray(data?.releases) ? data.releases : [];
     const seenGroups = new Set<string>();
-    const results = (Array.isArray(releases) ? releases : []).flatMap((release) => {
+    const results = releases.flatMap((release) => {
       const item = this.toItem(release, '250');
       if (!item) return [];
       const groupId = this.getReleaseGroupId(release) || item.providerItemId;
@@ -84,20 +84,21 @@ export class MusicBrainzExternalMetadataProvider implements ExternalMetadataProv
 
   private toItem(release: unknown, coverSize: '250' | '500'): ExternalMetadataItemModel | null {
     if (!this.isObject(release)) return null;
-    const mbid = normalizeMbid(this.getString(release.id));
-    const title = this.getString(release.title);
+    const parsed = release as MusicBrainzReleaseModel;
+    const mbid = normalizeMbid(this.getString(parsed.id));
+    const title = this.getString(parsed.title);
     if (!mbid || !title) return null;
     return {
       provider: this.name,
       providerItemId: mbid,
       externalIds: [{ source: 'musicbrainz', id: mbid }],
       title,
-      year: this.extractYear(this.getString(release.date)),
+      year: this.extractYear(this.getString(parsed.date)),
       contentType: 'album',
       poster: this.getCoverUrl(mbid, coverSize),
       plot: '',
-      actors: this.getArtistCredit(release),
-      genres: this.getGenres(release),
+      actors: this.getArtistCredit(parsed),
+      genres: this.getGenres(parsed),
       ratings: [],
     };
   }
@@ -109,7 +110,7 @@ export class MusicBrainzExternalMetadataProvider implements ExternalMetadataProv
 
   private getReleaseGroupId(release: unknown): string {
     if (!this.isObject(release)) return '';
-    const releaseGroup = this.isObject(release['release-group']) ? release['release-group'] : undefined;
+    const releaseGroup = (release as MusicBrainzReleaseModel)['release-group'];
     return normalizeMbid(this.getString(releaseGroup?.id)) ?? '';
   }
 
@@ -156,7 +157,7 @@ export class MusicBrainzExternalMetadataProvider implements ExternalMetadataProv
     return typeof value === 'string' ? value.trim() : '';
   }
 
-  private isObject(value: unknown): value is MusicBrainzReleaseModel {
+  private isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 

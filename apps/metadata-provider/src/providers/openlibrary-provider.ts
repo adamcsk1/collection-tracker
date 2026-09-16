@@ -6,6 +6,7 @@ import { DEFAULT_OPENLIBRARY_API_URL, DEFAULT_OPENLIBRARY_COVER_URL } from './op
 import {
   OpenLibraryAuthorModel,
   OpenLibraryBookModel,
+  OpenLibraryDescriptionModel,
   OpenLibraryEditionModel,
   OpenLibrarySearchDocumentModel,
   OpenLibrarySearchResponseModel,
@@ -158,7 +159,7 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
     return (await response.json()) as T;
   }
 
-  private getCoverUrl(isbn: string, size: 'M' | 'L', covers?: unknown): string {
+  private getCoverUrl(isbn: string, size: 'M' | 'L', covers?: number | number[] | null): string {
     const coverId = this.getPositiveCoverId(covers);
     const url = new URL(
       coverId ? `b/id/${coverId}-${size}.jpg` : `b/isbn/${isbn}-${size}.jpg`,
@@ -168,7 +169,7 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
     return url.href;
   }
 
-  private getPositiveCoverId(value: unknown): number | null {
+  private getPositiveCoverId(value?: number | number[] | null): number | null {
     const coverIds = Array.isArray(value) ? value : [value];
     return coverIds.find((coverId): coverId is number => typeof coverId === 'number' && coverId > 0) ?? null;
   }
@@ -188,9 +189,9 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
       .trim();
   }
 
-  private getDescription(value: unknown): string {
+  private getDescription(value?: string | OpenLibraryDescriptionModel): string {
     if (typeof value === 'string') return value;
-    if (value && typeof value === 'object' && 'value' in value) return this.getString(value.value);
+    if (value) return this.getString(value.value);
     return '';
   }
 

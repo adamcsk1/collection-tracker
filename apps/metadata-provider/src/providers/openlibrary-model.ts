@@ -1,22 +1,31 @@
+export interface OpenLibraryAuthorRefModel {
+  key?: string;
+  name?: string;
+}
+
+export interface OpenLibraryDescriptionModel {
+  value?: string;
+}
+
 export interface OpenLibrarySearchDocumentModel {
-  author_name?: unknown;
-  cover_i?: unknown;
-  cover_edition_key?: unknown;
+  author_name?: string[];
+  cover_i?: number;
+  cover_edition_key?: string;
   editions?: { docs?: OpenLibraryEditionModel[] };
-  first_publish_year?: unknown;
-  isbn?: unknown;
-  key?: unknown;
-  subject?: unknown;
-  title?: unknown;
+  first_publish_year?: number | string;
+  isbn?: string[];
+  key?: string;
+  subject?: string[];
+  title?: string;
 }
 
 export interface OpenLibraryEditionModel {
-  cover_i?: unknown;
-  isbn?: unknown;
-  isbn_10?: unknown;
-  isbn_13?: unknown;
-  key?: unknown;
-  title?: unknown;
+  cover_i?: number;
+  isbn?: string[];
+  isbn_10?: string[];
+  isbn_13?: string[];
+  key?: string;
+  title?: string;
 }
 
 export interface OpenLibrarySearchResponseModel {
@@ -24,15 +33,15 @@ export interface OpenLibrarySearchResponseModel {
 }
 
 export interface OpenLibraryBookModel {
-  authors?: Array<{ key?: unknown; name?: unknown }>;
-  by_statement?: unknown;
-  covers?: unknown;
-  description?: unknown;
-  publish_date?: unknown;
-  subjects?: unknown;
-  title?: unknown;
+  authors?: OpenLibraryAuthorRefModel[];
+  by_statement?: string;
+  covers?: number[];
+  description?: string | OpenLibraryDescriptionModel;
+  publish_date?: string;
+  subjects?: string[];
+  title?: string;
 }
 
 export interface OpenLibraryAuthorModel {
-  name?: unknown;
+  name?: string;
 }
