@@ -180,6 +180,40 @@ describe('Export/Import — collection data export', () => {
     });
   });
 
+  it('rejects obsolete collection data without changing the collection', () => {
+    let libraryItemsBeforeImport: unknown[] = [];
+
+    ExportImportPage.getCollectionDataExportButton().click();
+    cy.wait('@getExport').its('response.statusCode').should('eq', 200);
+    cy.readFile(exportPath, null, { timeout: 15000 }).then((source) => {
+      const exportData = JSON.parse(source.toString('utf8'));
+      cy.writeFile(exportPath, { ...exportData, version: 10 });
+    });
+    cy.request(
+      'POST',
+      '/api/v1/collection-items',
+      buildCollectionItem('Rejected Import Must Preserve This', 'movie', 'tt8500002')
+    );
+    cy.request('GET', '/api/v1/collection-items?limit=100&listType=library').then((response) => {
+      libraryItemsBeforeImport = response.body.data;
+    });
+    cy.intercept('POST', '/api/v1/users/me/imports').as('importCollectionData');
+
+    cy.on('window:confirm', () => true);
+    ExportImportPage.getCollectionDataImportFileInput().selectFile(exportPath, { force: true });
+    cy.wait('@importCollectionData').its('response.statusCode').should('eq', 400);
+
+    ExportImportPage.getToastMessage().should(
+      'contain.text',
+      'Could not import the collection data. Please select a valid collection tracker export file.'
+    );
+    cy.request('GET', '/api/v1/collection-items?limit=100&listType=library')
+      .its('body.data')
+      .should((items: unknown[]) => {
+        expect(items).to.deep.equal(libraryItemsBeforeImport);
+      });
+  });
+
   it('sends selected IMDb ID file content for collection-item import', () => {
     cy.writeFile('cypress/downloads/imdb-import.md', '- https://www.imdb.com/title/tt8600001/\n- tt8600002');
     cy.intercept('POST', '/api/v1/collection-items/imports', (request) => {

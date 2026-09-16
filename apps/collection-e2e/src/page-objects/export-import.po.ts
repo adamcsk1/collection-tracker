@@ -12,4 +12,5 @@ export const ExportImportPage = {
   getTagManagementExportButton: () => cy.getByTestId('tag-management-export'),
   getTagManagementImportButton: () => cy.getByTestId('tag-management-import'),
   getTagManagementImportFileInput: () => cy.getByTestId('tag-management-import-file'),
+  getToastMessage: () => cy.getByTestId('toast-message'),
 };
