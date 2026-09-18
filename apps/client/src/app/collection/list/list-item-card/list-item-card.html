@@ -8,12 +8,15 @@
   (keyup.enter)="onOpen($event)"
   (keyup.space)="onOpen($event)"
 >
-  <span
+  <img
     class="poster-image"
     [class.completed-image]="completedImage()"
-    [style.backgroundImage]="'url(' + imageUrl() + ')'"
+    [attr.src]="imageUrl() || null"
+    alt=""
     aria-hidden="true"
-  ></span>
+    loading="lazy"
+    decoding="async"
+  />
   @if (imageBadgeText(); as imageBadgeText) {
     <a
       href="#"

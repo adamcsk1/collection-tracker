@@ -1,3 +1,9 @@
+export interface CachedImage {
+  contentType: string;
+  buffer: Buffer;
+  fallback: boolean;
+}
+
 export interface ImageCacheMetadata {
   accessedAt: number;
   contentType: string;

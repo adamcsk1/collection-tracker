@@ -25,10 +25,11 @@ describe('PosterBackground component', () => {
   let orientationTarget: EventTarget;
   let setImagesSpy: ReturnType<typeof vi.spyOn>;
 
-  const createComponent = () => {
+  const createComponent = async () => {
     fixture = TestBed.createComponent(PosterBackground);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
   };
 
   beforeEach(() => {
@@ -73,50 +74,79 @@ describe('PosterBackground component', () => {
     vi.useRealTimers();
   });
 
-  it('keeps images empty when the API returns no images', () => {
+  it('keeps images empty when the API returns no images', async () => {
     api.getBackgroundImages.mockReturnValue(of({ images: [] }));
-    createComponent();
+    await createComponent();
 
     expect(component['images']()).toEqual([]);
   });
 
-  it('generates background images when API returns images', () => {
-    createComponent();
+  it('generates background images when API returns images', async () => {
+    await createComponent();
 
     const images = component['images']();
     expect(images.length).toBeGreaterThan(0);
     expect(images.every((image) => ['img-1', 'img-2'].includes(image.url))).toBe(true);
   });
 
-  it('loads background images once on creation', () => {
-    createComponent();
+  it('repeats a shuffled order without stacking the same poster in a column', async () => {
+    await createComponent();
+
+    const columnX = component['images']()[0].x;
+    const columnUrls = component['images']()
+      .filter((image) => image.x === columnX)
+      .map((image) => image.url);
+
+    expect(columnUrls.length).toBeGreaterThan(1);
+    expect(columnUrls.every((url, index) => index === 0 || url !== columnUrls[index - 1])).toBe(true);
+  });
+
+  it('uses every unique source URL when tiling', async () => {
+    api.getBackgroundImages.mockReturnValue(of({ images: ['a', 'b', 'c', 'd', 'e', 'f'] }));
+    await createComponent();
+
+    expect(new Set(component['images']().map((image) => image.url)).size).toBe(6);
+  });
+
+  it('drops duplicate source URLs before tiling', async () => {
+    api.getBackgroundImages.mockReturnValue(of({ images: ['img-1', 'img-1', '', 'img-2'] }));
+    await createComponent();
+
+    expect(component['imageUrls']).toEqual(['img-2', 'img-1']);
+  });
+
+  it('loads background images once on creation', async () => {
+    await createComponent();
 
     expect(api.getBackgroundImages).toHaveBeenCalledTimes(1);
   });
 
-  it('reloads background images when the refresh trigger changes', () => {
-    createComponent();
+  it('reloads background images when the refresh trigger changes', async () => {
+    await createComponent();
 
     fixture.componentRef.setInput('refreshTrigger', 1);
     fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(api.getBackgroundImages).toHaveBeenCalledTimes(2);
   });
 
-  it('proxies external background image URLs', () => {
+  it('proxies external background image URLs', async () => {
     api.getBackgroundImages.mockReturnValue(
       of({
         images: ['https://images.example/poster.png'],
       })
     );
     TestBed.inject(apiStateToken).setState('apiUrl', '/api');
-    createComponent();
+    await createComponent();
 
-    expect(component['images']()[0].url).toBe('/api/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.png');
+    expect(component['images']()[0].url).toBe(
+      '/api/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.png&variant=background'
+    );
   });
 
-  it('recomputes images on resize', () => {
-    createComponent();
+  it('recomputes images on resize', async () => {
+    await createComponent();
 
     Object.assign(window.visualViewport as object, { height: 1200, width: 500 });
     Object.defineProperty(window, 'innerHeight', { value: 1200, writable: true });
@@ -127,8 +157,8 @@ describe('PosterBackground component', () => {
     expect(component['windowHeight']()).toBe(1200);
   });
 
-  it('flags large height and width deltas for handling', () => {
-    createComponent();
+  it('flags large height and width deltas for handling', async () => {
+    await createComponent();
     component['lastViewportHeight'] = 800;
     component['lastViewportWidth'] = 500;
 
@@ -136,14 +166,14 @@ describe('PosterBackground component', () => {
     expect(component['shouldHandleWidth'](700)).toBe(true);
   });
 
-  it('detects likely keyboard appearance from visual viewport shrink', () => {
-    createComponent();
+  it('detects likely keyboard appearance from visual viewport shrink', async () => {
+    await createComponent();
     Object.assign(window.visualViewport as object, { height: 650 });
     expect(component['isKeyboardLikely'](650)).toBe(true);
   });
 
-  it('skips recompute when keyboard is likely open', () => {
-    createComponent();
+  it('skips recompute when keyboard is likely open', async () => {
+    await createComponent();
     setImagesSpy.mockClear();
 
     Object.assign(window.visualViewport as object, { height: 600, width: 500 });
@@ -154,8 +184,8 @@ describe('PosterBackground component', () => {
     expect(setImagesSpy).not.toHaveBeenCalled();
   });
 
-  it('skips recompute when a text input is focused', () => {
-    createComponent();
+  it('skips recompute when a text input is focused', async () => {
+    await createComponent();
     setImagesSpy.mockClear();
 
     const input = document.createElement('input');

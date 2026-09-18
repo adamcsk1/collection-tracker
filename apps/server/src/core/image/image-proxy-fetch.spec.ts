@@ -635,6 +635,7 @@ describe('image-proxy fetch responses', () => {
     await expect(getCachedImage(sourceUrl)).resolves.toEqual({
       contentType: 'image/jpeg',
       buffer: Buffer.from('legacy-image'),
+      fallback: false,
     });
     expect(existsSync(imagePath)).toBe(true);
     expect(existsSync(metadataPath)).toBe(true);
@@ -648,6 +649,8 @@ describe('image-proxy fetch responses', () => {
     writeFileSync(oldImagePath, '');
     writeFileSync(recentImagePath, '');
     writeFileSync(join(cacheFolder, 'orphan.jpg'), 'orphan');
+    writeFileSync(join(cacheFolder, 'old.card.webp'), 'thumb');
+    writeFileSync(join(cacheFolder, 'old.background.webp'), 'thumb');
     writeFileSync(join(cacheFolder, 'malformed.json'), '{');
     writeFileSync(
       join(cacheFolder, 'missing.json'),
@@ -687,6 +690,8 @@ describe('image-proxy fetch responses', () => {
     await expect(fetchAndCacheImageWithDetails('http://images.example/new.jpg')).resolves.toEqual({ kind: 'fetched' });
 
     expect(existsSync(oldImagePath)).toBe(false);
+    expect(existsSync(join(cacheFolder, 'old.card.webp'))).toBe(false);
+    expect(existsSync(join(cacheFolder, 'old.background.webp'))).toBe(false);
     expect(existsSync(recentImagePath)).toBe(true);
     expect(existsSync(join(cacheFolder, 'orphan.jpg'))).toBe(false);
     expect(existsSync(join(cacheFolder, 'malformed.json'))).toBe(false);

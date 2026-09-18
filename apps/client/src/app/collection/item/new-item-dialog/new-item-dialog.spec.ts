@@ -338,7 +338,7 @@ describe('NewItemDialog component', () => {
     } satisfies ExternalMetadataSelectDataModel;
 
     expect(component['getMatchedContentImageUrl'](content)).toBe(
-      '/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg'
+      '/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg&variant=card'
     );
     expect(component['getMatchedContentMeta'](content)).toBe('(movie) 2026');
   });

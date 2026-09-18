@@ -121,6 +121,7 @@ describe('proxy-image-api', () => {
       expect.any(Function)
     );
     expect(firstResponse.header).toHaveBeenCalledWith('Content-Type', 'image/png');
+    expect(firstResponse.header).toHaveBeenCalledWith('Cache-Control', 'private, max-age=31536000, immutable');
     expect(firstResponse.send).toHaveBeenCalledWith(image);
 
     const secondResponse = createResponse();
@@ -354,7 +355,50 @@ describe('proxy-image-api', () => {
 
     await handlerPromise();
     expect(response.header).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+    expect(response.header).toHaveBeenCalledWith('Cache-Control', 'public, max-age=31536000, immutable');
     expect(response.send).toHaveBeenCalledWith(image);
     expect(upstreamRequest).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for an unsupported image variant', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    const response = createResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: { url: 'https://images.example/poster.png', variant: 'huge' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(upstreamRequest).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the original image when a thumbnail is missing', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    const image = Buffer.from('image-bytes');
+
+    const { register } = await importApi(dataFolder);
+    const sourceRequest: any = { usernameHash: 'user', query: { url: 'https://images.example/poster.png' } };
+    const firstResponse = createResponse();
+    const firstApp = buildApp(sourceRequest, firstResponse);
+    register(firstApp.app);
+    await firstApp.handlerPromise();
+
+    const variantResponse = createResponse();
+    const variantApp = buildApp(
+      { usernameHash: 'user', query: { url: 'https://images.example/poster.png', variant: 'card' } },
+      variantResponse
+    );
+    register(variantApp.app);
+    await variantApp.handlerPromise();
+
+    expect(upstreamRequest).toHaveBeenCalledTimes(1);
+    expect(variantResponse.header).toHaveBeenCalledWith('Content-Type', 'image/png');
+    expect(variantResponse.header).toHaveBeenCalledWith('Cache-Control', 'no-store');
+    expect(variantResponse.send).toHaveBeenCalledWith(image);
   });
 });

@@ -18,6 +18,7 @@ const serverDependencyNames = [
   'fastify',
   'js-yaml',
   'jsonwebtoken',
+  'sharp',
 ];
 
 const resolveTsPath = (specifier) => {

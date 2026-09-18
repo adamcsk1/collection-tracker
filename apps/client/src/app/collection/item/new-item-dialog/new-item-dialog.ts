@@ -874,7 +874,7 @@ export class NewItemDialog {
   }
 
   protected getMatchedContentImageUrl(content: ExternalMetadataSelectDataModel): string {
-    return getProxyImageUrl(this.apiState.state.apiUrl(), content.poster ?? '');
+    return getProxyImageUrl(this.apiState.state.apiUrl(), content.poster ?? '', 'card');
   }
 
   protected getMatchedContentMeta(content: ExternalMetadataSelectDataModel): string | null {

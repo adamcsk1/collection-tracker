@@ -1,12 +1,32 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import type { FastifyInstance } from 'fastify';
+import { isProxyImageVariant, type ProxyImageVariant } from '@shared/utils/proxy-image-url-util';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { IMAGE_RATE_LIMIT_GROUP_ID } from '../core/constants/rate-limit-const';
 import { IMAGE_PROXY_QUEUE_TIMEOUT_MS } from '../core/image/image-proxy-const';
 import { isBackgroundImageUrl } from '../core/background/background';
 import { fetchAndCacheImageWithDetails, getCachedImage } from '../core/image/image-proxy';
+import type { CachedImage } from '../core/image/image-proxy-model';
 import { optionalJwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getGroupedRateLimitHook, getImageRateLimit } from '../core/utils/rate-limit-util';
+
+const sendCachedImage = (response: FastifyReply, image: CachedImage, cachePublic: boolean): void => {
+  response.header('Content-Type', image.contentType);
+  response.header(
+    'Cache-Control',
+    image.fallback
+      ? 'no-store'
+      : cachePublic
+        ? 'public, max-age=31536000, immutable'
+        : 'private, max-age=31536000, immutable'
+  );
+  response.send(image.buffer);
+};
+
+const parseImageVariant = (rawVariant: unknown): ProxyImageVariant | undefined | false => {
+  if (rawVariant == null || rawVariant === '') return undefined;
+  return isProxyImageVariant(rawVariant) ? rawVariant : false;
+};
 
 export const register = (app: FastifyInstance): void => {
   const rateLimit = getImageRateLimit();
@@ -17,7 +37,13 @@ export const register = (app: FastifyInstance): void => {
       config: { rateLimit: { max: rateLimit, timeWindow: '1 minute', groupId: IMAGE_RATE_LIMIT_GROUP_ID } },
     },
     withErrorHandler(async (request, response) => {
-      const sourceUrl = String((request.query as Record<string, unknown>).url ?? '');
+      const query = request.query as Record<string, unknown>;
+      const sourceUrl = String(query.url ?? '');
+      const variant = parseImageVariant(query.variant);
+      if (variant === false) {
+        response.code(400).send();
+        return;
+      }
 
       if (!request.usernameHash) {
         if (!isBackgroundImageUrl(sourceUrl)) {
@@ -25,11 +51,9 @@ export const register = (app: FastifyInstance): void => {
           return;
         }
 
-        const allowlisted = await getCachedImage(sourceUrl);
+        const allowlisted = await getCachedImage(sourceUrl, variant);
         if (allowlisted) {
-          response.header('Content-Type', allowlisted.contentType);
-          response.header('Cache-Control', 'public, max-age=31536000, immutable');
-          response.send(allowlisted.buffer);
+          sendCachedImage(response, allowlisted, true);
           return;
         }
 
@@ -37,11 +61,9 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      const cached = await getCachedImage(sourceUrl);
+      const cached = await getCachedImage(sourceUrl, variant);
       if (cached) {
-        response.header('Content-Type', cached.contentType);
-        response.header('Cache-Control', 'public, max-age=31536000, immutable');
-        response.send(cached.buffer);
+        sendCachedImage(response, cached, false);
         return;
       }
 
@@ -50,11 +72,9 @@ export const register = (app: FastifyInstance): void => {
       switch (result.kind) {
         case 'fetched':
         case 'cached': {
-          const refreshed = await getCachedImage(sourceUrl);
+          const refreshed = await getCachedImage(sourceUrl, variant);
           if (refreshed) {
-            response.header('Content-Type', refreshed.contentType);
-            response.header('Cache-Control', 'public, max-age=31536000, immutable');
-            response.send(refreshed.buffer);
+            sendCachedImage(response, refreshed, false);
           } else {
             response.code(400).send();
           }

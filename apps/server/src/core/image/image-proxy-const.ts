@@ -16,3 +16,10 @@ export const IMAGE_CACHE_ENTRY_OVERHEAD_BYTES = 8 * 1024;
 export const IMAGE_PROXY_CONCURRENCY = 4;
 export const IMAGE_PROXY_QUEUE_MAX = 32;
 export const IMAGE_PROXY_QUEUE_TIMEOUT_MS = 10_000;
+export const IMAGE_VARIANT_CONCURRENCY = 1;
+export const IMAGE_VARIANT_MAX_INPUT_PIXELS = 4096 * 4096;
+export const IMAGE_CACHE_VARIANT_CONTENT_TYPE = 'image/webp';
+export const IMAGE_CACHE_VARIANT_MAX_WIDTH = {
+  background: 240,
+  card: 480,
+} as const;

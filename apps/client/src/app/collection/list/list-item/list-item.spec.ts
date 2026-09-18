@@ -92,6 +92,22 @@ describe('ListItem', () => {
     fixture.detectChanges();
   });
 
+  it('lazy-loads card posters through the thumbnail proxy', () => {
+    TestBed.inject(apiStateToken).setState('apiUrl', '/api/v1');
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample'),
+      image: 'https://images.example/poster.jpg',
+    });
+    fixture.detectChanges();
+
+    const poster = (fixture.nativeElement as HTMLElement).querySelector('.poster-image');
+    expect(poster?.tagName).toBe('IMG');
+    expect(poster?.getAttribute('loading')).toBe('lazy');
+    expect(poster?.getAttribute('src')).toBe(
+      '/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg&variant=card'
+    );
+  });
+
   it('sets search text when provided value is not null', () => {
     component['onSetSearchText']('query');
 

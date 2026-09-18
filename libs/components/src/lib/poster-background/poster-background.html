@@ -1,7 +1,17 @@
 @for (image of images(); track $index) {
   <img
     alt=""
-    style="--x: {{ image.x }}px; --y: {{ image.y }}px; --animation-duration: {{ image.animationDuration }}s"
+    decoding="async"
+    fetchpriority="low"
+    loading="lazy"
+    [attr.width]="imageWidth"
+    [attr.height]="imageHeight"
+    [style.width.px]="imageWidth"
+    [style.height.px]="imageHeight"
+    [style.max-width]="'none'"
+    [style.--x.px]="image.x"
+    [style.--y.px]="image.y"
+    [style.--animation-duration.s]="image.animationDuration"
     animate.enter="animation-fade-in"
     animate.leave="animation-fade-out"
     [src]="image.url"

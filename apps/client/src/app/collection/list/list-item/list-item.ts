@@ -41,7 +41,7 @@ export class ListItem {
   });
   protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly imageUrl = computed(() =>
-    getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
+    getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image, 'card')
   );
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');

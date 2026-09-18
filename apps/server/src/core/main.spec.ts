@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   register: vi.fn(async () => undefined),
   registerAllApis: vi.fn(),
   registerDocsApi: vi.fn(async () => undefined),
+  backfillImageCacheVariants: vi.fn(async () => undefined),
 }));
 
 vi.mock('@fastify/cookie', () => ({ default: vi.fn() }));
@@ -30,6 +31,9 @@ vi.mock('../apis/docs-api', () => ({ register: mocks.registerDocsApi }));
 vi.mock('../tools/initializer', () => ({ initializeFolders: mocks.initializeFolders }));
 vi.mock('./argv/argv', () => ({ getArgv: () => ({ dataFolder: '.data', debug: false, metadataServiceUrl: '' }) }));
 vi.mock('./background/background', () => ({ warmBackgroundImages: vi.fn() }));
+vi.mock('./image/image-proxy', () => ({
+  backfillImageCacheVariants: mocks.backfillImageCacheVariants,
+}));
 vi.mock('./database/database', () => ({ initializeDatabase: vi.fn(() => ({})) }));
 vi.mock('./database/migrations', () => ({ hasSqlMigrations: vi.fn(() => true), runMigrations: vi.fn() }));
 vi.mock('./external-metadata/external-metadata-provider-factory', () => ({
@@ -70,7 +74,7 @@ describe('main', () => {
   });
 
   it('stops startup when the metadata service is unavailable', async () => {
-    mocks.loadExternalMetadataProviders.mockRejectedValue(new Error('metadata service is unavailable'));
+    mocks.loadExternalMetadataProviders.mockRejectedValueOnce(new Error('metadata service is unavailable'));
     const exit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
     await main();
@@ -80,5 +84,23 @@ describe('main', () => {
     expect(mocks.errorLog).toHaveBeenCalledWith('Server start unknown error (metadata service is unavailable)');
     expect(exit).toHaveBeenCalledWith(1);
     exit.mockRestore();
+  });
+
+  it('logs thumbnail backfill failures without stopping the server', async () => {
+    let rejectBackfill!: (error: Error) => void;
+    mocks.backfillImageCacheVariants.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectBackfill = reject;
+        })
+    );
+
+    await main();
+
+    expect(mocks.listen).toHaveBeenCalledWith({ port: 3000, host: '127.0.0.1' });
+    rejectBackfill(new Error('disk full'));
+    await vi.waitFor(() => {
+      expect(mocks.errorLog).toHaveBeenCalledWith('Image thumbnail backfill failed (disk full)');
+    });
   });
 });

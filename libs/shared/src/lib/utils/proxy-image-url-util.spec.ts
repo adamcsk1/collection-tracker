@@ -8,6 +8,20 @@ describe('getProxyImageUrl', () => {
     );
   });
 
+  it('appends a variant query for cards and backgrounds', () => {
+    expect(getProxyImageUrl('https://api.test/api/v1', 'https://images.example/poster.jpg', 'card')).toBe(
+      'https://api.test/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg&variant=card'
+    );
+  });
+
+  it('replaces an existing variant on an already proxied URL', () => {
+    const proxied = 'https://api.test/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg&variant=card';
+
+    expect(getProxyImageUrl('https://api.test/api/v1', proxied, 'background')).toBe(
+      'https://api.test/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg&variant=background'
+    );
+  });
+
   it('keeps empty, relative, and already proxied URLs unchanged', () => {
     const proxied = 'https://api.test/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg';
 

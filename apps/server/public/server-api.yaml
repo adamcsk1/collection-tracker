@@ -3982,11 +3982,14 @@ paths:
       security: []
       description: >-
         Fetches a public HTTP or HTTPS image URL, caches the bytes on the server, and returns the image with long-lived
-        cache headers. Authenticated requests follow safe public redirects (limited hop count) with SSRF checks on each
-        hop. Unauthenticated requests only serve cached bytes for URLs returned by GET /images/background; other URLs
-        return 401 and allowlisted cache misses return 404 without fetching. Localhost, private-network targets,
-        unsafe/unresolvable redirects, and oversized responses are rejected. Queue saturation or queue wait timeout
-        returns 503 with Retry-After guidance.
+        cache headers. Optional `variant=card` or `variant=background` returns a cached WebP thumbnail when available.
+        Missing thumbnails fall back to the original image with `Cache-Control: no-store` while a non-blocking job
+        generates the variant. Authenticated requests follow safe public redirects (limited hop count) with SSRF checks
+        on each hop and cache privately. Unauthenticated requests only serve cached bytes for URLs returned by GET
+        /images/background; other URLs return 401 and allowlisted cache misses return 404 without fetching. Localhost,
+        private-network targets, unsafe/unresolvable redirects, and oversized responses are rejected. Queue saturation
+        or queue wait timeout returns 503 with Retry-After guidance. After listen the server backfills missing
+        thumbnails for already cached originals without blocking startup.
       tags: [Image Proxy]
       parameters:
         - name: url
@@ -3996,6 +3999,13 @@ paths:
           schema:
             type: string
             format: uri
+        - name: variant
+          in: query
+          required: false
+          description: Optional thumbnail size. `card` is at most 480px wide; `background` is at most 240px wide.
+          schema:
+            type: string
+            enum: [card, background]
       responses:
         '200':
           description: Proxied image bytes.

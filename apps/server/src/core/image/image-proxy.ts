@@ -3,7 +3,9 @@ import { lookup } from 'dns/promises';
 import { type ClientRequest, request as httpRequest } from 'http';
 import { request as httpsRequest } from 'https';
 import { isIP } from 'net';
-import { extname, join } from 'path';
+import { basename, dirname, extname, join } from 'path';
+import sharp from 'sharp';
+import { PROXY_IMAGE_VARIANTS, type ProxyImageVariant } from '@shared/utils/proxy-image-url-util';
 import { getArgv } from '../argv/argv';
 import { FOLDERS } from '../main-const';
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from './image-cache-file';
@@ -13,13 +15,18 @@ import {
   IMAGE_CACHE_ENTRY_OVERHEAD_BYTES,
   IMAGE_CACHE_MAX_BYTES,
   IMAGE_CACHE_MAX_ENTRIES,
+  IMAGE_CACHE_VARIANT_CONTENT_TYPE,
+  IMAGE_CACHE_VARIANT_MAX_WIDTH,
+  IMAGE_VARIANT_MAX_INPUT_PIXELS,
   IMAGE_PROXY_CONCURRENCY,
   IMAGE_PROXY_QUEUE_MAX,
   IMAGE_PROXY_QUEUE_TIMEOUT_MS,
+  IMAGE_VARIANT_CONCURRENCY,
   MAX_IMAGE_BYTES,
   MAX_REDIRECT_HOPS,
 } from './image-proxy-const';
 import {
+  CachedImage,
   ImageCacheEntry,
   ImageCacheMetadata,
   ImageCacheState,
@@ -41,6 +48,28 @@ const inFlightRequests = new Map<string, Promise<ImageProxyResult>>();
 const cacheStates = new Map<string, Promise<ImageCacheState>>();
 const fetchQueue: ImageFetchQueueEntry[] = [];
 let activeFetches = 0;
+const variantJobs = new Map<string, Promise<void>>();
+const variantWaiters: Array<() => void> = [];
+let activeVariantJobs = 0;
+
+const getVariantFileName = (cacheKey: string, variant: ProxyImageVariant): string => `${cacheKey}.${variant}.webp`;
+
+const getCacheKeyFromMetadataPath = (metadataPath: string): string => basename(metadataPath, '.json');
+
+const acquireVariantSlot = async (): Promise<void> => {
+  if (activeVariantJobs < IMAGE_VARIANT_CONCURRENCY) {
+    activeVariantJobs += 1;
+    return;
+  }
+
+  await new Promise<void>((resolve) => variantWaiters.push(resolve));
+};
+
+const releaseVariantSlot = (): void => {
+  const next = variantWaiters.shift();
+  if (next) next();
+  else activeVariantJobs -= 1;
+};
 
 const acquireFetchSlot = async (): Promise<boolean> => {
   if (activeFetches < IMAGE_PROXY_CONCURRENCY) {
@@ -332,8 +361,16 @@ const removeCacheEntry = (cacheState: ImageCacheState, entry: ImageCacheEntry): 
   }
   cacheState.dirtyAccesses.delete(entry.metadataPath);
   cacheState.bytes -= entry.size;
+  const cacheFolder = dirname(entry.metadataPath);
+  const cacheKey = getCacheKeyFromMetadataPath(entry.metadataPath);
   return runEntryFileMutation(cacheState, entry.metadataPath, async () => {
-    await Promise.all([rm(entry.imagePath, { force: true }), rm(entry.metadataPath, { force: true })]);
+    await Promise.all([
+      rm(entry.imagePath, { force: true }),
+      rm(entry.metadataPath, { force: true }),
+      ...PROXY_IMAGE_VARIANTS.map((variant) =>
+        rm(join(cacheFolder, getVariantFileName(cacheKey, variant)), { force: true })
+      ),
+    ]);
   });
 };
 
@@ -405,10 +442,10 @@ const flushAccessMetadata = async (cacheState: ImageCacheState): Promise<void> =
   const removals = await runCacheMutation(cacheState, async () => {
     for (const { entry, metadataBytes } of writes) {
       if (cacheState.entries.get(entry.metadataPath) !== entry) continue;
-      const previousSize = entry.size;
+      const previousMetadataBytes = entry.metadataBytes;
       entry.metadataBytes = metadataBytes;
-      entry.size = entry.metadata.size + metadataBytes + IMAGE_CACHE_ENTRY_OVERHEAD_BYTES;
-      cacheState.bytes += entry.size - previousSize;
+      entry.size += metadataBytes - previousMetadataBytes;
+      cacheState.bytes += metadataBytes - previousMetadataBytes;
     }
     return collectCacheQuotaTrims(cacheState);
   });
@@ -458,12 +495,23 @@ const initializeCacheState = async (cacheFolder: string): Promise<ImageCacheStat
 
           metadata.accessedAt = Number.isFinite(metadata.accessedAt) ? metadata.accessedAt : imageStats.mtimeMs;
           metadata.size = imageStats.size;
+          const cacheKey = metadataFileName.slice(0, -'.json'.length);
+          let variantBytes = 0;
+          for (const variant of PROXY_IMAGE_VARIANTS) {
+            const variantFileName = getVariantFileName(cacheKey, variant);
+            referencedImages.add(variantFileName);
+            try {
+              variantBytes += (await stat(join(cacheFolder, variantFileName))).size;
+            } catch {
+              continue;
+            }
+          }
           const entry: ImageCacheEntry = {
             imagePath,
             metadata,
             metadataBytes: metadataStats.size,
             metadataPath,
-            size: imageStats.size + metadataStats.size + IMAGE_CACHE_ENTRY_OVERHEAD_BYTES,
+            size: imageStats.size + metadataStats.size + variantBytes + IMAGE_CACHE_ENTRY_OVERHEAD_BYTES,
           };
           referencedImages.add(metadata.fileName);
           cacheState.entries.set(metadataPath, entry);
@@ -504,6 +552,119 @@ const getCachedImageEntry = (cacheState: ImageCacheState, sourceUrl: string): Im
   return entry;
 };
 
+const listMissingVariants = async (cacheFolder: string, cacheKey: string): Promise<ProxyImageVariant[]> => {
+  const missing: ProxyImageVariant[] = [];
+  for (const variant of PROXY_IMAGE_VARIANTS) {
+    try {
+      if ((await stat(join(cacheFolder, getVariantFileName(cacheKey, variant)))).size > 0) continue;
+    } catch {
+      missing.push(variant);
+      continue;
+    }
+    missing.push(variant);
+  }
+  return missing;
+};
+
+const writeVariantFiles = async (
+  cacheState: ImageCacheState,
+  entry: ImageCacheEntry,
+  cacheFolder: string,
+  cacheKey: string,
+  variants: Array<{ variant: ProxyImageVariant; buffer: Buffer }>
+): Promise<void> => {
+  const written: Array<{ path: string; bytes: number }> = [];
+  try {
+    await runEntryFileMutation(cacheState, entry.metadataPath, async () => {
+      if (cacheState.entries.get(entry.metadataPath) !== entry) return;
+      for (const { variant, buffer } of variants) {
+        const variantPath = join(cacheFolder, getVariantFileName(cacheKey, variant));
+        const temporaryPath = `${variantPath}.${randomUUID()}.tmp`;
+        try {
+          await writeFile(temporaryPath, buffer);
+          await rename(temporaryPath, variantPath);
+          written.push({ path: variantPath, bytes: buffer.byteLength });
+        } finally {
+          await rm(temporaryPath, { force: true });
+        }
+      }
+    });
+  } catch (error) {
+    await Promise.all(written.map(({ path }) => rm(path, { force: true })));
+    throw error;
+  }
+
+  const removals = await runCacheMutation(cacheState, async () => {
+    if (cacheState.entries.get(entry.metadataPath) !== entry) return [];
+    const addedBytes = written.reduce((total, { bytes }) => total + bytes, 0);
+    entry.size += addedBytes;
+    cacheState.bytes += addedBytes;
+    return collectCacheQuotaTrims(cacheState);
+  });
+  await Promise.all(removals);
+};
+
+const generateMissingVariants = async (sourceUrl: string): Promise<void> => {
+  const { cacheFolder, cacheState } = await getCacheState();
+  const entry = cacheState.entriesBySourceUrl.get(sourceUrl);
+  if (!entry) return;
+
+  const cacheKey = getCacheKey(sourceUrl);
+  const missing = await listMissingVariants(cacheFolder, cacheKey);
+  if (!missing.length) return;
+
+  let original: Buffer;
+  try {
+    original = await runEntryFileMutation(cacheState, entry.metadataPath, () => readFile(entry.imagePath));
+  } catch {
+    return;
+  }
+  if (!original.byteLength) return;
+
+  const generated: Array<{ variant: ProxyImageVariant; buffer: Buffer }> = [];
+  for (const variant of missing) {
+    try {
+      generated.push({
+        variant,
+        buffer: await sharp(original, { limitInputPixels: IMAGE_VARIANT_MAX_INPUT_PIXELS })
+          .autoOrient()
+          .resize({ width: IMAGE_CACHE_VARIANT_MAX_WIDTH[variant], withoutEnlargement: true })
+          .webp()
+          .toBuffer(),
+      });
+    } catch {
+      continue;
+    }
+  }
+  if (!generated.length) return;
+  await writeVariantFiles(cacheState, entry, cacheFolder, cacheKey, generated);
+};
+
+const queueMissingVariants = (sourceUrl: string): Promise<void> => {
+  const existing = variantJobs.get(sourceUrl);
+  if (existing) return existing;
+
+  const job = (async () => {
+    await acquireVariantSlot();
+    try {
+      await generateMissingVariants(sourceUrl);
+    } catch {
+      return;
+    } finally {
+      releaseVariantSlot();
+    }
+  })().finally(() => {
+    if (variantJobs.get(sourceUrl) === job) variantJobs.delete(sourceUrl);
+  });
+  variantJobs.set(sourceUrl, job);
+  return job;
+};
+
+export const backfillImageCacheVariants = async (): Promise<void> => {
+  const { cacheState } = await getCacheState();
+  await Promise.all([...cacheState.entriesBySourceUrl.keys()].map((sourceUrl) => queueMissingVariants(sourceUrl)));
+};
+
 export const isImageCacheQuotaExceeded = (
   cacheBytes: number,
   cacheEntryCount: number,
@@ -520,6 +681,7 @@ const fetchAndCacheUncachedImage = async (url: URL): Promise<ImageProxyResult> =
   try {
     const { cacheFolder, cacheState } = await getCacheState();
     if (await runCacheMutation(cacheState, async () => Boolean(getCachedImageEntry(cacheState, url.href)))) {
+      void queueMissingVariants(url.href);
       return { kind: 'cached' };
     }
 
@@ -627,6 +789,7 @@ const fetchAndCacheUncachedImage = async (url: URL): Promise<ImageProxyResult> =
       await Promise.all([rm(temporaryImagePath, { force: true }), rm(temporaryMetadataPath, { force: true })]);
     }
 
+    void queueMissingVariants(url.href);
     return { kind: 'fetched' };
   } finally {
     clearTimeout(deadline);
@@ -647,6 +810,7 @@ export const fetchAndCacheImageWithDetails = async (sourceUrl: string): Promise<
 
   const { cacheState } = await getCacheState();
   if (await runCacheMutation(cacheState, async () => Boolean(getCachedImageEntry(cacheState, url.href)))) {
+    void queueMissingVariants(url.href);
     return { kind: 'cached' };
   }
 
@@ -663,7 +827,7 @@ export const fetchAndCacheImage = async (sourceUrl: string): Promise<boolean> =>
   return result.kind === 'cached' || result.kind === 'fetched';
 };
 
-export const getCachedImage = async (sourceUrl: string): Promise<{ contentType: string; buffer: Buffer } | null> => {
+export const getCachedImage = async (sourceUrl: string, variant?: ProxyImageVariant): Promise<CachedImage | null> => {
   let url: URL;
 
   try {
@@ -676,18 +840,37 @@ export const getCachedImage = async (sourceUrl: string): Promise<{ contentType: 
     return null;
   }
 
-  const { cacheState } = await getCacheState();
+  const { cacheFolder, cacheState } = await getCacheState();
   const cachedRead = await runCacheMutation(cacheState, async () => {
     const cached = getCachedImageEntry(cacheState, url.href);
     if (!cached) return null;
     return {
       cached,
-      operation: runEntryFileMutation(cacheState, cached.metadataPath, () => readFile(cached.imagePath)),
+      operation: runEntryFileMutation(cacheState, cached.metadataPath, async () => {
+        if (variant) {
+          try {
+            const buffer = await readFile(join(cacheFolder, getVariantFileName(getCacheKey(url.href), variant)));
+            if (buffer.byteLength > 0) {
+              return { contentType: IMAGE_CACHE_VARIANT_CONTENT_TYPE, buffer, fallback: false };
+            }
+          } catch {
+            void queueMissingVariants(url.href);
+          }
+        }
+
+        return {
+          contentType: cached.metadata.contentType,
+          buffer: await readFile(cached.imagePath),
+          fallback: Boolean(variant),
+        };
+      }),
     };
   });
   if (!cachedRead) return null;
   try {
-    return { contentType: cachedRead.cached.metadata.contentType, buffer: await cachedRead.operation };
+    const image = await cachedRead.operation;
+    if (image.fallback) void queueMissingVariants(url.href);
+    return image;
   } catch {
     const removal = await runCacheMutation(cacheState, async () =>
       cacheState.entries.get(cachedRead.cached.metadataPath) === cachedRead.cached

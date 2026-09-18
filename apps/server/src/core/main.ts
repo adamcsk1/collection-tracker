@@ -3,6 +3,7 @@ import fastifyCors from '@fastify/cors';
 import fastifyFormbody from '@fastify/formbody';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
+import { API_PREFIX } from '@shared/constants/api-const';
 import dotenv from 'dotenv';
 import fastify, { type FastifyRequest } from 'fastify';
 import { existsSync } from 'fs';
@@ -20,6 +21,7 @@ import { apiResponseHook } from './utils/api-response-util';
 import { validateEnvironment } from './utils/environment-util';
 import { getRequestPath } from './utils/request-url-util';
 import { warmBackgroundImages } from './background/background';
+import { backfillImageCacheVariants } from './image/image-proxy';
 import { loadExternalMetadataProviders } from './external-metadata/external-metadata-provider-factory';
 
 const DEFAULT_METADATA_SERVICE_READY_ATTEMPTS = 30;
@@ -101,7 +103,10 @@ export const main = async () => {
     debugLog('Applying request logging middleware');
     await app.register(fastifyHelmet);
     debugLog('Applying security middleware');
-    app.addHook('onSend', async (_request, response) => {
+    app.addHook('onSend', async (request, response) => {
+      if (getRequestPath(request.url) === `${API_PREFIX}/images/proxy` && response.hasHeader('cache-control')) {
+        return;
+      }
       response.header('Surrogate-Control', 'no-store');
       response.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       response.header('Pragma', 'no-cache');
@@ -133,6 +138,9 @@ export const main = async () => {
     await app.listen({ port: Number(process.env.PORT), host: `${process.env.HOST}` });
     infoLog(`[ ready ] http://${process.env.HOST}:${process.env.PORT}`);
     void warmBackgroundImages();
+    void backfillImageCacheVariants().catch((error: unknown) => {
+      void errorLog(`Image thumbnail backfill failed (${error instanceof Error ? error.message : 'unknown error'})`);
+    });
   } catch (error: unknown) {
     if (error instanceof Error) errorLog(`Server start unknown error (${error.message})`);
     process.exit(1);

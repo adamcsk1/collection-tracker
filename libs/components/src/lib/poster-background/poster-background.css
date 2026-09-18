@@ -16,6 +16,9 @@ img {
   z-index: -1;
   width: var(--image-width);
   height: var(--image-height);
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
   position: absolute;
   top: var(--y);
   left: var(--x);
