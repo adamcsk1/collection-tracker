@@ -10,8 +10,8 @@
       "{workspaceRoot}/tsconfig.base.json",
       "{workspaceRoot}/tsconfig.json",
       "{workspaceRoot}/tsconfig.spec.json",
-      "{workspaceRoot}/vitest.angular.config.ts",
-      "{workspaceRoot}/vitest.coverage-exclude.ts",
+      "{workspaceRoot}/vitest.angular.config.mts",
+      "{workspaceRoot}/vitest.coverage-exclude.mts",
       "{workspaceRoot}/vitest.setup.ts"
     ]
   },

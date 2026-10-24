@@ -17,7 +17,7 @@
     },
     "test": {
       "executor": "nx:run-commands",
-      "options": { "command": "vitest run --config apps/client/vitest.config.ts" }
+      "options": { "command": "vitest run --config apps/client/vitest.config.mts" }
     },
     "lint": {
       "executor": "nx:run-commands",

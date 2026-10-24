@@ -18,7 +18,7 @@
     },
     "test": {
       "executor": "nx:run-commands",
-      "options": { "command": "vitest run --config apps/metadata-provider/vitest.config.ts" }
+      "options": { "command": "vitest run --config apps/metadata-provider/vitest.config.mts" }
     },
     "lint": {
       "executor": "nx:run-commands",

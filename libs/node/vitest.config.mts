@@ -1,10 +1,10 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
-import { coverageExclude } from '../../vitest.coverage-exclude';
+import { coverageExclude } from '../../vitest.coverage-exclude.mts';
 
 export default defineConfig({
-  root: __dirname,
-  cacheDir: '../../node_modules/.vitest/apps/metadata-provider',
+  root: import.meta.dirname,
+  cacheDir: '../../node_modules/.vitest/libs/node',
   resolve: {
     tsconfigPaths: true,
   },
@@ -14,13 +14,13 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
     include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
-    setupFiles: [resolve(__dirname, '../../vitest.setup.ts')],
+    setupFiles: [resolve(import.meta.dirname, '../../vitest.setup.ts')],
     reporters: ['default', 'verbose'],
     coverage: {
       enabled: true,
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      reportsDirectory: '../../coverage/apps/metadata-provider',
+      reportsDirectory: '../../coverage/libs/node',
       exclude: [...coverageExclude],
     },
   },

@@ -8,6 +8,7 @@ export const coverageExclude = [
   '**/*-routes.ts',
   '**/*-const.ts',
   '**/*.config.ts',
+  '**/*.config.mts',
   '**/*.config.cjs',
   '**/scripts/*',
   '**/*.html',

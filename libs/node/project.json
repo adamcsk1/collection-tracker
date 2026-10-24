@@ -8,7 +8,7 @@
   "targets": {
     "test": {
       "executor": "nx:run-commands",
-      "options": { "command": "vitest run --config libs/node/vitest.config.ts" }
+      "options": { "command": "vitest run --config libs/node/vitest.config.mts" }
     },
     "lint": {
       "executor": "nx:run-commands",
