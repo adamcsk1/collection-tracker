@@ -34,7 +34,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 
 ## Requirements
 
-- Node.js `>= 26.0.0`
+- Node.js `26.12.1` (pinned in `.node-version`)
 - npm
 - Docker, only for container builds
 - Android Studio, only for Android wrapper work

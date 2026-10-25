@@ -209,7 +209,7 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '26.0.0'
+          node-version-file: '.node-version'
           cache: npm
 
       - name: Set up Java
