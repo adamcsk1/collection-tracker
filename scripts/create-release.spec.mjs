@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const {
+  androidBuildMetadata,
   createCommandFailureMessage,
   formatCommand,
   formatHelp,
@@ -25,6 +26,24 @@ const aboutSource = `export class About {
 `;
 
 describe('create-release build metadata helpers', () => {
+  it('shares precise APK ordering and source identity across release metadata', () => {
+    const commit = 'a'.repeat(40);
+    const now = Date.parse('2026-10-27T12:00:00Z');
+    const build = androidBuildMetadata('1.2.3', true, commit, '1790000000', now);
+    expect(build).toEqual({
+      schema: 1,
+      channel: 'snapshot',
+      version: '1.2.3',
+      commit,
+      commitTime: 1790000000,
+      versionCode: now / 2000,
+    });
+    expect(build.versionCode).toBeGreaterThan(26102712);
+    expect(androidBuildMetadata('1.2.3', false, commit, '1790000000', now + 2000).versionCode).toBe(
+      build.versionCode + 1
+    );
+    expect(androidBuildMetadata('1.2.3', false, commit, '1790000000', now).channel).toBe('release');
+  });
   it('updates About build metadata placeholders and escapes TypeScript string values', () => {
     const updatedSource = updateClientAboutBuildInfoSource(aboutSource, {
       build: "abc123 (feature\\branch's)",

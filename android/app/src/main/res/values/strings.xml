@@ -1,5 +1,21 @@
 <resources>
   <string name="app_name">Collection tracker</string>
+  <string name="native_settings">App settings</string>
+  <string name="update_enabled">Check for app updates on launch</string>
+  <string name="update_check">Check updates</string>
+  <string name="update_checking">Checking for updates…</string>
+  <string name="update_current">No newer update is available.</string>
+  <string name="update_failed">Unable to check for updates. Try again.</string>
+  <string name="update_channel">Update channel</string>
+  <string-array name="update_channels">
+    <item>Release</item>
+    <item>Snapshot</item>
+  </string-array>
+  <string name="update_available">App update available</string>
+  <string name="update_message">Version %1$s (%2$s) is available on GitHub.</string>
+  <string name="update_open">Open release</string>
+  <string name="update_skip">Skip this release</string>
+  <string name="update_browser_unavailable">No browser is available on this device.</string>
   <string name="config_title">Collection Tracker web config</string>
   <string name="page_url_label">Page URL</string>
   <string name="api_url_label">API URL</string>

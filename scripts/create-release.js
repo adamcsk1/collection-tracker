@@ -36,6 +36,7 @@ let appVersion = '';
 let webReleaseName = '';
 let webReleaseFolder = '';
 let webZipFile = '';
+let androidBuild;
 
 const formatHelp = () => `Usage:
   npm run release -- [options]
@@ -167,11 +168,27 @@ const tagReleaseVersion = (version) => {
 
 const releaseVersion = (version, snapshot, sha) => (snapshot ? `${version}-snapshot.${sha.slice(0, 12)}` : version);
 
+const androidBuildMetadata = (version, snapshot, commit, commitTime, now = Date.now()) => ({
+  schema: 1,
+  channel: snapshot ? 'snapshot' : 'release',
+  version,
+  commit,
+  commitTime: Number(commitTime),
+  versionCode: Math.floor(now / 2000),
+});
+
 const prepareVersion = (options) => {
   console.log('Preparing release version');
   const currentVersion = readPackageVersion();
   assertVersionFilesMatch(currentVersion);
-  setReleasePaths(releaseVersion(currentVersion, options.snapshot, getCommandOutput('git', ['rev-parse', 'HEAD'])));
+  const commit = getCommandOutput('git', ['rev-parse', 'HEAD']);
+  androidBuild = androidBuildMetadata(
+    currentVersion,
+    options.snapshot,
+    commit,
+    getCommandOutput('git', ['show', '-s', '--format=%ct', 'HEAD'])
+  );
+  setReleasePaths(releaseVersion(currentVersion, options.snapshot, commit));
 };
 
 const resolveApkSigner = (buildToolsFolder = androidSdkBuildToolsFolder, platform = process.platform) => {
@@ -289,7 +306,17 @@ const createAndroidRelease = () => {
   const androidCommand = process.platform === 'win32' ? 'cmd' : './gradlew';
   const androidArgs =
     process.platform === 'win32' ? ['/c', join(androidFolder, 'gradlew.bat'), 'assembleRelease'] : ['assembleRelease'];
-  run(androidCommand, androidArgs, { cwd: androidFolder, label: 'Building Android release APK' });
+  run(androidCommand, androidArgs, {
+    cwd: androidFolder,
+    label: 'Building Android release APK',
+    env: {
+      CT_BUILD_CHANNEL: androidBuild.channel,
+      CT_BUILD_VERSION: androidBuild.version,
+      CT_BUILD_COMMIT: androidBuild.commit,
+      CT_COMMIT_TIME: String(androidBuild.commitTime),
+      CT_BUILD_CODE: String(androidBuild.versionCode),
+    },
+  });
 
   const apkFiles = findAndroidApks();
   if (!apkFiles.length) {
@@ -336,6 +363,9 @@ const createRelease = () => {
   recreateFolder(releaseFolder);
   createWebRelease();
   createAndroidRelease();
+  const metadataFile = join(releaseFolder, 'android-update.json');
+  writeFileSync(metadataFile, JSON.stringify(androidBuild));
+  writeHashFiles(metadataFile);
   createZip(webReleaseFolder, webZipFile);
   writeHashFiles(webZipFile);
   if (!options.snapshot) tagReleaseVersion(appVersion);
@@ -354,6 +384,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  androidBuildMetadata,
   createCommandFailureMessage,
   formatBuildDate,
   formatCommand,

@@ -160,7 +160,7 @@ const updateVersionFiles = (version) => {
   writeJsonFile(packageLockFile, packageLock);
 
   const androidBuild = readFileSync(androidBuildFile, 'utf-8');
-  const updatedAndroidBuild = androidBuild.replace(/versionName = "\d+\.\d+\.\d+"/, `versionName = "${version}"`);
+  const updatedAndroidBuild = androidBuild.replace(/getOrElse\("\d+\.\d+\.\d+"\)/, `getOrElse("${version}")`);
   if (updatedAndroidBuild === androidBuild)
     throw new Error(`Could not update Android versionName in ${androidBuildFile}`);
   writeFileSync(androidBuildFile, updatedAndroidBuild);
@@ -177,7 +177,7 @@ const assertVersionFilesMatch = (version) => {
   const versions = [
     ['package-lock.json', packageLock.version],
     ['package-lock.json packages root', packageLock.packages[''].version],
-    ['Android versionName', getVersionFromFile(androidBuildFile, /versionName = "(\d+\.\d+\.\d+)"/, 'Android')],
+    ['Android versionName', getVersionFromFile(androidBuildFile, /getOrElse\("(\d+\.\d+\.\d+)"\)/, 'Android')],
   ];
 
   for (const [label, foundVersion] of versions) {

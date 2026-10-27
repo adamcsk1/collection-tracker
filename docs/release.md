@@ -11,6 +11,7 @@ For version `0.0.1`, the release output includes:
 - `release/collection-tracker-0.0.1.apk` when Android signing is configured.
 - `release/collection-tracker-0.0.1-unsigned.apk` when Gradle produces an unsigned Android APK.
 - `.sha256` and `.md5` hash files for the zip files and APK.
+- `android-update.json` and its `.sha256` and `.md5` files, identifying the Android channel, base version, full commit SHA, source commit timestamp, and APK version code.
 
 Release packaging clears the existing `release/` folder before writing new artifacts.
 
@@ -63,7 +64,9 @@ git push origin main --tags
 
 The Release workflow decodes `ANDROID_KEYSTORE_BASE64` and runs `npm run release` with `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. Both channels use the same signing key. It uploads the ZIP, signed APK, and checksum files; missing, unsigned, or checksum-invalid artifacts fail publication. `--no-commit` bumps are local only and do not create that GitHub Release.
 
-Snapshots use `npm run release -- --snapshot`, which skips automatic version tagging. For package version `0.0.1` and commit `abcdef123456…`, artifacts are `collection-tracker-0.0.1-snapshot.abcdef123456.apk` and `.zip`, each with `.sha256` and `.md5` files. The About version uses the same snapshot identifier. Android keeps its existing package version name and hourly timestamp version code.
+Snapshots use `npm run release -- --snapshot`, which skips automatic version tagging. For package version `0.0.1` and commit `abcdef123456…`, artifacts are `collection-tracker-0.0.1-snapshot.abcdef123456.apk` and `.zip`, each with `.sha256` and `.md5` files. The About version uses the same snapshot identifier. Android keeps its base package version name and uses Unix time in two-second units for the version code, avoiding the previous hourly ordering ambiguity.
+
+Packaging passes `CT_BUILD_CHANNEL`, `CT_BUILD_COMMIT`, `CT_COMMIT_TIME`, and `CT_BUILD_CODE` to Gradle and writes matching schema-1 `android-update.json`. The publisher validates its checksums and channel/SHA/tag before staging, uploads it alongside the existing assets, and includes the same JSON in a `collection-tracker-android` HTML comment in release notes. Android reads this metadata from the public GitHub release API for its opt-in launch-only checks; keep the comment intact when editing notes. Local Gradle builds use the current Git commit and Release channel. Source commit timestamps conservatively order snapshots; identical timestamps do not trigger an update.
 
 The workflow can also be dispatched manually on the current default branch (snapshot, plus stable when tagged), or triggered by a version-tag push. A tag push before CI/Docker completion fails its gate; the later Docker completion retries both channels. Superseded commits never intentionally replace the current snapshot. Duplicate completions and reruns skip an already-published snapshot SHA. Docker run names carry the actual build SHA; the Release workflow uses that SHA rather than the nested event's workflow revision. Older Docker runs without this provenance are skipped.
 

@@ -7,7 +7,14 @@ class CollectionTrackerBridge(
   private val activity: Activity,
   private val resetAppConfig: () -> Unit,
   private val downloadHandler: AndroidDownloadHandler,
+  private val openSettings: () -> Unit,
 ) {
+  @Suppress("unused")
+  @JavascriptInterface
+  fun showSettings() {
+    activity.runOnUiThread { openSettings() }
+  }
+
   @Suppress("unused")
   @JavascriptInterface
   fun resetAppConfig(): Boolean {

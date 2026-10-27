@@ -1,0 +1,5 @@
+<resources>
+  <item name="updateEnabled" type="id" />
+  <item name="updateChannel" type="id" />
+  <item name="checkUpdates" type="id" />
+</resources>

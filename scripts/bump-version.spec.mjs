@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { bumpVersion, formatHelp, parseArguments } = require('./bump-version.js');
+const { assertVersionFilesMatch, bumpVersion, formatHelp, parseArguments, readPackageVersion } = require('./bump-version.js');
 
 describe('bump-version argument helpers', () => {
   it('prints usage, options, and examples in help output', () => {
@@ -31,6 +31,10 @@ describe('bump-version argument helpers', () => {
 });
 
 describe('bump-version version helpers', () => {
+  it('reads the Android build version used by release packaging', () => {
+    expect(() => assertVersionFilesMatch(readPackageVersion())).not.toThrow();
+  });
+
   it('bumps semantic versions', () => {
     expect(bumpVersion('1.2.3', 'patch')).toBe('1.2.4');
     expect(bumpVersion('1.2.3', 'minor')).toBe('1.3.0');

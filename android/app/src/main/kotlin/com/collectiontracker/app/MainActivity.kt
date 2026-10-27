@@ -29,10 +29,16 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Toast
 import android.widget.TextView
+import android.widget.Spinner
+import android.widget.ArrayAdapter
+import android.widget.AdapterView
+import android.view.View
+import java.util.concurrent.Executors
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -49,6 +55,10 @@ private const val PREF_TRUST_UNTRUSTED_CERTIFICATES = "trust_untrusted_certifica
 private const val PREFS_API_URL = "CT.ApiUrl"
 
 class MainActivity : AppCompatActivity() {
+  internal companion object {
+    var defaultUpdateFetcher: (String) -> UpdateBuild? = UpdateClient::fetch
+  }
+
   private lateinit var pageInput: EditText
   private lateinit var apiInput: EditText
   private lateinit var trustUntrustedCertificatesInput: CheckBox
@@ -66,6 +76,13 @@ class MainActivity : AppCompatActivity() {
   private var isShowingInvalidPage = false
   private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
   private val navigation = WebViewNavigation()
+  private lateinit var updates: UpdateSession
+  private val updateExecutor = Executors.newSingleThreadExecutor()
+  internal var updateFetcher: (String) -> UpdateBuild? = defaultUpdateFetcher
+  private var updateDialog: AlertDialog? = null
+  private var settingsDialog: AlertDialog? = null
+  private var pendingUpdateRequest: UpdateRequest? = null
+  private var resumed = false
 
   private val localNetworkPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
     if (granted) {
@@ -108,11 +125,135 @@ class MainActivity : AppCompatActivity() {
     setupWebView()
     configureActions()
     maybeStartFromSavedConfig()
+    updates = UpdateSession(
+      UpdateBuild(BuildConfig.UPDATE_CHANNEL, BuildConfig.VERSION_NAME, BuildConfig.BUILD_COMMIT,
+        BuildConfig.COMMIT_TIME, BuildConfig.VERSION_CODE.toLong()),
+      UpdateCodec.decode(prefs.getString("updates", null), BuildConfig.UPDATE_CHANNEL),
+    ) { state -> prefs.edit { putString("updates", UpdateCodec.encode(state)) } }
+    updates.dismissed = savedInstanceState?.getBoolean("updateDismissed") ?: false
+    findViewById<ImageButton>(R.id.nativeSettingsButton).setOnClickListener { showNativeSettings() }
+    if (savedInstanceState?.getBoolean("updatePending") == true) checkUpdates(force = true, manual = savedInstanceState.getBoolean("updateManual"))
+    else if (savedInstanceState == null) checkUpdates()
+  }
+
+  override fun onResume() {
+    super.onResume()
+    resumed = true
+    if (::updates.isInitialized) showAvailableUpdate()
+  }
+
+  override fun onSaveInstanceState(outState: Bundle) {
+    if (::updates.isInitialized) {
+      val pending = pendingUpdateRequest?.takeIf { updates.accepts(it) }
+      outState.putBoolean("updateDismissed", updates.dismissed)
+      outState.putBoolean("updatePending", pending != null)
+      outState.putBoolean("updateManual", pending?.manual == true)
+    }
+    super.onSaveInstanceState(outState)
+  }
+
+  override fun onDestroy() {
+    updateExecutor.shutdownNow()
+    updateDialog?.dismiss()
+    settingsDialog?.dismiss()
+    super.onDestroy()
   }
 
   override fun onPause() {
+    resumed = false
     super.onPause()
     CookieManager.getInstance().flush()
+  }
+
+  private fun showNativeSettings() {
+    if (isFinishing || isDestroyed || settingsDialog?.isShowing == true) return
+    val content = LinearLayout(this).apply {
+      orientation = LinearLayout.VERTICAL
+      val padding = (24 * resources.displayMetrics.density).toInt()
+      setPadding(padding, padding, padding, padding)
+    }
+    val enabled = CheckBox(this).apply {
+      id = R.id.updateEnabled
+      setText(R.string.update_enabled)
+      isChecked = updates.state.enabled
+    }
+    val label = TextView(this).apply { setText(R.string.update_channel); labelFor = R.id.updateChannel }
+    val channels = listOf("release", "snapshot")
+    val channel = Spinner(this).apply {
+      id = R.id.updateChannel
+      contentDescription = getString(R.string.update_channel)
+      adapter = ArrayAdapter.createFromResource(this@MainActivity, R.array.update_channels, android.R.layout.simple_spinner_dropdown_item)
+      setSelection(channels.indexOf(updates.state.channel))
+    }
+    fun changed() {
+      if (updates.configure(enabled.isChecked, channels[channel.selectedItemPosition])) {
+        updateDialog?.dismiss()
+        checkUpdates(force = true)
+      }
+    }
+    enabled.setOnCheckedChangeListener { _, _ -> changed() }
+    channel.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+      override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = changed()
+      override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+    }
+    content.addView(enabled)
+    content.addView(label)
+    content.addView(channel)
+    content.addView(Button(this).apply {
+      id = R.id.checkUpdates
+      setText(R.string.update_check)
+      setOnClickListener { checkUpdates(manual = true) }
+    })
+    settingsDialog = AlertDialog.Builder(this).setTitle(R.string.native_settings).setView(content)
+      .setPositiveButton(android.R.string.ok, null)
+      .setNeutralButton(R.string.edit_settings) { _, _ -> showConfig() }.show()
+  }
+
+  private fun checkUpdates(force: Boolean = false, manual: Boolean = false) {
+    if (pendingUpdateRequest?.let { updates.accepts(it) && (!manual || it.manual) } == true) {
+      if (manual) Toast.makeText(this, R.string.update_checking, Toast.LENGTH_SHORT).show()
+      return
+    }
+    if (!manual) showAvailableUpdate()
+    val request = updates.begin(System.currentTimeMillis(), force, manual) ?: return
+    pendingUpdateRequest = request
+    if (manual) Toast.makeText(this, R.string.update_checking, Toast.LENGTH_SHORT).show()
+    updateExecutor.execute {
+      val result = runCatching { updateFetcher(request.channel) }
+      runOnUiThread {
+        if (isDestroyed || isFinishing) return@runOnUiThread
+        if (pendingUpdateRequest == request) pendingUpdateRequest = null
+        if (!updates.accepts(request)) return@runOnUiThread
+        if (result.isSuccess) updates.complete(request, result.getOrNull())
+        if (manual) {
+          if (result.isFailure || updates.available() == null) {
+            Toast.makeText(this, if (result.isFailure) R.string.update_failed else R.string.update_current, Toast.LENGTH_LONG).show()
+            return@runOnUiThread
+          }
+          settingsDialog?.dismiss()
+        }
+        showAvailableUpdate()
+      }
+    }
+  }
+
+  private fun showAvailableUpdate() {
+    if (!resumed || isFinishing || isDestroyed) return
+    val build = updates.available() ?: return
+    updates.dismissed = true
+    updateDialog = AlertDialog.Builder(this)
+      .setTitle(R.string.update_available)
+      .setMessage(getString(R.string.update_message, build.version, build.commit.take(12)))
+      .setPositiveButton(R.string.update_open) { _, _ ->
+        try {
+          startActivity(Intent(Intent.ACTION_VIEW, build.releaseUrl.toUri()))
+        } catch (_: ActivityNotFoundException) {
+          Toast.makeText(this, R.string.update_browser_unavailable, Toast.LENGTH_LONG).show()
+        }
+      }
+      .setNegativeButton(android.R.string.cancel, null)
+      .setNeutralButton(R.string.update_skip) { _, _ -> updates.skip(build) }
+      .show()
   }
 
   private fun configureActions() {
@@ -342,7 +483,7 @@ class MainActivity : AppCompatActivity() {
       }
     }
 
-    webView.addJavascriptInterface(CollectionTrackerBridge(this, ::clearStoredConfig, downloadHandler), "CollectionTrackerInterface")
+    webView.addJavascriptInterface(CollectionTrackerBridge(this, ::clearStoredConfig, downloadHandler, ::showNativeSettings), "CollectionTrackerInterface")
   }
 
   private fun injectRuntimeConfig() {
@@ -470,10 +611,12 @@ class MainActivity : AppCompatActivity() {
     errorContainer.isVisible = false
     configContainer.isVisible = false
     webView.isVisible = true
+    findViewById<View>(R.id.nativeSettingsBar).isVisible = false
     webView.loadUrl(pageUrl)
   }
 
   private fun showError(message: Int = R.string.error_message) {
+    findViewById<View>(R.id.nativeSettingsBar).isVisible = false
     navigation.invalidate()
     webView.stopLoading()
     errorMessage.setText(message)
@@ -488,12 +631,14 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun showWeb() {
+    findViewById<View>(R.id.nativeSettingsBar).isVisible = false
     configContainer.isVisible = false
     errorContainer.isVisible = false
     webView.isVisible = true
   }
 
   private fun showConfig() {
+    findViewById<View>(R.id.nativeSettingsBar).isVisible = true
     navigation.invalidate()
     webView.stopLoading()
     configContainer.isVisible = true

@@ -14,7 +14,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - Fastify for the API
 - Vitest for unit tests and Cypress for end-to-end coverage
 - SQLite persistence in a configurable data directory
-- Android WebView wrapper for mobile distribution
+- Android WebView wrapper with native settings, manual Release/Snapshot update checks, and optional launch checks
 
 ## Workspace
 

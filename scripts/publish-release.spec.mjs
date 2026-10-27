@@ -9,11 +9,31 @@ const { publish, readAssets } = createRequire(import.meta.url)('./publish-releas
 const sha = 'a'.repeat(40);
 const previousSha = 'b'.repeat(40);
 const folders = [];
+function writeMetadata(folder, channel = 'snapshot', overrides = {}) {
+  const name = 'android-update.json';
+  const data = JSON.stringify({
+    schema: 1,
+    channel,
+    version: '1.2.3',
+    commit: sha,
+    commitTime: 1790000000,
+    versionCode: 895000000,
+    ...overrides,
+  });
+  writeFileSync(join(folder, name), data);
+  for (const algorithm of ['sha256', 'md5']) {
+    writeFileSync(
+      join(folder, `${name}.${algorithm}`),
+      `${createHash(algorithm).update(data).digest('hex')}  ${name}\n`
+    );
+  }
+}
 afterEach(() => folders.splice(0).forEach((folder) => rmSync(folder, { recursive: true, force: true })));
 
 function fixture({ existing = true, tag = 'snapshot' } = {}) {
   const artifactDir = mkdtempSync(join(tmpdir(), 'collection-publisher-'));
   folders.push(artifactDir);
+  writeMetadata(artifactDir, tag === 'snapshot' ? 'snapshot' : 'release');
   for (const name of ['collection-tracker-snapshot.apk', 'collection-tracker-snapshot.zip']) {
     writeFileSync(join(artifactDir, name), 'binary');
     for (const algorithm of ['sha256', 'md5']) {
@@ -89,7 +109,16 @@ function fixture({ existing = true, tag = 'snapshot' } = {}) {
 }
 
 describe('release publisher', () => {
-  it('stages all six verified assets before replacing snapshot using explicit SHA', async () => {
+  it.each([{ commit: previousSha }, { channel: 'release' }, { versionCode: -1 }, { commitTime: 0 }, { schema: 2 }])(
+    'rejects mismatched metadata before staging: %j',
+    async (overrides) => {
+      const state = fixture();
+      writeMetadata(state.options.artifactDir, 'snapshot', overrides);
+      await expect(publish(state.options)).rejects.toThrow('Invalid Android update metadata');
+      expect(state.repos.createRelease).not.toHaveBeenCalled();
+    }
+  );
+  it('stages all nine verified assets before replacing snapshot using explicit SHA', async () => {
     const state = fixture();
     const upload = state.repos.uploadReleaseAsset.getMockImplementation();
     state.repos.uploadReleaseAsset.mockImplementation(async (values) => {
@@ -107,7 +136,8 @@ describe('release publisher', () => {
       make_latest: 'false',
       target_commitish: sha,
     });
-    expect(release.assets).toHaveLength(6);
+    expect(release.assets).toHaveLength(9);
+    expect(release.body).toContain('<!-- collection-tracker-android:');
     expect(release.body).toContain(sha);
     expect(release.body).toContain('/actions/runs/42');
     expect(release.body).toContain('Built:');
@@ -121,6 +151,7 @@ describe('release publisher', () => {
     await publish(state.options);
     expect(state.refs.get('tags/snapshot').object.sha).toBe(sha);
     state.options.tag = 'v1.2.3';
+    writeMetadata(state.options.artifactDir, 'release');
     await publish(state.options);
     await publish(state.options);
     expect(state.repos.createRelease).toHaveBeenCalledTimes(2);
@@ -141,11 +172,18 @@ describe('release publisher', () => {
     expect(state.git.updateRef).not.toHaveBeenCalled();
   });
 
-  it.each(['upload', 'incomplete', 'archive', 'tag', 'publish'])(
+  it.each(['upload', 'metadataUpload', 'incomplete', 'archive', 'tag', 'publish'])(
     'restores previous snapshot after %s failure',
     async (failure) => {
       const state = fixture();
       if (failure === 'upload') state.repos.uploadReleaseAsset.mockRejectedValueOnce(new Error('failed'));
+      if (failure === 'metadataUpload') {
+        const upload = state.repos.uploadReleaseAsset.getMockImplementation();
+        state.repos.uploadReleaseAsset.mockImplementation(async (values) => {
+          if (values.name === 'android-update.json') throw new Error('metadata upload failed');
+          return upload(values);
+        });
+      }
       if (failure === 'incomplete') state.repos.uploadReleaseAsset.mockResolvedValueOnce({ data: { size: 0 } });
       if (failure === 'archive' || failure === 'publish') {
         const update = state.repos.updateRelease.getMockImplementation();

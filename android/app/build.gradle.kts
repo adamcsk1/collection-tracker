@@ -1,13 +1,23 @@
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import java.time.Instant
 
 plugins {
   id("com.android.application")
 }
 
-val versionCodeTimestamp: Int = ZonedDateTime.now(ZoneOffset.UTC)
-  .format(DateTimeFormatter.ofPattern("yyMMddHH")).toInt()
+val versionCodeTimestamp = providers.environmentVariable("CT_BUILD_CODE").orNull?.toInt()
+  ?: (Instant.now().epochSecond / 2).toInt()
+val buildChannel = providers.environmentVariable("CT_BUILD_CHANNEL").getOrElse("release")
+val buildVersion = providers.environmentVariable("CT_BUILD_VERSION").getOrElse("0.0.1")
+require(Regex("(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)").matches(buildVersion))
+val buildCommit = providers.environmentVariable("CT_BUILD_COMMIT").orNull ?: providers.exec {
+  commandLine("git", "rev-parse", "HEAD")
+}.standardOutput.asText.get().trim()
+val commitTime = providers.environmentVariable("CT_COMMIT_TIME").orNull ?: providers.exec {
+  commandLine("git", "show", "-s", "--format=%ct", "HEAD")
+}.standardOutput.asText.get().trim()
+require(buildChannel in listOf("release", "snapshot"))
+require(Regex("[a-f0-9]{40}").matches(buildCommit))
+require(commitTime.toLong() > 0)
 
 val releaseKeystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD")
@@ -31,8 +41,14 @@ android {
     minSdk = 35
     targetSdk = 37
     versionCode = versionCodeTimestamp
-    versionName = "0.0.1"
+    versionName = buildVersion
+    buildConfigField("String", "UPDATE_CHANNEL", "\"$buildChannel\"")
+    buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
+    buildConfigField("long", "COMMIT_TIME", "${commitTime}L")
   }
+
+  buildFeatures { buildConfig = true }
+  testOptions { unitTests.isIncludeAndroidResources = true }
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -67,4 +83,6 @@ dependencies {
   implementation("androidx.appcompat:appcompat:1.8.0")
   implementation("com.google.android.material:material:1.14.0")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.2.21")
+  testImplementation("org.json:json:20250517")
+  testImplementation("org.robolectric:robolectric:4.16.1")
 }

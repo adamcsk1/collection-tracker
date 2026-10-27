@@ -12,7 +12,7 @@ const readAssets = (artifactDir) => {
   ) {
     throw new Error('Expected one signed APK and one web ZIP');
   }
-  return names.flatMap((name) => {
+  return [...names, 'android-update.json'].flatMap((name) => {
     const data = readFileSync(join(artifactDir, name));
     const checksums = ['sha256', 'md5'].map((algorithm) => {
       const checksumName = `${name}.${algorithm}`;
@@ -56,6 +56,20 @@ async function publish({ github, context, core, artifactDir, tag, sha, branch })
   }
   if (existing?.draft) throw new Error(`Existing ${tag} draft needs recovery before retrying`);
   const files = readAssets(artifactDir);
+  const metadata = JSON.parse(files.find((file) => file.name === 'android-update.json').data.toString());
+  if (
+    metadata.schema !== 1 ||
+    metadata.commit !== sha ||
+    metadata.channel !== (snapshot ? 'snapshot' : 'release') ||
+    !/^\d+\.\d+\.\d+$/.test(metadata.version) ||
+    (!snapshot && tag !== `v${metadata.version}`) ||
+    !Number.isSafeInteger(metadata.commitTime) ||
+    metadata.commitTime <= 0 ||
+    !Number.isInteger(metadata.versionCode) ||
+    metadata.versionCode <= 0 ||
+    metadata.versionCode > 2100000000
+  )
+    throw new Error('Invalid Android update metadata');
   const runUrl = `${context.serverUrl || 'https://github.com'}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`;
   const notes = snapshot
     ? `Development snapshot from ${branch}.\n\nCommit: ${sha}\nBuilt: ${new Date().toISOString()}\nBuild and checks: ${runUrl}\n\nIncludes a signed Android APK, web/server ZIP, and SHA-256 and MD5 checksums. This prerelease is replaced by the next successful build.`
@@ -73,7 +87,7 @@ async function publish({ github, context, core, artifactDir, tag, sha, branch })
         tag_name: snapshot ? stagingTag : tag,
         target_commitish: sha,
         name: snapshot ? 'Development snapshot' : tag,
-        body: notes,
+        body: `${notes}\n\n<!-- collection-tracker-android:${JSON.stringify(metadata)} -->`,
         draft: true,
         prerelease: snapshot,
         make_latest: 'false',

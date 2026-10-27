@@ -34,6 +34,6 @@ This directory contains the maintained project documentation. The root [`README.
 
 - [Release packaging, rolling snapshots, and publication recovery](./release.md)
 - [Docker deployment](./docker.md)
-- [Android wrapper](./android.md)
+- [Android wrapper, manual updates, and opt-in launch checks](./android.md)
 
 Keep this tree aligned with the workspace whenever responsibilities, build scripts, routes, or runtime requirements change.

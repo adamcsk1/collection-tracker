@@ -147,6 +147,8 @@ The CI → Docker GHCR → Release chain publishes the current default-branch co
 
 `npm run release -- --snapshot` names artifacts and About metadata with `X.Y.Z-snapshot.<12-character SHA>` and skips automatic version tagging. Both channels use the same Android signing secrets. The publisher verifies checksums, stages assets, rechecks the branch tip, skips duplicate publication, and rolls back failed snapshot replacement. Release runs share non-cancelling concurrency. See `docs/release.md` for recovery instructions.
 
+Android automatic update checks are native, opt-in (default off), and launch-only with a 24-hour attempt throttle; enabling or changing channel checks immediately. Manual Check updates bypasses opt-out, throttle, and skipped/dismissed builds without enabling automatic checks. The native App settings bar appears only on URL configuration; the WebView bridge exposes `showSettings()` to open the same dialog. No background workers or notifications are used. Packaging embeds channel, version, commit, commit timestamp, and a Unix-time/two-second APK versionCode, and publishes matching checksummed `android-update.json` plus a release-note metadata comment. Snapshot ordering uses source commit time and exact identity rather than the rolling tag. See `docs/android.md` for cache and skip behavior.
+
 ## Commit Conventions
 
 Format: `type(scope): short imperative summary`.
