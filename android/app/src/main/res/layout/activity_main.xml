@@ -129,6 +129,7 @@
         android:textStyle="bold" />
 
     <TextView
+        android:id="@+id/errorMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
@@ -146,6 +147,18 @@
       app:backgroundTint="@null"
       android:textColor="@color/secondary"
       android:text="@string/retry" />
+
+    <Button
+      android:id="@+id/permissionSettingsButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="12dp"
+      android:background="@drawable/button_with_border"
+      android:backgroundTint="@null"
+      app:backgroundTint="@null"
+      android:textColor="@color/secondary"
+      android:text="@string/permission_settings"
+      android:visibility="gone" />
 
     <Button
       android:id="@+id/editButton"

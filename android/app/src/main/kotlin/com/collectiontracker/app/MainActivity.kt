@@ -1,14 +1,18 @@
 package com.collectiontracker.app
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.net.NetworkCapabilities
 import android.net.http.SslError
 import android.os.Bundle
+import android.os.Build
+import android.provider.Settings
 import android.webkit.CookieManager
 import android.webkit.JsResult
 import android.webkit.SslErrorHandler
@@ -28,6 +32,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Toast
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -50,6 +55,8 @@ class MainActivity : AppCompatActivity() {
   private lateinit var openButton: Button
   private lateinit var editButton: Button
   private lateinit var retryButton: Button
+  private lateinit var permissionSettingsButton: Button
+  private lateinit var errorMessage: TextView
   private lateinit var configContainer: ScrollView
   private lateinit var errorContainer: LinearLayout
   private lateinit var webView: WebView
@@ -58,6 +65,16 @@ class MainActivity : AppCompatActivity() {
   private var apiUrl: String = ""
   private var isShowingInvalidPage = false
   private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+  private val navigation = WebViewNavigation()
+
+  private val localNetworkPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+    if (granted) {
+      launchWebView()
+    } else {
+      showError(R.string.error_local_network_permission)
+      permissionSettingsButton.isVisible = true
+    }
+  }
 
   private val fileChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
     val callback = fileChooserCallback ?: return@registerForActivityResult
@@ -76,6 +93,8 @@ class MainActivity : AppCompatActivity() {
     openButton = findViewById(R.id.openButton)
     editButton = findViewById(R.id.editButton)
     retryButton = findViewById(R.id.retryButton)
+    permissionSettingsButton = findViewById(R.id.permissionSettingsButton)
+    errorMessage = findViewById(R.id.errorMessage)
     configContainer = findViewById(R.id.configContainer)
     errorContainer = findViewById(R.id.errorContainer)
     webView = findViewById(R.id.webView)
@@ -108,6 +127,9 @@ class MainActivity : AppCompatActivity() {
     retryButton.setOnClickListener {
       hideError()
       launchWebView()
+    }
+    permissionSettingsButton.setOnClickListener {
+      startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName".toUri()))
     }
 
     pageInput.addTextChangedListener {
@@ -270,14 +292,17 @@ class MainActivity : AppCompatActivity() {
       }
 
       override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-        hideError()
+        if (webView.isVisible) {
+          navigation.start(url)
+          hideError()
+        }
         super.onPageStarted(view, url, favicon)
       }
 
       override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
 
-        if (url.isNullOrBlank() || url == "about:blank") return
+        if (!navigation.canVerify(url)) return
 
         if (!isLikelyCollectionTrackerPage(url)) {
           showInvalidPage()
@@ -348,7 +373,8 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun verifyCollectionTrackerContent(url: String?) {
-    if (url.isNullOrBlank()) return
+    val generation = navigation.generation
+    if (!navigation.canVerify(url, generation)) return
 
     val script = """
       (function() {
@@ -370,13 +396,12 @@ class MainActivity : AppCompatActivity() {
     """.trimIndent()
 
     webView.evaluateJavascript(script) { result ->
+      if (isFinishing || isDestroyed || !navigation.canVerify(url, generation)) return@evaluateJavascript
       if (result == "true") {
         injectRuntimeConfig()
         return@evaluateJavascript
       }
-      runOnUiThread {
-        showInvalidPage()
-      }
+      showInvalidPage()
     }
   }
 
@@ -428,6 +453,13 @@ class MainActivity : AppCompatActivity() {
 
   private fun launchWebView() {
     if (pageUrl.isBlank() || apiUrl.isBlank()) return
+    navigation.invalidate()
+
+    // DNS names and separate API hosts may reach the LAN even when the page URL looks public.
+    if (Build.VERSION.SDK_INT >= 37 && checkSelfPermission(Manifest.permission.ACCESS_LOCAL_NETWORK) != PackageManager.PERMISSION_GRANTED) {
+      localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+      return
+    }
 
     if (!isNetworkAvailable()) {
       showError()
@@ -441,7 +473,11 @@ class MainActivity : AppCompatActivity() {
     webView.loadUrl(pageUrl)
   }
 
-  private fun showError() {
+  private fun showError(message: Int = R.string.error_message) {
+    navigation.invalidate()
+    webView.stopLoading()
+    errorMessage.setText(message)
+    permissionSettingsButton.isVisible = false
     webView.isVisible = false
     errorContainer.isVisible = true
     configContainer.isVisible = false
@@ -458,6 +494,8 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun showConfig() {
+    navigation.invalidate()
+    webView.stopLoading()
     configContainer.isVisible = true
     webView.isVisible = false
     errorContainer.isVisible = false

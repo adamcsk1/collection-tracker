@@ -10,6 +10,8 @@
   <string name="open">Open</string>
   <string name="error_title">Unable to load page</string>
   <string name="error_message">The page URL is not reachable right now.</string>
+  <string name="error_local_network_permission">Allow Nearby devices access to connect to your Collection Tracker server. Tap Retry to request access again. If Android no longer prompts, open App permissions, allow Nearby devices, then return and tap Retry.</string>
+  <string name="permission_settings">App permissions</string>
   <string name="retry">Retry</string>
   <string name="edit_settings">Edit settings</string>
   <string name="error_page_url_required">Enter a page URL</string>
