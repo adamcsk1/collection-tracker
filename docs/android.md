@@ -34,3 +34,5 @@ Run Android commands with Java 17 or newer from the [`android`](../android) dire
 ```
 
 Release APK packaging and signing details are covered in [Release packaging](./release.md).
+
+The rolling `snapshot` prerelease includes a signed APK built with the same key and application ID as stable releases. Snapshot filenames contain the package version and commit SHA; Android retains its package version name and existing hourly timestamp version code. Builds within the same UTC hour can share a version code. Installing an older build may require uninstalling the newer wrapper, which clears its saved configuration.

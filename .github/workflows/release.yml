@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: release-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: release-publisher
   cancel-in-progress: false
 
 permissions:
@@ -25,6 +25,10 @@ jobs:
     name: Package and publish GitHub Release
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [snapshot, stable]
     if: >-
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -46,12 +50,20 @@ jobs:
               'Typecheck',
             ];
             const { owner, repo } = context.repo;
-            const headSha =
-              context.eventName === 'workflow_run' ? context.payload.workflow_run.head_sha : context.sha;
+            const snapshot = '${{ matrix.channel }}' === 'snapshot';
+            // Nested workflow_run head_sha describes the workflow revision, not necessarily its checkout.
+            const headSha = context.eventName === 'workflow_run'
+              ? /^Docker GHCR ([a-f0-9]{40})$/.exec(context.payload.workflow_run.display_title)?.[1]
+              : context.sha;
             const failWhenNotReady = context.eventName === 'push' || context.eventName === 'workflow_dispatch';
 
             core.setOutput('ready', 'false');
             core.setOutput('tag', '');
+            if (!headSha) {
+              core.notice('Docker run has no explicit build SHA; a new Docker run with the updated workflow is required.');
+              return;
+            }
+            core.setOutput('sha', headSha);
 
             const notReady = (message) => {
               if (failWhenNotReady) {
@@ -85,16 +97,20 @@ jobs:
               if (commitSha === headSha) tags.push(tagName);
             }
 
-            if (tags.length === 0) {
+            if (!snapshot && tags.length === 0) {
+              if (context.eventName === 'workflow_dispatch' && context.ref.startsWith('refs/heads/')) {
+                core.notice('No stable tag; snapshot only.');
+                return;
+              }
               notReady(`no vX.Y.Z tag on ${headSha}`);
               return;
             }
-            if (tags.length > 1) {
+            if (!snapshot && tags.length > 1) {
               core.setFailed(`Multiple vX.Y.Z tags on ${headSha}: ${tags.join(', ')}`);
               return;
             }
 
-            const tag = tags[0];
+            const tag = snapshot ? 'snapshot' : tags[0];
             const { data: packageFile } = await github.rest.repos.getContent({
               owner,
               repo,
@@ -104,7 +120,7 @@ jobs:
             const packageVersion = JSON.parse(
               Buffer.from(packageFile.content, packageFile.encoding).toString('utf8')
             ).version;
-            if (tag !== `v${packageVersion}`) {
+            if (!snapshot && tag !== `v${packageVersion}`) {
               core.setFailed(`Tag ${tag} does not match package.json version ${packageVersion}`);
               return;
             }
@@ -120,17 +136,18 @@ jobs:
               return;
             }
 
-            const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+            const workflowRuns = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
               owner,
               repo,
               branch: repository.default_branch,
               event: 'push',
+              head_sha: headSha,
               per_page: 100,
             });
 
             const missingOrFailed = [];
             for (const workflowName of requiredWorkflows) {
-              const workflowRun = data.workflow_runs.find(
+              const workflowRun = workflowRuns.find(
                 (run) => run.name === workflowName && run.head_sha === headSha
               );
               if (!workflowRun || workflowRun.status !== 'completed' || workflowRun.conclusion !== 'success') {
@@ -150,10 +167,9 @@ jobs:
                 run_id: runId,
                 per_page: 100,
               });
-              const publishStep = jobs.jobs
-                .flatMap((job) => job.steps || [])
-                .find((step) => step.name === 'Build and push Docker image');
-              return publishStep?.conclusion === 'success';
+              const steps = jobs.jobs.flatMap((job) => job.steps || []);
+              return ['Build and push Docker image', 'Build and push metadata-provider Docker image']
+                .every((name) => steps.some((step) => step.name === name && step.conclusion === 'success'));
             };
 
             let dockerPublished = false;
@@ -164,10 +180,10 @@ jobs:
                 owner,
                 repo,
                 workflow_id: 'docker-ghcr.yml',
-                head_sha: headSha,
               });
               for (const run of dockerRuns) {
-                if (run.status !== 'completed') continue;
+                if (run.display_title !== `Docker GHCR ${headSha}`) continue;
+                if (run.status !== 'completed' || run.conclusion !== 'success') continue;
                 if (await dockerPublishSucceeded(run.id)) {
                   dockerPublished = true;
                   break;
@@ -184,7 +200,7 @@ jobs:
             core.setOutput('tag', tag);
 
       - name: Log in to GHCR
-        if: steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true' && matrix.channel == 'stable'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -192,18 +208,20 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tag GHCR image with version
-        if: steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true' && matrix.channel == 'stable'
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SHA: ${{ steps.gate.outputs.sha }}
           TAG: ${{ steps.gate.outputs.tag }}
-        run: docker buildx imagetools create -t "$IMAGE:$TAG" "$IMAGE:sha-$SHA"
+        run: |
+          docker buildx imagetools create -t "$IMAGE:$TAG" "$IMAGE:sha-$SHA"
+          docker buildx imagetools create -t "$IMAGE-metadata-provider:$TAG" "$IMAGE-metadata-provider:sha-$SHA"
 
       - name: Checkout
         if: steps.gate.outputs.ready == 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ steps.gate.outputs.sha }}
 
       - name: Set up Node
         if: steps.gate.outputs.ready == 'true'
@@ -260,24 +278,24 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RELEASE_CHANNEL: ${{ matrix.channel }}
         run: |
           chmod +x android/gradlew
-          npm run release
+          if [ "$RELEASE_CHANNEL" = snapshot ]; then
+            npm run release -- --snapshot
+          else
+            npm run release
+          fi
 
       - name: Publish GitHub Release
         if: steps.gate.outputs.ready == 'true'
+        uses: actions/github-script@v8
         env:
-          GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.gate.outputs.tag }}
-        run: |
-          shopt -s nullglob
-          files=(release/*.apk release/*.zip release/*.sha256 release/*.md5)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No release artifacts found in release/" >&2
-            exit 1
-          fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "${files[@]}" --clobber
-          else
-            gh release create "$TAG" "${files[@]}" --generate-notes --title "$TAG"
-          fi
+          RELEASE_SHA: ${{ steps.gate.outputs.sha }}
+        with:
+          script: |
+            const { publish } = require('./scripts/publish-release.js');
+            await publish({ github, context, core, artifactDir: 'release',
+              tag: process.env.TAG, sha: process.env.RELEASE_SHA,
+              branch: context.payload.repository.default_branch });

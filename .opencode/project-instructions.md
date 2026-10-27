@@ -141,6 +141,12 @@ Always follow the existing test style in the file being tested.
 
 E2E tests live in `apps/collection-e2e/src/` and run against the Docker test container on port `2999`. The `.opencode/agents/testing.md` agent file contains the full Cypress conventions.
 
+## Release Publication
+
+The CI → Docker GHCR → Release chain publishes the current default-branch commit as a rolling `snapshot` prerelease, never stable Latest. Matching `vX.Y.Z` tags also publish stable releases. Both channels require all seven CI workflows and both Docker image pushes. Docker GHCR embeds the actual build SHA in its run name because nested `workflow_run` context SHAs may differ from the checked-out source. Release checks out and publishes that explicit SHA.
+
+`npm run release -- --snapshot` names artifacts and About metadata with `X.Y.Z-snapshot.<12-character SHA>` and skips automatic version tagging. Both channels use the same Android signing secrets. The publisher verifies checksums, stages assets, rechecks the branch tip, skips duplicate publication, and rolls back failed snapshot replacement. Release runs share non-cancelling concurrency. See `docs/release.md` for recovery instructions.
+
 ## Commit Conventions
 
 Format: `type(scope): short imperative summary`.

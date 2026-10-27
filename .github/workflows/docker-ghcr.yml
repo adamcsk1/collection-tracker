@@ -1,4 +1,5 @@
 name: Docker GHCR
+run-name: Docker GHCR ${{ github.event.workflow_run.head_sha || github.sha }}
 
 on:
   workflow_dispatch:

@@ -240,6 +240,8 @@ See the server documentation for the full runtime model and data layout.
 
 See the [release documentation](./docs/release.md) for packaging, version bump, tag, hash, and Android APK details.
 
+The latest successful main build is available as a [rolling snapshot prerelease](https://github.com/adamcsk1/collection-tracker/releases/tag/snapshot), with a signed Android APK, web/server ZIP, and checksums. Stable releases remain version-tagged separately.
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).

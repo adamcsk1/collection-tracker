@@ -42,6 +42,7 @@ const formatHelp = () => `Usage:
 
 Options:
   -h, --help                  Show this help.
+  --snapshot                  Build snapshot artifacts without creating a version tag.
 
 Examples:
   npm run release
@@ -69,10 +70,14 @@ DISABLE_REGISTRATION=0`;
 const metadataEnv = `OMDB_API_KEY=""`;
 
 const parseArguments = (args = process.argv.slice(2)) => {
-  const options = { help: false };
+  const options = { help: false, snapshot: false };
 
   for (const arg of args) {
     if (arg === '--') continue;
+    if (arg === '--snapshot') {
+      options.snapshot = true;
+      continue;
+    }
     if (arg === '--help' || arg === '-h') {
       options.help = true;
       continue;
@@ -160,11 +165,13 @@ const tagReleaseVersion = (version) => {
   run('git', ['tag', tag], { label: `Tagging release ${tag}` });
 };
 
-const prepareVersion = () => {
+const releaseVersion = (version, snapshot, sha) => (snapshot ? `${version}-snapshot.${sha.slice(0, 12)}` : version);
+
+const prepareVersion = (options) => {
   console.log('Preparing release version');
   const currentVersion = readPackageVersion();
   assertVersionFilesMatch(currentVersion);
-  setReleasePaths(currentVersion);
+  setReleasePaths(releaseVersion(currentVersion, options.snapshot, getCommandOutput('git', ['rev-parse', 'HEAD'])));
 };
 
 const resolveApkSigner = (buildToolsFolder = androidSdkBuildToolsFolder, platform = process.platform) => {
@@ -323,7 +330,7 @@ const createRelease = () => {
     return;
   }
 
-  prepareVersion();
+  prepareVersion(options);
   withClientAboutBuildInfo(clientAboutFile, getClientAboutReleaseBuildInfo(), runNpmBuild);
   console.log('Staging release folder');
   recreateFolder(releaseFolder);
@@ -331,7 +338,7 @@ const createRelease = () => {
   createAndroidRelease();
   createZip(webReleaseFolder, webZipFile);
   writeHashFiles(webZipFile);
-  tagReleaseVersion(appVersion);
+  if (!options.snapshot) tagReleaseVersion(appVersion);
 
   console.log(`Web release created at ${webReleaseFolder}`);
   console.log(`Web archive created at ${webZipFile}`);
@@ -353,6 +360,7 @@ module.exports = {
   formatHelp,
   getAndroidSdkBuildToolsFolder,
   parseArguments,
+  releaseVersion,
   resolveApkSigner,
   updateClientAboutBuildInfoSource,
   withClientAboutBuildInfo,

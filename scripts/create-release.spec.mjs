@@ -11,6 +11,7 @@ const {
   formatHelp,
   getAndroidSdkBuildToolsFolder,
   parseArguments,
+  releaseVersion,
   resolveApkSigner,
   updateClientAboutBuildInfoSource,
   withClientAboutBuildInfo,
@@ -76,9 +77,15 @@ describe('create-release argument helpers', () => {
   });
 
   it('parses help options', () => {
-    expect(parseArguments(['--help'])).toEqual({ help: true });
-    expect(parseArguments(['--', '--help'])).toEqual({ help: true });
-    expect(parseArguments([])).toEqual({ help: false });
+    expect(parseArguments(['--help'])).toEqual({ help: true, snapshot: false });
+    expect(parseArguments(['--', '--help'])).toEqual({ help: true, snapshot: false });
+    expect(parseArguments([])).toEqual({ help: false, snapshot: false });
+    expect(parseArguments(['--snapshot'])).toEqual({ help: false, snapshot: true });
+  });
+
+  it('identifies snapshot artifacts and About version without changing stable versions', () => {
+    expect(releaseVersion('1.2.3', true, '123456789abcdef')).toBe('1.2.3-snapshot.123456789abc');
+    expect(releaseVersion('1.2.3', false, '123456789abcdef')).toBe('1.2.3');
   });
 
   it('reports unknown arguments with usage guidance', () => {
@@ -134,4 +141,3 @@ describe('create-release apk signer helpers', () => {
     }
   });
 });
-
