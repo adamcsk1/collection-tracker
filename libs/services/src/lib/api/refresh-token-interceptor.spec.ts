@@ -23,19 +23,19 @@ describe('refreshTokenInterceptor', () => {
     vi.mocked(redirectToLogin).mockClear();
   });
 
-  it('preserves the session when refresh is rate limited', async () => {
-    const rateLimitError = { status: 429 };
-    refresh.mockReturnValue(throwError(() => rateLimitError));
+  it.each([0, 429, 500, 502, 503, 504])('preserves the session on temporary refresh failure %s', async (status) => {
+    const refreshError = { status };
+    refresh.mockReturnValue(throwError(() => refreshError));
     const next: HttpHandlerFn = vi.fn(() => throwError(() => ({ status: 401 })));
 
     const result = TestBed.runInInjectionContext(() => refreshTokenInterceptor(request, next));
 
-    await expect(firstValueFrom(result)).rejects.toBe(rateLimitError);
+    await expect(firstValueFrom(result)).rejects.toBe(refreshError);
     expect(redirectToLogin).not.toHaveBeenCalled();
   });
 
-  it('redirects to login when refresh is rejected', async () => {
-    refresh.mockReturnValue(throwError(() => ({ status: 403 })));
+  it.each([401, 403])('redirects to login when refresh is rejected with %s', async (status) => {
+    refresh.mockReturnValue(throwError(() => ({ status })));
     const next: HttpHandlerFn = vi.fn(() => throwError(() => ({ status: 401 })));
 
     const result = TestBed.runInInjectionContext(() => refreshTokenInterceptor(request, next));

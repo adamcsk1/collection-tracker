@@ -140,8 +140,8 @@ describe('MainService', () => {
     expect(api.validateSession).toHaveBeenCalled();
   });
 
-  it('marks token as invalid and clears logged-in flag when validation fails', () => {
-    api.validateSession.mockReturnValue(throwError(() => new Error('fail')));
+  it.each([401, 403])('clears the session when validation rejects credentials with %s', (status) => {
+    api.validateSession.mockReturnValue(throwError(() => ({ status })));
 
     expect(() => service.validateSession()).not.toThrow();
     expect(service.tokenValid()).toBe(false);
@@ -149,8 +149,8 @@ describe('MainService', () => {
     expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES);
   });
 
-  it('preserves the logged-in session when validation is rate limited', () => {
-    api.validateSession.mockReturnValue(throwError(() => ({ status: 429 })));
+  it.each([0, 429, 500, 502, 503, 504])('preserves the session on temporary validation failure %s', (status) => {
+    api.validateSession.mockReturnValue(throwError(() => ({ status })));
 
     service.validateSession();
 

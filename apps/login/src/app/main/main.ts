@@ -6,7 +6,7 @@ import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-lo
 import { Toast } from '@components/toast/toast';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
-import { isRateLimitError } from '@services/api/http-error-util';
+import { isTransientHttpError } from '@services/api/http-error-util';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -62,7 +62,7 @@ export class Main implements AfterViewInit {
       .validateSession()
       .pipe(
         catchError((error: unknown) => {
-          if (!isRateLimitError(error)) this.webstorage.removeItem(STORAGE_LOGGED_IN);
+          if (!isTransientHttpError(error)) this.webstorage.removeItem(STORAGE_LOGGED_IN);
           this.blockerLoadingState.setState('show', false);
           return EMPTY;
         })

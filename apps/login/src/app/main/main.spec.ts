@@ -99,9 +99,9 @@ describe('Main component', () => {
     expect(blockerState.state.show()).toBe(false);
   });
 
-  it('hides the blocker loader and clears flag when validation fails', () => {
+  it.each([401, 403])('hides the blocker and clears the session when credentials are rejected with %s', (status) => {
     webStorage.getItem.mockReturnValue('true');
-    apiService.validateSession.mockReturnValue(throwError(() => new Error('invalid')));
+    apiService.validateSession.mockReturnValue(throwError(() => ({ status })));
 
     fixture.componentInstance.ngAfterViewInit();
 
@@ -109,9 +109,9 @@ describe('Main component', () => {
     expect(webStorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
   });
 
-  it('hides the blocker without clearing the session when validation is rate limited', () => {
+  it.each([0, 429, 500, 502, 503, 504])('preserves the session on temporary validation failure %s', (status) => {
     webStorage.getItem.mockReturnValue('true');
-    apiService.validateSession.mockReturnValue(throwError(() => ({ status: 429 })));
+    apiService.validateSession.mockReturnValue(throwError(() => ({ status })));
 
     fixture.componentInstance.ngAfterViewInit();
 
