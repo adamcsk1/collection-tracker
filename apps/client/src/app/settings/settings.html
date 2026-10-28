@@ -97,6 +97,16 @@
     >
       {{ translations.exportImport() }}
     </a>
+    @if (companionSettingsAvailable) {
+      <button
+        type="button"
+        class="button-custom button-borderless"
+        data-test-id="settings-nav-companion-app"
+        (click)="onCompanionAppSettings()"
+      >
+        {{ translations.companionAppSettings() }}
+      </button>
+    }
   </nav>
   <hr />
   <div class="settings-content">

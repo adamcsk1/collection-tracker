@@ -1,4 +1,6 @@
 export const SettingsPage = {
+  getCompanionAppSettings: () => cy.getByTestId('settings-nav-companion-app'),
+  getNavToggle: () => cy.getByTestId('settings-nav-toggle'),
   visitBasics: () => {
     cy.visit('/client/#/settings/basics');
   },

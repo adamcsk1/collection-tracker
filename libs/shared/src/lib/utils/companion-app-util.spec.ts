@@ -1,5 +1,32 @@
-import { describe, expect, it, vi } from 'vitest';
-import { companionApp, resetCompanionAppConfig, saveCompanionAppDownload } from './companion-app-util';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  companionApp,
+  companionAppSettingsAvailable,
+  openCompanionAppSettings,
+  resetCompanionAppConfig,
+  saveCompanionAppDownload,
+} from './companion-app-util';
+
+afterEach(() => {
+  delete window.CollectionTrackerInterface;
+});
+
+describe('companion app settings', () => {
+  it('detects support and invokes the bridge with its receiver', () => {
+    const showSettings = vi.fn();
+    window.CollectionTrackerInterface = { showSettings };
+    expect(companionAppSettingsAvailable()).toBe(true);
+    openCompanionAppSettings();
+    expect(showSettings).toHaveBeenCalledExactlyOnceWith();
+    expect(showSettings.mock.contexts[0]).toBe(window.CollectionTrackerInterface);
+  });
+
+  it.each([undefined, {}])('handles browsers and older companions: %s', (bridge) => {
+    window.CollectionTrackerInterface = bridge;
+    expect(companionAppSettingsAvailable()).toBe(false);
+    expect(() => openCompanionAppSettings()).not.toThrow();
+  });
+});
 
 describe('companionApp', () => {
   it('returns true when CollectionTrackerInterface exists on window', () => {

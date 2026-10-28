@@ -2,6 +2,7 @@ export {};
 
 declare global {
   interface CollectionTrackerBridge {
+    showSettings?: () => void;
     resetAppConfig?: () => boolean;
     saveDownload?: (fileName: string, mimeType: string, base64Content: string) => boolean;
   }

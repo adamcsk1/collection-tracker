@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { companionAppSettingsAvailable, openCompanionAppSettings } from '@shared/utils/companion-app-util';
 import { mainStateToken } from '../main/main-store';
 
 @Component({
@@ -18,9 +19,11 @@ export class Settings {
   private readonly mainState = inject(mainStateToken);
 
   protected readonly navExpanded = signal(false);
+  protected readonly companionSettingsAvailable = companionAppSettingsAvailable();
 
   protected readonly translations = {
     settings: computed(() => this.ngxSignalTranslate.translate('Settings')),
+    companionAppSettings: computed(() => this.ngxSignalTranslate.translate('Settings.CompanionApp')),
     toggleMenu: computed(() => this.ngxSignalTranslate.translate('Settings.ToggleMenu')),
     basics: computed(() => this.ngxSignalTranslate.translate('Basics')),
     user: computed(() => this.ngxSignalTranslate.translate('User')),
@@ -36,6 +39,11 @@ export class Settings {
 
   protected onToggleNav(): void {
     this.navExpanded.update((expanded) => !expanded);
+  }
+
+  protected onCompanionAppSettings(): void {
+    openCompanionAppSettings();
+    this.onNavLinkClick();
   }
 
   protected onNavLinkClick(): void {

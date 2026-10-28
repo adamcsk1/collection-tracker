@@ -2,6 +2,11 @@ import type {} from '../models/companion-app-model';
 
 export const companionApp = () => !!window.CollectionTrackerInterface;
 
+export const companionAppSettingsAvailable = () =>
+  typeof window.CollectionTrackerInterface?.showSettings === 'function';
+
+export const openCompanionAppSettings = () => window.CollectionTrackerInterface?.showSettings?.();
+
 export const resetCompanionAppConfig = () => {
   return window.CollectionTrackerInterface?.resetAppConfig?.();
 };

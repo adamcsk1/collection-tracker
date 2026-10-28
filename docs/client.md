@@ -34,6 +34,8 @@ Top navigation is **intent-first**. Media type uses always-visible chips on Coll
 - `settings/*`: account, tags, display, media refresh, tracker data, shares, export/import
 - about page: build metadata
 
+Inside the Android companion app, the settings menu includes **Companion app settings** when the native bridge supports it. This opens the native dialog for update preferences, manual update checks, and editing instance URLs. The action is hidden in ordinary browsers and older companions without `showSettings()` support.
+
 ### Sharing
 
 Owned items in every list expose a Share action in item details. The item-sharing dialog lists existing outgoing
