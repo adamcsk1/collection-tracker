@@ -106,6 +106,10 @@ export const CollectionPage = {
   getListItemMetacriticRatings: () => cy.getByTestId('list-item-rating-metacritic'),
   getListItemUserRates: () => cy.getByTestId('list-item-user-rate'),
   getListItemImages: (options?: Partial<Cypress.Timeoutable>) => cy.get('[data-test-id="list-item-image"]', options),
+  getListItemImageByTitle: (title: string) =>
+    cy
+      .getByTestId('list-item-image', { timeout: 10000 })
+      .filter((_index, element) => element.getAttribute('aria-label') === title),
   getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),

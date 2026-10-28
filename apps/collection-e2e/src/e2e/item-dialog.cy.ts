@@ -355,8 +355,13 @@ describe('Item dialog — url', { testIsolation: false }, () => {
   });
 
   it('keeps filters when an item is opened and closed', () => {
+    cy.intercept({ method: 'GET', pathname: '/api/v1/collection-items', query: { type: 'movie' } }).as(
+      'getFilteredMovies'
+    );
     CollectionPage.visitLibraryWithQuery('type=movie');
-    CollectionPage.getListItemImages().first().click();
+    cy.wait('@getFilteredMovies').its('response.statusCode').should('eq', 200);
+    CollectionPage.getListItemByTitle('Url Test Movie').should('be.visible');
+    CollectionPage.getListItemImageByTitle('Url Test Movie').click();
     CollectionPage.getItemDialogHost().should('be.visible');
     cy.url().should('include', 'type=movie');
     cy.url().should('include', 'item=omdb:tt7000091');
