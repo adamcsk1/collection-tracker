@@ -13,6 +13,7 @@ import android.webkit.WebView
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import org.robolectric.shadows.ShadowToast
+import org.robolectric.shadows.ShadowLog
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.After
@@ -147,9 +148,12 @@ class MainActivityUpdateTest {
     val button = ShadowAlertDialog.getLatestAlertDialog().findViewById<Button>(R.id.checkUpdates)
     button.performClick()
     waitForUpdate { ShadowToast.getTextOfLatestToast() == activity.getString(R.string.update_current) }
-    activity.updateFetcher = { error("offline") }
+    activity.updateFetcher = { error("private response body") }
     button.performClick()
     waitForUpdate { ShadowToast.getTextOfLatestToast() == activity.getString(R.string.update_failed) }
+    val log = ShadowLog.getLogsForTag("AndroidUpdates").last()
+    assertEquals("Update check failed: IllegalStateException", log.msg)
+    assertNull(log.throwable)
     assertFalse(UpdateCodec.decode(prefs.getString("updates", null), "release").enabled)
   }
 

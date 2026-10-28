@@ -37,7 +37,11 @@ Run Android commands with Java 17 or newer from the [`android`](../android) dire
 
 Release APK packaging and signing details are covered in [Release packaging](./release.md).
 
-JVM tests cover update policy, persistence, HTTP failures and limits, and native settings/dialog wiring through Robolectric (API 35). Device testing is still useful for browser handoff and platform lifecycle behavior.
+JVM tests cover update policy, persistence, successful release and snapshot HTTP responses, failures and limits, and native settings/dialog wiring through Robolectric (API 35).
+
+With an API 35 or newer emulator running, or an authorized Android device connected through ADB, run `./gradlew connectedDebugAndroidTest`. The instrumentation regression test parses release and snapshot metadata using the device's Android ICU regex implementation; JVM and Robolectric tests cannot catch all differences from the desktop regex engine. The Android workflow runs this test on an API 35 emulator alongside JVM tests, lint, and APK assembly. Results are written to `android/app/build/reports/androidTests/connected/`. Browser handoff and platform lifecycle behavior still benefit from manual device testing.
+
+Update check failures log only the exception type under the `AndroidUpdates` Logcat tag, without exception messages or response bodies.
 
 The rolling `snapshot` prerelease includes a signed APK built with the same key and application ID as stable releases. Snapshot filenames contain the package version and commit SHA. APK version codes use Unix time in two-second units, replacing the old hourly timestamp codes; release packaging shares the exact code and source identity with the update metadata. Installing an older build may require uninstalling the newer wrapper, which clears its saved configuration.
 

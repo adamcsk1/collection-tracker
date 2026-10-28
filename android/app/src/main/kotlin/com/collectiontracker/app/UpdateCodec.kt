@@ -27,7 +27,7 @@ object UpdateCodec {
     if (channel == "snapshot" && (tag != "snapshot" || !release.getBoolean("prerelease"))) return null
     if (release.isNull("published_at")) return null
     val body = release.getString("body")
-    val matches = Regex("<!-- collection-tracker-android:(\\{[^\\r\\n]*}) -->").findAll(body).toList()
+    val matches = Regex("<!-- collection-tracker-android:(\\{[^\\r\\n]*\\}) -->").findAll(body).toList()
     if (matches.size != 1) return null
     val build = build(JSONObject(matches.single().groupValues[1]))
     if (build.channel != channel || (channel == "release" && tag != "v${build.version}")) return null

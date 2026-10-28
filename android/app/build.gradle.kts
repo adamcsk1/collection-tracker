@@ -40,6 +40,7 @@ android {
     applicationId = "com.collectiontracker.app"
     minSdk = 35
     targetSdk = 37
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     versionCode = versionCodeTimestamp
     versionName = buildVersion
     buildConfigField("String", "UPDATE_CHANNEL", "\"$buildChannel\"")
@@ -85,4 +86,6 @@ dependencies {
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.2.21")
   testImplementation("org.json:json:20250517")
   testImplementation("org.robolectric:robolectric:4.16.1")
+  androidTestImplementation("androidx.test:runner:1.7.0")
+  androidTestImplementation("junit:junit:4.13.2")
 }

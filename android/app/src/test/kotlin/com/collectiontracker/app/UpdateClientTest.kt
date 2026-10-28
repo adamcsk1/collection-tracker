@@ -44,4 +44,28 @@ class UpdateClientTest {
       assertTrue(connection.disconnected)
     }
   }
+
+  @Test fun parsesSuccessfulPublishedReleaseAndSnapshotResponses() {
+    for ((channel, tag) in listOf("release" to "v1.2.3", "snapshot" to "snapshot")) {
+      val body = """
+        {
+          "id": 123456789,
+          "tag_name": "$tag",
+          "name": "Collection Tracker — $tag",
+          "draft": false,
+          "prerelease": ${channel == "snapshot"},
+          "published_at": "2026-10-27T12:00:00Z",
+          "html_url": "https://github.com/adamcsk1/collection-tracker/releases/tag/$tag",
+          "body": "## Changes\r\n- Android updates\r\n\r\n<!-- collection-tracker-android:{\"schema\":1,\"channel\":\"$channel\",\"version\":\"1.2.3\",\"commit\":\"${"b".repeat(40)}\",\"commitTime\":1790000000,\"versionCode\":895000000} -->\r\n\r\n## Downloads",
+          "assets": [{"name": "collection-tracker.apk", "size": 123456}]
+        }
+      """.trimIndent()
+      for (length in listOf(-1L, body.toByteArray(Charsets.UTF_8).size.toLong())) {
+        val connection = Connection(body = body, length = length)
+        assertEquals(UpdateBuild(channel, "1.2.3", "b".repeat(40), 1790000000, 895000000),
+          UpdateClient.fetch(channel) { connection })
+        assertTrue(connection.disconnected)
+      }
+    }
+  }
 }

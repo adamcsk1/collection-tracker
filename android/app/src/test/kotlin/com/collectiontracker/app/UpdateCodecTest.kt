@@ -36,4 +36,22 @@ class UpdateCodecTest {
     assertEquals(UpdateState(), UpdateCodec.decode("corrupt", "release"))
     assertEquals(UpdateState(), UpdateCodec.decode("{\"channel\":\"unknown\"}", "release"))
   }
+
+  @Test fun parsesMetadataBetweenMarkdownSectionsWithEitherLineEnding() {
+    for (channel in listOf("release", "snapshot")) {
+      val candidate = build.copy(channel = channel)
+      for (newline in listOf("\n", "\r\n")) {
+        val body = listOf("## Changes", "- Fix Android updates", "",
+          "<!-- collection-tracker-android:${UpdateCodec.json(candidate)} -->", "", "## Downloads").joinToString(newline)
+        assertEquals(candidate, UpdateCodec.release(release(candidate).put("body", body).toString(), channel))
+      }
+    }
+  }
+
+  @Test fun rejectsDuplicateMultilineAndUnclosedMetadata() {
+    val marker = "<!-- collection-tracker-android:${UpdateCodec.json(build)} -->"
+    for (body in listOf("$marker\n$marker", marker.replace(",", ",\n"), marker.replace("} -->", " -->"))) {
+      assertNull(UpdateCodec.release(release().put("body", body).toString(), "snapshot"))
+    }
+  }
 }

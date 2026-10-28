@@ -13,6 +13,7 @@ import android.net.http.SslError
 import android.os.Bundle
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.JsResult
 import android.webkit.SslErrorHandler
@@ -220,6 +221,7 @@ class MainActivity : AppCompatActivity() {
     if (manual) Toast.makeText(this, R.string.update_checking, Toast.LENGTH_SHORT).show()
     updateExecutor.execute {
       val result = runCatching { updateFetcher(request.channel) }
+        .onFailure { error -> Log.w("AndroidUpdates", "Update check failed: ${error.javaClass.simpleName}") }
       runOnUiThread {
         if (isDestroyed || isFinishing) return@runOnUiThread
         if (pendingUpdateRequest == request) pendingUpdateRequest = null
