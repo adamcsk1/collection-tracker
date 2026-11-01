@@ -641,6 +641,15 @@ describe('ItemDialog', () => {
     expect(component['episodeProgressText']()).toBe('Fallback.NotAvailable');
   });
 
+  it('does not load series tracking data for tracking movies', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', contentType: 'movie' }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(api.getTrackingSeasonsByExternalId).not.toHaveBeenCalled();
+    expect(api.getTrackingCompletedEpisodesByExternalId).not.toHaveBeenCalled();
+  });
+
   it('loads watched episodes on init for tracking items', () => {
     api.getTrackingCompletedEpisodesByExternalId.mockReturnValue(
       of({ completedEpisodes: [{ season: 1, episode: 2 }], lastCompletedEpisode: { season: 1, episode: 2 } })

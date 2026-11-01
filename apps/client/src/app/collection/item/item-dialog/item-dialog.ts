@@ -529,7 +529,7 @@ export class ItemDialog implements OnInit {
   }
 
   private loadSeriesSeasons(): void {
-    if (!this.tracking()) return;
+    if (!this.tracking() || !this.series()) return;
     const item = this.collectionItem();
     const seasonsRequest = item.ownerShareCode
       ? this.api.getTrackingSeasonsByExternalId(item.externalProvider, item.externalItemId, item.ownerShareCode)
@@ -541,7 +541,7 @@ export class ItemDialog implements OnInit {
   }
 
   private loadCompletedEpisodes(): void {
-    if (!this.tracking()) return;
+    if (!this.tracking() || !this.series()) return;
     const item = this.collectionItem();
     const completedEpisodesRequest = item.ownerShareCode
       ? this.api.getTrackingCompletedEpisodesByExternalId(
