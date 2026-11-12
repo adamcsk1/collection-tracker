@@ -1,14 +1,18 @@
-export const HealthPage = {
-  visit: () => cy.visit('/health/'),
+import type { Page } from '@playwright/test';
 
-  getLoginLink: () => cy.getByTestId('health-login-link'),
-  getDiagnosticsUnauthorized: () => cy.getByTestId('health-diagnostics-unauthorized'),
-  getStatusBanner: () => cy.getByTestId('health-status-banner'),
-  getMetricsGrid: () => cy.getByTestId('health-metrics-grid'),
-  getMemoryCard: () => cy.getByTestId('health-memory-card'),
-  getCpuCard: () => cy.getByTestId('health-cpu-card'),
-  getMetadataCard: () => cy.getByTestId('health-metadata-card'),
-  getMetadataStatus: () => cy.getByTestId('health-metadata-status'),
-  getAiCard: () => cy.getByTestId('health-ai-card'),
-  getAiStatus: () => cy.getByTestId('health-ai-status'),
-};
+export const createHealthPage = (page: Page) => ({
+  visit: async () => {
+    await page.goto('/health/');
+  },
+
+  getLoginLink: () => page.getByTestId('health-login-link'),
+  getDiagnosticsUnauthorized: () => page.getByTestId('health-diagnostics-unauthorized'),
+  getStatusBanner: () => page.getByTestId('health-status-banner'),
+  getMetricsGrid: () => page.getByTestId('health-metrics-grid'),
+  getMemoryCard: () => page.getByTestId('health-memory-card'),
+  getCpuCard: () => page.getByTestId('health-cpu-card'),
+  getMetadataCard: () => page.getByTestId('health-metadata-card'),
+  getMetadataStatus: () => page.getByTestId('health-metadata-status'),
+  getAiCard: () => page.getByTestId('health-ai-card'),
+  getAiStatus: () => page.getByTestId('health-ai-status'),
+});

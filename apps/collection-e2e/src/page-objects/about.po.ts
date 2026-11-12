@@ -1,16 +1,20 @@
-import { CommonPage } from './common.po';
+import type { Page } from '@playwright/test';
+import { createCommonPage } from './common.po';
 
-export const AboutPage = {
-  visit: () => {
-    cy.visit('/client/#/collection/library');
-    CommonPage.openMenu();
-    CommonPage.getNavAboutLink().click();
-  },
+export const createAboutPage = (page: Page) => {
+  const commonPage = createCommonPage(page);
 
-  getTitle: () => cy.getByTestId('about-title'),
-  getBuild: () => cy.getByTestId('about-build'),
-  getVersion: () => cy.getByTestId('about-version'),
-  getGithubLink: () => cy.getByTestId('about-github-link').scrollIntoView(),
-  getHealthLink: () => cy.getByTestId('about-health-link').scrollIntoView(),
-  getApiDocsLink: () => cy.getByTestId('about-api-docs-link').scrollIntoView(),
+  return {
+    visit: async () => {
+      await page.goto('/client/#/collection/library');
+      await commonPage.openMenu();
+      await commonPage.getNavAboutLink().click();
+    },
+    getTitle: () => page.getByTestId('about-title'),
+    getBuild: () => page.getByTestId('about-build'),
+    getVersion: () => page.getByTestId('about-version'),
+    getGithubLink: () => page.getByTestId('about-github-link'),
+    getHealthLink: () => page.getByTestId('about-health-link'),
+    getApiDocsLink: () => page.getByTestId('about-api-docs-link'),
+  };
 };

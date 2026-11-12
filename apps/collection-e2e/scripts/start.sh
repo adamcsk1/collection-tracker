@@ -24,7 +24,7 @@ CONTAINER_ID=$(docker run --rm --network "${NETWORK_NAME}" \
 for attempt in {1..30}; do
   if curl --fail --silent --show-error "http://127.0.0.1:${PORT}/" > /dev/null && \
     curl --fail --silent --show-error "http://127.0.0.1:${PORT}/api/v1/health" > /dev/null; then
-    echo "Cypress app is ready on port ${PORT}"
+    echo "Playwright app is ready on port ${PORT}"
     exit 0
   fi
   sleep 2

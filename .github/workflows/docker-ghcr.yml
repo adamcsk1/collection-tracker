@@ -6,7 +6,7 @@ on:
   workflow_run:
     workflows:
       - Android
-      - Cypress
+      - Playwright
       - Format
       - i18n
       - Lint
@@ -41,7 +41,7 @@ jobs:
           script: |
             const requiredWorkflows = [
               'Android',
-              'Cypress',
+              'Playwright',
               'Format',
               'i18n',
               'Lint',

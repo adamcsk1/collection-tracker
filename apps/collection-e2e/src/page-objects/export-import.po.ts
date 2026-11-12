@@ -1,16 +1,18 @@
-export const ExportImportPage = {
-  visit: () => {
-    cy.visit('/client/#/settings/export-import');
-    cy.reload();
+import type { Page } from '@playwright/test';
+
+export const createExportImportPage = (page: Page) => ({
+  visit: async () => {
+    await page.goto('/client/#/settings/export-import');
+    await page.reload();
   },
 
-  getCollectionDataExportButton: () => cy.getByTestId('collection-data-export'),
-  getCollectionDataImportButton: () => cy.getByTestId('collection-data-import'),
-  getCollectionDataImportFileInput: () => cy.getByTestId('collection-data-import-file'),
-  getCollectionItemsImdbIdImportButton: () => cy.getByTestId('collection-items-imdb-id-import'),
-  getCollectionItemsImdbIdImportFileInput: () => cy.getByTestId('collection-items-imdb-id-import-file'),
-  getTagManagementExportButton: () => cy.getByTestId('tag-management-export'),
-  getTagManagementImportButton: () => cy.getByTestId('tag-management-import'),
-  getTagManagementImportFileInput: () => cy.getByTestId('tag-management-import-file'),
-  getToastMessage: () => cy.getByTestId('toast-message'),
-};
+  getCollectionDataExportButton: () => page.getByTestId('collection-data-export'),
+  getCollectionDataImportButton: () => page.getByTestId('collection-data-import'),
+  getCollectionDataImportFileInput: () => page.getByTestId('collection-data-import-file'),
+  getCollectionItemsImdbIdImportButton: () => page.getByTestId('collection-items-imdb-id-import'),
+  getCollectionItemsImdbIdImportFileInput: () => page.getByTestId('collection-items-imdb-id-import-file'),
+  getTagManagementExportButton: () => page.getByTestId('tag-management-export'),
+  getTagManagementImportButton: () => page.getByTestId('tag-management-import'),
+  getTagManagementImportFileInput: () => page.getByTestId('tag-management-import-file'),
+  getToastMessage: () => page.getByTestId('toast-message'),
+});

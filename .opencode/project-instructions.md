@@ -1,6 +1,6 @@
 # Collection Tracker Project Instructions
 
-Collection Tracker is a self-hosted media catalog application for managing personal movie, series, book, and music collections. It is built as a TypeScript workspace with Angular frontends, a Fastify backend using SQLite persistence, and a native Android WebView wrapper. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Cypress, Vitest, ESLint, and server builds run through direct CLI commands.
+Collection Tracker is a self-hosted media catalog application for managing personal movie, series, book, and music collections. It is built as a TypeScript workspace with Angular frontends, a Fastify backend using SQLite persistence, and a native Android WebView wrapper. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Playwright, Vitest, ESLint, and server builds run through direct CLI commands.
 
 AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, `batchSize: 16`, `parallelRequests: 2`, and `semanticCandidateLimit: 120`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 20, "num_thread": 16, "num_ctx": 16384 }`. Optional root-level `keep_alive` is passed to Ollama generate and embed requests only when present in the config file. Status intents (unfinished/completed/favorite) use derived item fields and may skip the language model for pure status queries. Unfinished/completed pre-filters apply only on tracking; favorite applies on all lists. Pure status short-circuits do not require Ollama to be up.
 
@@ -22,29 +22,29 @@ Collection pages use signed cursor pagination with a maximum limit of `100` and 
 
 ## Docker Deployment Environment Variables
 
-| Variable              | Default                  | Description                                                                                                        |
-| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `BASE_PATH`           | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.        |
-| `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.    |
-| `HEALTH_RATE_LIMIT`   | `60`                     | Public health and authenticated health-diagnostics requests allowed per client IP per minute.                      |
-| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy and public background-image list requests allowed per client IP per minute.                            |
-| `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                       |
-| `APP_PORT`            | `3001`                   | Host port mapped to the container's nginx listener.                                                                |
-| `APP_UID`             | `1000`                   | Runtime user ID used for writable Docker files. Set to `$(id -u)` on Linux hosts so `./.data` remains accessible.  |
-| `APP_GID`             | `1000`                   | Runtime group ID used for writable Docker files. Set to `$(id -g)` on Linux hosts so `./.data` remains accessible.  |
-| `METADATA_SERVICE_URL` | `http://metadata-provider:3002` | App-container URL for the private metadata provider service. Not published to the host. |
+| Variable               | Default                         | Description                                                                                                        |
+| ---------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `BASE_PATH`            | _(empty)_                       | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.        |
+| `HEALTH_CHECK_URL`     | `http://127.0.0.1:3001/`        | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.    |
+| `HEALTH_RATE_LIMIT`    | `60`                            | Public health and authenticated health-diagnostics requests allowed per client IP per minute.                      |
+| `IMAGE_RATE_LIMIT`     | `240`                           | Image proxy and public background-image list requests allowed per client IP per minute.                            |
+| `TRUSTED_PROXY_CIDRS`  | _(empty)_                       | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                       |
+| `APP_PORT`             | `3001`                          | Host port mapped to the container's nginx listener.                                                                |
+| `APP_UID`              | `1000`                          | Runtime user ID used for writable Docker files. Set to `$(id -u)` on Linux hosts so `./.data` remains accessible.  |
+| `APP_GID`              | `1000`                          | Runtime group ID used for writable Docker files. Set to `$(id -g)` on Linux hosts so `./.data` remains accessible. |
+| `METADATA_SERVICE_URL` | `http://metadata-provider:3002` | App-container URL for the private metadata provider service. Not published to the host.                            |
 
 ## Apps
 
-| App                   | Purpose                                                       |
-| --------------------- | ------------------------------------------------------------- |
-| `apps/client`         | Main collection management UI                                 |
-| `apps/health`         | Server health status dashboard                                |
-| `apps/login`          | Authentication UI (sign-in / sign-up)                         |
-| `apps/server`             | Fastify REST API                                              |
-| `apps/metadata-provider`  | Built-in and replacement external metadata adapters           |
-| `apps/dev-proxy`          | Local dev gateway serving everything through `localhost:4200` |
-| `apps/collection-e2e` | Cypress E2E tests                                             |
+| App                      | Purpose                                                       |
+| ------------------------ | ------------------------------------------------------------- |
+| `apps/client`            | Main collection management UI                                 |
+| `apps/health`            | Server health status dashboard                                |
+| `apps/login`             | Authentication UI (sign-in / sign-up)                         |
+| `apps/server`            | Fastify REST API                                              |
+| `apps/metadata-provider` | Built-in and replacement external metadata adapters           |
+| `apps/dev-proxy`         | Local dev gateway serving everything through `localhost:4200` |
+| `apps/collection-e2e`    | Playwright E2E tests                                          |
 
 ## Standalone Projects
 
@@ -91,7 +91,7 @@ npm run format:check    # Prettier check
 npm run test            # Unit tests with Vitest
 npm run test:affected   # Test projects affected by local changes
 npm run test:docker-lifecycle  # Docker first-start, restart, auth, and persistence integration test
-npm run cypress:chrome  # Cypress E2E tests
+npm run playwright:chrome  # Playwright E2E tests
 cd android && ./gradlew testDebugUnitTest  # Android JVM unit tests
 cd android && ./gradlew assembleDebug      # Android debug APK build
 ```
@@ -139,7 +139,7 @@ Always follow the existing test style in the file being tested.
 
 ## E2E Tests
 
-E2E tests live in `apps/collection-e2e/src/` and run against the Docker test container on port `2999`. The `.opencode/agents/testing.md` agent file contains the full Cypress conventions.
+E2E tests live in `apps/collection-e2e/src/` and run against the Docker test container on port `2999`. The `.opencode/agents/testing.md` agent file contains the full Playwright conventions.
 
 ## Release Publication
 
@@ -179,7 +179,7 @@ Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, 
 - Each server route `*-api.ts` registrar must register exactly one HTTP operation. Different methods on the same path use separate files; plugin registrars such as `docs-api.ts` are exempt.
 - User-visible template text should use `NgxSignalTranslateService.translate()` from computed signals on a
   protected `translations` property. Keep the injected service private.
-- New interactive and landmark elements should include stable `data-test-id` attributes for Cypress.
+- New interactive and landmark elements should include stable `data-test-id` attributes for Playwright.
 
 ## Architecture Constraints
 

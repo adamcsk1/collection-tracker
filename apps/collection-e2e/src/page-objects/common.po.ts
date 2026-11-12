@@ -1,30 +1,30 @@
-const getNavLink = (testId: string) =>
-  cy.get(`ct-menu-dialog [data-test-id="${testId}"]`).scrollIntoView().should('be.visible');
+import type { Page } from '@playwright/test';
 
-export const CommonPage = {
-  openMenu: () => {
-    cy.getByTestId('nav-menu-button').should('be.visible').click();
-    cy.get('ct-menu-dialog').should('exist');
-  },
-  closeMenu: () => {
-    cy.getByTestId('dialog-overlay').click({ force: true });
-    cy.get('ct-menu-dialog').should('not.exist');
-  },
-  getNavCollectionLink: () => getNavLink('nav-collection'),
-  getNavUpNextLink: () => getNavLink('nav-up-next'),
-  getNavWishlistLink: () => getNavLink('nav-wishlist'),
-  getNavTrackingLink: () => getNavLink('nav-tracking'),
-  /** Books live under Collection filter; no top-level nav item. */
-  getNavBooksLink: () => getNavLink('nav-collection'),
-  getMenuNavItem: (testId: string) => cy.get(`ct-menu-dialog [data-test-id="${testId}"]`),
-  getNavSettingsLink: () => getNavLink('nav-settings'),
-  getNavStatisticsLink: () => getNavLink('nav-statistics'),
+export const createCommonPage = (page: Page) => {
+  const getNavLink = (testId: string) => page.locator(`ct-menu-dialog [data-test-id="${testId}"]`);
 
-  getNavAboutLink: () => getNavLink('nav-about'),
-  getNavLogoutLink: () => getNavLink('nav-logout'),
-
-  navigateToSettingsViaMenu: () => {
-    CommonPage.openMenu();
-    CommonPage.getNavSettingsLink().click();
-  },
+  return {
+    openMenu: async () => {
+      await page.getByTestId('nav-menu-button').click();
+      await page.locator('ct-menu-dialog').waitFor();
+    },
+    closeMenu: async () => {
+      await page.getByTestId('dialog-overlay').click({ force: true });
+      await page.locator('ct-menu-dialog').waitFor({ state: 'detached' });
+    },
+    getNavCollectionLink: () => getNavLink('nav-collection'),
+    getNavUpNextLink: () => getNavLink('nav-up-next'),
+    getNavWishlistLink: () => getNavLink('nav-wishlist'),
+    getNavTrackingLink: () => getNavLink('nav-tracking'),
+    getNavBooksLink: () => getNavLink('nav-collection'),
+    getMenuNavItem: (testId: string) => page.locator(`ct-menu-dialog [data-test-id="${testId}"]`),
+    getNavSettingsLink: () => getNavLink('nav-settings'),
+    getNavStatisticsLink: () => getNavLink('nav-statistics'),
+    getNavAboutLink: () => getNavLink('nav-about'),
+    getNavLogoutLink: () => getNavLink('nav-logout'),
+    navigateToSettingsViaMenu: async () => {
+      await page.getByTestId('nav-menu-button').click();
+      await getNavLink('nav-settings').click();
+    },
+  };
 };

@@ -1,128 +1,138 @@
-export const SettingsPage = {
-  getCompanionAppSettings: () => cy.getByTestId('settings-nav-companion-app'),
-  getNavToggle: () => cy.getByTestId('settings-nav-toggle'),
-  visitBasics: () => {
-    cy.visit('/client/#/settings/basics');
+import type { Page } from '@playwright/test';
+
+export const createSettingsPage = (page: Page) => ({
+  getCompanionAppSettings: () => page.getByTestId('settings-nav-companion-app'),
+  getNavToggle: () => page.getByTestId('settings-nav-toggle'),
+  visitBasics: async () => {
+    await page.goto('/client/#/settings/basics');
   },
 
-  visitAccount: () => {
-    cy.visit('/client/#/settings/account');
+  visitAccount: async () => {
+    await page.goto('/client/#/settings/account');
   },
 
-  visitAccessTokens: () => {
-    cy.visit('/client/#/settings/access-tokens');
+  visitAccessTokens: async () => {
+    await page.goto('/client/#/settings/access-tokens');
   },
 
-  visitShares: () => {
-    cy.visit('/client/#/settings/shares');
+  visitShares: async () => {
+    await page.goto('/client/#/settings/shares');
   },
 
-  visitMediaRefresh: () => {
-    cy.visit('/client/#/settings/media-refresh');
+  visitMediaRefresh: async () => {
+    await page.goto('/client/#/settings/media-refresh');
   },
 
-  visitCollectionListDisplay: () => {
-    cy.visit('/client/#/settings/collection-list-display');
+  visitCollectionListDisplay: async () => {
+    await page.goto('/client/#/settings/collection-list-display');
   },
 
-  visitManageTrackerData: () => {
-    cy.visit('/client/#/settings/manage-tracker-data');
+  visitManageTrackerData: async () => {
+    await page.goto('/client/#/settings/manage-tracker-data');
   },
 
-  visitFeatures: () => {
-    cy.visit('/client/#/settings/features');
+  visitFeatures: async () => {
+    await page.goto('/client/#/settings/features');
   },
 
   // Basic form fields (always visible when settingsLock is off)
-  getBasicsForm: () => cy.getByTestId('settings-basics-form'),
-  getLanguageSelect: () => cy.getByTestId('settings-language').find('select'),
-  getThemeSelect: () => cy.getByTestId('settings-theme').scrollIntoView().find('select'),
-  getAnimatedBackgroundCheckbox: () => cy.getByTestId('settings-animated-background').find('input[type="checkbox"]'),
-  getAppModeSelect: () => cy.getByTestId('settings-app-mode').scrollIntoView().find('select'),
-  getSettingsLockCheckbox: () => cy.getByTestId('settings-settings-lock').find('input[type="checkbox"]'),
-  getSensitiveDataStorageSelect: () =>
-    cy.getByTestId('settings-sensitive-data-storage').scrollIntoView().find('select'),
+  getBasicsForm: () => page.getByTestId('settings-basics-form'),
+  getLanguageSelect: () => page.getByTestId('settings-language').locator('select'),
+  getThemeSelect: () => page.getByTestId('settings-theme').locator('select'),
+  getAnimatedBackgroundCheckbox: () =>
+    page.getByTestId('settings-animated-background').locator('input[type="checkbox"]'),
+  getAppModeSelect: () => page.getByTestId('settings-app-mode').locator('select'),
+  getSettingsLockCheckbox: () => page.getByTestId('settings-settings-lock').locator('input[type="checkbox"]'),
+  getSensitiveDataStorageSelect: () => page.getByTestId('settings-sensitive-data-storage').locator('select'),
   getClearLocalStorageCheckbox: () =>
-    cy.getByTestId('settings-clear-local-storage-after-logout').scrollIntoView().find('input[type="checkbox"]'),
+    page.getByTestId('settings-clear-local-storage-after-logout').locator('input[type="checkbox"]'),
 
   // Collection list display page
-  getCollectionListDisplayForm: () => cy.getByTestId('settings-collection-list-display-form'),
-  getListShowYearCheckbox: () => cy.getByTestId('settings-list-show-year').find('input[type="checkbox"]'),
-  getListShowSharedIconCheckbox: () => cy.getByTestId('settings-list-show-shared-icon').find('input[type="checkbox"]'),
-  getListPreferredRatingSelect: () => cy.getByTestId('settings-list-preferred-rating').find('select'),
+  getCollectionListDisplayForm: () => page.getByTestId('settings-collection-list-display-form'),
+  getListShowYearCheckbox: () => page.getByTestId('settings-list-show-year').locator('input[type="checkbox"]'),
+  getListShowSharedIconCheckbox: () =>
+    page.getByTestId('settings-list-show-shared-icon').locator('input[type="checkbox"]'),
+  getListPreferredRatingSelect: () => page.getByTestId('settings-list-preferred-rating').locator('select'),
   getListImdbRatingFallbackCheckbox: () =>
-    cy.getByTestId('settings-list-imdb-rating-fallback').find('input[type="checkbox"]'),
+    page.getByTestId('settings-list-imdb-rating-fallback').locator('input[type="checkbox"]'),
 
   // Features page
-  getFeaturesForm: () => cy.getByTestId('settings-features-form'),
-  getFeatureWishlistCheckbox: () => cy.getByTestId('settings-feature-wishlist').find('input[type="checkbox"]'),
-  getFeatureUpNextCheckbox: () => cy.getByTestId('settings-feature-up-next').find('input[type="checkbox"]'),
-  getFeatureTrackingCheckbox: () => cy.getByTestId('settings-feature-tracking').find('input[type="checkbox"]'),
-  getFeatureBooksCheckbox: () => cy.getByTestId('settings-feature-books').find('input[type="checkbox"]'),
-  getFeatureMusicCheckbox: () => cy.getByTestId('settings-feature-music').find('input[type="checkbox"]'),
+  getFeaturesForm: () => page.getByTestId('settings-features-form'),
+  getFeatureWishlistCheckbox: () => page.getByTestId('settings-feature-wishlist').locator('input[type="checkbox"]'),
+  getFeatureUpNextCheckbox: () => page.getByTestId('settings-feature-up-next').locator('input[type="checkbox"]'),
+  getFeatureTrackingCheckbox: () => page.getByTestId('settings-feature-tracking').locator('input[type="checkbox"]'),
+  getFeatureBooksCheckbox: () => page.getByTestId('settings-feature-books').locator('input[type="checkbox"]'),
+  getFeatureMusicCheckbox: () => page.getByTestId('settings-feature-music').locator('input[type="checkbox"]'),
 
   // Media refresh page
-  getMediaRefreshLibrarySelect: () => cy.getByTestId('settings-media-refresh-library').find('select'),
-  findMediaRefreshLibrarySelect: () => cy.get('body').find('[data-test-id="settings-media-refresh-library"] select'),
-  getImageRefreshStartButton: () => cy.getByTestId('settings-images-refresh-start').scrollIntoView(),
-  getExternalRatingsRefreshStartButton: () =>
-    cy.getByTestId('settings-external-ratings-refresh-start').scrollIntoView(),
-  getImageRefreshStatus: () => cy.getByTestId('settings-image-refresh-status').scrollIntoView(),
+  getMediaRefreshLibrarySelect: () => page.getByTestId('settings-media-refresh-library').locator('select'),
+  findMediaRefreshLibrarySelect: () =>
+    page.locator('body').locator('[data-test-id="settings-media-refresh-library"] select'),
+  getImageRefreshStartButton: () => page.getByTestId('settings-images-refresh-start'),
+  getExternalRatingsRefreshStartButton: () => page.getByTestId('settings-external-ratings-refresh-start'),
+  getImageRefreshStatus: () => page.getByTestId('settings-image-refresh-status'),
 
   // Manage tracker data page
-  getMarkAllCompletedButton: () => cy.getByTestId('settings-mark-all-completed').scrollIntoView(),
-  getMarkAllUncompletedButton: () => cy.getByTestId('settings-mark-all-uncompleted').scrollIntoView(),
-  getMarkAllSeriesCompletedButton: () => cy.getByTestId('settings-mark-all-series-completed').scrollIntoView(),
-  getMarkAllSeriesUncompletedButton: () => cy.getByTestId('settings-mark-all-series-uncompleted').scrollIntoView(),
-  getMarkAllBooksCompletedButton: () => cy.getByTestId('settings-mark-all-books-completed').scrollIntoView(),
-  getMarkAllBooksUncompletedButton: () => cy.getByTestId('settings-mark-all-books-uncompleted').scrollIntoView(),
-  getRemoveAllTrackedMovieDataButton: () => cy.getByTestId('settings-remove-all-tracked-movie-data').scrollIntoView(),
-  getRemoveAllTrackedSeriesDataButton: () => cy.getByTestId('settings-remove-all-tracked-series-data').scrollIntoView(),
-  getRemoveAllTrackedBookDataButton: () => cy.getByTestId('settings-remove-all-tracked-book-data').scrollIntoView(),
-  getRemoveAllTrackedMusicDataButton: () => cy.getByTestId('settings-remove-all-tracked-music-data').scrollIntoView(),
+  getMarkAllCompletedButton: () => page.getByTestId('settings-mark-all-completed'),
+  getMarkAllUncompletedButton: () => page.getByTestId('settings-mark-all-uncompleted'),
+  getMarkAllSeriesCompletedButton: () => page.getByTestId('settings-mark-all-series-completed'),
+  getMarkAllSeriesUncompletedButton: () => page.getByTestId('settings-mark-all-series-uncompleted'),
+  getMarkAllBooksCompletedButton: () => page.getByTestId('settings-mark-all-books-completed'),
+  getMarkAllBooksUncompletedButton: () => page.getByTestId('settings-mark-all-books-uncompleted'),
+  getRemoveAllTrackedMovieDataButton: () => page.getByTestId('settings-remove-all-tracked-movie-data'),
+  getRemoveAllTrackedSeriesDataButton: () => page.getByTestId('settings-remove-all-tracked-series-data'),
+  getRemoveAllTrackedBookDataButton: () => page.getByTestId('settings-remove-all-tracked-book-data'),
+  getRemoveAllTrackedMusicDataButton: () => page.getByTestId('settings-remove-all-tracked-music-data'),
 
   // Account Actions page
-  getAccountActionsSection: () => cy.getByTestId('settings-account-actions'),
-  getCreateUserTokenButton: () => cy.getByTestId('settings-create-user-token').scrollIntoView(),
-  getDeleteUserButton: () => cy.getByTestId('settings-delete-user').scrollIntoView(),
+  getAccountActionsSection: () => page.getByTestId('settings-account-actions'),
+  getCreateUserTokenButton: () => page.getByTestId('settings-create-user-token'),
+  getDeleteUserButton: () => page.getByTestId('settings-delete-user'),
 
   // Access Tokens page
-  getAccessTokensSection: () => cy.getByTestId('settings-access-tokens'),
-  getCreateAccessTokenButton: () => cy.getByTestId('settings-create-access-token').scrollIntoView(),
-  getRevokeTokenButton: (tokenHash: string) => cy.getByTestId(`settings-revoke-token-${tokenHash}`).scrollIntoView(),
+  getAccessTokensSection: () => page.getByTestId('settings-access-tokens'),
+  getCreateAccessTokenButton: () => page.getByTestId('settings-create-access-token'),
+  getRevokeTokenButton: (tokenHash: string) => page.getByTestId(`settings-revoke-token-${tokenHash}`),
 
   // Shares page
-  getShareCode: () => cy.getByTestId('share-code-card').find('.user-hash'),
-  getAddShareOpenButton: () => cy.getByTestId('add-share-open'),
-  getShareDialog: () => cy.getByTestId('share-dialog').find('[data-test-id="dialog-frame"]'),
-  getShareDialogTitle: () => cy.getByTestId('share-dialog-title'),
-  getShareDialogMessage: () => cy.getByTestId('share-dialog-message'),
-  getShareDialogDependency: () => cy.getByTestId('share-dialog-dependency'),
-  getShareDialogUserHashInput: () => cy.getByTestId('share-dialog-user-hash').find('input'),
-  getShareDialogGrants: () => cy.getByTestId('share-dialog-grants'),
+  getShareCode: () => page.getByTestId('share-code-card').locator('.user-hash'),
+  getAddShareOpenButton: () => page.getByTestId('add-share-open'),
+  getShareDialog: () => page.getByTestId('share-dialog').getByTestId('dialog-frame'),
+  getShareDialogTitle: () => page.getByTestId('share-dialog-title'),
+  getShareDialogMessage: () => page.getByTestId('share-dialog-message'),
+  getShareDialogDependency: () => page.getByTestId('share-dialog-dependency'),
+  getShareDialogUserHashInput: () => page.getByTestId('share-dialog-user-hash').locator('input'),
+  getShareDialogGrants: () => page.getByTestId('share-dialog-grants'),
   getAddShareGrantCheckbox: (
     listType: string,
     contentType: string,
     permission: 'can-read' | 'can-create' | 'can-update' | 'can-delete'
-  ) => cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).find('input[type="checkbox"]'),
-  getShareDialogSaveButton: () => cy.getByTestId('share-dialog-save'),
-  closeShareDialogByOverlay: () =>
-    cy.getByTestId('share-dialog').last().find('[data-test-id="dialog-overlay"]').click({ force: true }),
-  getEditShareButton: (shareCode: string) => cy.getByTestId(`edit-share-${shareCode}`),
+  ) =>
+    page.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).locator('input[type="checkbox"]'),
+  getShareDialogSaveButton: () => page.getByTestId('share-dialog-save'),
+  closeShareDialogByOverlay: async () => {
+    await page
+      .getByTestId('share-dialog')
+      .last()
+      .getByTestId('dialog-overlay')
+      .click({ position: { x: 10, y: 10 } });
+  },
+  getEditShareButton: (shareCode: string) => page.getByTestId(`edit-share-${shareCode}`),
   getOutgoingShareGrantCheckbox: (
     listType: string,
     contentType: string,
     permission: 'can-read' | 'can-create' | 'can-update' | 'can-delete'
-  ) => cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).find('input[type="checkbox"]'),
+  ) =>
+    page.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).locator('input[type="checkbox"]'),
   getClearSelectedShareButton: (listType: string, contentType: string) =>
-    cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-clear-selected`),
-  getRemoveShareButton: (shareCode: string) => cy.getByTestId(`remove-share-${shareCode}`),
-  getRevokeIncomingShareButton: (shareCode: string) => cy.getByTestId(`revoke-incoming-share-${shareCode}`),
-  getViewIncomingShareButton: (shareCode: string) => cy.getByTestId(`view-incoming-share-${shareCode}`),
+    page.getByTestId(`share-dialog-grant-${listType}-${contentType}-clear-selected`),
+  getRemoveShareButton: (shareCode: string) => page.getByTestId(`remove-share-${shareCode}`),
+  getRevokeIncomingShareButton: (shareCode: string) => page.getByTestId(`revoke-incoming-share-${shareCode}`),
+  getViewIncomingShareButton: (shareCode: string) => page.getByTestId(`view-incoming-share-${shareCode}`),
   getIncomingShareDefaultCheckbox: (listType: string, contentType: string) =>
-    cy.getByTestId(`share-dialog-default-${listType}-${contentType}`).find('input[type="checkbox"]'),
-  getManageTrackerLibrarySelect: () => cy.getByTestId('settings-manage-tracker-data-library').find('select'),
+    page.getByTestId(`share-dialog-default-${listType}-${contentType}`).locator('input[type="checkbox"]'),
+  getManageTrackerLibrarySelect: () => page.getByTestId('settings-manage-tracker-data-library').locator('select'),
 
   // Token dialog (shown after creating a new user token or access token)
-  getTokenDialogValue: () => cy.getByTestId('token-dialog-value'),
-};
+  getTokenDialogValue: () => page.getByTestId('token-dialog-value'),
+});

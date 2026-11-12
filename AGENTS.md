@@ -9,7 +9,7 @@ Project-specific OpenCode agents live in `.opencode/agents/`:
 - `coder` - general implementation work
 - `architect` - planning, architecture, and workspace boundary decisions
 - `code-reviewer` - read-only change review
-- `testing` - Vitest and Cypress guidance
+- `testing` - Vitest and Playwright guidance
 - `i18n-a11y` - internationalisation and accessibility work
 - `commit` - conventional commit preparation
 

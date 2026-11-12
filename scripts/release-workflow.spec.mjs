@@ -60,7 +60,7 @@ async function runGate({
         return [
           { id: 12, display_title: title, head_sha: 'wrong-workflow-sha', status: 'completed', conclusion: 'success' },
         ];
-      return ['Android', 'Cypress', 'Format', 'i18n', 'Lint', 'Test', 'Typecheck'].map((name) => ({
+      return ['Android', 'Playwright', 'Format', 'i18n', 'Lint', 'Test', 'Typecheck'].map((name) => ({
         name,
         head_sha: sha,
         status: 'completed',
@@ -99,7 +99,7 @@ describe('release workflow gate', () => {
     { channel: 'stable' },
     { channel: 'stable', tags: ['v9.9.9'] },
     { tip: 'newer' },
-    { failedCheck: 'Cypress' },
+    { failedCheck: 'Playwright' },
     { dockerSkipped: true },
     { title: 'legacy run without SHA' },
   ])('does not build when gate requirements fail: %j', async (options) => {
@@ -118,5 +118,24 @@ describe('release workflow gate', () => {
     );
     const docker = load(readFileSync('.github/workflows/docker-ghcr.yml', 'utf8'));
     expect(docker['run-name']).toBe('Docker GHCR ${{ github.event.workflow_run.head_sha || github.sha }}');
+  });
+  it('uses the Playwright browser workflow throughout publication gates', () => {
+    const browserWorkflow = load(readFileSync('.github/workflows/playwright.yml', 'utf8'));
+    expect(browserWorkflow.name).toBe('Playwright');
+    expect(browserWorkflow.jobs.playwright.strategy.matrix.include).toEqual([
+      { browser: 'chromium', script: 'chrome' },
+      { browser: 'firefox', script: 'firefox' },
+    ]);
+    const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+    for (const { browser, script } of browserWorkflow.jobs.playwright.strategy.matrix.include) {
+      expect(packageJson.scripts[`playwright:${script}`]).toContain(`--args="--project=${browser}"`);
+    }
+    for (const path of ['.github/workflows/docker-ghcr.yml', '.github/workflows/cancel-on-failure.yml']) {
+      const dependentWorkflow = load(readFileSync(path, 'utf8'));
+      expect(dependentWorkflow.on.workflow_run.workflows).toContain('Playwright');
+      expect(dependentWorkflow.on.workflow_run.workflows).not.toContain('Cypress');
+    }
+    const dockerWorkflow = load(readFileSync('.github/workflows/docker-ghcr.yml', 'utf8'));
+    expect(dockerWorkflow.jobs.publish.steps.find((step) => step.id === 'gate').with.script).toContain("'Playwright'");
   });
 });

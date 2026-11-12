@@ -1,6 +1,6 @@
 # Collection Tracker
 
-Collection Tracker is a TypeScript workspace for a self-hosted movie, series, and book catalog. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Cypress, Vitest, ESLint, and server builds run through their direct CLIs.
+Collection Tracker is a TypeScript workspace for a self-hosted movie, series, and book catalog. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Playwright, Vitest, ESLint, and server builds run through their direct CLIs.
 
 ## Project Goal
 
@@ -12,7 +12,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 
 - Angular CLI applications with Nx task orchestration
 - Fastify for the API
-- Vitest for unit tests and Cypress for end-to-end coverage
+- Vitest for unit tests and Playwright for end-to-end coverage
 - SQLite persistence in a configurable data directory
 - Android WebView wrapper with native settings, manual Release/Snapshot update checks, and optional launch checks
 
@@ -24,7 +24,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - `apps/server`: API, authentication, and SQLite persistence
 - `apps/metadata-provider`: OMDb, Open Library, MusicBrainz, and replacement metadata adapters
 - `apps/dev-proxy`: single-origin development gateway on `http://localhost:4200`
-- `apps/collection-e2e`: Cypress smoke-test project
+- `apps/collection-e2e`: Playwright smoke-test project
 - `libs/components`: shared standalone Angular UI components
 - `libs/services`: shared Angular services and signal stores
 - `libs/shared`: models, constants, styles, animations, and utilities
@@ -60,7 +60,7 @@ Common workspace commands:
 npm run build
 npm run test
 npm run test:docker-lifecycle
-npm run cypress:chrome
+npm run playwright:chrome
 npm run lint:check
 npm run lint
 npm run typecheck
@@ -73,7 +73,7 @@ Release packaging details are covered in [Release packaging](./docs/release.md).
 ## Docker Deployment
 
 Prebuilt images are published to GitHub Container Registry as `ghcr.io/adamcsk1/collection-tracker:latest` after the main
-branch passes the Android, Cypress, format, i18n, lint, test, and typecheck workflows.
+branch passes the Android, Playwright, format, i18n, lint, test, and typecheck workflows.
 
 Use a deployment compose file like this:
 

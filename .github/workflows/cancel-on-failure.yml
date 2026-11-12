@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows:
       - Android
-      - Cypress
+      - Playwright
       - Format
       - i18n
       - Lint

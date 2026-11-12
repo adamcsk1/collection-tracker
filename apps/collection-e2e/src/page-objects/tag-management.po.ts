@@ -1,19 +1,22 @@
-export const TagManagementPage = {
-  visit: () => {
-    cy.visit('/client/#/settings/tag-management');
+import type { Page } from '@playwright/test';
+
+export const createTagManagementPage = (page: Page) => ({
+  visit: async () => {
+    await page.goto('/client/#/settings/tag-management');
   },
 
-  getResetButton: () => cy.getByTestId('tag-management-reset'),
-  getList: () => cy.getByTestId('tag-management-list', { timeout: 10000 }),
-  getColorButton: (tag: string) => cy.getByTestId(`tag-management-color-${tag}`),
+  getResetButton: () => page.getByTestId('tag-management-reset'),
+  getList: () => page.getByTestId('tag-management-list'),
+  getColorButton: (tag: string) => page.getByTestId(`tag-management-color-${tag}`),
   findRenameInputHost: (tag: string) =>
-    cy.getByTestId('tag-management-list').find(`[data-test-id="tag-management-rename-input-${tag}"]`),
-  getRenameInput: (tag: string) => cy.getByTestId(`tag-management-rename-input-${tag}`).find('input'),
-  getRenameButton: (tag: string) => cy.getByTestId(`tag-management-rename-${tag}`),
-  getWeightInput: (tag: string) => cy.getByTestId(`tag-management-weight-${tag}`).find('input'),
+    page.getByTestId('tag-management-list').locator(`[data-test-id="tag-management-rename-input-${tag}"]`),
+  getRenameInput: (tag: string) => page.getByTestId(`tag-management-rename-input-${tag}`).locator('input'),
+  getRenameButton: (tag: string) => page.getByTestId(`tag-management-rename-${tag}`),
+  getWeightInput: (tag: string) => page.getByTestId(`tag-management-weight-${tag}`).locator('input'),
   getImageBorderCheckbox: (tag: string) =>
-    cy.getByTestId(`tag-management-image-border-${tag}`).find('input[type="checkbox"]'),
-  getTextColorCheckbox: (tag: string) => cy.getByTestId(`tag-management-text-color-${tag}`).find('input[type="checkbox"]'),
+    page.getByTestId(`tag-management-image-border-${tag}`).locator('input[type="checkbox"]'),
+  getTextColorCheckbox: (tag: string) =>
+    page.getByTestId(`tag-management-text-color-${tag}`).locator('input[type="checkbox"]'),
   getImageBadgeCheckbox: (tag: string) =>
-    cy.getByTestId(`tag-management-image-badge-${tag}`).find('input[type="checkbox"]'),
-};
+    page.getByTestId(`tag-management-image-badge-${tag}`).locator('input[type="checkbox"]'),
+});

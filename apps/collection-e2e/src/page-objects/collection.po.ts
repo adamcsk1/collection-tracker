@@ -1,329 +1,341 @@
-const getActiveDialog = () => cy.get('.dialog').last();
-const getDialogFrame = (subject: Cypress.Chainable<JQuery<HTMLElement>>) =>
-  subject.find('[data-test-id="dialog-frame"]');
-const getActiveDialogFrame = () => cy.getByTestId('dialog-frame').last();
-const getItemDialog = () => getDialogFrame(cy.getByTestId('item-dialog').last());
-const getSeriesMetadataDialog = () => getDialogFrame(cy.getByTestId('series-metadata-dialog').last());
-const getCompletedEpisodesDialogHost = () => cy.getByTestId('completed-episodes-dialog');
-const getCompletedEpisodesDialog = () => getCompletedEpisodesDialogHost().last();
-const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).last().parents('.dialog').first();
-const dialogActionHoldDuration = 500;
-const expandFloatSearch = (testId: string) => {
-  cy.get('body')
-    .should((body) => {
-      const targetSearch = body.find(`[data-test-id="${testId}"]`);
-      const searchToggle = body.find('[data-test-id="float-search-toggle"]');
-      expect(targetSearch.length + searchToggle.length).to.be.greaterThan(0);
-    })
-    .then((body) => {
-      const targetSearch = body.find(`[data-test-id="${testId}"]`);
-      if (!targetSearch.length) {
-        cy.getByTestId('float-search-toggle').click();
-      }
-    });
-};
-const getFloatSearchInput = (testId: string) => {
-  expandFloatSearch(testId);
-  return cy.getByTestId(testId).find('input');
-};
-const swipeActiveDialog = (startX: number, endX: number) =>
-  getActiveDialogFrame()
-    .trigger('pointerdown', {
+import { expect, type Locator, type Page } from '@playwright/test';
+import type { ApiClient } from '../support/test';
+
+export const createCollectionPage = (page: Page) => {
+  const getActiveDialog = () => page.locator('.dialog').last();
+  const getDialogFrame = (subject: Locator) => subject.locator('[data-test-id="dialog-frame"]');
+  const getActiveDialogFrame = () => page.getByTestId('dialog-frame').last();
+  const getItemDialog = () => getDialogFrame(page.getByTestId('item-dialog').last());
+  const getSeriesMetadataDialog = () => getDialogFrame(page.getByTestId('series-metadata-dialog').last());
+  const getCompletedEpisodesDialogHost = () => page.getByTestId('completed-episodes-dialog');
+  const getCompletedEpisodesDialogFrame = () => getDialogFrame(getCompletedEpisodesDialogHost().last());
+  const getDialogComponentHost = (testId: string) =>
+    page
+      .getByTestId(testId)
+      .last()
+      .locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " dialog ")][1]');
+  const expandFloatSearch = async (testId: string) => {
+    await expect(page.getByTestId(testId).or(page.getByTestId('float-search-toggle')).first()).toBeAttached();
+    if ((await page.getByTestId(testId).count()) === 0) {
+      await page.getByTestId('float-search-toggle').click();
+    }
+  };
+  const getFloatSearchInput = async (testId: string) => {
+    await expandFloatSearch(testId);
+    return page.getByTestId(testId).locator('input');
+  };
+  const swipeActiveDialog = async (startX: number, endX: number) => {
+    const activeDialogFrame = getActiveDialogFrame();
+    await activeDialogFrame.dispatchEvent('pointerdown', {
       pointerId: 1,
       pointerType: 'touch',
       isPrimary: true,
       clientX: startX,
       clientY: 180,
-      force: true,
-    })
-    .trigger('pointerup', {
+    });
+    await activeDialogFrame.dispatchEvent('pointerup', {
       pointerId: 1,
       pointerType: 'touch',
       isPrimary: true,
       clientX: endX,
       clientY: 184,
-      force: true,
     });
+  };
 
-export const CollectionPage = {
-  visit: () => {
-    cy.visit('/client/#/collection/library');
-    cy.reload();
-  },
+  return {
+    visit: async () => {
+      await page.goto('/client/#/collection/library');
+      await page.reload();
+    },
+    visitTracking: async () => {
+      await page.goto('/client/#/collection/tracking');
+    },
+    visitUpNext: async () => {
+      await page.goto('/client/#/collection/up-next');
+    },
+    visitWishlist: async () => {
+      await page.goto('/client/#/collection/wishlist');
+    },
+    visitBooks: async () => {
+      await page.goto('/client/#/collection/books');
+    },
+    visitLibraryWithSharedFilter: async (shared: 'mine' | 'shared') => {
+      await page.goto(`/client/#/collection/library?shared=${shared}`);
+      await page.reload();
+    },
+    visitLibraryWithQuery: async (query: string) => {
+      await page.goto(`/client/#/collection/library?${query}`);
+      await page.reload();
+    },
+    visitTrackingWithQuery: async (query: string) => {
+      await page.goto(`/client/#/collection/tracking?${query}`);
+      await page.reload();
+    },
+    visitBooksWithQuery: async (query: string) => {
+      await page.goto(`/client/#/collection/books?${query}`);
+      await page.reload();
+    },
+    getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book' | 'album') =>
+      page.getByTestId(`collection-media-chip-${chip}`),
 
-  visitTracking: () => {
-    cy.visit('/client/#/collection/tracking');
-  },
-  visitUpNext: () => {
-    cy.visit('/client/#/collection/up-next');
-  },
-  visitWishlist: () => {
-    cy.visit('/client/#/collection/wishlist');
-  },
-  visitBooks: () => {
-    cy.visit('/client/#/collection/books');
-  },
-  visitLibraryWithSharedFilter: (shared: 'mine' | 'shared') => {
-    cy.visit(`/client/#/collection/library?shared=${shared}`);
-    cy.reload();
-  },
-  visitLibraryWithQuery: (query: string) => {
-    cy.visit(`/client/#/collection/library?${query}`);
-    cy.reload();
-  },
-  visitTrackingWithQuery: (query: string) => {
-    cy.visit(`/client/#/collection/tracking?${query}`);
-    cy.reload();
-  },
-  visitBooksWithQuery: (query: string) => {
-    cy.visit(`/client/#/collection/books?${query}`);
-    cy.reload();
-  },
-  getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book' | 'album') =>
-    cy.getByTestId(`collection-media-chip-${chip}`),
+    // Search
+    getSearchInput: () => getFloatSearchInput('collection-search'),
+    getSearchHost: () => page.getByTestId('collection-search'),
+    getTrackingSearchInput: () => getFloatSearchInput('tracking-search'),
+    getUpNextSearchInput: () => getFloatSearchInput('up-next-search'),
+    getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
 
-  // Search
-  getSearchInput: () => getFloatSearchInput('collection-search'),
-  getSearchHost: () => cy.getByTestId('collection-search'),
-  getTrackingSearchInput: () => getFloatSearchInput('tracking-search'),
-  getUpNextSearchInput: () => getFloatSearchInput('up-next-search'),
-  getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
-
-  // List
-  getList: () => cy.getByTestId('collection-list'),
-  getListItems: (options: Partial<Cypress.Timeoutable> = { timeout: 10000 }) =>
-    cy.getByTestId('list-item-title', options),
-  getListItemByTitle: (title: string) =>
-    cy
-      .getByTestId('list-item-title', { timeout: 10000 })
-      .filter((_index, element) => element.textContent?.trim() === title),
-  getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
-  getTrackingCompletedBadges: () => cy.getByTestId('list-item-tracking-completed'),
-  getSharedBadges: () => cy.getByTestId('list-item-shared'),
-  getListItemYears: () => cy.getByTestId('list-item-year'),
-  getListItemImdbRatings: () => cy.getByTestId('list-item-rating-imdb'),
-  getListItemRottenTomatoesRatings: () => cy.getByTestId('list-item-rating-rotten-tomatoes'),
-  getListItemMetacriticRatings: () => cy.getByTestId('list-item-rating-metacritic'),
-  getListItemUserRates: () => cy.getByTestId('list-item-user-rate'),
-  getListItemImages: (options?: Partial<Cypress.Timeoutable>) => cy.get('[data-test-id="list-item-image"]', options),
-  getListItemImageByTitle: (title: string) =>
-    cy
-      .getByTestId('list-item-image', { timeout: 10000 })
-      .filter((_index, element) => element.getAttribute('aria-label') === title),
-  getAllItems: () => cy.getByTestId('list-item-title'),
-  getEmptyState: () => cy.getByTestId('list-empty'),
-  getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
-  getAddFirstUpNextItemLink: () => cy.getByTestId('add-first-up-next-item'),
-  getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
-  getAddFirstTrackingItemLink: () => cy.getByTestId('add-first-tracking-item'),
-  setListPreferredRatingToUser: () =>
-    cy.request('POST', '/api/v1/users/me/settings', {
-      collectionListDisplayPreferences: {
-        showYear: true,
-        showSharedIcon: true,
-        preferredRating: 'user',
-        imdbRatingFallback: false,
-      },
-    }),
-
-  // Float buttons
-  getShowFunctionsButton: () => cy.getByTestId('show-functions'),
-  getAddNewButton: () => cy.getByTestId('add-new'),
-  getRandomPickButton: () => cy.getByTestId('random-pick'),
-  getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
-  getFloatSearchToggleButton: () => cy.getByTestId('float-search-toggle'),
-  getAiSearchButton: () => cy.getByTestId('float-ai-search-button'),
-  getOrderByCreatedAtButton: () => cy.getByTestId('list-order-by-created-at'),
-  getOrderByAlphabetButton: () => cy.getByTestId('list-order-by-alphabet'),
-  getOrderDirectionDescButton: () => cy.getByTestId('list-order-direction-desc'),
-  getOrderDirectionAscButton: () => cy.getByTestId('list-order-direction-asc'),
-  getCollectionFilterButton: (filter: string) => cy.getByTestId(`collection-filter-${filter}`),
-
-  // AI search input
-  openAiSearchDialog: () => cy.getByTestId('float-ai-search-button').click(),
-  getAiSearchTextarea: () => cy.getByTestId('ai-search-textarea').find('textarea'),
-  getAiSearchSendButton: () => cy.getByTestId('ai-search-send'),
-
-  // New item dialog
-  getNewItemSearch: () => cy.get('[data-test-id="new-item-search"]'),
-  getNewItemSearchInput: () => cy.getByTestId('new-item-search').find('input'),
-  getNewItemSearchModeButton: () => cy.getByTestId('new-item-search-mode'),
-  getNewItemManualModeButton: () => cy.getByTestId('new-item-manual-mode'),
-  getNewItemModeTabs: () => cy.getByTestId('new-item-mode-tabs'),
-  getNewItemSearchPanel: () => cy.getByTestId('new-item-mode-first-panel'),
-  getNewItemManualPanel: () => cy.getByTestId('new-item-mode-second-panel'),
-  getNewItemManualHint: () => cy.getByTestId('new-item-manual-hint'),
-  getNewItemManualHintAndPreview: () =>
-    getActiveDialogFrame().find(
-      '[data-test-id="new-item-manual-hint"], [data-test-id="new-item-manual-image-preview"]'
-    ),
-  getNewItemLibrarySelect: () => cy.getByTestId('new-item-library').find('select'),
-  getNewItemContentSelect: () => cy.getByTestId('new-item-search-content-type').find('select'),
-  getNewItemContentOptions: () => cy.getByTestId('new-item-content-option'),
-  getNewItemUserRateInput: () => cy.getByTestId('new-item-user-rate').find('input'),
-  getNewItemCopyToTrackingAsCompletedCheckbox: () =>
-    cy.getByTestId('new-item-copy-to-tracking-as-completed').find('input[type="checkbox"]'),
-  getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
-  getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
-  getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
-  getNewItemActionButtons: () =>
-    getActiveDialogFrame().find(
-      '[data-test-id="new-item-save"], [data-test-id="new-item-save-and-new"], [data-test-id="new-item-save-and-close"]'
-    ),
-
-  // Manual new item form
-  getNewItemManualTitleInput: () => cy.getByTestId('new-item-manual-title').find('input'),
-  getNewItemManualImdbIdInput: () => cy.getByTestId('new-item-manual-imdb-id').find('input'),
-  getNewItemManualYearInput: () => cy.getByTestId('new-item-manual-year').find('input'),
-  getNewItemManualContentTypeSelect: () => cy.getByTestId('new-item-manual-content-type').find('select'),
-  getNewItemManualRateInput: () => cy.getByTestId('new-item-manual-rate').find('input'),
-  getNewItemManualRottenTomatoesRateInput: () => cy.getByTestId('new-item-manual-rotten-tomatoes-rate').find('input'),
-  getNewItemManualMetacriticRateInput: () => cy.getByTestId('new-item-manual-metacritic-rate').find('input'),
-  getNewItemManualUserRateInput: () => cy.getByTestId('new-item-manual-user-rate').find('input'),
-  getNewItemManualImageInput: () => cy.getByTestId('new-item-manual-image').find('input'),
-  getNewItemManualImagePreview: () => cy.getByTestId('new-item-manual-image-preview'),
-  getNewItemManualGenreInput: () => cy.getByTestId('new-item-manual-genre').find('input'),
-  getNewItemManualTagsInput: () => cy.getByTestId('new-item-manual-tags').find('input'),
-  getNewItemManualActorsInput: () => cy.getByTestId('new-item-manual-actors').find('input'),
-  getNewItemManualPlotInput: () => cy.getByTestId('new-item-manual-plot').find('textarea'),
-  getNewItemManualProgressCurrentInput: () => cy.getByTestId('new-item-manual-progress-current').find('input'),
-  getNewItemManualProgressTotalInput: () => cy.getByTestId('new-item-manual-progress-total').find('input'),
-  getNewItemProgressCurrentInput: () => cy.getByTestId('new-item-progress-current').find('input'),
-  getNewItemProgressTotalInput: () => cy.getByTestId('new-item-progress-total').find('input'),
-  getListItemProgress: () => cy.getByTestId('list-item-progress'),
-
-  // Item dialog
-  getItemDialogShellHost: () => cy.getByTestId('item-dialog'),
-  getItemDialogHost: getItemDialog,
-  getItemDialogComponentHost: () => getDialogComponentHost('item-dialog'),
-  getActiveDialogHost: getActiveDialog,
-  getActiveDialogFrame,
-  getFocusedElement: () => cy.focused(),
-  swipeActiveDialogFromLeftEdge: () => swipeActiveDialog(2, 90),
-  swipeActiveDialogFromRightEdge: () =>
-    cy.window().then((window) => swipeActiveDialog(window.innerWidth - 2, window.innerWidth - 90)),
-  getItemDialogEditButton: () => getItemDialog().find('[data-test-id="item-dialog-edit"]'),
-  getItemDialogReadOnlyButton: () => getItemDialog().find('[data-test-id="item-dialog-read-only"]'),
-  getItemDialogSaveButton: () => getItemDialog().find('[data-test-id="item-dialog-save"]'),
-  getItemDialogSaveLabel: () => getItemDialog().find('[data-test-id="item-dialog-save-label"]'),
-  getItemDialogDeleteButton: () => getItemDialog().find('[data-test-id="item-dialog-delete"]'),
-  getItemDialogShareButton: () => getItemDialog().find('[data-test-id="item-dialog-share"]'),
-  closeDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
-  closeActiveDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
-  expectItemDialogActionsVisible: () => {
-    getActiveDialog().then((dialog) => {
-      cy.wrap(dialog).find('[data-test-id="dialog-actions-menu"]').should('be.visible');
-    });
-  },
-  getDialogActionTooltip: () => getActiveDialog().find('[data-test-id="reveal-label-tooltip"]'),
-  getItemDialogActionButtons: () => getItemDialog().find('.button-reveal-label'),
-  holdItemDialogAction: (testId: string) => {
-    getItemDialog().find(`[data-test-id="${testId}"]`).trigger('pointerdown', {
-      pointerId: 1,
-      pointerType: 'touch',
-      isPrimary: true,
-      clientX: 100,
-      clientY: 100,
-      force: true,
-    });
-    cy.wait(dialogActionHoldDuration);
-  },
-  releaseHeldItemDialogAction: (testId: string) => {
-    getItemDialog()
-      .find(`[data-test-id="${testId}"]`)
-      .then((button) => {
-        const element = button[0];
-        const window = element.ownerDocument.defaultView;
-        if (!window) throw new Error('Dialog action window is unavailable');
-        element.dispatchEvent(
-          new window.PointerEvent('pointerup', {
-            bubbles: true,
-            pointerId: 1,
-            pointerType: 'touch',
-            isPrimary: true,
-            clientX: 100,
-            clientY: 100,
-          })
-        );
-        element.click();
+    // List
+    getList: () => page.getByTestId('collection-list'),
+    getListItems: () => page.getByTestId('list-item-title'),
+    getListItemByTitle: (title: string) =>
+      page.getByTestId('list-item-title').and(page.getByRole('heading', { name: title, exact: true })),
+    getFavoriteBadges: () => page.getByTestId('list-item-favorite'),
+    getTrackingCompletedBadges: () => page.getByTestId('list-item-tracking-completed'),
+    getSharedBadges: () => page.getByTestId('list-item-shared'),
+    getListItemYears: () => page.getByTestId('list-item-year'),
+    getListItemImdbRatings: () => page.getByTestId('list-item-rating-imdb'),
+    getListItemRottenTomatoesRatings: () => page.getByTestId('list-item-rating-rotten-tomatoes'),
+    getListItemMetacriticRatings: () => page.getByTestId('list-item-rating-metacritic'),
+    getListItemUserRates: () => page.getByTestId('list-item-user-rate'),
+    getListItemImages: () => page.getByTestId('list-item-image'),
+    getListItemImageBadges: () => page.getByTestId('list-item-image-badge'),
+    getListItemImageByTitle: (title: string) =>
+      page.getByTestId('list-item-image').and(page.getByLabel(title, { exact: true })),
+    getAllItems: () => page.getByTestId('list-item-title'),
+    getEmptyState: () => page.getByTestId('list-empty'),
+    getAddFirstItemLink: () => page.getByTestId('add-first-item'),
+    getAddFirstUpNextItemLink: () => page.getByTestId('add-first-up-next-item'),
+    getAddFirstWishlistItemLink: () => page.getByTestId('add-first-wishlist-item'),
+    getAddFirstTrackingItemLink: () => page.getByTestId('add-first-tracking-item'),
+    setListPreferredRatingToUser: async (api: ApiClient) => {
+      await api.request('POST', '/api/v1/users/me/settings', {
+        collectionListDisplayPreferences: {
+          showYear: true,
+          showSharedIcon: true,
+          preferredRating: 'user',
+          imdbRatingFallback: false,
+        },
       });
-  },
-  getItemDialogMarkFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-favorite"]'),
-  getItemDialogRemoveFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-favorite"]'),
-  getItemDialogMarkFinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-finished"]'),
-  getItemDialogMarkUnfinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-unfinished"]'),
-  getItemDialogMoveFinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-move-finished"]'),
-  getItemDialogMoveTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-move-tracking"]'),
-  getItemDialogCopyTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-copy-tracking"]'),
-  getItemDialogOpenInTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-open-in-tracking"]'),
-  getItemDialogRemoveTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-tracking"]'),
-  getItemDialogSharedLibraryBadge: () => getItemDialog().find('[data-test-id="item-dialog-shared-library"]'),
-  getItemDialogUserRateChip: () => getItemDialog().find('[data-test-id="item-dialog-user-rate-chip"]'),
-  getItemDialogTitleInput: () => getItemDialog().find('[data-test-id="item-dialog-title"] input'),
-  getItemDialogYearInput: () => getItemDialog().find('[data-test-id="item-dialog-year"] input'),
-  getItemDialogIMDbRateInput: () => getItemDialog().find('[data-test-id="item-dialog-rate"] input'),
-  getItemDialogRottenTomatoesRateInput: () =>
-    getItemDialog().find('[data-test-id="item-dialog-rotten-tomatoes-rate"] input'),
-  getItemDialogMetacriticRateInput: () => getItemDialog().find('[data-test-id="item-dialog-metacritic-rate"] input'),
-  getItemDialogUserRateInput: () => getItemDialog().find('[data-test-id="item-dialog-user-rate"] input'),
-  getItemDialogEpisodeProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-episode-progress-chip"]'),
-  getItemDialogProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-progress-chip"]'),
-  getItemDialogProgressCurrentInput: () => getItemDialog().find('[data-test-id="item-dialog-progress-current"] input'),
-  getItemDialogProgressTotalInput: () => getItemDialog().find('[data-test-id="item-dialog-progress-total"] input'),
-  getItemDialogCompletedChip: () => getItemDialog().find('[data-test-id="item-dialog-completed-chip"]'),
-  getItemDialogManageCompletedEpisodesButton: () =>
-    getItemDialog().find('[data-test-id="item-dialog-manage-completed-episodes"]'),
-  getItemDialogManageSeriesMetadataButton: () =>
-    getItemDialog().find('[data-test-id="item-dialog-manage-series-metadata"]'),
-  getItemDialogGenreInput: () => getItemDialog().find('[data-test-id="item-dialog-genre"] input'),
-  getItemDialogTagsInput: () => getItemDialog().find('[data-test-id="item-dialog-tags"] input'),
-  getItemDialogTagSuggestions: () => getItemDialog().find('[data-test-id="item-dialog-tags"] [role="option"]'),
-  getItemDialogActorsInput: () => getItemDialog().find('[data-test-id="item-dialog-actors"] input'),
-  getItemDialogPlotInput: () => getItemDialog().find('[data-test-id="item-dialog-plot"] textarea'),
-  getItemDialogWatchedUpToSeasonSelect: () =>
-    getItemDialog().find('[data-test-id="item-dialog-watched-up-to-season"] select'),
-  getItemDialogWatchedUpToEpisodeSelect: () =>
-    getItemDialog().find('[data-test-id="item-dialog-watched-up-to-episode"] select'),
+    },
 
-  // Series metadata dialog
-  getSeriesMetadataDialogHost: () => cy.getByTestId('series-metadata-dialog'),
-  getSeriesMetadataDialog: getSeriesMetadataDialog,
-  getSeriesMetadataDialogComponentHost: () => getDialogComponentHost('series-metadata-dialog'),
-  getSeriesMetadataMessage: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-message"]'),
-  getSeriesMetadataNoMetadataMessage: () =>
-    getSeriesMetadataDialog().find('[data-test-id="series-metadata-no-metadata-message"]'),
-  getSeriesMetadataAddButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-add"]'),
-  getSeriesMetadataRefreshButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-refresh"]'),
-  getSeriesMetadataRemoveAllButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-remove-all"]'),
-  getSeriesMetadataSaveButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-save"]'),
-  getSeriesMetadataValidation: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-validation"]'),
-  getSeriesMetadataSeasonInputs: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-season"] input'),
-  getSeriesMetadataEpisodeInputs: () =>
-    getSeriesMetadataDialog().find('[data-test-id="series-metadata-episodes"] input'),
-  getSeriesMetadataRemoveButtons: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-remove"]'),
-  getSeriesMetadataEpisodeTitleToggles: () =>
-    getSeriesMetadataDialog().find('[data-test-id="series-metadata-episode-titles-toggle"] summary'),
-  getSeriesMetadataEpisodeTitleInputs: () =>
-    getSeriesMetadataDialog().find('[data-test-id="series-metadata-episode-title"] input'),
+    // Float buttons
+    getShowFunctionsButton: () => page.getByTestId('show-functions'),
+    getAddNewButton: () => page.getByTestId('add-new'),
+    getRandomPickButton: () => page.getByTestId('random-pick'),
+    getScrollToTopButton: () => page.getByTestId('scroll-to-top'),
+    getFloatSearchToggleButton: () => page.getByTestId('float-search-toggle'),
+    getAiSearchButton: () => page.getByTestId('float-ai-search-button'),
+    getOrderByCreatedAtButton: () => page.getByTestId('list-order-by-created-at'),
+    getOrderByAlphabetButton: () => page.getByTestId('list-order-by-alphabet'),
+    getOrderDirectionDescButton: () => page.getByTestId('list-order-direction-desc'),
+    getOrderDirectionAscButton: () => page.getByTestId('list-order-direction-asc'),
+    getCollectionFilterButton: (filter: string) => page.getByTestId(`collection-filter-${filter}`),
 
-  // Completed episodes dialog
-  getCompletedEpisodesDialogHost,
-  getCompletedEpisodesDialogComponentHost: () => getDialogComponentHost('completed-episodes-dialog'),
-  getCompletedEpisodesDialog: () => getDialogFrame(getCompletedEpisodesDialog()),
-  getCompletedEpisodesSeasonToggle: () =>
-    getCompletedEpisodesDialog()
-      .find('[data-test-id="completed-episodes-season-toggle"]')
-      .find('input[type="checkbox"]'),
-  getCompletedEpisodesEpisodeCheckbox: () =>
-    getCompletedEpisodesDialog()
-      .find('[data-test-id="completed-episodes-episode-checkbox"]')
-      .find('input[type="checkbox"]'),
-  getCompletedEpisodesMarkAllCompletedButton: () =>
-    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-completed"]'),
-  getCompletedEpisodesMarkAllUncompletedButton: () =>
-    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-uncompleted"]'),
-  getCompletedEpisodesNoMetadataMessage: () =>
-    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-no-metadata-message"]'),
-  getCompletedEpisodesManageSeasonMetadataButton: () =>
-    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-manage-season-metadata"]'),
+    // AI search input
+    openAiSearchDialog: async () => {
+      await page.getByTestId('float-ai-search-button').click();
+    },
+    getAiSearchTextarea: () => page.getByTestId('ai-search-textarea').locator('textarea'),
+    getAiSearchSendButton: () => page.getByTestId('ai-search-send'),
+
+    // New item dialog
+    getNewItemSearch: () => page.getByTestId('new-item-search'),
+    getNewItemSearchInput: () => page.getByTestId('new-item-search').locator('input'),
+    getNewItemSearchModeButton: () => page.getByTestId('new-item-search-mode'),
+    getNewItemManualModeButton: () => page.getByTestId('new-item-manual-mode'),
+    getNewItemModeTabs: () => page.getByTestId('new-item-mode-tabs'),
+    getNewItemSearchPanel: () => page.getByTestId('new-item-mode-first-panel'),
+    getNewItemManualPanel: () => page.getByTestId('new-item-mode-second-panel'),
+    getNewItemManualHint: () => page.getByTestId('new-item-manual-hint'),
+    getNewItemManualHintAndPreview: () =>
+      getActiveDialogFrame().locator(
+        '[data-test-id="new-item-manual-hint"], [data-test-id="new-item-manual-image-preview"]'
+      ),
+    getNewItemLibrarySelect: () => page.getByTestId('new-item-library').locator('select'),
+    getNewItemContentSelect: () => page.getByTestId('new-item-search-content-type').locator('select'),
+    getNewItemContentOptions: () => page.getByTestId('new-item-content-option'),
+    getNewItemUserRateInput: () => page.getByTestId('new-item-user-rate').locator('input'),
+    getNewItemCopyToTrackingAsCompletedCheckbox: () =>
+      page.getByTestId('new-item-copy-to-tracking-as-completed').locator('input[type="checkbox"]'),
+    getNewItemSaveButton: () => page.getByTestId('new-item-save'),
+    getNewItemSaveAndNewButton: () => page.getByTestId('new-item-save-and-new'),
+    getNewItemSaveAndCloseButton: () => page.getByTestId('new-item-save-and-close'),
+    getNewItemActionButtons: () =>
+      getActiveDialogFrame().locator(
+        '[data-test-id="new-item-save"], [data-test-id="new-item-save-and-new"], [data-test-id="new-item-save-and-close"]'
+      ),
+
+    // Manual new item form
+    getNewItemManualTitleInput: () => page.getByTestId('new-item-manual-title').locator('input'),
+    getNewItemManualImdbIdInput: () => page.getByTestId('new-item-manual-imdb-id').locator('input'),
+    getNewItemManualYearInput: () => page.getByTestId('new-item-manual-year').locator('input'),
+    getNewItemManualContentTypeSelect: () => page.getByTestId('new-item-manual-content-type').locator('select'),
+    getNewItemManualRateInput: () => page.getByTestId('new-item-manual-rate').locator('input'),
+    getNewItemManualRottenTomatoesRateInput: () =>
+      page.getByTestId('new-item-manual-rotten-tomatoes-rate').locator('input'),
+    getNewItemManualMetacriticRateInput: () => page.getByTestId('new-item-manual-metacritic-rate').locator('input'),
+    getNewItemManualUserRateInput: () => page.getByTestId('new-item-manual-user-rate').locator('input'),
+    getNewItemManualImageInput: () => page.getByTestId('new-item-manual-image').locator('input'),
+    getNewItemManualImagePreview: () => page.getByTestId('new-item-manual-image-preview'),
+    getNewItemManualGenreInput: () => page.getByTestId('new-item-manual-genre').locator('input'),
+    getNewItemManualTagsInput: () => page.getByTestId('new-item-manual-tags').locator('input'),
+    getNewItemManualActorsInput: () => page.getByTestId('new-item-manual-actors').locator('input'),
+    getNewItemManualPlotInput: () => page.getByTestId('new-item-manual-plot').locator('textarea'),
+    getNewItemManualProgressCurrentInput: () => page.getByTestId('new-item-manual-progress-current').locator('input'),
+    getNewItemManualProgressTotalInput: () => page.getByTestId('new-item-manual-progress-total').locator('input'),
+    getNewItemProgressCurrentInput: () => page.getByTestId('new-item-progress-current').locator('input'),
+    getNewItemProgressTotalInput: () => page.getByTestId('new-item-progress-total').locator('input'),
+    getListItemProgress: () => page.getByTestId('list-item-progress'),
+
+    // Item dialog
+    getItemDialogShellHost: () => page.getByTestId('item-dialog'),
+    getItemDialogHost: getItemDialog,
+    getItemDialogComponentHost: () => getDialogComponentHost('item-dialog'),
+    getActiveDialogHost: getActiveDialog,
+    getActiveDialogFrame,
+    getFocusedElement: () => page.locator(':focus'),
+    swipeActiveDialogFromLeftEdge: async () => {
+      await swipeActiveDialog(2, 90);
+    },
+    swipeActiveDialogFromRightEdge: async () => {
+      const viewport = page.viewportSize();
+      if (!viewport) throw new Error('Page viewport is unavailable');
+      await swipeActiveDialog(viewport.width - 2, viewport.width - 90);
+    },
+    getItemDialogEditButton: () => getItemDialog().locator('[data-test-id="item-dialog-edit"]'),
+    getItemDialogReadOnlyButton: () => getItemDialog().locator('[data-test-id="item-dialog-read-only"]'),
+    getItemDialogSaveButton: () => getItemDialog().locator('[data-test-id="item-dialog-save"]'),
+    getItemDialogSaveLabel: () => getItemDialog().locator('[data-test-id="item-dialog-save-label"]'),
+    getItemDialogDeleteButton: () => getItemDialog().locator('[data-test-id="item-dialog-delete"]'),
+    getItemDialogShareButton: () => getItemDialog().locator('[data-test-id="item-dialog-share"]'),
+    closeDialogByOverlay: async () => {
+      await getActiveDialog()
+        .locator('[data-test-id="dialog-overlay"]')
+        .click({ position: { x: 10, y: 10 } });
+    },
+    closeActiveDialogByOverlay: async () => {
+      await getActiveDialog()
+        .locator('[data-test-id="dialog-overlay"]')
+        .click({ position: { x: 10, y: 10 } });
+    },
+    expectItemDialogActionsVisible: async () => {
+      await expect(getActiveDialog().locator('[data-test-id="dialog-actions-menu"]')).toBeVisible();
+    },
+    getDialogActionTooltip: () => getActiveDialog().locator('[data-test-id="reveal-label-tooltip"]'),
+    getItemDialogActionButtons: () => getItemDialog().locator('.button-reveal-label'),
+    holdItemDialogAction: async (testId: string) => {
+      await getItemDialog().locator(`[data-test-id="${testId}"]`).dispatchEvent('pointerdown', {
+        pointerId: 1,
+        pointerType: 'touch',
+        isPrimary: true,
+        clientX: 100,
+        clientY: 100,
+      });
+      await expect(getActiveDialog().locator('[data-test-id="reveal-label-tooltip"]')).toBeVisible();
+    },
+    releaseHeldItemDialogAction: async (testId: string) => {
+      await getItemDialog()
+        .locator(`[data-test-id="${testId}"]`)
+        .evaluate((element) => {
+          const elementWindow = element.ownerDocument.defaultView;
+          if (!elementWindow) throw new Error('Dialog action window is unavailable');
+          element.dispatchEvent(
+            new elementWindow.PointerEvent('pointerup', {
+              bubbles: true,
+              pointerId: 1,
+              pointerType: 'touch',
+              isPrimary: true,
+              clientX: 100,
+              clientY: 100,
+            })
+          );
+          (element as HTMLElement).click();
+        });
+    },
+    getItemDialogMarkFavoriteButton: () => getItemDialog().locator('[data-test-id="item-dialog-mark-favorite"]'),
+    getItemDialogRemoveFavoriteButton: () => getItemDialog().locator('[data-test-id="item-dialog-remove-favorite"]'),
+    getItemDialogMarkFinishedButton: () => getItemDialog().locator('[data-test-id="item-dialog-mark-finished"]'),
+    getItemDialogMarkUnfinishedButton: () => getItemDialog().locator('[data-test-id="item-dialog-mark-unfinished"]'),
+    getItemDialogMoveFinishedButton: () => getItemDialog().locator('[data-test-id="item-dialog-move-finished"]'),
+    getItemDialogMoveTrackingButton: () => getItemDialog().locator('[data-test-id="item-dialog-move-tracking"]'),
+    getItemDialogCopyTrackingButton: () => getItemDialog().locator('[data-test-id="item-dialog-copy-tracking"]'),
+    getItemDialogOpenInTrackingButton: () => getItemDialog().locator('[data-test-id="item-dialog-open-in-tracking"]'),
+    getItemDialogRemoveTrackingButton: () => getItemDialog().locator('[data-test-id="item-dialog-remove-tracking"]'),
+    getItemDialogSharedLibraryBadge: () => getItemDialog().locator('[data-test-id="item-dialog-shared-library"]'),
+    getItemDialogUserRateChip: () => getItemDialog().locator('[data-test-id="item-dialog-user-rate-chip"]'),
+    getItemDialogTitleInput: () => getItemDialog().locator('[data-test-id="item-dialog-title"] input'),
+    getItemDialogYearInput: () => getItemDialog().locator('[data-test-id="item-dialog-year"] input'),
+    getItemDialogIMDbRateInput: () => getItemDialog().locator('[data-test-id="item-dialog-rate"] input'),
+    getItemDialogRottenTomatoesRateInput: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-rotten-tomatoes-rate"] input'),
+    getItemDialogMetacriticRateInput: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-metacritic-rate"] input'),
+    getItemDialogUserRateInput: () => getItemDialog().locator('[data-test-id="item-dialog-user-rate"] input'),
+    getItemDialogEpisodeProgressChip: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-episode-progress-chip"]'),
+    getItemDialogProgressChip: () => getItemDialog().locator('[data-test-id="item-dialog-progress-chip"]'),
+    getItemDialogProgressCurrentInput: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-progress-current"] input'),
+    getItemDialogProgressTotalInput: () => getItemDialog().locator('[data-test-id="item-dialog-progress-total"] input'),
+    getItemDialogCompletedChip: () => getItemDialog().locator('[data-test-id="item-dialog-completed-chip"]'),
+    getItemDialogManageCompletedEpisodesButton: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-manage-completed-episodes"]'),
+    getItemDialogManageSeriesMetadataButton: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-manage-series-metadata"]'),
+    getItemDialogGenreInput: () => getItemDialog().locator('[data-test-id="item-dialog-genre"] input'),
+    getItemDialogTagsInput: () => getItemDialog().locator('[data-test-id="item-dialog-tags"] input'),
+    getItemDialogTagSuggestions: () => getItemDialog().locator('[data-test-id="item-dialog-tags"] [role="option"]'),
+    getItemDialogActorsInput: () => getItemDialog().locator('[data-test-id="item-dialog-actors"] input'),
+    getItemDialogPlotInput: () => getItemDialog().locator('[data-test-id="item-dialog-plot"] textarea'),
+    getItemDialogWatchedUpToSeasonSelect: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-watched-up-to-season"] select'),
+    getItemDialogWatchedUpToEpisodeSelect: () =>
+      getItemDialog().locator('[data-test-id="item-dialog-watched-up-to-episode"] select'),
+
+    // Series metadata dialog
+    getSeriesMetadataDialogHost: () => page.getByTestId('series-metadata-dialog'),
+    getSeriesMetadataDialog,
+    getSeriesMetadataDialogComponentHost: () => getDialogComponentHost('series-metadata-dialog'),
+    getSeriesMetadataMessage: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-message"]'),
+    getSeriesMetadataNoMetadataMessage: () =>
+      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-no-metadata-message"]'),
+    getSeriesMetadataAddButton: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-add"]'),
+    getSeriesMetadataRefreshButton: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-refresh"]'),
+    getSeriesMetadataRemoveAllButton: () =>
+      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-remove-all"]'),
+    getSeriesMetadataSaveButton: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-save"]'),
+    getSeriesMetadataValidation: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-validation"]'),
+    getSeriesMetadataSeasonInputs: () =>
+      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-season"] input'),
+    getSeriesMetadataEpisodeInputs: () =>
+      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episodes"] input'),
+    getSeriesMetadataRemoveButtons: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-remove"]'),
+    getSeriesMetadataEpisodeTitleToggles: () =>
+      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episode-titles-toggle"] summary'),
+    getSeriesMetadataEpisodeTitleInputs: () =>
+      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episode-title"] input'),
+
+    // Completed episodes dialog
+    getCompletedEpisodesDialogHost,
+    getCompletedEpisodesDialogComponentHost: () => getDialogComponentHost('completed-episodes-dialog'),
+    getCompletedEpisodesDialog: getCompletedEpisodesDialogFrame,
+    getCompletedEpisodesSeasonSummaries: () => getCompletedEpisodesDialogFrame().locator('details > summary'),
+    getCompletedEpisodesSeasonToggle: () =>
+      getCompletedEpisodesDialogFrame()
+        .locator('[data-test-id="completed-episodes-season-toggle"]')
+        .locator('input[type="checkbox"]'),
+    getCompletedEpisodesEpisodeCheckbox: () =>
+      getCompletedEpisodesDialogFrame()
+        .locator('[data-test-id="completed-episodes-episode-checkbox"]')
+        .locator('input[type="checkbox"]'),
+    getCompletedEpisodesMarkAllCompletedButton: () =>
+      getCompletedEpisodesDialogFrame().locator('[data-test-id="completed-episodes-mark-all-completed"]'),
+    getCompletedEpisodesMarkAllUncompletedButton: () =>
+      getCompletedEpisodesDialogFrame().locator('[data-test-id="completed-episodes-mark-all-uncompleted"]'),
+    getCompletedEpisodesNoMetadataMessage: () =>
+      getCompletedEpisodesDialogFrame().locator('[data-test-id="completed-episodes-no-metadata-message"]'),
+    getCompletedEpisodesManageSeasonMetadataButton: () =>
+      getCompletedEpisodesDialogFrame().locator('[data-test-id="completed-episodes-manage-season-metadata"]'),
+  };
 };

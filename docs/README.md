@@ -20,7 +20,7 @@ This directory contains the maintained project documentation. The root [`README.
 - [Metadata provider](./metadata-provider.md)
 - [Server API reference](../apps/server/public/server-api.yaml)
 - [Development proxy](./dev-proxy.md)
-- [Collection E2E](./collection-e2e.md)
+- [Collection E2E (Playwright)](./collection-e2e.md)
 
 ## Libraries
 

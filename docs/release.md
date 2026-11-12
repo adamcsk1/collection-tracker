@@ -52,7 +52,7 @@ Do not commit keystores or signing passwords. When these variables are omitted, 
 
 ## GitHub Actions
 
-The existing CI → Docker GHCR → Release chain publishes the current default-branch commit to `/releases/tag/snapshot` after Android, Cypress (Chrome and Firefox), Format, i18n, Lint, Test, Typecheck, and both Docker GHCR image pushes are green. The snapshot is always a prerelease and never becomes stable Latest. Its notes identify the commit, UTC build time, and Actions run.
+The existing CI → Docker GHCR → Release chain publishes the current default-branch commit to `/releases/tag/snapshot` after Android, Playwright (Chrome and Firefox), Format, i18n, Lint, Test, Typecheck, and both Docker GHCR image pushes are green. The snapshot is always a prerelease and never becomes stable Latest. Its notes identify the commit, UTC build time, and Actions run.
 
 A default-branch commit tagged `vX.Y.Z` (matching `package.json`) additionally publishes a stable GitHub Release. Both channels are built on tagged commits. The app and metadata-provider GHCR images for that commit are also tagged `vX.Y.Z`. Existing published stable releases are left untouched on reruns.
 
@@ -78,4 +78,4 @@ On API failure, the publisher attempts to restore the previous tag and release w
 
 If recovery needs attention, pause Release runs before making repairs. Inspect `snapshot-staging-<run>-<attempt>` and `snapshot-backup-<run>-<attempt>` draft releases and their recorded commit SHAs. Restore the `snapshot` tag to the desired commit and the corresponding complete release to tag `snapshot`, public prerelease, with **Set as latest release** disabled. Remove temporary releases/tags only after confirming the restored assets and checksums. Then resume or rerun Release for the current tip. An existing `snapshot` draft blocks automatic replacement so it can be recovered explicitly.
 
-If `Cypress (firefox)` is listed in branch protection, keep it required. The Cypress workflow fails when Firefox E2E fails.
+When migrating branch protection, replace the old `Cypress (chrome)` and `Cypress (firefox)` required checks with `Playwright (chromium)` and `Playwright (firefox)`. Both Playwright browser jobs must remain required.

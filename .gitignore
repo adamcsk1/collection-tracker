@@ -37,6 +37,8 @@ yarn-error.log
 /libpeerconnection.log
 testem.log
 /typings
+/**/playwright-results/
+/**/playwright-report/
 /**/cypress/*
 .tmp-*
 *.tmp

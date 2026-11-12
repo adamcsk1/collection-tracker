@@ -1,26 +1,31 @@
+import type { Page } from '@playwright/test';
 import type { StatisticsScope } from './statistics-model';
 
-export const StatisticsPage = {
-  visit: () => {
-    cy.visit('/client/#/statistics');
+export const createStatisticsPage = (page: Page) => ({
+  visit: async () => {
+    await page.goto('/client/#/statistics');
   },
-  getContent: () => cy.getByTestId('statistics-content', { timeout: 10000 }),
-  getScrollContainer: () => cy.getByTestId('statistics-scroll', { timeout: 10000 }),
-  getEmptyMessage: () => cy.getByTestId('statistics-empty', { timeout: 10000 }),
-  getSummary: () => cy.getByTestId('statistics-summary', { timeout: 10000 }),
-  getSummaryCard: (card: string) => cy.getByTestId(`statistics-summary-${card}`, { timeout: 10000 }),
-  selectScope: (scope: StatisticsScope) => cy.getByTestId(`collection-media-chip-${scope}`).click(),
-  getScopeChip: (scope: StatisticsScope) => cy.getByTestId(`collection-media-chip-${scope}`),
-  openTagsDetails: () => {
-    cy.getByTestId('statistics-tags-details')
-      .find('details')
-      .then(($details) => {
-        if (!$details.prop('open')) cy.wrap($details).find('summary').click();
-      });
+  getContent: () => page.getByTestId('statistics-content'),
+  getScrollContainer: () => page.getByTestId('statistics-scroll'),
+  getEmptyMessage: () => page.getByTestId('statistics-empty'),
+  getSummary: () => page.getByTestId('statistics-summary'),
+  getSummaryCard: (card: string) => page.getByTestId(`statistics-summary-${card}`),
+  selectScope: async (scope: StatisticsScope) => {
+    await page.getByTestId(`collection-media-chip-${scope}`).click();
   },
-  getTag: (tag: string) => cy.getByTestId(`statistics-tag-${tag}`),
-  getUnavailableTagsMessage: () => cy.getByTestId('statistics-tags-unavailable').scrollIntoView(),
-  getTagChartCard: () => cy.getByTestId('statistics-tag-chart-card'),
-  getOverviewChartCard: () => cy.getByTestId('statistics-overview-chart-card'),
-  getRatingChartCard: () => cy.getByTestId('statistics-rating-chart-card'),
-};
+  getScopeChip: (scope: StatisticsScope) => page.getByTestId(`collection-media-chip-${scope}`),
+  openTagsDetails: async () => {
+    const details = page.getByTestId('statistics-tags-details').locator('details');
+    const isOpen = await details.evaluate((element) => (element as HTMLDetailsElement).open);
+    if (!isOpen) await details.locator('summary').click();
+  },
+  getTag: (tag: string) => page.getByTestId(`statistics-tag-${tag}`),
+  getUnavailableTagsMessage: async () => {
+    const message = page.getByTestId('statistics-tags-unavailable');
+    await message.scrollIntoViewIfNeeded();
+    return message;
+  },
+  getTagChartCard: () => page.getByTestId('statistics-tag-chart-card'),
+  getOverviewChartCard: () => page.getByTestId('statistics-overview-chart-card'),
+  getRatingChartCard: () => page.getByTestId('statistics-rating-chart-card'),
+});

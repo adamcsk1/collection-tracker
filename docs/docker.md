@@ -4,7 +4,7 @@ Docker Compose runs two images: the app image serves the built Angular applicati
 
 ## GHCR Image
 
-Main branch builds publish a prebuilt runtime image to GitHub Container Registry after the Android, Cypress, format,
+Main branch builds publish a prebuilt runtime image to GitHub Container Registry after the Android, Playwright, format,
 i18n, lint, test, and typecheck workflows all pass for the same commit.
 
 Published tags:
@@ -94,17 +94,17 @@ The Docker default uses `host.docker.internal` so the container can reach Ollama
 
 ## Environment Variables
 
-| Variable              | Default                  | Description                                                                                                      |
-| --------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `BASE_PATH`           | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.      |
-| `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.  |
-| `HEALTH_RATE_LIMIT`   | `60`                     | Public health and authenticated health-diagnostics requests allowed per client IP per minute.                    |
-| `IMAGE_RATE_LIMIT`    | `240`                    | Image proxy and public background-image list requests allowed per client IP per minute.                          |
-| `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                     |
-| `APP_PORT`            | `3001`                   | Host port mapped to the container's nginx listener.                                                              |
-| `APP_UID`             | `1000`                   | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |
-| `APP_GID`             | `1000`                   | Runtime group ID used for writable files. Set to `$(id -g)` on Linux hosts so `./.data` remains user-accessible. |
-| `METADATA_SERVICE_URL` | `http://metadata-provider:3002` | App-container URL for the private metadata provider. Not published. |
+| Variable               | Default                         | Description                                                                                                      |
+| ---------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `BASE_PATH`            | _(empty)_                       | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.      |
+| `HEALTH_CHECK_URL`     | `http://127.0.0.1:3001/`        | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.  |
+| `HEALTH_RATE_LIMIT`    | `60`                            | Public health and authenticated health-diagnostics requests allowed per client IP per minute.                    |
+| `IMAGE_RATE_LIMIT`     | `240`                           | Image proxy and public background-image list requests allowed per client IP per minute.                          |
+| `TRUSTED_PROXY_CIDRS`  | _(empty)_                       | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                     |
+| `APP_PORT`             | `3001`                          | Host port mapped to the container's nginx listener.                                                              |
+| `APP_UID`              | `1000`                          | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |
+| `APP_GID`              | `1000`                          | Runtime group ID used for writable files. Set to `$(id -g)` on Linux hosts so `./.data` remains user-accessible. |
+| `METADATA_SERVICE_URL` | `http://metadata-provider:3002` | App-container URL for the private metadata provider. Not published.                                              |
 
 ## Docker Compose (Recommended for VPS)
 

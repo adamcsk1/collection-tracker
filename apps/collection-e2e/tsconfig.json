@@ -5,11 +5,7 @@
     "rootDir": ".",
     "outDir": "../../dist/out-tsc",
     "allowJs": true,
-    "types": ["cypress", "node"]
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.js",
-    "cypress.config.ts"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.js", "playwright.config.ts"]
 }

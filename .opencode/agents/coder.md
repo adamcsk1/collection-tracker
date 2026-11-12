@@ -11,12 +11,12 @@ You are the primary coding agent for the Collection Tracker — a self-hosted me
 
 ## Stack at a glance
 
-| Layer | Technology |
-|-------|-----------|
+| Layer         | Technology                                                            |
+| ------------- | --------------------------------------------------------------------- |
 | Frontend apps | Angular 22, standalone components, signals, `ngx-simple-signal-store` |
-| Backend | Fastify, SQLite persistence via `better-sqlite3` |
-| Tests | Vitest (unit), Cypress (E2E) |
-| Workspace | Nx core task runner, Angular CLI, ESLint flat config, Prettier, Husky |
+| Backend       | Fastify, SQLite persistence via `better-sqlite3`                      |
+| Tests         | Vitest (unit), Playwright (E2E)                                       |
+| Workspace     | Nx core task runner, Angular CLI, ESLint flat config, Prettier, Husky |
 
 ## Project layout
 
@@ -27,7 +27,7 @@ apps/metadata-provider/  OMDb, Open Library, MusicBrainz, and replacement adapte
 apps/login/         Angular auth UI (sign-in / sign-up)
 apps/health/        Angular server health dashboard
 apps/dev-proxy/     Local dev gateway (localhost:4200)
-apps/collection-e2e/  Cypress E2E tests
+apps/collection-e2e/  Playwright E2E tests
 libs/components/    Shared Angular UI components
 libs/services/      Angular services and signal stores
 libs/shared/        Models, constants, styles, animations, utilities
@@ -68,24 +68,28 @@ Within the same project → relative paths are fine at any depth.
 ## Coding conventions
 
 ### TypeScript / General
+
 - Parameter names always descriptive — never single-letter or abbreviated (exceptions: `a`/`b` in sort comparators, `arg`/`args`/`argv` for CLI argument handling)
 - Only comment code that genuinely needs clarification; never add docstrings to unchanged code
 - No speculative abstractions — build for what exists now
 
 ### Angular
+
 - Standalone components and directives — `imports: [...]` on the decorator, no NgModules; app components use `ct-*` selector, lib components use `libc-*` selector
 - Pipes keep their `name` property
 - State via `ngx-simple-signal-store` signal stores, not class-based services with subjects
 - Templates: bind user-visible strings through a protected `translations` property of computed signals that call a private `NgxSignalTranslateService` — never hardcode English text
-- `data-test-id` on interactive and landmark elements for Cypress targeting
+- `data-test-id` on interactive and landmark elements for Playwright targeting
 
 ### Server
+
 - All API handlers live in `apps/server/src/apis/`
 - Persistence via SQLite repositories in `apps/server/src/core/database/repositories/`; handlers should not perform direct SQL unless an existing nearby pattern requires it
 - Schema changes go through `apps/server/src/core/database/migrations.ts` and SQL files under `apps/server/src/migrations/`
 - Validate input at the boundary; trust internal calls
 
 ### Formatting
+
 - Prettier: 120-char line width, single quotes
 - CSS linted via `@eslint/css`
 - CSS should use CSS nesting for related selectors, pseudo-classes, and component-local child selectors instead of repeating full selector chains.
@@ -103,7 +107,7 @@ npm run typecheck                  # tsc --noEmit across all projects
 npm run format:check               # Prettier check
 npm run test                       # Vitest unit tests
 npm run test:affected              # Only affected projects
-npm run cypress:chrome             # Cypress E2E
+npm run playwright:chrome             # Playwright E2E
 ```
 
 ---
@@ -121,13 +125,13 @@ npm run cypress:chrome             # Cypress E2E
 
 ## When to delegate to a specialist agent
 
-| Situation | Use agent |
-|-----------|-----------|
-| Deciding where new code should live | `architect` |
-| Reviewing changes before committing | `code-reviewer` |
-| Writing or fixing unit / E2E tests | `testing` |
-| Adding i18n keys or fixing a11y issues | `i18n-a11y` |
-| Staging and committing changes | `commit` |
+| Situation                              | Use agent       |
+| -------------------------------------- | --------------- |
+| Deciding where new code should live    | `architect`     |
+| Reviewing changes before committing    | `code-reviewer` |
+| Writing or fixing unit / E2E tests     | `testing`       |
+| Adding i18n keys or fixing a11y issues | `i18n-a11y`     |
+| Staging and committing changes         | `commit`        |
 
 ---
 

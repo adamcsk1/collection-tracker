@@ -9,7 +9,7 @@ Stack:
 - SQLite persistence through `better-sqlite3`
 - Native Android WebView wrapper
 - Vitest unit tests
-- Cypress E2E tests
+- Playwright E2E tests
 
 Review for correctness, security, maintainability, test coverage, and project convention violations. Do not comment on formatting, whitespace, import ordering, or other issues already enforced by Prettier, ESLint, TypeScript, or existing CI unless the issue changes runtime behavior.
 
@@ -35,7 +35,7 @@ Issue description and why it matters. Suggested fix.
 - Any changed API route, request body, response shape, or persistence behavior.
 - Any changed Angular template with user-visible text, interactive elements, forms, or routing.
 - Any changed database migration or repository code.
-- Any changed Cypress test, fixture, page object, or support command.
+- Any changed Playwright test, fixture, page object, or support command.
 - Any dependency, build, TypeScript, or CI configuration change.
 - Any changed Android Activity, WebView, JavaScript bridge, download handling, Gradle, manifest, or Android workflow behavior.
 
@@ -61,7 +61,7 @@ Issue description and why it matters. Suggested fix.
 - New forms should use Angular Signal Forms from `@angular/forms/signals`, not new `ReactiveFormsModule` or template-driven form patterns.
 - User-visible template text should use `NgxSignalTranslateService.translate()` from computed signals on a protected
   `translations` property rather than hardcoded English. The injected translation service should stay private.
-- New interactive or landmark elements should include stable `data-test-id` attributes for Cypress.
+- New interactive or landmark elements should include stable `data-test-id` attributes for Playwright.
 - Icon-only buttons and non-obvious controls must have accessible names, usually via translated `[attr.aria-label]`.
 - Non-button clickable elements must be keyboard-accessible and expose the correct role.
 
@@ -109,16 +109,16 @@ Issue description and why it matters. Suggested fix.
 - If tests were changed only to pass after a production change, verify the production behavior is actually correct. Do not accept tests that hide a real defect.
 - Angular component tests should follow the project zoneless testing pattern. Do not add unnecessary `fixture.detectChanges()` calls where the existing pattern uses `await fixture.whenStable()`.
 
-## Cypress E2E Tests
+## Playwright E2E Tests
 
 - E2E tests live under `apps/collection-e2e/src/` and target the Docker test container on port `2999`.
-- Tests should use page objects from `page-objects/`; spec files should not call `cy.get()` directly when a page object exists or should be added.
-- Element selection should use `cy.getByTestId(...)`, not CSS classes, tag names, or text that may change with i18n.
-- For custom `Input`, `Select`, `Autocomplete`, and `Checkbox` components, the `data-test-id` is usually on the host. Tests should reach the actual control with `.find('input')`, `.find('select')`, or `.find('input[type="checkbox"]')` as appropriate.
-- Only capability endpoints under `/api/v1/external-metadata/*`, `/api/v1/images/*`, and `/api/v1/ai/*` should normally have responses stubbed with `cy.intercept`. Resource endpoints such as auth, collection items, settings, and tag management should hit the Docker test server unless an existing test pattern explicitly says otherwise. A pass-through intercept used only to observe a real request is acceptable.
+- Tests should use page-object factories from `page-objects/`; reuse existing locators instead of duplicating selectors.
+- Element selection should use `page.getByTestId(...)`, not CSS classes, tag names, or text that may change with i18n.
+- For custom `Input`, `Select`, `Autocomplete`, and `Checkbox` components, the `data-test-id` is usually on the host. Reach the actual control with `.locator('input')`, `.locator('select')`, or `.locator('input[type="checkbox"]')` as appropriate.
+- Only capability endpoints under `/api/v1/external-metadata/*`, `/api/v1/images/*`, and `/api/v1/ai/*` should normally have responses stubbed with `page.route`. Resource endpoints such as auth, collection items, settings, and tag management should hit the Docker test server unless an existing test pattern explicitly says otherwise. Observe real requests with `page.waitForResponse`, registered before the action.
 - Stubbed JSON success bodies must include the `{ data: ... }` envelope. Cursor-page stubs must also include `page`; binary image stubs are not enveloped.
-- Destructive account tests must use `cy.autoLoginWithNewUser()`, not the shared `cy.autoLogin()` user.
-- Tests involving `ConfirmService` actions must stub `window.confirm` before the action.
+- Destructive account tests must use the `autoLoginWithNewUser` fixture, not the shared `autoLogin` user. Keep one worker until accounts and server state are isolated.
+- Tests involving `ConfirmService` actions must handle native dialogs with `page.on('dialog', ...)` before the action.
 - New pages should add `data-test-id` coverage, a page object, and relevant E2E coverage.
 
 ## Android

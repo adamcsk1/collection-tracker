@@ -42,7 +42,7 @@ jobs:
           script: |
             const requiredWorkflows = [
               'Android',
-              'Cypress',
+              'Playwright',
               'Format',
               'i18n',
               'Lint',

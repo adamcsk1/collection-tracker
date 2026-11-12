@@ -1,16 +1,26 @@
-export const SignUpPage = {
-  visit: () => {
-    cy.clearCookies({ log: false });
-    cy.visit('/login/#/sign-up', {
-      onBeforeLoad: (window) => window.localStorage.removeItem('CT.LoggedIn'),
-    });
-  },
+import type { Page } from '@playwright/test';
 
-  getUsernameInput: () => cy.getByTestId('sign-up-username').find('input'),
-  getSubmitButton: () => cy.getByTestId('sign-up-submit'),
-  getSecretValue: () => cy.getByTestId('sign-up-secret-value'),
-  getSignInLink: () => cy.getByTestId('sign-in-link'),
+export const createSignUpPage = (page: Page) => {
+  const getUsernameInput = () => page.getByTestId('sign-up-username').locator('input');
+  const getSubmitButton = () => page.getByTestId('sign-up-submit');
 
-  fillUsername: (username: string) => SignUpPage.getUsernameInput().clear().type(username),
-  submit: () => SignUpPage.getSubmitButton().click(),
+  return {
+    visit: async () => {
+      await page.context().clearCookies();
+      await page.addInitScript(() => window.localStorage.removeItem('CT.LoggedIn'));
+      await page.goto('/login/#/sign-up');
+    },
+
+    getUsernameInput,
+    getSubmitButton,
+    getSecretValue: () => page.getByTestId('sign-up-secret-value'),
+    getSignInLink: () => page.getByTestId('sign-in-link'),
+
+    fillUsername: async (username: string) => {
+      await getUsernameInput().fill(username);
+    },
+    submit: async () => {
+      await getSubmitButton().click();
+    },
+  };
 };

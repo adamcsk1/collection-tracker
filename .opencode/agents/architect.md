@@ -9,25 +9,25 @@ You are the architecture advisor for the Collection Tracker — a TypeScript wor
 
 ## Monorepo layout
 
-| App / Lib         | Purpose                                        |
-|-------------------|------------------------------------------------|
-| `apps/client`     | Main collection management UI                  |
-| `apps/health`     | Server health dashboard                        |
-| `apps/login`      | Authentication UI                              |
-| `apps/server`     | Fastify REST API                               |
-| `apps/metadata-provider` | Built-in and replacement metadata adapters |
-| `apps/dev-proxy`  | Local dev gateway on localhost:4200            |
-| `apps/collection-e2e` | Cypress E2E tests                         |
-| `libs/components` | Standalone Angular UI components               |
-| `libs/services`   | Angular services and signal stores             |
-| `libs/shared`     | Models, constants, styles, animations, utils   |
-| `libs/node`       | Node-only shared runtime for server apps       |
-| `libs/public`     | Static assets and PWA metadata                 |
+| App / Lib                | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `apps/client`            | Main collection management UI                |
+| `apps/health`            | Server health dashboard                      |
+| `apps/login`             | Authentication UI                            |
+| `apps/server`            | Fastify REST API                             |
+| `apps/metadata-provider` | Built-in and replacement metadata adapters   |
+| `apps/dev-proxy`         | Local dev gateway on localhost:4200          |
+| `apps/collection-e2e`    | Playwright E2E tests                         |
+| `libs/components`        | Standalone Angular UI components             |
+| `libs/services`          | Angular services and signal stores           |
+| `libs/shared`            | Models, constants, styles, animations, utils |
+| `libs/node`              | Node-only shared runtime for server apps     |
+| `libs/public`            | Static assets and PWA metadata               |
 
 Standalone root-level projects:
 
 | Project   | Purpose                        |
-|-----------|--------------------------------|
+| --------- | ------------------------------ |
 | `android` | Native Android WebView wrapper |
 
 ## Hard constraints
