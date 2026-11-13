@@ -12,6 +12,7 @@ Source: [`apps/collection-e2e`](../apps/collection-e2e)
   selected-scope creation, received-item re-share prevention, and physical book routing against the real server.
 - Tests run serially because the shared `playwright` user is cleaned by `autoLogin()` before each test.
 - Playwright owns these `.spec.ts` files; the root Vitest configuration excludes the E2E project.
+- Accessibility specs run axe against authentication, selected client and health routes, and representative dialogs in both browser projects. Full results are attached to the Playwright report. These scans do not replace keyboard and screen-reader testing.
 
 ## Execution
 
