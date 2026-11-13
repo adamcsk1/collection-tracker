@@ -19,6 +19,12 @@
   gap: var(--size-md);
 }
 
+.page-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-xl);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -289,11 +295,11 @@
   font-weight: bold;
 
   &[data-status='up'] {
-    color: var(--color-olive);
+    color: color-mix(in srgb, var(--color-olive) 50%, var(--text-color));
   }
 
   &[data-status='down'] {
-    color: var(--color-crimson);
+    color: color-mix(in srgb, var(--color-crimson) 50%, var(--text-color));
   }
 }
 

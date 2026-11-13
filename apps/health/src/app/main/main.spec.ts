@@ -156,6 +156,9 @@ describe('Main component', () => {
     fixture.detectChanges();
 
     const error = fixture.nativeElement.querySelector('[data-test-id="health-diagnostics-error"]');
+    const announcement = fixture.nativeElement.querySelector('[data-test-id="health-refresh-status"]');
+    expect(announcement.getAttribute('role')).toBe('status');
+    expect(announcement.textContent.trim()).toBe('');
     expect(error?.getAttribute('role')).toBe('alert');
     expect(error?.textContent).toContain('Message.HealthDiagnosticsError');
 
@@ -165,6 +168,17 @@ describe('Main component', () => {
     expect(sharedApiService.getHealthDiagnostics).toHaveBeenCalledTimes(2);
     expect(fixture.nativeElement.querySelector('[data-test-id="health-metrics-grid"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test-id="health-diagnostics-error"]')).toBeNull();
+    expect(announcement.textContent).toContain('Status.Ok');
+    expect(announcement.textContent).toContain('LoadedAt:');
+  });
+
+  it('places health content in a main landmark', () => {
+    const fixture = TestBed.createComponent(Main);
+    fixture.detectChanges();
+
+    const main = fixture.nativeElement.querySelector('[data-test-id="health-main"]');
+    expect(main.tagName).toBe('MAIN');
+    expect(main.querySelector('[data-test-id="health-status-banner"]')).toBeTruthy();
   });
 
   it('returns correct bar level based on percentage thresholds', () => {
