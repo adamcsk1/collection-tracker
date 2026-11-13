@@ -96,6 +96,12 @@ describe('SignIn component', () => {
   });
 
   it('requires a non-empty username', () => {
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="sign-in-username"] input').getAttribute('autocomplete')
+    ).toBe('username');
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="sign-in-token"] input').getAttribute('autocomplete')
+    ).toBe('current-password');
     const usernameField = fixture.componentInstance['form'].username();
 
     usernameField.value.set('');

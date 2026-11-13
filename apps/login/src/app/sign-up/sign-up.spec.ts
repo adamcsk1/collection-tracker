@@ -59,6 +59,9 @@ describe('SignUp component', () => {
   });
 
   it('preloads API URL and updates it when sending the form', async () => {
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="sign-up-username"] input').getAttribute('autocomplete')
+    ).toBe('username');
     const component = fixture.componentInstance;
     apiState.setState('apiUrl', 'https://old-api');
 
@@ -96,6 +99,19 @@ describe('SignUp component', () => {
     expect(webStorage.setItem).not.toHaveBeenCalled();
   });
 
+  it('announces the sign-up result in an existing live region', async () => {
+    const status = fixture.nativeElement.querySelector('[role="status"]') as HTMLElement;
+    expect(status.getAttribute('aria-live')).toBe('polite');
+    expect(status.textContent?.trim()).toBe('');
+
+    fixture.componentInstance['signUpModel'].set({ username: 'neo', apiUrl: 'https://stored-api' });
+    await fixture.componentInstance['onSend']();
+    await fixture.whenStable();
+
+    expect(status.textContent?.trim()).toBe('Message.SignUpSecret');
+    expect(fixture.nativeElement.querySelector('[data-test-id="sign-up-secret-value"]').textContent).toBe('new-token');
+  });
+
   it('uses empty API URL when none is configured', () => {
     apiState.setState('apiUrl', '');
 
@@ -110,8 +126,10 @@ describe('SignUp component', () => {
     const mobileSpy = mobileUserAgent as Mock;
     mobileSpy.mockReturnValue(false);
     component['secret'].set('copied-token');
-
-    component['onCopyToClipboard']();
+    fixture.detectChanges();
+    const copyButton = fixture.nativeElement.querySelector('[data-test-id="sign-up-copy-secret"]') as HTMLButtonElement;
+    expect(copyButton.type).toBe('button');
+    copyButton.click();
 
     expect(copySpy).toHaveBeenCalledWith('copied-token');
     expect(toastState.state.message()).toBe('Toast.CopiedToClipboard');

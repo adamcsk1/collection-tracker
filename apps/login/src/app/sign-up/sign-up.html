@@ -1,11 +1,12 @@
 <div class="header">
-  <h2>{{ translations.signUp() }}</h2>
+  <h2 tabindex="-1">{{ translations.signUp() }}</h2>
   <p>{{ translations.messageSignUp() }}</p>
 </div>
 <form role="form" [attr.aria-label]="translations.signUp()" [formRoot]="form">
   <libc-input
     data-test-id="sign-up-username"
     icon="person"
+    autocomplete="username"
     [label]="translations.username()"
     [mandatory]="true"
     [formField]="form.username"
@@ -22,18 +23,21 @@
   @if (secret()) {
     <label for="secret">{{ translations.secret() }}</label>
     <code id="secret" data-test-id="sign-up-secret-value">{{ secret() }}</code>
-    <a
-      tabindex="0"
-      role="button"
+    <button
+      type="button"
+      data-test-id="sign-up-copy-secret"
       class="text-button"
       [attr.aria-label]="translations.copyToClipboard()"
       (click)="onCopyToClipboard()"
-      (keyup.enter)="onCopyToClipboard()"
     >
       {{ translations.copyToClipboard() }}
-    </a>
-    <small> {{ translations.messageSignUpSecret() }} </small>
+    </button>
   }
+  <small role="status" aria-live="polite">
+    @if (secret()) {
+      {{ translations.messageSignUpSecret() }}
+    }
+  </small>
   @if (showApiUrlInput()) {
     <libc-input
       [label]="translations.apiUrl()"

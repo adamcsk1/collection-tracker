@@ -1,5 +1,16 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Title } from '@angular/platform-browser';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
 import { PosterBackground } from '@components/poster-background/poster-background';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
@@ -14,7 +25,7 @@ import { STORAGE_API_URL, STORAGE_LOGGED_IN } from '@shared/constants/storage-co
 import { getApiPrefix } from '@shared/utils/get-api-prefix-util';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, filter } from 'rxjs';
 
 @Component({
   selector: 'ct-root',
@@ -31,13 +42,36 @@ export class Main implements AfterViewInit {
   private readonly apiState = inject(apiStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
+  private readonly router = inject(Router);
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly documentTitle = inject(Title);
+  private readonly path = signal(this.router.navigated ? this.getPath(this.router.url) : '');
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
+    signIn: computed(() => this.ngxSignalTranslate.translate('SignIn')),
+    signUp: computed(() => this.ngxSignalTranslate.translate('SignUp')),
   };
   protected readonly themeLogo = this.theme.themeLogo;
 
   constructor() {
     this.ngxSignalTranslate.setLanguage('en');
+    effect(() => {
+      const page = this.path() === 'sign-up' ? this.translations.signUp() : this.translations.signIn();
+      this.documentTitle.setTitle(`${page} - ${this.translations.title()}`);
+    });
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe((event) => {
+        const path = this.getPath(event.urlAfterRedirects);
+        const previousPath = this.path();
+        this.path.set(path);
+        if (previousPath && previousPath !== path && (path === 'sign-in' || path === 'sign-up')) {
+          this.element.nativeElement.querySelector<HTMLElement>('router-outlet + * h2')?.focus();
+        }
+      });
     this.blockerLoadingState.setState('withoutDelay', true);
     this.blockerLoadingState.setState('show', true);
     this.themeState.setState('theme', 'light');
@@ -50,6 +84,15 @@ export class Main implements AfterViewInit {
       this.webstorage.setItem(STORAGE_API_URL, apiUrl);
     }
     this.apiState.setState('apiUrl', apiUrl);
+  }
+
+  private getPath(url: string): string {
+    return (
+      this.router
+        .parseUrl(url)
+        .root.children['primary']?.segments.map((segment) => segment.path)
+        .join('/') ?? ''
+    );
   }
 
   public ngAfterViewInit(): void {

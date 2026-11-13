@@ -1,11 +1,12 @@
 <div class="header">
-  <h2>{{ translations.welcomeBack() }}</h2>
+  <h2 tabindex="-1">{{ translations.welcomeBack() }}</h2>
   <p>{{ translations.messageSignIn() }}</p>
 </div>
 <form role="form" [attr.aria-label]="translations.signIn()" [formRoot]="form">
   <libc-input
     data-test-id="sign-in-username"
     icon="person"
+    autocomplete="username"
     [label]="translations.username()"
     [mandatory]="true"
     [formField]="form.username"
@@ -13,6 +14,7 @@
   <libc-input
     data-test-id="sign-in-token"
     icon="lock"
+    autocomplete="current-password"
     [label]="translations.secret()"
     [mandatory]="true"
     [type]="tokenInputType()"
