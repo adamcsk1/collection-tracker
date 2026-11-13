@@ -6,13 +6,14 @@
 
   /* Customs */
   --focus-border-color: var(--main-color);
+  --app-title-shadow-color: var(--focus-border-color);
 }
 
 .dark {
   --background-color: #0f1b22;
   --background-color-alt: #162630;
   --color-darkgoldenrod: #f0b429;
-  --color-crimson: #e14b46;
+  --color-crimson: #f05c57;
   --color-olive: #9ec643;
   --text-color: var(--base-color-lighter);
   --border-color: var(--base-color-light);
@@ -23,11 +24,12 @@
 .light {
   --background-color: #f8f3e7;
   --background-color-alt: #e9e2d3;
-  --color-darkgoldenrod: #8f5b00;
+  --color-darkgoldenrod: #875600;
   --color-crimson: #b7322b;
   --color-olive: #6c8c00;
   --text-color: var(--base-color-darker);
   --border-color: var(--base-color-dark);
   --main-color: var(--color-darkgoldenrod);
+  --app-title-shadow-color: #7c4d00;
   --theme-color: var(--background-color-alt);
 }
