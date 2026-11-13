@@ -1,8 +1,11 @@
-<libc-dialog-shell>
+<libc-dialog-shell ariaLabelledBy="ai-search-dialog-title">
+  <ng-container dialog-shell-top-content>
+    <h2 id="ai-search-dialog-title" class="dialog-title">{{ translations.aiSearch() }}</h2>
+  </ng-container>
   <ng-container dialog-shell-content>
     <libc-textarea
       data-test-id="ai-search-textarea"
-      [attr.aria-label]="translations.aiSearch()"
+      [label]="translations.aiSearch()"
       [formField]="formField()"
       [placeholder]="placeholder()"
       [rows]="5"

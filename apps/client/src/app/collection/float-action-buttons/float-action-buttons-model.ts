@@ -25,7 +25,7 @@ export interface FloatActionButtonsConfig {
 }
 
 export interface FloatActionButtonsCallbacks {
-  addNew: () => void;
+  addNew: (focusFallback?: () => HTMLElement | null) => void;
   randomPick: () => void;
   toggleOrderBy: () => void;
   toggleOrderDirection: () => void;

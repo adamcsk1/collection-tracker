@@ -25,9 +25,15 @@
   >
     <span list-empty>
       {{ translations.messageEmptyTracking() }}<br />
-      <a data-test-id="add-first-tracking-item" href="#" role="button" (click)="onAddTracking($event)">{{
-        translations.messageAddFirstTracking()
-      }}</a>
+      <button
+        type="button"
+        class="text-button"
+        style="display: inline-block"
+        data-test-id="add-first-tracking-item"
+        (click)="onAddTracking($event)"
+      >
+        {{ translations.messageAddFirstTracking() }}
+      </button>
     </span>
   </ct-list>
 </div>

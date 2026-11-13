@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NavigationEnd, Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
+import { Subject } from 'rxjs';
 import { MainService } from './main-service';
 import { initialMainState, mainStateToken } from './main-store';
 import { TokenValidationService } from './token-validation-service';
@@ -25,8 +28,11 @@ describe('Main component (client)', () => {
     loadStoredData: ReturnType<typeof vi.fn>;
   };
   let theme: { listen: ReturnType<typeof vi.fn> };
-  let translate: { setLanguage: ReturnType<typeof vi.fn> };
-  let portal: { setViewContainerRef: ReturnType<typeof vi.fn> };
+  let translate: { setLanguage: ReturnType<typeof vi.fn>; translate: ReturnType<typeof vi.fn> };
+  let portal: { setViewContainerRef: ReturnType<typeof vi.fn>; componentRef: ReturnType<typeof vi.fn> };
+  let routerEvents: Subject<NavigationEnd>;
+  let route: { data: Record<string, string>; firstChild: null };
+  let title: { setTitle: ReturnType<typeof vi.fn> };
   let tokenValidation: { startValidation: ReturnType<typeof vi.fn> };
   let androidBackHandler: { listen: ReturnType<typeof vi.fn> };
 
@@ -36,8 +42,11 @@ describe('Main component (client)', () => {
       loadStoredData: vi.fn(),
     };
     theme = { listen: vi.fn() };
-    translate = { setLanguage: vi.fn() };
-    portal = { setViewContainerRef: vi.fn() };
+    translate = { setLanguage: vi.fn(), translate: vi.fn((key: string) => key) };
+    portal = { setViewContainerRef: vi.fn(), componentRef: vi.fn(() => null) };
+    routerEvents = new Subject<NavigationEnd>();
+    route = { data: {}, firstChild: null };
+    title = { setTitle: vi.fn() };
     tokenValidation = { startValidation: vi.fn() };
     androidBackHandler = { listen: vi.fn() };
 
@@ -50,6 +59,8 @@ describe('Main component (client)', () => {
         { provide: PortalService, useValue: portal },
         { provide: ThemeService, useValue: theme },
         { provide: NgxSignalTranslateService, useValue: translate },
+        { provide: Router, useValue: { events: routerEvents, routerState: { snapshot: { root: route } } } },
+        { provide: Title, useValue: title },
         provideStore(initialApiState, apiStateToken),
         provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
         provideStore(initialToastState, toastStateToken),
@@ -59,7 +70,7 @@ describe('Main component (client)', () => {
 
     TestBed.overrideComponent(Main, {
       set: {
-        template: '',
+        template: '<div #mainContent tabindex="-1"></div>',
       },
     });
 
@@ -98,5 +109,27 @@ describe('Main component (client)', () => {
 
   it('starts the Android back handler on init', () => {
     expect(androidBackHandler.listen).toHaveBeenCalledOnce();
+  });
+
+  it('updates the translated title and focuses only on subsequent path changes without a portal', async () => {
+    const content = fixture.nativeElement.querySelector('div') as HTMLElement;
+    const focus = vi.spyOn(content, 'focus');
+    route.data['titleKey'] = 'Collection';
+    routerEvents.next(new NavigationEnd(1, '/collection/library', '/collection/library'));
+    await fixture.whenStable();
+    expect(title.setTitle).toHaveBeenLastCalledWith('Collection | AppTitle');
+    expect(focus).not.toHaveBeenCalled();
+
+    routerEvents.next(new NavigationEnd(2, '/collection/library?favorite=true', '/collection/library?favorite=true'));
+    expect(focus).not.toHaveBeenCalled();
+    route.data['titleKey'] = 'Books';
+    routerEvents.next(new NavigationEnd(3, '/collection/books', '/collection/books'));
+    await fixture.whenStable();
+    expect(title.setTitle).toHaveBeenLastCalledWith('Books | AppTitle');
+    expect(focus).toHaveBeenCalledOnce();
+
+    portal.componentRef.mockReturnValue({});
+    routerEvents.next(new NavigationEnd(4, '/settings/basics', '/settings/basics'));
+    expect(focus).toHaveBeenCalledOnce();
   });
 });

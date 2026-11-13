@@ -24,9 +24,15 @@
   >
     <span list-empty>
       {{ translations.messageEmptyWishlist() }}<br />
-      <a data-test-id="add-first-wishlist-item" href="#" role="button" (click)="onAddWishlist($event)">{{
-        translations.messageAddFirstWishlist()
-      }}</a>
+      <button
+        type="button"
+        class="text-button"
+        style="display: inline-block"
+        data-test-id="add-first-wishlist-item"
+        (click)="onAddWishlist($event)"
+      >
+        {{ translations.messageAddFirstWishlist() }}
+      </button>
     </span>
   </ct-list>
 </div>

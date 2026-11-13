@@ -26,6 +26,16 @@
   }
 }
 
+.shares-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    min-width: 0;
+  }
+}
+
 .share-code-card,
 .add-share-form,
 .share-card {

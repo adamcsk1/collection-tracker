@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  ElementRef,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+  ViewContainerRef,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Title } from '@angular/platform-browser';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { PosterBackground } from '@components/poster-background/poster-background';
 import { FloatActions } from './float-actions/float-actions';
 import { Header } from './header/header';
@@ -34,11 +46,39 @@ export class Main implements OnInit {
   private readonly tokenValidation = inject(TokenValidationService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly theme = inject(ThemeService);
+  private readonly router = inject(Router);
+  private readonly title = inject(Title);
   private readonly collectionDialogsRef = viewChild('portal', { read: ViewContainerRef });
+  private readonly mainContent = viewChild<ElementRef<HTMLElement>>('mainContent');
+  private readonly titleKey = signal('AppTitle');
   protected readonly useAnimatedBackground = this.mainState.state.animatedBackground;
   protected readonly backgroundImagesRefreshTrigger = this.mainState.state.backgroundImagesRefreshTrigger;
 
   constructor() {
+    let previousPath: string | undefined;
+    this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (!(event instanceof NavigationEnd)) return;
+      const path = event.urlAfterRedirects.split(/[?#]/)[0];
+      let route = this.router.routerState.snapshot.root;
+      let titleKey = 'AppTitle';
+      while (route) {
+        titleKey = route.data['titleKey'] ?? titleKey;
+        if (!route.firstChild) break;
+        route = route.firstChild;
+      }
+      this.titleKey.set(titleKey);
+      if (previousPath !== undefined && previousPath !== path && !this.portal.componentRef()) {
+        this.mainContent()?.nativeElement.focus();
+      }
+      previousPath = path;
+    });
+    effect(() => {
+      const appTitle = this.ngxSignalTranslate.translate('AppTitle');
+      const titleKey = this.titleKey();
+      this.title.setTitle(
+        titleKey === 'AppTitle' ? appTitle : `${this.ngxSignalTranslate.translate(titleKey)} | ${appTitle}`
+      );
+    });
     effect(() => {
       const loadNetworkStatus = this.apiState.state.loadNetworkStatus();
 

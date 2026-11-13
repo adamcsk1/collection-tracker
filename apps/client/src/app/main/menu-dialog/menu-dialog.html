@@ -1,5 +1,6 @@
-<libc-dialog-shell>
+<libc-dialog-shell ariaLabelledBy="menu-dialog-title">
   <ng-container dialog-shell-content>
+    <span id="menu-dialog-title" hidden>{{ translations.menu() }}</span>
     <ct-menu-nav />
   </ng-container>
 </libc-dialog-shell>

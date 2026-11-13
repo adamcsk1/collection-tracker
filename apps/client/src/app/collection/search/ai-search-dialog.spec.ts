@@ -45,6 +45,10 @@ describe('AiSearchDialog component', () => {
 
   it('renders the AI search textarea', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="ai-search-textarea"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('textarea').getAttribute('aria-label')).toBe('AiSearch');
+    expect(fixture.nativeElement.querySelector('[role="dialog"]').getAttribute('aria-labelledby')).toBe(
+      'ai-search-dialog-title'
+    );
   });
 
   it('uses the standard dialog host class', () => {

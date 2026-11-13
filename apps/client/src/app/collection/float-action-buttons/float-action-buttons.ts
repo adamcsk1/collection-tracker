@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { apiStateToken } from '@services/api/api-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { CollectionItemOrderBy, CollectionItemOrderDirection } from '@shared/models/api-model';
@@ -17,6 +27,8 @@ export class FloatActionButtons implements OnDestroy {
   private readonly apiState = inject(apiStateToken);
   private readonly floatActions = inject(FloatActionsService);
   private readonly actionButtons = inject(FloatActionButtonsService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   protected readonly translations = {
     addNew: computed(() => this.ngxSignalTranslate.translate('AddNew')),
@@ -140,8 +152,23 @@ export class FloatActionButtons implements OnDestroy {
     this.showFloatButtons.set(false);
   }
 
-  protected onAddNew(): void {
-    this.actionButtons.addNew();
+  protected onAddNew(event?: Event): void {
+    this.actionButtons.addNew(
+      this.actionButtonsVisible()
+        ? () => {
+            if (
+              !this.host.nativeElement.querySelector('[data-test-id="show-functions"]') &&
+              !this.actionButtonsVisible()
+            ) {
+              this.changeDetector.detectChanges();
+            }
+            return this.host.nativeElement.querySelector<HTMLElement>('[data-test-id="show-functions"]');
+          }
+        : undefined
+    );
+    if (event?.currentTarget instanceof HTMLElement) {
+      event.currentTarget.closest('.float-buttons-container')?.setAttribute('inert', '');
+    }
     this.showFloatButtons.set(false);
   }
 

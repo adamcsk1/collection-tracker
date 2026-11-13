@@ -18,15 +18,15 @@
   >
     <span list-empty>
       {{ translations.messageEmptyMusic() }}<br />
-      <a
+      <button
+        type="button"
+        class="text-button"
+        style="display: inline-block"
         data-test-id="add-first-music-item"
-        href="#"
-        role="button"
         (click)="onAddMusic($event)"
-        (keyup.enter)="onAddMusic($event)"
-        (keyup.space)="onAddMusic($event)"
-        >{{ translations.messageAddFirstMusic() }}</a
       >
+        {{ translations.messageAddFirstMusic() }}
+      </button>
     </span>
   </ct-list>
 </div>

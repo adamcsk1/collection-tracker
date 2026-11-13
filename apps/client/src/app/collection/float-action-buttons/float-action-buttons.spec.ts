@@ -1,5 +1,7 @@
+import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -61,6 +63,13 @@ describe('FloatActionButtons', () => {
     expect(fixture.nativeElement.textContent).toContain('Filtering');
     expect(fixture.nativeElement.textContent).toContain('Sorting');
     expect(fixture.nativeElement.textContent).not.toContain('Actions');
+    expect(fixture.nativeElement.querySelector('[role="region"]').getAttribute('aria-label')).toBe('Actions');
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="list-order-direction-desc"]').getAttribute('aria-label')
+    ).toBe('SortDescendingShort - SwitchToDescendingOrder');
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="list-order-direction-asc"]').getAttribute('aria-label')
+    ).toBe('SortAscendingShort - SwitchToAscendingOrder');
   });
 
   it('runs registered callbacks and closes the action menu', () => {
@@ -82,6 +91,64 @@ describe('FloatActionButtons', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="hide-functions"]')).toBeNull();
     expect(floatActions.actionButtonsVisible()).toBe(false);
   });
+
+  it('supplies the restored menu opener as the focus fallback', () => {
+    const addNew = vi.fn();
+    actionButtons.setCallbacks({
+      addNew,
+      randomPick: vi.fn(),
+      toggleOrderBy: vi.fn(),
+      toggleOrderDirection: vi.fn(),
+      applyFilter: vi.fn(),
+      showFunctions: vi.fn(),
+    });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+    const leavingMenu = fixture.nativeElement.querySelector('.float-buttons-container') as HTMLElement;
+    (leavingMenu.querySelector('[data-test-id="add-new"]') as HTMLButtonElement).click();
+    expect(leavingMenu.hasAttribute('inert')).toBe(true);
+    fixture.detectChanges();
+
+    expect(addNew.mock.calls[0][0]()).toBe(fixture.nativeElement.querySelector('[data-test-id="show-functions"]'));
+  });
+
+  it.each(['closeTop', 'closeAll'] as const)(
+    'restores focus when the portal closes before the opener renders via %s',
+    (close) => {
+      const portal = TestBed.inject(PortalService);
+      const dialog = document.createElement('button');
+      const dialogRef = {
+        destroy: () => dialog.remove(),
+        location: { nativeElement: dialog },
+        setInput: vi.fn(),
+      } as unknown as ComponentRef<unknown>;
+      portal.setViewContainerRef({ createComponent: () => dialogRef, clear: vi.fn() } as unknown as ViewContainerRef);
+      actionButtons.setCallbacks({
+        addNew: (fallback) => {
+          portal.open(class {}, {}, fallback);
+          document.body.append(dialog);
+          dialog.focus();
+        },
+        randomPick: vi.fn(),
+        toggleOrderBy: vi.fn(),
+        toggleOrderDirection: vi.fn(),
+        applyFilter: vi.fn(),
+        showFunctions: vi.fn(),
+      });
+      document.body.append(fixture.nativeElement);
+      component['onShowFunctions']();
+      fixture.detectChanges();
+      const trigger = fixture.nativeElement.querySelector('[data-test-id="add-new"]') as HTMLButtonElement;
+      trigger.focus();
+      trigger.click();
+      expect(fixture.nativeElement.querySelector('[data-test-id="show-functions"]')).toBeNull();
+
+      portal[close]();
+
+      expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-test-id="show-functions"]'));
+      fixture.nativeElement.remove();
+    }
+  );
 
   it('uses direct add mode when add is the only configured action', () => {
     const addNew = vi.fn();
@@ -156,10 +223,10 @@ describe('FloatActionButtons', () => {
     expect(alphabetOrder?.textContent).not.toContain('SwitchToAlphabetOrder');
     expect(descendingOrder?.textContent).not.toContain('SwitchToDescendingOrder');
     expect(ascendingOrder?.textContent).not.toContain('SwitchToAscendingOrder');
-    expect(createdAtOrder?.getAttribute('aria-label')).toBe('SwitchToCreatedAtOrder');
-    expect(alphabetOrder?.getAttribute('aria-label')).toBe('SwitchToAlphabetOrder');
-    expect(descendingOrder?.getAttribute('aria-label')).toBe('SwitchToDescendingOrder');
-    expect(ascendingOrder?.getAttribute('aria-label')).toBe('SwitchToAscendingOrder');
+    expect(createdAtOrder?.getAttribute('aria-label')).toBe('SortCreatedAtShort - SwitchToCreatedAtOrder');
+    expect(alphabetOrder?.getAttribute('aria-label')).toBe('SortAlphabetShort - SwitchToAlphabetOrder');
+    expect(descendingOrder?.getAttribute('aria-label')).toBe('SortDescendingShort - SwitchToDescendingOrder');
+    expect(ascendingOrder?.getAttribute('aria-label')).toBe('SortAscendingShort - SwitchToAscendingOrder');
     expect(createdAtOrder?.getAttribute('title')).toBe('SwitchToCreatedAtOrder');
     expect(alphabetOrder?.getAttribute('title')).toBe('SwitchToAlphabetOrder');
     expect(descendingOrder?.getAttribute('title')).toBe('SwitchToDescendingOrder');

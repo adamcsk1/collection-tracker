@@ -1,22 +1,21 @@
-<libc-dialog-shell>
+<libc-dialog-shell ariaLabelledBy="token-dialog-heading">
   <ng-container dialog-shell-top-content>
-    <h3 class="dialog-title">
-      <i class="material-icons" [title]="title()"> key </i>
+    <h3 id="token-dialog-heading" class="dialog-title">
+      <i class="material-icons" aria-hidden="true" [title]="title()"> key </i>
       {{ title() }}
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
     <code data-test-id="token-dialog-value" id="secret">{{ token() }}</code>
-    <a
+    <button
       data-test-id="token-dialog-copy"
       class="text-button"
-      tabindex="0"
+      type="button"
       [attr.aria-label]="translations.copyToClipboard()"
       (click)="onCopyToClipboard()"
-      (keyup.enter)="onCopyToClipboard()"
     >
       {{ translations.copyToClipboard() }}
-    </a>
+    </button>
     <small> {{ message() }} </small>
   </ng-container>
 </libc-dialog-shell>

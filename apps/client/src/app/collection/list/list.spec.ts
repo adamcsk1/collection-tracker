@@ -52,7 +52,7 @@ describe('List', () => {
   let actionButtons: FloatActionButtonsService;
   let scrollSpy: ReturnType<typeof vi.fn>;
   let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
-  let router: { navigate: ReturnType<typeof vi.fn> };
+  let router: { navigate: ReturnType<typeof vi.fn>; url: string };
   let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
@@ -87,7 +87,7 @@ describe('List', () => {
 
   beforeEach(() => {
     portal = { open: vi.fn(), closeAll: vi.fn() };
-    router = { navigate: vi.fn(() => Promise.resolve(true)) };
+    router = { navigate: vi.fn(() => Promise.resolve(true)), url: '/collection' };
     queryParamMap = new BehaviorSubject(convertToParamMap({}));
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     api = {
@@ -333,6 +333,34 @@ describe('List', () => {
       music: false,
       allowedContentTypes: ['movie', 'series', 'book', 'album'],
     });
+  });
+
+  it('passes the floating focus fallback to the portal', () => {
+    const fallback = vi.fn(() => document.createElement('button'));
+    component['onAddNew'](fallback);
+    const resolveFallback = vi.mocked(portal.open).mock.calls.at(-1)?.[2];
+    expect(resolveFallback?.()).toBeInstanceOf(HTMLButtonElement);
+    expect(fallback).toHaveBeenCalledOnce();
+  });
+
+  it('skips the floating focus fallback after the route changes', () => {
+    const fallback = vi.fn(() => document.createElement('button'));
+    component['onAddNew'](fallback);
+    const resolveFallback = vi.mocked(portal.open).mock.calls.at(-1)?.[2];
+    router.url = '/other';
+
+    expect(resolveFallback?.()).toBeNull();
+    expect(fallback).not.toHaveBeenCalled();
+  });
+
+  it('skips the floating focus fallback after the list is destroyed', () => {
+    const fallback = vi.fn(() => document.createElement('button'));
+    component['onAddNew'](fallback);
+    const resolveFallback = vi.mocked(portal.open).mock.calls.at(-1)?.[2];
+    fixture.destroy();
+
+    expect(resolveFallback?.()).toBeNull();
+    expect(fallback).not.toHaveBeenCalled();
   });
 
   it('opens the new item dialog in wishlist mode on the wishlist page', () => {

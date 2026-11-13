@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  Injector,
+  model,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, max, min, submit, validate } from '@angular/forms/signals';
@@ -83,6 +95,8 @@ export class ItemDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+  private readonly elementRef: ElementRef<HTMLElement> = inject(ElementRef);
   private readonly mainState = inject(mainStateToken);
   private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
   protected readonly translations = {
@@ -658,6 +672,15 @@ export class ItemDialog implements OnInit {
 
   protected onEdit(): void {
     this.editMode.set(true);
+    afterNextRender(
+      () => {
+        if (this.editMode())
+          this.elementRef.nativeElement
+            .querySelector<HTMLInputElement>('[data-test-id="item-dialog-title"] input')
+            ?.focus();
+      },
+      { injector: this.injector }
+    );
   }
 
   protected onShare(): void {
@@ -672,11 +695,21 @@ export class ItemDialog implements OnInit {
   }
 
   protected onReadOnly(): void {
+    const wasEditing = this.editMode();
     const lastSavedItem = this.lastSavedItem();
     if (lastSavedItem) {
       this.form().reset(buildItemFormFromChange(lastSavedItem));
     }
     this.editMode.set(false);
+    if (wasEditing) {
+      afterNextRender(
+        () => {
+          if (!this.editMode())
+            this.elementRef.nativeElement.querySelector<HTMLElement>('#item-dialog-heading')?.focus();
+        },
+        { injector: this.injector }
+      );
+    }
   }
 
   protected onPosterImageError(): void {

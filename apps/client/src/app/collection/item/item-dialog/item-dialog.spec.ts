@@ -249,6 +249,32 @@ describe('ItemDialog', () => {
     expect(component['editMode']()).toBe(false);
   });
 
+  it('moves focus to the title on edit and the dialog heading on return', async () => {
+    component['onEdit']();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const title = fixture.nativeElement.querySelector('[data-test-id="item-dialog-title"] input');
+    expect(document.activeElement).toBe(title);
+
+    component['onReadOnly']();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#item-dialog-heading'));
+  });
+
+  it('does not move focus after saving a favorite outside edit mode', async () => {
+    confirm.open.mockReturnValue(of(true));
+    const heading = fixture.nativeElement.querySelector('#item-dialog-heading') as HTMLElement;
+    const focus = vi.spyOn(heading, 'focus');
+
+    await component['onMarkAsFavorite']();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(focus).not.toHaveBeenCalled();
+  });
+
   it('renders form-associated edit footer controls with translated labels', () => {
     component['onEdit']();
     fixture.detectChanges();

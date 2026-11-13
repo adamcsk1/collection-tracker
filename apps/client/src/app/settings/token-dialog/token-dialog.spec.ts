@@ -1,5 +1,6 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
+import { PortalService } from '@services/portal-service';
 import * as copyToClipboardUtil from '@shared/utils/copy-to-clipboard-util';
 import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -12,6 +13,7 @@ vi.mock('@shared/utils/mobile-user-agent.util', () => ({ mobileUserAgent: vi.fn(
 
 describe('TokenDialog component', () => {
   let component: TokenDialog;
+  let fixture: ComponentFixture<TokenDialog>;
 
   beforeEach(() => {
     (mobileUserAgentUtil.mobileUserAgent as Mock).mockReturnValue(null);
@@ -20,18 +22,23 @@ describe('TokenDialog component', () => {
       imports: [TokenDialog],
       providers: [
         provideStore(initialToastState, toastStateToken),
+        { provide: PortalService, useValue: { closeTop: vi.fn() } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });
 
-    TestBed.overrideComponent(TokenDialog, { set: { template: '' } });
-
-    const fixture = TestBed.createComponent(TokenDialog);
+    fixture = TestBed.createComponent(TokenDialog);
     fixture.componentRef.setInput('title', 'My Title');
     fixture.componentRef.setInput('message', 'My Message');
     fixture.componentRef.setInput('token', 'secret-token');
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('names the dialog using only the title text', () => {
+    const dialog = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+
+    expect(dialog).toHaveAccessibleName('My Title');
   });
 
   it('calls copyToClipboard with the current token', () => {

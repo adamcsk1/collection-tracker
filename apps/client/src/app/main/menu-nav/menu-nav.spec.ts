@@ -59,6 +59,12 @@ describe('MenuNav', () => {
     expect(portal.closeAll).toHaveBeenCalledTimes(1);
   });
 
+  it('hides decorative navigation icons from assistive technology', () => {
+    const icons = fixture.nativeElement.querySelectorAll('nav .material-icons') as NodeListOf<HTMLElement>;
+    expect(icons.length).toBeGreaterThan(0);
+    expect(Array.from(icons).every((icon) => icon.getAttribute('aria-hidden') === 'true')).toBe(true);
+  });
+
   it('shows only navigation links for enabled collection features', () => {
     const mainState = TestBed.inject(mainStateToken);
     const hasLink = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;

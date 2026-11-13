@@ -1,9 +1,9 @@
-<libc-dialog-shell data-test-id="item-dialog" (closed)="onDialogClosed()">
+<libc-dialog-shell data-test-id="item-dialog" ariaLabelledBy="item-dialog-heading" (closed)="onDialogClosed()">
   <ng-container dialog-shell-top-content>
-    <h3 class="dialog-title">
+    <h2 id="item-dialog-heading" class="dialog-title" tabindex="-1">
       <i class="material-icons" aria-hidden="true" data-test-id="item-dialog-icon">{{ dialogIcon() }}</i>
       {{ dialogTitle() }}
-    </h3>
+    </h2>
   </ng-container>
   <ng-container dialog-shell-content>
     @if (editMode()) {

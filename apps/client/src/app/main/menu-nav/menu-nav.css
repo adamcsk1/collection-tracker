@@ -3,7 +3,8 @@
   align-items: center;
   margin-bottom: var(--size-md);
 
-  h1 {
+  .app-title-style {
+    display: block;
     margin: auto 0 auto var(--size-xs);
     line-height: 1;
     font-size: var(--font-size-lg);

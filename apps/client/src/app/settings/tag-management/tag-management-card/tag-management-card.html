@@ -40,6 +40,7 @@
         #colorInput
         type="color"
         class="color-input"
+        tabindex="-1"
         [value]="tagManagement().color ?? ''"
         [attr.aria-hidden]="true"
         (change)="onColorInputChange($event)"

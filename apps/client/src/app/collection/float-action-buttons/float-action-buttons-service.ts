@@ -43,8 +43,8 @@ export class FloatActionButtonsService {
     this.callbacks = noopCallbacks;
   }
 
-  public addNew(): void {
-    this.callbacks.addNew();
+  public addNew(focusFallback?: () => HTMLElement | null): void {
+    this.callbacks.addNew(focusFallback);
   }
 
   public randomPick(): void {

@@ -104,6 +104,18 @@ describe('SettingsShares', () => {
     sharesState.setState('mutating', true);
     await fixture.whenStable();
 
+    const lists = fixture.nativeElement.querySelectorAll('ul.shares-list');
+    expect(lists).toHaveLength(2);
+    expect(lists[0].querySelector('li > article h4').textContent).toContain('Friend');
+    expect(lists[1].querySelector('li > article h4').textContent).toContain('Owner');
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="remove-share-friend-code"] i').getAttribute('aria-hidden')
+    ).toBe('true');
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test-id="revoke-incoming-share-owner-code"] i')
+        .getAttribute('aria-hidden')
+    ).toBe('true');
     expect(fixture.nativeElement.querySelector('.shares-page').getAttribute('aria-busy')).toBe('true');
     expect(fixture.nativeElement.querySelector('[data-test-id="add-share-open"]').disabled).toBe(true);
     expect(fixture.nativeElement.querySelector('[data-test-id="edit-share-friend-code"]').disabled).toBe(true);

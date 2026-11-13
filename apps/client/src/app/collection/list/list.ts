@@ -127,7 +127,7 @@ export class List implements OnDestroy {
   constructor() {
     this.sharesLoader.load(this.destroyRef);
     this.actionButtons.setCallbacks({
-      addNew: () => this.onAddNew(),
+      addNew: (focusFallback) => this.onAddNew(focusFallback),
       randomPick: () => this.onRandomPick(),
       toggleOrderBy: () => this.onToggleOrderBy(),
       toggleOrderDirection: () => this.onToggleOrderDirection(),
@@ -245,7 +245,7 @@ export class List implements OnDestroy {
     this.randomPick.emit();
   }
 
-  protected onAddNew(): void {
+  protected onAddNew(focusFallback?: () => HTMLElement | null): void {
     const listType = this.listType();
     const activeFilters = this.getActiveFilterActions();
     const lockedType =
@@ -260,14 +260,21 @@ export class List implements OnDestroy {
               : undefined;
     const booksEnabled = this.mainState.state.collectionFeaturePreferences().books;
     const musicEnabled = this.mainState.state.collectionFeaturePreferences().music;
-    this.portal.open(NewItemDialog, {
-      upNext: listType === 'up-next',
-      wishlist: listType === 'wishlist',
-      tracking: listType === 'tracking',
-      books: lockedType === 'book',
-      music: lockedType === 'album',
-      allowedContentTypes: getAllowedAddContentTypes(listType, lockedType, booksEnabled, musicEnabled),
-    });
+    const openingUrl = this.router.url;
+    this.portal.open(
+      NewItemDialog,
+      {
+        upNext: listType === 'up-next',
+        wishlist: listType === 'wishlist',
+        tracking: listType === 'tracking',
+        books: lockedType === 'book',
+        music: lockedType === 'album',
+        allowedContentTypes: getAllowedAddContentTypes(listType, lockedType, booksEnabled, musicEnabled),
+      },
+      ...(focusFallback
+        ? [() => (!this.destroyRef.destroyed && this.router.url === openingUrl ? focusFallback() : null)]
+        : [])
+    );
   }
 
   protected onScroll(): void {

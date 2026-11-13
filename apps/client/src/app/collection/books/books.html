@@ -18,9 +18,15 @@
   >
     <span list-empty>
       {{ translations.messageEmptyBooks() }}<br />
-      <a data-test-id="add-first-books-item" href="#" role="button" (click)="onAddBooks($event)">{{
-        translations.messageAddFirstBooks()
-      }}</a>
+      <button
+        type="button"
+        class="text-button"
+        style="display: inline-block"
+        data-test-id="add-first-books-item"
+        (click)="onAddBooks($event)"
+      >
+        {{ translations.messageAddFirstBooks() }}
+      </button>
     </span>
   </ct-list>
 </div>

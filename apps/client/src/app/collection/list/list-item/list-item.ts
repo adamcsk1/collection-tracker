@@ -97,9 +97,13 @@ export class ListItem {
   protected readonly translations = {
     completed: computed(() => this.ngxSignalTranslate.translate('Completed')),
     favorite: computed(() => this.ngxSignalTranslate.translate('Favorite')),
+    imdb: computed(() => this.ngxSignalTranslate.translate('IMDb')),
+    metacritic: computed(() => this.ngxSignalTranslate.translate('Metacritic')),
     metacriticShort: computed(() => this.ngxSignalTranslate.translate('MetacriticShort')),
+    rottenTomatoes: computed(() => this.ngxSignalTranslate.translate('RottenTomatoes')),
     rottenTomatoesShort: computed(() => this.ngxSignalTranslate.translate('RottenTomatoesShort')),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
+    userRate: computed(() => this.ngxSignalTranslate.translate('UserRate')),
   };
   public readonly collectionItem = input.required<CollectionItemModel>();
 
@@ -128,11 +132,20 @@ export class ListItem {
   ): ListItemCardRatingModel | null {
     switch (rating) {
       case 'imdb':
-        return item.rate ? { label: '', value: item.rate, testId: 'list-item-rating-imdb', icon: 'star_rate' } : null;
+        return item.rate
+          ? {
+              label: '',
+              source: this.translations.imdb(),
+              value: item.rate,
+              testId: 'list-item-rating-imdb',
+              icon: 'star_rate',
+            }
+          : null;
       case 'rottenTomatoes':
         return item.rottenTomatoesRate
           ? {
               label: this.translations.rottenTomatoesShort(),
+              source: this.translations.rottenTomatoes(),
               value: item.rottenTomatoesRate,
               testId: 'list-item-rating-rotten-tomatoes',
               icon: 'star_rate',
@@ -142,6 +155,7 @@ export class ListItem {
         return item.metacriticRate
           ? {
               label: this.translations.metacriticShort(),
+              source: this.translations.metacritic(),
               value: item.metacriticRate,
               testId: 'list-item-rating-metacritic',
               icon: 'star_rate',
@@ -149,7 +163,13 @@ export class ListItem {
           : null;
       case 'user':
         return item.userRate !== null
-          ? { label: '', value: item.userRate, testId: 'list-item-user-rate', icon: 'person' }
+          ? {
+              label: '',
+              source: this.translations.userRate(),
+              value: item.userRate,
+              testId: 'list-item-user-rate',
+              icon: 'person',
+            }
           : null;
     }
   }

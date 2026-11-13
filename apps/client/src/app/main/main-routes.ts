@@ -10,11 +10,13 @@ export const routes: Routes = [
   },
   {
     path: 'statistics',
+    data: { titleKey: 'Statistics' },
     loadComponent: () => import('../statistics/statistics').then((module) => module.Statistics),
     canActivate: [mainGuard],
   },
   {
     path: 'about',
+    data: { titleKey: 'About' },
     loadComponent: () => import('../about/about').then((module) => module.About),
     canActivate: [mainGuard],
   },

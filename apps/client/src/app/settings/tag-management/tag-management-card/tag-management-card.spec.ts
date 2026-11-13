@@ -98,6 +98,7 @@ describe('TagManagementCard', () => {
   });
 
   it('handles color selection and input changes', () => {
+    expect(fixture.nativeElement.querySelector('input[type="color"]').tabIndex).toBe(-1);
     const emittedColors: string[] = [];
     component.colorChange.subscribe((color) => emittedColors.push(color));
     const colorInput = document.createElement('input');

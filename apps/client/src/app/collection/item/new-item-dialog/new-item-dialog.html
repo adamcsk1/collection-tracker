@@ -1,9 +1,9 @@
-<libc-dialog-shell>
+<libc-dialog-shell ariaLabelledBy="new-item-dialog-heading">
   <ng-container dialog-shell-top-content>
-    <h3 class="dialog-title">
+    <h2 id="new-item-dialog-heading" class="dialog-title">
       <i class="material-icons" aria-hidden="true" data-test-id="new-item-dialog-icon">{{ dialogIcon() }}</i>
       {{ dialogTitle() }}
-    </h3>
+    </h2>
   </ng-container>
   <ng-container dialog-shell-content>
     <libc-tabs

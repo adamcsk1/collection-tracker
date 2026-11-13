@@ -24,9 +24,15 @@
   >
     <span list-empty>
       {{ translations.messageEmptyUpNext() }}<br />
-      <a data-test-id="add-first-up-next-item" href="#" role="button" (click)="onAddUpNext($event)">{{
-        translations.messageAddFirstUpNext()
-      }}</a>
+      <button
+        type="button"
+        class="text-button"
+        style="display: inline-block"
+        data-test-id="add-first-up-next-item"
+        (click)="onAddUpNext($event)"
+      >
+        {{ translations.messageAddFirstUpNext() }}
+      </button>
     </span>
   </ct-list>
 </div>

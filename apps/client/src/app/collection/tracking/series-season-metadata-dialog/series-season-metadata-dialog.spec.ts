@@ -58,6 +58,9 @@ describe('SeriesSeasonMetadataDialog', () => {
   });
 
   it('initializes rows from input metadata', () => {
+    expect(fixture.nativeElement.querySelector('[role="dialog"]').getAttribute('aria-labelledby')).toBe(
+      'series-metadata-heading'
+    );
     expect(component['seasons']()).toEqual([{ season: 1, episodes: 2 }]);
   });
 

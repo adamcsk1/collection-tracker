@@ -7,7 +7,7 @@
         <div class="user-hash-row">
           <span class="user-hash">{{ userShareCode() }}</span>
           <button data-test-id="copy-user-hash" (click)="onCopyUserHash()">
-            <i class="material-icons">content_copy</i>
+            <i class="material-icons" aria-hidden="true">content_copy</i>
             {{ translations.copy() }}
           </button>
         </div>
@@ -34,42 +34,44 @@
   <section class="shares-section">
     <h3>{{ translations.outgoingShares() }}</h3>
     @if (outgoing().length) {
-      <div class="shares-list" role="list">
+      <ul class="shares-list" role="list">
         @for (share of outgoing(); track share.sharedWithUserShareCode) {
-          <article class="card card-interactive share-card" role="listitem">
-            <h4 class="card-title">{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</h4>
-            <div class="card-body">
-              <div class="share-card-header">
-                <div>
-                  <div class="share-card-label">{{ translations.sharedWith() }}</div>
-                  <div>{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</div>
-                  <div class="share-code">{{ share.sharedWithUserShareCode }}</div>
+          <li>
+            <article class="card card-interactive share-card">
+              <h4 class="card-title">{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</h4>
+              <div class="card-body">
+                <div class="share-card-header">
+                  <div>
+                    <div class="share-card-label">{{ translations.sharedWith() }}</div>
+                    <div>{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</div>
+                    <div class="share-code">{{ share.sharedWithUserShareCode }}</div>
+                  </div>
+                  <button
+                    [attr.data-test-id]="'remove-share-' + share.sharedWithUserShareCode"
+                    class="button-danger"
+                    [disabled]="mutating()"
+                    (click)="onRemoveShare(share.sharedWithUserShareCode)"
+                  >
+                    <i class="material-icons" aria-hidden="true">delete</i>
+                    {{ translations.removeShare() }}
+                  </button>
                 </div>
+
                 <button
-                  [attr.data-test-id]="'remove-share-' + share.sharedWithUserShareCode"
-                  class="button-danger"
+                  [attr.data-test-id]="'edit-share-' + share.sharedWithUserShareCode"
+                  class="share-action"
+                  type="button"
                   [disabled]="mutating()"
-                  (click)="onRemoveShare(share.sharedWithUserShareCode)"
+                  (click)="onEditShare(share)"
                 >
-                  <i class="material-icons">delete</i>
-                  {{ translations.removeShare() }}
+                  <i class="material-icons" aria-hidden="true">edit</i>
+                  {{ translations.editShare() }}
                 </button>
               </div>
-
-              <button
-                [attr.data-test-id]="'edit-share-' + share.sharedWithUserShareCode"
-                class="share-action"
-                type="button"
-                [disabled]="mutating()"
-                (click)="onEditShare(share)"
-              >
-                <i class="material-icons" aria-hidden="true">edit</i>
-                {{ translations.editShare() }}
-              </button>
-            </div>
-          </article>
+            </article>
+          </li>
         }
-      </div>
+      </ul>
     } @else {
       <p class="empty-message">{{ translations.messageEmptyOutgoingShares() }}</p>
     }
@@ -78,41 +80,43 @@
   <section class="shares-section">
     <h3>{{ translations.incomingShares() }}</h3>
     @if (incoming().length) {
-      <div class="shares-list" role="list">
+      <ul class="shares-list" role="list">
         @for (share of incoming(); track share.ownerUserShareCode) {
-          <article class="card card-interactive share-card" role="listitem">
-            <h4 class="card-title">{{ share.ownerUsername || share.ownerUserShareCode }}</h4>
-            <div class="card-body">
-              <div class="share-card-header">
-                <div>
-                  <div class="share-card-label">{{ translations.owner() }}</div>
-                  <div>{{ share.ownerUsername || share.ownerUserShareCode }}</div>
-                  <div class="share-code">{{ share.ownerUserShareCode }}</div>
+          <li>
+            <article class="card card-interactive share-card">
+              <h4 class="card-title">{{ share.ownerUsername || share.ownerUserShareCode }}</h4>
+              <div class="card-body">
+                <div class="share-card-header">
+                  <div>
+                    <div class="share-card-label">{{ translations.owner() }}</div>
+                    <div>{{ share.ownerUsername || share.ownerUserShareCode }}</div>
+                    <div class="share-code">{{ share.ownerUserShareCode }}</div>
+                  </div>
+                  <button
+                    [attr.data-test-id]="'revoke-incoming-share-' + share.ownerUserShareCode"
+                    class="button-danger"
+                    [disabled]="mutating()"
+                    (click)="onRevokeIncomingShare(share.ownerUserShareCode)"
+                  >
+                    <i class="material-icons" aria-hidden="true">delete</i>
+                    {{ translations.revokeShare() }}
+                  </button>
                 </div>
+
                 <button
-                  [attr.data-test-id]="'revoke-incoming-share-' + share.ownerUserShareCode"
-                  class="button-danger"
-                  [disabled]="mutating()"
-                  (click)="onRevokeIncomingShare(share.ownerUserShareCode)"
+                  [attr.data-test-id]="'view-incoming-share-' + share.ownerUserShareCode"
+                  class="share-action"
+                  type="button"
+                  (click)="onViewIncomingShare(share)"
                 >
-                  <i class="material-icons">delete</i>
-                  {{ translations.revokeShare() }}
+                  <i class="material-icons" aria-hidden="true">visibility</i>
+                  {{ translations.viewShare() }}
                 </button>
               </div>
-
-              <button
-                [attr.data-test-id]="'view-incoming-share-' + share.ownerUserShareCode"
-                class="share-action"
-                type="button"
-                (click)="onViewIncomingShare(share)"
-              >
-                <i class="material-icons" aria-hidden="true">visibility</i>
-                {{ translations.viewShare() }}
-              </button>
-            </div>
-          </article>
+            </article>
+          </li>
         }
-      </div>
+      </ul>
     } @else {
       <p class="empty-message">{{ translations.messageEmptyIncomingShares() }}</p>
     }

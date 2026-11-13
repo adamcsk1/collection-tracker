@@ -194,6 +194,8 @@ describe('ListItem', () => {
     expect(completed).not.toBeNull();
     expect(completed?.textContent?.trim()).toBe('check_circle');
     expect(completed?.getAttribute('aria-label')).toBe('Completed');
+    expect(completed?.getAttribute('role')).toBe('img');
+    expect(completed?.closest('[role="button"]')).toBeNull();
     expect(completed?.getAttribute('title')).toBe('Completed');
     expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).toContain(
       'completed-image'
@@ -373,10 +375,16 @@ describe('ListItem', () => {
 
     expect(component['selectedRating']()).toEqual({
       label: '',
+      source: 'UserRate',
       value: 8.5,
       testId: 'list-item-user-rate',
       icon: 'person',
     });
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('[data-test-id="list-item-user-rate"]')
+        ?.getAttribute('aria-label')
+    ).toBe('UserRate 8.5');
 
     fixture.componentRef.setInput('collectionItem', { ...buildItem('Unrated'), userRate: null });
     fixture.detectChanges();
@@ -445,6 +453,11 @@ describe('ListItem', () => {
     expect(text).toContain('MC 85/100');
     expect(text).not.toContain('8.1');
     expect(text).not.toContain('RT 96%');
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('[data-test-id="list-item-rating-metacritic"]')
+        ?.getAttribute('aria-label')
+    ).toBe('Metacritic 85/100');
   });
 
   it('falls back to IMDb when selected rating is unavailable and fallback is enabled', () => {
@@ -460,6 +473,26 @@ describe('ListItem', () => {
       (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-rating-imdb"]')
     ).not.toBeNull();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('8.1');
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('[data-test-id="list-item-rating-imdb"]')
+        ?.getAttribute('aria-label')
+    ).toBe('IMDb 8.1');
+  });
+
+  it('labels Rotten Tomatoes ratings with the full source name', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      preferredRating: 'rottenTomatoes',
+    });
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Sample'), rottenTomatoesRate: '96%' });
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('[data-test-id="list-item-rating-rotten-tomatoes"]')
+        ?.getAttribute('aria-label')
+    ).toBe('RottenTomatoes 96%');
   });
 
   it('does not fall back to IMDb when fallback is disabled', () => {

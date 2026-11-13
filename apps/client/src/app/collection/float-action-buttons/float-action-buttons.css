@@ -2,6 +2,40 @@
   display: contents;
 }
 
+.float-scale-in {
+  animation: float-scale-in 0.2s ease-in-out forwards;
+}
+
+.float-scale-out {
+  animation: float-scale-out 0.2s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes float-scale-in {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes float-scale-out {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-scale-in,
+  .float-scale-out {
+    animation-duration: 1ms;
+  }
+}
+
 .float-buttons-container {
   position: absolute;
   left: 50%;

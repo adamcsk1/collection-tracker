@@ -78,6 +78,9 @@ describe('CompletedEpisodesDialog', () => {
   });
 
   it('loads seasons metadata and completed episodes on init', () => {
+    expect(fixture.nativeElement.querySelector('[role="dialog"]').getAttribute('aria-labelledby')).toBe(
+      'completed-episodes-heading'
+    );
     expect(api.getTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(api.getTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['seasonsMetadata']()).toEqual([{ season: 1, episodes: 3, titles: [] }]);

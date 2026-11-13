@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { MenuNav } from '../menu-nav/menu-nav';
 
 @Component({
@@ -11,4 +12,9 @@ import { MenuNav } from '../menu-nav/menu-nav';
     class: 'dialog',
   },
 })
-export class MenuDialog {}
+export class MenuDialog {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  protected readonly translations = {
+    menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
+  };
+}

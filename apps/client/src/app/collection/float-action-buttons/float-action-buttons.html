@@ -1,5 +1,11 @@
 @if (actionButtonsVisible()) {
-  <div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
+  <div
+    class="float-buttons-container"
+    role="region"
+    [attr.aria-label]="translations.actions()"
+    animate.enter="float-scale-in"
+    animate.leave="float-scale-out"
+  >
     @if (config().filterActions.length > 0) {
       <div class="float-action-section">
         <div class="float-action-section-title">{{ translations.filtering() }}</div>
@@ -46,7 +52,7 @@
           <div class="float-action" [class.float-action-current]="isOrderByActive('createdAt')">
             <button
               data-test-id="list-order-by-created-at"
-              [attr.aria-label]="translations.orderByCreatedAt()"
+              [attr.aria-label]="translations.orderByCreatedAtShort() + ' - ' + translations.orderByCreatedAt()"
               [attr.aria-current]="isOrderByActive('createdAt') ? 'true' : null"
               [title]="translations.orderByCreatedAt()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
@@ -59,7 +65,7 @@
           <div class="float-action" [class.float-action-current]="isOrderByActive('alphabet')">
             <button
               data-test-id="list-order-by-alphabet"
-              [attr.aria-label]="translations.orderByAlphabet()"
+              [attr.aria-label]="translations.orderByAlphabetShort() + ' - ' + translations.orderByAlphabet()"
               [attr.aria-current]="isOrderByActive('alphabet') ? 'true' : null"
               [title]="translations.orderByAlphabet()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
@@ -74,7 +80,9 @@
           <div class="float-action" [class.float-action-current]="isOrderDirectionActive('desc')">
             <button
               data-test-id="list-order-direction-desc"
-              [attr.aria-label]="translations.orderDirectionDescending()"
+              [attr.aria-label]="
+                translations.orderDirectionDescendingShort() + ' - ' + translations.orderDirectionDescending()
+              "
               [attr.aria-current]="isOrderDirectionActive('desc') ? 'true' : null"
               [title]="translations.orderDirectionDescending()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
@@ -87,7 +95,9 @@
           <div class="float-action" [class.float-action-current]="isOrderDirectionActive('asc')">
             <button
               data-test-id="list-order-direction-asc"
-              [attr.aria-label]="translations.orderDirectionAscending()"
+              [attr.aria-label]="
+                translations.orderDirectionAscendingShort() + ' - ' + translations.orderDirectionAscending()
+              "
               [attr.aria-current]="isOrderDirectionActive('asc') ? 'true' : null"
               [title]="translations.orderDirectionAscending()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
@@ -110,7 +120,7 @@
               [attr.aria-label]="translations.addNew()"
               [title]="translations.addNew()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
-              (click)="onAddNew()"
+              (click)="onAddNew($event)"
             >
               <i class="material-icons">add</i>
               <span>{{ translations.addNew() }}</span>

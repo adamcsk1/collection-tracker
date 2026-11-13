@@ -37,6 +37,17 @@
     outline: none;
   }
 
+  .image-action {
+    position: absolute;
+    inset: 0;
+
+    &:focus-visible {
+      outline: var(--outline-style);
+      outline-color: var(--focus-border-color);
+      outline-offset: -2px;
+    }
+  }
+
   .poster-image {
     position: absolute;
     inset: 0;
@@ -51,6 +62,7 @@
 
   .completed {
     position: absolute;
+    pointer-events: none;
     inset: 50% auto auto 50%;
     transform: translate(-50%, -50%);
     display: inline-flex;
@@ -75,7 +87,7 @@
   width: 100%;
 }
 
-h3 {
+h2 {
   color: var(--main-color);
   font-size: var(--font-size-base);
   margin: 0;
@@ -83,9 +95,14 @@ h3 {
   overflow: hidden;
   text-overflow: ellipsis;
 
-  a {
+  .title-button {
     color: inherit;
-    text-decoration: none;
+    font: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    text-align: inherit;
+    cursor: pointer;
   }
 }
 
