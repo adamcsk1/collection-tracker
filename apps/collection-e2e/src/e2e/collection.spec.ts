@@ -342,6 +342,26 @@ test.describe('Collection — delete an element', () => {
   });
 });
 
+test('shows an inset focus indicator when tabbing to a poster', async ({ page, autoLogin, api }) => {
+  await autoLogin();
+  await seedItems(api, [buildCollectionItem('Keyboard Focus Movie')]);
+  await collectionPage.visit();
+  const poster = collectionPage.getListItemImages().first();
+  await expect(poster).toBeVisible();
+  await collectionPage.tabToFirstListItemImage();
+  expect(await poster.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
+  await expect(poster).toHaveCSS('outline-style', 'solid');
+  await expect(poster).toHaveCSS('outline-offset', '-2px');
+  const outline = await poster.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { width: parseFloat(style.outlineWidth), color: style.outlineColor };
+  });
+  expect(outline.width).toBeGreaterThan(0);
+  expect(outline.color).not.toBe('rgba(0, 0, 0, 0)');
+  await page.keyboard.press('Enter');
+  await expect(collectionPage.getItemDialogHost()).toBeVisible();
+});
+
 test.describe('Collection — cursor pagination', () => {
   const titles = Array.from({ length: 55 }, (_, index) => `Cursor Test Movie ${String(index + 1).padStart(2, '0')}`);
   test.beforeEach(async ({ autoLogin }) => {
@@ -693,7 +713,7 @@ test.describe('Collection — watch later', () => {
     const manualTitle = 'Manual Watch Later Movie';
     await commonPage.openMenu();
     await commonPage.getNavUpNextLink().click();
-    await collectionPage.getAddFirstUpNextItemLink().click();
+    await collectionPage.getAddFirstUpNextItemLink().press('Space');
     await saveManualItem(page, manualTitle, 'tt8110001', 'movie', 'up-next');
     await reloadAndExpectPersistedTitle(page, manualTitle);
   });
@@ -715,7 +735,7 @@ test.describe('Collection — wishlist', () => {
     await commonPage.getNavWishlistLink().click();
     await expect(page).toHaveURL(/#\/collection\/wishlist/);
     await expect(page.getByTestId('collection-search')).toHaveCount(0);
-    await collectionPage.getAddFirstWishlistItemLink().click();
+    await collectionPage.getAddFirstWishlistItemLink().press('Enter');
     await collectionPage.getNewItemSearchInput().fill(wishlistTitle);
     await expect(collectionPage.getNewItemContentOptions().first()).toBeVisible();
     await collectionPage.getNewItemSaveAndCloseButton().click();
@@ -757,7 +777,7 @@ test.describe('Collection — tracking series', () => {
     await commonPage.getNavTrackingLink().click();
     await expect(page).toHaveURL(/#\/collection\/tracking/);
     await expect(page.getByTestId('collection-search')).toHaveCount(0);
-    await collectionPage.getAddFirstTrackingItemLink().click();
+    await collectionPage.getAddFirstTrackingItemLink().press('Space');
     await collectionPage.getNewItemContentSelect().selectOption('series');
     await collectionPage.getNewItemSearchInput().fill(seriesTitle);
     await expect(collectionPage.getNewItemContentOptions()).toHaveCount(1);

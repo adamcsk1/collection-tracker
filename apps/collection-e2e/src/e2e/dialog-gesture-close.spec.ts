@@ -28,6 +28,23 @@ const setMobileViewport = async (page: Page) => {
 };
 
 test.describe('Dialog gesture close', () => {
+  test('returns focus to the floating actions opener after closing new item', async ({ page, autoLogin, api }) => {
+    await autoLogin();
+    await api.request(
+      'POST',
+      '/api/v1/collection-items',
+      buildCollectionItem('Focus Return Movie', 'movie', 'tt7100015')
+    );
+    await collectionPage.visit();
+    await expect(collectionPage.getListItems().filter({ hasText: 'Focus Return Movie' })).toBeVisible();
+    await collectionPage.getShowFunctionsButton().click();
+    await collectionPage.getAddNewButton().focus();
+    await page.keyboard.press('Enter');
+    await expect(collectionPage.getNewItemSearch()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(collectionPage.getShowFunctionsButton()).toBeFocused();
+  });
+
   test('closes the active dialog from the mobile left screen edge', async ({ page, autoLogin, api }) => {
     await setMobileViewport(page);
     await openMovieItemDialog('Left Edge Gesture Movie', 'tt7100011', autoLogin, api);

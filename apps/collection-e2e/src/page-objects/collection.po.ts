@@ -99,6 +99,13 @@ export const createCollectionPage = (page: Page) => {
     getListItemMetacriticRatings: () => page.getByTestId('list-item-rating-metacritic'),
     getListItemUserRates: () => page.getByTestId('list-item-user-rate'),
     getListItemImages: () => page.getByTestId('list-item-image'),
+    tabToFirstListItemImage: async () => {
+      const image = page.getByTestId('list-item-image').first();
+      for (let index = 0; index < 50 && !(await image.evaluate((element) => element === document.activeElement)); index++) {
+        await page.keyboard.press('Tab');
+      }
+      await expect(image).toBeFocused();
+    },
     getListItemImageBadges: () => page.getByTestId('list-item-image-badge'),
     getListItemImageByTitle: (title: string) =>
       page.getByTestId('list-item-image').and(page.getByLabel(title, { exact: true })),
@@ -140,6 +147,10 @@ export const createCollectionPage = (page: Page) => {
     getAiSearchSendButton: () => page.getByTestId('ai-search-send'),
 
     // New item dialog
+    openNewItemDialog: async () => {
+      await page.getByTestId('show-functions').click();
+      await page.getByTestId('add-new').click();
+    },
     getNewItemSearch: () => page.getByTestId('new-item-search'),
     getNewItemSearchInput: () => page.getByTestId('new-item-search').locator('input'),
     getNewItemSearchModeButton: () => page.getByTestId('new-item-search-mode'),

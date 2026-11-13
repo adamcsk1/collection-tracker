@@ -65,7 +65,7 @@ test.describe('Books', () => {
     });
 
     await booksPage.visit();
-    await booksPage.getAddFirstItemLink().click();
+    await booksPage.getAddFirstItemLink().press('Space');
     const openLibrarySearchResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
     await booksPage.getNewItemSearchInput().fill(title);
     await openLibrarySearchResponsePromise;

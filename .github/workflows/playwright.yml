@@ -37,7 +37,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run Playwright (${{ matrix.browser }})
+      - name: Run Playwright and axe (${{ matrix.browser }})
         run: npm run playwright:${{ matrix.script }}
 
       - name: Stop Playwright container

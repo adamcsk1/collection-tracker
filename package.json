@@ -77,6 +77,7 @@
     "@angular/build": "^22.2.4",
     "@angular/cli": "^22.2.4",
     "@angular/compiler-cli": "^22.2.3",
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/css": "^2.0.1",
     "@playwright/test": "^1.65.0",
     "@schematics/angular": "^22.2.4",

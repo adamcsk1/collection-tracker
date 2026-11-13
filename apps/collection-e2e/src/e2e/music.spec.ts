@@ -65,7 +65,7 @@ test.describe('Music', () => {
     });
 
     await musicPage.visit();
-    await musicPage.getAddFirstItemLink().click();
+    await musicPage.getAddFirstItemLink().press('Enter');
     const musicBrainzSearchResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
     await musicPage.getNewItemSearchInput().fill(title);
     await musicBrainzSearchResponsePromise;

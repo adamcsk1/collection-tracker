@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { createHealthPage } from '../page-objects/health.po';
 import { expect, test } from '../support/test';
 
@@ -38,6 +39,26 @@ test.describe('Health page', () => {
       await expect(healthPage.getMetadataStatus()).toHaveAttribute('data-status', /^(up|down)$/);
       await expect(healthPage.getAiCard()).toBeVisible();
       await expect(healthPage.getAiStatus()).toHaveAttribute('data-status', /^(up|down)$/);
+    });
+
+    test('diagnostics contrast meets WCAG in both themes and service states', async ({ page }) => {
+      await expect(healthPage.getMetricsGrid()).toBeVisible();
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate((value) => {
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add(value);
+        }, theme);
+        for (const status of ['up', 'down']) {
+          await healthPage
+            .getMetadataStatus()
+            .evaluate((element, value) => element.setAttribute('data-status', value), status);
+          const results = await new AxeBuilder({ page })
+            .include('[data-test-id="health-metrics-grid"]')
+            .withRules('color-contrast')
+            .analyze();
+          expect(results.violations).toEqual([]);
+        }
+      }
     });
   });
 });

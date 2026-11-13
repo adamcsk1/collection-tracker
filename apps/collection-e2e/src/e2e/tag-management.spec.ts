@@ -413,8 +413,7 @@ test.describe('Tag Management — effect on collection item', () => {
     ]);
     await collectionPage.visit();
     await page.reload();
-    // The badge anchor appears inside the image container
-    const badge = collectionPage.getListItemImages().first().locator('.badge');
+    const badge = collectionPage.getListItemImageBadges().first();
     await expect(badge).toBeVisible();
     await expect(badge).toContainText(customTag);
   });
