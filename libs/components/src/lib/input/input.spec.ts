@@ -12,6 +12,8 @@ import { Input } from './input';
     [formField]="field"
     label="Name"
     hint="Helpful"
+    [mandatory]="true"
+    autocomplete="username"
     icon="search"
     [showReset]="true"
     resetButtonDataTestId="name-reset"
@@ -113,6 +115,11 @@ describe('Input component', () => {
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
+    const input = localFixture.nativeElement.querySelector('input') as HTMLInputElement;
+    expect(input.getAttribute('aria-required')).toBe('true');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('autocomplete')).toBe('username');
+    expect(localFixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
   });
 
   it('marks the icon as decorative', () => {

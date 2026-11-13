@@ -49,7 +49,6 @@ export class DialogShell implements AfterViewInit {
   private edgeSwipeStartY: number | null = null;
   private edgeSwipePointerId: number | null = null;
   private edgeSwipeDirection: 1 | -1 | null = null;
-  private previouslyFocusedElement: HTMLElement | null = null;
   public readonly closeWithPortal = input(true);
   public readonly ariaLabelledBy = input('');
   public readonly closed = output<void>();
@@ -68,8 +67,6 @@ export class DialogShell implements AfterViewInit {
   };
 
   public ngAfterViewInit(): void {
-    this.previouslyFocusedElement =
-      this.document.activeElement instanceof HTMLElement ? this.document.activeElement : null;
     this.dialogRoot()?.nativeElement.focus();
 
     const menuContentElement = this.menuContent()?.nativeElement;
@@ -94,13 +91,13 @@ export class DialogShell implements AfterViewInit {
         this.closed.emit();
         if (this.closeWithPortal()) {
           this.portal.closeTop();
-          this.previouslyFocusedElement?.focus();
         }
       });
   }
 
   public onTrapFocus(event: Event): void {
     const keyboardEvent = event as KeyboardEvent;
+    if (keyboardEvent.key !== 'Tab') return;
     const focusableElements = this.getFocusableElements();
     if (!focusableElements.length) {
       event.preventDefault();
@@ -111,7 +108,10 @@ export class DialogShell implements AfterViewInit {
     const firstFocusableElement = focusableElements[0];
     const lastFocusableElement = focusableElements[focusableElements.length - 1];
     const activeElement = this.document.activeElement;
-    if (keyboardEvent.shiftKey && activeElement === firstFocusableElement) {
+    if (
+      keyboardEvent.shiftKey &&
+      (activeElement === firstFocusableElement || activeElement === this.dialogRoot()?.nativeElement)
+    ) {
       event.preventDefault();
       lastFocusableElement.focus();
     } else if (!keyboardEvent.shiftKey && activeElement === lastFocusableElement) {

@@ -52,14 +52,15 @@
       role="combobox"
       aria-autocomplete="list"
       aria-haspopup="listbox"
-      aria-multiline="false"
       [attr.aria-expanded]="suggestions().length > 0"
       [attr.aria-controls]="suggestions().length ? 'autocomplete-suggestions-list' : null"
       [attr.aria-activedescendant]="
         suggestions().length && selectedSuggestion() !== -1 ? 'autocomplete-suggestion-' + selectedSuggestion() : null
       "
-      [attr.aria-label]="placeholder()"
+      [attr.aria-label]="label() || placeholder()"
       [attr.aria-describedby]="describedBy()"
+      [attr.aria-required]="mandatory() ? 'true' : null"
+      [attr.aria-invalid]="showError() ? 'true' : null"
       [placeholder]="placeholder()"
       [disabled]="disabled()"
       [value]="value() ?? ''"
@@ -87,7 +88,7 @@
     <small [id]="hintId()">{{ hint() }}</small>
   }
   @if (showError()) {
-    <small class="error" [id]="errorId()">
+    <small class="error" [id]="errorId()" role="alert">
       @if (hasRequiredError()) {
         {{ translations.validationRequired() }}
       }

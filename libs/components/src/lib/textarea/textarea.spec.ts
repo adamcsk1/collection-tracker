@@ -10,7 +10,13 @@ import { Textarea } from './textarea';
   imports: [FormField, Textarea],
   template: `
     <div style="height: 120px;">
-      <libc-textarea [formField]="field" label="Bio" hint="Hint" [autoHeight]="autoHeight"></libc-textarea>
+      <libc-textarea
+        [formField]="field"
+        label="Bio"
+        hint="Hint"
+        [autoHeight]="autoHeight"
+        [mandatory]="true"
+      ></libc-textarea>
     </div>
   `,
 })
@@ -81,6 +87,9 @@ describe('Textarea component', () => {
 
     const describedBy = component['describedBy']() ?? '';
     expect(describedBy).toContain('-error');
+    expect(localFixture.nativeElement.querySelector('textarea').getAttribute('aria-required')).toBe('true');
+    expect(localFixture.nativeElement.querySelector('textarea').getAttribute('aria-invalid')).toBe('true');
+    expect(localFixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
   });
 
   it('does not set describedBy when no hint or errors present', () => {

@@ -12,6 +12,8 @@ import { Autocomplete, AutocompleteService } from './autocomplete';
   template: `<libc-autocomplete
     [formField]="field"
     placeholder="Search"
+    label="Find items"
+    [mandatory]="true"
     hint="Helpful"
     [showReset]="true"
   ></libc-autocomplete>`,
@@ -79,6 +81,10 @@ describe('Autocomplete component', () => {
   });
 
   it('renders suggestions and accepts a selection', () => {
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    expect(input.getAttribute('aria-label')).toBe('Find items');
+    expect(input.getAttribute('aria-required')).toBe('true');
+    expect(input.hasAttribute('aria-multiline')).toBe(false);
     vi.useFakeTimers();
     component['onKeyup']({
       code: 'KeyA',
@@ -414,6 +420,25 @@ describe('Autocomplete component', () => {
     const noHintComponent = noHintFixture.debugElement.children[0].children[0]
       .componentInstance as Autocomplete<string>;
     expect(noHintComponent['describedBy']()).toBeNull();
+  });
+
+  it('exposes error id when touched with required validation error', () => {
+    const localFixture = TestBed.createComponent(HostComponent);
+    localFixture.detectChanges();
+
+    const componentInstance = localFixture.debugElement.children[0].children[0]
+      .componentInstance as Autocomplete<string>;
+    componentInstance.touched.set(true);
+    localFixture.detectChanges();
+
+    const describedBy = componentInstance['describedBy']() ?? '';
+    expect(describedBy).toContain('-hint');
+    expect(describedBy).toContain('-error');
+    const input = localFixture.nativeElement.querySelector('input') as HTMLInputElement;
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    const error = localFixture.nativeElement.querySelector('[role="alert"]') as HTMLElement;
+    expect(error).toBeTruthy();
+    expect(error.textContent).toContain('Validation.Required');
   });
 
   it('emits userEvent when a key is pressed in the input', () => {

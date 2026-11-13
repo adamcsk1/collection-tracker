@@ -8,7 +8,13 @@ import { Select } from './select';
 @Component({
   selector: 'libc-test-select-host',
   imports: [FormField, Select],
-  template: `<libc-select [formField]="field" [options]="options" label="Choose" hint="Pick one"></libc-select>`,
+  template: `<libc-select
+    [formField]="field"
+    [options]="options"
+    label="Choose"
+    hint="Pick one"
+    [mandatory]="true"
+  ></libc-select>`,
 })
 class HostComponent {
   public readonly model = signal('');
@@ -74,6 +80,7 @@ describe('Select component', () => {
   });
 
   it('renders options and updates the field value on change', () => {
+    expect(fixture.nativeElement.querySelector('select').getAttribute('aria-required')).toBe('true');
     const component = fixture.debugElement.children[0].children[0].componentInstance as Select;
     const options = component.options().map((option) => option.value);
 
@@ -120,6 +127,9 @@ describe('Select component', () => {
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
+    const select = localFixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    expect(select.getAttribute('aria-invalid')).toBe('true');
+    expect(localFixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
   });
 
   it('keeps the option typed value when selection changes', () => {

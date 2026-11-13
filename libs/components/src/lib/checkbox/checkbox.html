@@ -4,6 +4,8 @@
     [id]="checkboxId()"
     [attr.aria-label]="label()"
     [attr.aria-describedby]="describedBy()"
+    [attr.aria-required]="mandatory() ? 'true' : null"
+    [attr.aria-invalid]="showError() ? 'true' : null"
     [attr.aria-checked]="indeterminate() ? 'mixed' : value() === true"
     [checked]="value() === true"
     [indeterminate]="indeterminate()"
@@ -23,7 +25,7 @@
   <small class="hint" [id]="hintId()">{{ hint() }}</small>
 }
 @if (showError()) {
-  <small class="error" [id]="errorId()">
+  <small class="error" [id]="errorId()" role="alert">
     @if (hasRequiredError()) {
       {{ translations.validationRequired() }}
     }

@@ -237,6 +237,18 @@ describe('DialogShell component', () => {
     }
   });
 
+  it('wraps shift-tab from the initially focused dialog root', () => {
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+    const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLElement;
+    const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+
+    dialogRoot.focus();
+    dialogRoot.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(dragHandle);
+  });
+
   it('focuses dialog root when no focusable controls exist', () => {
     const dialogShell = fixture.debugElement.query(By.directive(DialogShell)).componentInstance as DialogShell;
     vi.spyOn(
@@ -249,21 +261,6 @@ describe('DialogShell component', () => {
 
     expect(event.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(fixture.nativeElement.querySelector('.dialog-frame'));
-  });
-
-  it('restores focus to the previously focused element after close', () => {
-    const trigger = document.createElement('button');
-    document.body.appendChild(trigger);
-    trigger.focus();
-    const restoreFixture = TestBed.createComponent(HostComponent);
-    restoreFixture.detectChanges();
-    const overlay = restoreFixture.nativeElement.querySelector('.dialog-overlay') as HTMLButtonElement;
-
-    overlay.click();
-    finishCloseAnimation();
-
-    expect(document.activeElement).toBe(trigger);
-    trigger.remove();
   });
 
   it('calls portal.closeTop when the drag handle is pulled down', () => {

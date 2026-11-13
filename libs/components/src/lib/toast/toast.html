@@ -1,14 +1,17 @@
+<p class="announcement" role="status" aria-live="assertive" aria-atomic="true">{{ message() }}</p>
 @if (message(); as message) {
-  <p
-    data-test-id="toast-message"
-    tabindex="0"
-    role="status"
-    aria-live="assertive"
-    animate.enter="animation-scale-in"
-    animate.leave="animation-scale-out"
-    (click)="onToastClick()"
-    (keydown)="onToastClick()"
-  >
-    {{ message }}
-  </p>
+  <div class="toast" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
+    <p data-test-id="toast-message" aria-hidden="true">{{ message }}</p>
+    <button
+      type="button"
+      class="button-icon"
+      data-test-id="toast-dismiss"
+      [attr.aria-label]="translations.close()"
+      (click)="onToastClick()"
+      (focus)="onDismissFocus()"
+      (blur)="onDismissBlur()"
+    >
+      <span class="material-icons" aria-hidden="true">close</span>
+    </button>
+  </div>
 }

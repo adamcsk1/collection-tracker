@@ -65,6 +65,7 @@ describe('Checkbox component', () => {
     expect(input.indeterminate).toBe(true);
     expect(input.checked).toBe(false);
     expect(input.getAttribute('aria-checked')).toBe('mixed');
+    expect(input.getAttribute('aria-required')).toBe('true');
 
     fixture.componentInstance.indeterminate.set(false);
     fixture.detectChanges();
@@ -118,5 +119,8 @@ describe('Checkbox component', () => {
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
+    const input = localFixture.nativeElement.querySelector('input') as HTMLInputElement;
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(localFixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
   });
 });

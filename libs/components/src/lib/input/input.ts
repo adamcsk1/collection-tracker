@@ -26,6 +26,7 @@ export class Input<T> implements FormValueControl<T | null> {
   });
   public readonly inputId = input<string>(crypto.randomUUID());
   public readonly type = input<'text' | 'password' | 'number'>('text');
+  public readonly autocomplete = input<string>();
   public readonly label = input<string>('');
   public readonly mandatory = input<boolean>(false);
   public readonly showReset = input<boolean>(false);

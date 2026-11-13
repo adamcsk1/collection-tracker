@@ -12,7 +12,10 @@
     class="input"
     [attr.aria-label]="label() || placeholder()"
     [attr.aria-describedby]="describedBy()"
+    [attr.aria-required]="mandatory() ? 'true' : null"
+    [attr.aria-invalid]="showError() ? 'true' : null"
     [type]="type()"
+    [attr.autocomplete]="autocomplete() ?? null"
     [id]="inputId()"
     [value]="value() ?? ''"
     [attr.min]="min() ?? null"
@@ -41,7 +44,7 @@
   <small [id]="hintId()">{{ hint() }}</small>
 }
 @if (showError()) {
-  <small class="error" [id]="errorId()">
+  <small class="error" [id]="errorId()" role="alert">
     @if (hasRequiredError()) {
       {{ translations.validationRequired() }}
     }
