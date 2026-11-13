@@ -53,6 +53,88 @@ describe('PortalService', () => {
     expect(service.componentRef()).toBeNull();
   });
 
+  it('restores the trigger when a portal closes directly', () => {
+    const trigger = document.createElement('button');
+    const inner = document.createElement('button');
+    hostElement.append(inner);
+    document.body.append(trigger, hostElement);
+    trigger.focus();
+    service.open(DummyComponent);
+    inner.focus();
+
+    service.closeTop();
+
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
+    hostElement.remove();
+  });
+
+  it.each(['closeTop', 'closeAll'] as const)('uses a fallback for a removed trigger on %s', (close) => {
+    const trigger = document.createElement('button');
+    const fallback = document.createElement('button');
+    document.body.append(trigger, fallback);
+    trigger.focus();
+    service.open(DummyComponent, {}, () => fallback);
+    trigger.remove();
+
+    service[close]();
+
+    expect(document.activeElement).toBe(fallback);
+    fallback.remove();
+  });
+
+  it.each(['closeTop', 'closeAll'] as const)(
+    'uses the fallback while a connected trigger is leaving on %s',
+    (close) => {
+      const leavingMenu = document.createElement('div');
+      const trigger = document.createElement('button');
+      const fallback = document.createElement('button');
+      leavingMenu.append(trigger);
+      document.body.append(leavingMenu, fallback);
+      trigger.focus();
+      service.open(DummyComponent, {}, () => fallback);
+      leavingMenu.setAttribute('inert', '');
+
+      service[close]();
+
+      expect(trigger.isConnected).toBe(true);
+      expect(document.activeElement).toBe(fallback);
+      leavingMenu.remove();
+      expect(document.activeElement).toBe(fallback);
+      fallback.remove();
+    }
+  );
+
+  it('prefers the connected trigger over the fallback', () => {
+    const trigger = document.createElement('button');
+    const fallback = document.createElement('button');
+    document.body.append(trigger, fallback);
+    trigger.focus();
+    service.open(DummyComponent, {}, () => fallback);
+    fallback.focus();
+    service.closeTop();
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
+    fallback.remove();
+  });
+
+  it('restores the original trigger when all portals close', () => {
+    const trigger = document.createElement('button');
+    const inner = document.createElement('button');
+    hostElement.append(inner);
+    document.body.append(trigger, hostElement);
+    trigger.focus();
+    service.open(DummyComponent);
+    inner.focus();
+    service.openStacked(DummyComponent);
+
+    service.closeAll();
+
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
+    hostElement.remove();
+  });
+
   it('replaces the active component when opening a regular portal', () => {
     const firstDestroy = vi.fn();
     const firstHostElement = document.createElement('div');
@@ -70,6 +152,38 @@ describe('PortalService', () => {
     expect(firstDestroy).toHaveBeenCalled();
     expect(clearSpy).toHaveBeenCalled();
     expect(service.componentRef()).toBe(secondComponentRef);
+  });
+
+  it('restores the original trigger after replacing a portal', () => {
+    const trigger = document.createElement('button');
+    document.body.append(trigger, hostElement);
+    const inner = document.createElement('button');
+    hostElement.append(inner);
+    trigger.focus();
+    service.open(DummyComponent);
+    inner.focus();
+    service.open(DummyComponent);
+
+    service.closeAll();
+
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
+    hostElement.remove();
+  });
+
+  it('does not restore a trigger removed during navigation', () => {
+    const trigger = document.createElement('button');
+    const nextPageControl = document.createElement('button');
+    document.body.append(trigger, nextPageControl);
+    trigger.focus();
+    service.open(DummyComponent);
+    trigger.remove();
+    nextPageControl.focus();
+
+    service.closeAll();
+
+    expect(document.activeElement).toBe(nextPageControl);
+    nextPageControl.remove();
   });
 
   it('keeps previous components mounted when opening a stacked portal', () => {
@@ -114,6 +228,37 @@ describe('PortalService', () => {
     expect(service.componentRef()).toBe(firstComponentRef);
     firstHostElement.remove();
     secondHostElement.remove();
+  });
+
+  it.each([false, true])('restores stacked trigger or parent frame when disabled: %s', (disabled) => {
+    const parentHost = document.createElement('div');
+    parentHost.innerHTML = '<div class="dialog-frame" tabindex="-1"><button>Open</button></div>';
+    const trigger = parentHost.querySelector('button') as HTMLButtonElement;
+    const parentRef = {
+      destroy: vi.fn(),
+      location: { nativeElement: parentHost },
+      setInput,
+    } as unknown as ComponentRef<unknown>;
+    const childHost = document.createElement('div');
+    childHost.innerHTML = '<button>Child</button>';
+    const childRef = {
+      destroy: vi.fn(),
+      location: { nativeElement: childHost },
+      setInput,
+    } as unknown as ComponentRef<unknown>;
+    document.body.append(parentHost, childHost);
+    createComponent.mockReturnValueOnce(parentRef).mockReturnValueOnce(childRef);
+    service.open(DummyComponent);
+    trigger.focus();
+    service.openStacked(DummyComponent);
+    trigger.disabled = disabled;
+    (childHost.querySelector('button') as HTMLButtonElement).focus();
+
+    service.closeTop();
+
+    expect(document.activeElement).toBe(disabled ? parentHost.querySelector('.dialog-frame') : trigger);
+    parentHost.remove();
+    childHost.remove();
   });
 
   it('closes every stacked component when closing all portals', () => {
