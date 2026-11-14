@@ -37,11 +37,16 @@ yarn-error.log
 /libpeerconnection.log
 testem.log
 /typings
-/**/playwright-results/
-/**/playwright-report/
 /**/cypress/*
 .tmp-*
 *.tmp
+
+# Playwright
+/**/playwright-results/
+/**/playwright-report/
+apps/collection-e2e/playwright-results-diagnostic
+apps/collection-e2e/playwright-results-regression-fixes
+apps/collection-e2e/playwright-results-six-issues
 
 # System files
 .DS_Store
