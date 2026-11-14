@@ -75,7 +75,7 @@ class MainActivityUpdateTest {
 
   @Test fun webChromeClientDoesNotOverrideNativeJavascriptDialogs() {
     val activity = launch()
-    val chromeClient = assertNotNull(activity.findViewById<WebView>(R.id.webView).webChromeClient)
+    val chromeClient = requireNotNull(activity.findViewById<WebView>(R.id.webView).webChromeClient)
     val overriddenMethods = chromeClient.javaClass.declaredMethods.map { it.name }
     assertFalse(overriddenMethods.contains("onJsAlert"))
     assertFalse(overriddenMethods.contains("onJsConfirm"))
