@@ -58,6 +58,16 @@ describe('SignUp component', () => {
     fixture.detectChanges();
   });
 
+  it('reveals the API URL field through its change control', async () => {
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('[data-test-id="sign-up-api-url"]')).toBeNull();
+    host.querySelector<HTMLButtonElement>('[data-test-id="sign-up-change-api-url"]')?.click();
+    await fixture.whenStable();
+
+    expect(host.querySelector('[data-test-id="sign-up-api-url"] input')).not.toBeNull();
+    expect(host.querySelector('[data-test-id="sign-up-change-api-url"]')).toBeNull();
+  });
+
   it('preloads API URL and updates it when sending the form', async () => {
     expect(
       fixture.nativeElement.querySelector('[data-test-id="sign-up-username"] input').getAttribute('autocomplete')
