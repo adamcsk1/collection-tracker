@@ -30,7 +30,6 @@
     padding-top: var(--size-xs);
 
     .episode-title {
-      opacity: 0.7;
       font-size: 0.9em;
     }
   }

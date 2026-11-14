@@ -77,7 +77,6 @@
 }
 
 .share-card-label {
-  opacity: 0.7;
   font-size: var(--font-size-sm);
 }
 
@@ -126,6 +125,5 @@
 }
 
 .empty-message {
-  opacity: 0.7;
   margin: 0;
 }
