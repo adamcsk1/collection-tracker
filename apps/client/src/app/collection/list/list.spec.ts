@@ -297,6 +297,96 @@ describe('List', () => {
     }
   });
 
+  it.each(['library', 'books', 'music', 'tracking', 'up-next', 'wishlist'])(
+    'announces completed empty searches in a persistent text-only status on %s',
+    async (listType) => {
+      const response = new Subject<CollectionItemsPageModel>();
+      api.searchItems.mockReturnValue(response);
+      fixture.componentRef.setInput('listType', listType);
+      fixture.componentRef.setInput('routeSearchText', 'missing');
+      await fixture.whenStable();
+
+      const element = fixture.nativeElement as HTMLElement;
+      const status = element.querySelector('[data-test-id="collection-search-status"]');
+      expect(status?.getAttribute('role')).toBe('status');
+      expect(status?.getAttribute('aria-live')).toBe('polite');
+      expect(status?.getAttribute('aria-atomic')).toBe('true');
+      expect(status?.closest('[aria-busy]')).toBeNull();
+      expect(status?.textContent?.trim()).toBe('');
+      const focusedElement = document.activeElement;
+
+      response.next({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } });
+      await fixture.whenStable();
+
+      expect(element.querySelector('[data-test-id="collection-search-status"]')).toBe(status);
+      expect(status?.textContent?.trim()).toBe('Message.EmptySearch');
+      expect(status?.children.length).toBe(0);
+      expect(document.activeElement).toBe(focusedElement);
+      expect(element.querySelector('[role="list"]')?.hasAttribute('aria-live')).toBe(false);
+
+      const mutations = vi.fn();
+      const observer = new MutationObserver(mutations);
+      observer.observe(status!, { childList: true, characterData: true, subtree: true });
+      component['scrolling'].set(true);
+      fixture.componentRef.setInput('emptyIcon', 'search_off');
+      apiState.setState('loadNetworkStatus', 'pending');
+      await fixture.whenStable();
+      apiState.setState('loadNetworkStatus', 'finished');
+      await fixture.whenStable();
+      expect(mutations).not.toHaveBeenCalled();
+      observer.disconnect();
+
+      component['loadItems'](true, 'another search');
+      await fixture.whenStable();
+      expect(status?.textContent?.trim()).toBe('');
+      response.next({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } });
+      await fixture.whenStable();
+      expect(status?.textContent?.trim()).toBe('Message.EmptySearch');
+
+      component['loadItems'](true, 'matching search');
+      await fixture.whenStable();
+      expect(status?.textContent?.trim()).toBe('');
+      response.next({ items: [buildItem('Match')], page: { limit: 50, hasMore: false, nextCursor: null } });
+      await fixture.whenStable();
+      expect(status?.textContent?.trim()).toBe('');
+      expect(element.querySelector('[data-test-id="collection-search-status"]')).toBe(status);
+    }
+  );
+
+  it('keeps empty collections and failed searches out of the no-results status', async () => {
+    const response = new Subject<CollectionItemsPageModel>();
+    api.searchItems.mockReturnValue(response);
+    await fixture.whenStable();
+    const status = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="collection-search-status"]');
+
+    response.next({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } });
+    await fixture.whenStable();
+    expect(status?.textContent?.trim()).toBe('');
+
+    component['loadItems'](true, 'failed');
+    response.error(new Error('failed'));
+    await fixture.whenStable();
+    expect(status?.textContent?.trim()).toBe('');
+  });
+
+  it.each(['route filter', 'AI'])('announces empty %s results without standard search text', async (searchMode) => {
+    const response = new Subject<CollectionItemsPageModel>();
+    fixture.componentRef.setInput('dataSource', () => response);
+    if (searchMode === 'route filter') {
+      fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ favorite: true }));
+    } else {
+      collectionState.setState('aiSearchPromptText', 'science fiction');
+      collectionState.setState('forceStandardSearch', false);
+    }
+    await fixture.whenStable();
+    const status = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="collection-search-status"]');
+    expect(status?.textContent?.trim()).toBe('');
+
+    response.next({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } });
+    await fixture.whenStable();
+    expect(status?.textContent?.trim()).toBe('Message.EmptySearch');
+  });
+
   it('shows the filtered empty message when route filters return no items', async () => {
     api.searchItems.mockReturnValue(of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } }));
     fixture.componentRef.setInput(

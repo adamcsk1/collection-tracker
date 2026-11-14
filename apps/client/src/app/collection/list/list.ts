@@ -92,6 +92,7 @@ export class List implements OnDestroy {
   };
   protected readonly visibleCollection = signal<CollectionItemModel[]>([]);
   protected readonly collectionLength = signal(0);
+  protected readonly emptySearchResult = signal(false);
   private readonly nextCursor = signal<string | null>(null);
   protected readonly hasMore = signal(true);
   protected readonly orderBy = signal<CollectionItemOrderBy>('createdAt');
@@ -366,6 +367,7 @@ export class List implements OnDestroy {
   ): void {
     const requestId = ++this.loadRequestId;
     const aiRequest = this.aiFilterActive();
+    if (reset) this.emptySearchResult.set(false);
     this.pendingLoadRequestId = requestId;
     this.getItemsRequest(reset, searchText, orderBy, orderDirection)
       .pipe(
@@ -392,6 +394,13 @@ export class List implements OnDestroy {
       .subscribe((response) => {
         if (requestId === this.loadRequestId) {
           this.applyItemsResponse(response, reset);
+          if (reset) {
+            this.emptySearchResult.set(
+              this.apiLoadNetworkStatus() === 'finished' &&
+                response.items.length === 0 &&
+                (!!searchText.trim() || !!this.routeFilterKey() || aiRequest)
+            );
+          }
         }
       });
   }
