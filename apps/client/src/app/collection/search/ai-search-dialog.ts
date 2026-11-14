@@ -54,6 +54,6 @@ export class AiSearchDialog {
   }
 
   protected onShowMessage(): void {
-    this.alert.show(this.ngxSignalTranslate.translate('Message.AiSearch'));
+    this.alert.info(this.ngxSignalTranslate.translate('Message.AiSearch'));
   }
 }

@@ -620,28 +620,28 @@ export class ItemDialog implements OnInit {
   }
 
   protected onDelete(): void {
-    const ownerShareCode = this.collectionItem().ownerShareCode;
-    const listType = this.collectionItem().listType === 'library' ? undefined : this.collectionItem().listType;
+    const item = this.collectionItem();
+    const ownerShareCode = item.ownerShareCode;
+    const listType = item.listType === 'library' ? undefined : item.listType;
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: this.collectionItem().title }))
+      .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: item.title }), {
+        destructive: true,
+        confirmationText: item.title,
+        actionLabel: this.translations.delete(),
+      })
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
             this.spinnerLoadingState.setState('show', true);
             const deleteRequest = listType
               ? this.api.deleteByExternalId(
-                  this.collectionItem().externalProvider,
-                  this.collectionItem().externalItemId,
-                  this.collectionItem().hash,
+                  item.externalProvider,
+                  item.externalItemId,
+                  item.hash,
                   ownerShareCode,
                   listType
                 )
-              : this.api.deleteByExternalId(
-                  this.collectionItem().externalProvider,
-                  this.collectionItem().externalItemId,
-                  this.collectionItem().hash,
-                  ownerShareCode
-                );
+              : this.api.deleteByExternalId(item.externalProvider, item.externalItemId, item.hash, ownerShareCode);
             return deleteRequest.pipe(
               map(() => confirmed),
               finalize(() => this.spinnerLoadingState.setState('show', false))
@@ -653,8 +653,8 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          if (listType) this.collectionService.deleteCollectionItem(this.collectionItem(), ownerShareCode, listType);
-          else this.collectionService.deleteCollectionItem(this.collectionItem(), ownerShareCode);
+          if (listType) this.collectionService.deleteCollectionItem(item, ownerShareCode, listType);
+          else this.collectionService.deleteCollectionItem(item, ownerShareCode);
           this.collectionService.triggerReload();
           this.closeItemAndClearQuery();
         }
@@ -950,7 +950,11 @@ export class ItemDialog implements OnInit {
     if (!trackerHash) return;
 
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: item.title }))
+      .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: item.title }), {
+        destructive: true,
+        confirmationText: item.title,
+        actionLabel: this.ngxSignalTranslate.translate('DeleteFromTracking'),
+      })
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {

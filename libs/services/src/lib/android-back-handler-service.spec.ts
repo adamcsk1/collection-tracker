@@ -21,6 +21,20 @@ describe('AndroidBackHandlerService', () => {
     expect((window as AndroidBackWindow).CollectionTrackerAndroidBack?.()).toBe(false);
   });
 
+  it('does not replace the hook when listening again', () => {
+    const hook = (window as AndroidBackWindow).CollectionTrackerAndroidBack;
+
+    service.listen();
+
+    expect((window as AndroidBackWindow).CollectionTrackerAndroidBack).toBe(hook);
+  });
+
+  it('removes the hook when the injector is destroyed', () => {
+    TestBed.resetTestingModule();
+
+    expect((window as AndroidBackWindow).CollectionTrackerAndroidBack).toBeUndefined();
+  });
+
   it('dispatches Escape to the top open dialog from the Android back hook', () => {
     const inertHost = document.createElement('div');
     inertHost.setAttribute('data-test-id', 'android-back-test-host');

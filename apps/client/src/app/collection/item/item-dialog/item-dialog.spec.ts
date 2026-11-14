@@ -817,7 +817,11 @@ describe('ItemDialog', () => {
 
     component['onDelete']();
 
-    expect(confirm.open).toHaveBeenCalled();
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.Delete', {
+      destructive: true,
+      confirmationText: 'Test Movie',
+      actionLabel: 'DeleteFromCollection',
+    });
     expect(api.deleteByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'testhash', undefined);
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
@@ -1886,7 +1890,11 @@ describe('ItemDialog', () => {
 
     component['onRemoveFromTracking']();
 
-    expect(confirm.open).toHaveBeenCalled();
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.Delete', {
+      destructive: true,
+      confirmationText: 'Test Movie',
+      actionLabel: 'DeleteFromTracking',
+    });
     expect(api.deleteByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'tracker-hash', undefined, 'tracking');
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),

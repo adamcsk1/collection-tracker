@@ -173,6 +173,10 @@ describe('ShareDialog', () => {
 
     component['onReadToggle']('library', 'movie', true);
 
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ShareSelectedToAll', {
+      destructive: true,
+      confirmationText: 'Library / Movies',
+    });
     expect(component['readIndeterminate']('library', 'movie')).toBe(true);
 
     confirm.open.mockReturnValueOnce(of(true));
@@ -187,6 +191,10 @@ describe('ShareDialog', () => {
     confirm.open.mockReturnValueOnce(of(false));
 
     component['onClearSelected']('library', 'movie');
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ShareSelectedToNone', {
+      destructive: true,
+      confirmationText: 'Library / Movies',
+    });
     expect(component['readIndeterminate']('library', 'movie')).toBe(true);
 
     confirm.open.mockReturnValueOnce(of(true));

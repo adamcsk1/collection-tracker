@@ -4,6 +4,7 @@ import { buildBooksItem } from '../fixtures/openlibrary';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createCommonPage } from '../page-objects/common.po';
 import { createSettingsPage } from '../page-objects/settings.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import type { Page } from '@playwright/test';
 
 let collectionPage: ReturnType<typeof createCollectionPage>;
@@ -28,12 +29,6 @@ const openSettingsSections = async (page: Page) => {
 
 const waitForApiResponse = (page: Page, method: string, urlPart: string) =>
   page.waitForResponse((response) => response.request().method() === method && response.url().includes(urlPart));
-
-const acceptDialogs = (page: Page) => {
-  page.on('dialog', async (dialog) => {
-    await dialog.accept();
-  });
-};
 
 test.describe('Settings - basic form fields', () => {
   test.beforeEach(async ({ autoLogin, page }) => {
@@ -67,9 +62,9 @@ test.describe('Settings - media refresh page', () => {
   });
 
   test('calls the refresh images API when the image refresh button is clicked', async ({ page }) => {
-    acceptDialogs(page);
     const refreshResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/refresh-images');
     await settingsPage.getImageRefreshStartButton().click();
+    await createMessageDialog(page).confirm();
     expect((await refreshResponsePromise).status()).toBe(200);
     const status = settingsPage.getImageRefreshStatus();
     await expect(status).toBeVisible();
@@ -224,9 +219,9 @@ test.describe('Settings - mark all completed / uncompleted', () => {
   });
 
   test('marks all movies as completed and persists them in tracking', async ({ page }) => {
-    acceptDialogs(page);
     const responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-movies-completed');
     await settingsPage.getMarkAllCompletedButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.visitTracking();
     await expect(collectionPage.getListItems()).toHaveCount(2);
@@ -236,38 +231,40 @@ test.describe('Settings - mark all completed / uncompleted', () => {
   });
 
   test('marks all movies as uncompleted and removes them from tracking', async ({ page }) => {
-    acceptDialogs(page);
     let responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-movies-completed');
     await settingsPage.getMarkAllCompletedButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-movies-uncompleted');
     await settingsPage.getMarkAllUncompletedButton().click();
+    await createMessageDialog(page).confirm('Movies');
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.visitTracking();
     await expect(collectionPage.getEmptyState()).toBeVisible();
   });
 
   test('mark all series as completed calls the bulk update API', async ({ page }) => {
-    acceptDialogs(page);
     const responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-series-completed');
     await settingsPage.getMarkAllSeriesCompletedButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
   });
 
   test('mark all series as uncompleted calls the bulk update API', async ({ page }) => {
-    acceptDialogs(page);
     let responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-series-completed');
     await settingsPage.getMarkAllSeriesCompletedButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-series-uncompleted');
     await settingsPage.getMarkAllSeriesUncompletedButton().click();
+    await createMessageDialog(page).confirm('Series');
     expect((await responsePromise).status()).toBe(200);
   });
 
   test('marks all books as completed and persists them in tracking', async ({ page }) => {
-    acceptDialogs(page);
     const responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-books-completed');
     await settingsPage.getMarkAllBooksCompletedButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.visitTracking();
     await expect(collectionPage.getListItems().filter({ hasText: 'Watch Test Book A' })).toBeVisible();
@@ -276,12 +273,13 @@ test.describe('Settings - mark all completed / uncompleted', () => {
   });
 
   test('marks all books as uncompleted and keeps tracking items without completed badges', async ({ page }) => {
-    acceptDialogs(page);
     let responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-books-completed');
     await settingsPage.getMarkAllBooksCompletedButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     responsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items/actions/mark-books-uncompleted');
     await settingsPage.getMarkAllBooksUncompletedButton().click();
+    await createMessageDialog(page).confirm('Books');
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.visitTracking();
     await expect(collectionPage.getListItems().filter({ hasText: 'Watch Test Book A' })).toBeVisible();
@@ -292,20 +290,19 @@ test.describe('Settings - mark all completed / uncompleted', () => {
   });
 
   test('remove all tracked movie data calls the delete API and empties the tracker', async ({ api, page }) => {
-    acceptDialogs(page);
     await api.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Tracked Movie', 'movie', 'tt8000004'),
       listType: 'tracking',
     });
     const responsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/tracking/completed-movies');
     await settingsPage.getRemoveAllTrackedMovieDataButton().click();
+    await createMessageDialog(page).confirm('Movies');
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.visitTracking();
     await expect(collectionPage.getEmptyState()).toBeVisible();
   });
 
   test('removes all tracked series data and persists an empty tracking', async ({ api, page }) => {
-    acceptDialogs(page);
     await api.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Tracked Series', 'series', 'tt8000005'),
       listType: 'tracking',
@@ -316,6 +313,7 @@ test.describe('Settings - mark all completed / uncompleted', () => {
     await settingsPage.visitManageTrackerData();
     const responsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/tracking');
     await settingsPage.getRemoveAllTrackedSeriesDataButton().click();
+    await createMessageDialog(page).confirm('Series');
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.visitTracking();
     await expect(collectionPage.getEmptyState()).toBeVisible();
@@ -368,18 +366,18 @@ test.describe('Settings - account actions (destructive)', () => {
   });
 
   test('create new user token calls PUT /api/v1/users/me/token and shows the token dialog', async ({ page }) => {
-    acceptDialogs(page);
     const responsePromise = waitForApiResponse(page, 'PUT', '/api/v1/users/me/token');
     await settingsPage.getCreateUserTokenButton().click();
+    await createMessageDialog(page).confirm('Account');
     expect((await responsePromise).status()).toBe(200);
     await expect(settingsPage.getTokenDialogValue()).toBeVisible();
     await expect(settingsPage.getTokenDialogValue()).not.toBeEmpty();
   });
 
   test('delete user calls DELETE /api/v1/users/me and redirects to login', async ({ page }) => {
-    acceptDialogs(page);
     const responsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/users/me');
     await settingsPage.getDeleteUserButton().click();
+    await createMessageDialog(page).confirm('Account');
     expect((await responsePromise).status()).toBe(204);
     await expect(page).toHaveURL(/\/login\//);
   });
@@ -392,24 +390,25 @@ test.describe('Settings - access tokens', () => {
   });
 
   test('create access token calls POST /api/v1/users/me/access-tokens and shows the token dialog', async ({ page }) => {
-    acceptDialogs(page);
     const responsePromise = waitForApiResponse(page, 'POST', '/api/v1/users/me/access-tokens');
     await settingsPage.getCreateAccessTokenButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(settingsPage.getTokenDialogValue()).toBeVisible();
     await expect(settingsPage.getTokenDialogValue()).not.toBeEmpty();
   });
 
   test('revoke access token calls DELETE /api/v1/users/me/access-tokens/:hash', async ({ api, page }) => {
-    acceptDialogs(page);
     const createResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/users/me/access-tokens');
     await settingsPage.getCreateAccessTokenButton().click();
+    await createMessageDialog(page).confirm();
     expect((await createResponsePromise).status()).toBe(200);
     await collectionPage.closeActiveDialogByOverlay();
     const tokensResponse = await api.request('GET', '/api/v1/users/me/access-tokens');
     const tokensBody = (await tokensResponse.json()) as { data: { tokenHash: string }[] };
     const revokeResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/users/me/access-tokens/');
     await settingsPage.getRevokeTokenButton(tokensBody.data[0].tokenHash).click();
+    await createMessageDialog(page).confirm(tokensBody.data[0].tokenHash);
     expect((await revokeResponsePromise).status()).toBe(204);
   });
 });

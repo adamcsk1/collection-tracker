@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
@@ -35,6 +45,7 @@ import { getOpenSeasons } from './utils/get-open-seasons-util';
 export class CompletedEpisodesDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly portal = inject(PortalService);
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly toastState = inject(toastStateToken);
   private readonly confirm = inject(ConfirmService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
@@ -50,7 +61,7 @@ export class CompletedEpisodesDialog implements OnInit {
   public readonly saved = input<
     (completedEpisodes: TrackingCompletedEpisodeModel[], item?: CollectionItemApiModel) => void
   >(() => undefined);
-  public readonly closed = input<() => void>(() => this.portal.closeTop());
+  public readonly closed = input<() => void>(() => this.portal.close(this.element.nativeElement));
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('Title.CompletedEpisodes')),
     setSeasonMetadata: computed(() => this.ngxSignalTranslate.translate('Message.SetSeasonMetadata')),
@@ -294,7 +305,11 @@ export class CompletedEpisodesDialog implements OnInit {
 
   protected async onMarkAllEpisodesUncompleted(): Promise<void> {
     const confirmed = await firstValueFrom(
-      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUncompleted'))
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUncompleted'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Series'),
+        actionLabel: this.translations.markAllEpisodesUncompleted(),
+      })
     );
     if (!confirmed) return;
 

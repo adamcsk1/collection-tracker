@@ -1,5 +1,5 @@
-<ct-header class="main-header" />
-<div class="layout-body">
+<ct-header class="main-header" data-dialog-background />
+<div class="layout-body" data-dialog-background>
   <ct-menu-nav class="sidebar" />
   <div #mainContent class="main-body" role="main" tabindex="-1">
     <router-outlet />
@@ -11,7 +11,7 @@
   }
 }
 <libc-spinner-loading />
-<ct-float-actions />
+<ct-float-actions data-dialog-background />
 <libc-toast />
 <libc-blocker-loading />
 <ng-container #portal />

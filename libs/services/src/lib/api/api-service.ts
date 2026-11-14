@@ -50,6 +50,7 @@ import {
 } from '@shared/models/external-metadata-model';
 import { Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
+import { ApiRequestOptions } from './api-request-model';
 
 @Injectable({
   providedIn: 'root',
@@ -224,12 +225,15 @@ export class ApiService extends BaseApiService {
     externalIdentityId: string,
     ownerShareCode?: string,
     listType?: CollectionListTypeModel,
-    externalIds?: ExternalItemIdentityModel[]
+    externalIds?: ExternalItemIdentityModel[],
+    options: ApiRequestOptions = {}
   ): Observable<CollectionItemExistsApiResponseModel> {
     const externalIdParams = externalIds?.length ? JSON.stringify(externalIds) : undefined;
     return this.request(
       'GET',
-      `/collection-items/exists${this.buildQuery({ externalIdentitySource, externalIdentityId, ownerShareCode, listType, externalIds: externalIdParams })}`
+      `/collection-items/exists${this.buildQuery({ externalIdentitySource, externalIdentityId, ownerShareCode, listType, externalIds: externalIdParams })}`,
+      undefined,
+      options
     );
   }
 

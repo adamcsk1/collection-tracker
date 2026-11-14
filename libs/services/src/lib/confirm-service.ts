@@ -1,16 +1,19 @@
-import { Injectable } from '@angular/core';
-import { filter, Observable, of } from 'rxjs';
+import { inject, Injectable } from '@angular/core';
+import { filter, Observable } from 'rxjs';
+import { ConfirmDialogOptions } from './message-dialog-model';
+import { MessageDialogService } from './message-dialog-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConfirmService {
-  // ?? Temporary native alert
-  public open(message: string): Observable<boolean> {
-    return of(confirm(message));
+  private readonly dialogs = inject(MessageDialogService);
+
+  public open(message: string, options: ConfirmDialogOptions = {}): Observable<boolean> {
+    return this.dialogs.open({ message, mode: 'confirm', options });
   }
 
-  public ifConfirmed(message: string): Observable<boolean> {
-    return this.open(message).pipe(filter((confirmed) => confirmed));
+  public ifConfirmed(message: string, options: ConfirmDialogOptions = {}): Observable<boolean> {
+    return this.open(message, options).pipe(filter((confirmed) => confirmed));
   }
 }

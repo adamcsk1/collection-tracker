@@ -744,14 +744,16 @@ export class NewItemDialog {
                       providerReference.identityId,
                       ownerShareCode,
                       undefined,
-                      providerReference.externalIds
+                      providerReference.externalIds,
+                      { suppressErrorAlert: true }
                     )
                   : this.api.collectionItemExists(
                       providerReference.identitySource,
                       providerReference.identityId,
                       ownerShareCode,
                       listType,
-                      providerReference.externalIds
+                      providerReference.externalIds,
+                      { suppressErrorAlert: true }
                     );
               return exists$.pipe(catchError(() => of({ exists: false })));
             })
@@ -789,9 +791,14 @@ export class NewItemDialog {
             return timer(150).pipe(
               switchMap(() =>
                 this.api
-                  .collectionItemExists('openlibrary', isbn, targetOwnerShareCode || undefined, listType, [
-                    { source: 'isbn', id: isbn },
-                  ])
+                  .collectionItemExists(
+                    'openlibrary',
+                    isbn,
+                    targetOwnerShareCode || undefined,
+                    listType,
+                    [{ source: 'isbn', id: isbn }],
+                    { suppressErrorAlert: true }
+                  )
                   .pipe(catchError(() => of({ exists: false })))
               )
             );
@@ -802,9 +809,14 @@ export class NewItemDialog {
             return timer(150).pipe(
               switchMap(() =>
                 this.api
-                  .collectionItemExists('musicbrainz', mbid, targetOwnerShareCode || undefined, listType, [
-                    { source: 'musicbrainz', id: mbid },
-                  ])
+                  .collectionItemExists(
+                    'musicbrainz',
+                    mbid,
+                    targetOwnerShareCode || undefined,
+                    listType,
+                    [{ source: 'musicbrainz', id: mbid }],
+                    { suppressErrorAlert: true }
+                  )
                   .pipe(catchError(() => of({ exists: false })))
               )
             );
@@ -814,9 +826,14 @@ export class NewItemDialog {
           return timer(150).pipe(
             switchMap(() =>
               this.api
-                .collectionItemExists('omdb', imdbId, targetOwnerShareCode || undefined, listType, [
-                  { source: 'imdb', id: imdbId },
-                ])
+                .collectionItemExists(
+                  'omdb',
+                  imdbId,
+                  targetOwnerShareCode || undefined,
+                  listType,
+                  [{ source: 'imdb', id: imdbId }],
+                  { suppressErrorAlert: true }
+                )
                 .pipe(catchError(() => of({ exists: false })))
             )
           );

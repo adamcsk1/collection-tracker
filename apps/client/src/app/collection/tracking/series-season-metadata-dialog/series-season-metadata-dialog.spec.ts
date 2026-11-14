@@ -23,7 +23,7 @@ describe('SeriesSeasonMetadataDialog', () => {
     refreshTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
     deleteTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
   };
-  let portal: { closeTop: ReturnType<typeof vi.fn> };
+  let portal: { close: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
 
@@ -35,7 +35,7 @@ describe('SeriesSeasonMetadataDialog', () => {
       ),
       deleteTrackingSeasonsByExternalId: vi.fn(() => of({ seasons: [], item: { hash: 'metadata-deleted-hash' } })),
     };
-    portal = { closeTop: vi.fn() };
+    portal = { close: vi.fn() };
     confirm = { open: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
@@ -222,7 +222,7 @@ describe('SeriesSeasonMetadataDialog', () => {
     });
     expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 2, titles: ['Pilot'] }], undefined);
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataSaved');
-    expect(portal.closeTop).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(fixture.nativeElement);
   });
 
   it('saves shared owner metadata using owner share code', async () => {
@@ -253,7 +253,7 @@ describe('SeriesSeasonMetadataDialog', () => {
   it('calls the default portal close when closed', () => {
     component['onClose']();
 
-    expect(portal.closeTop).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(fixture.nativeElement);
   });
 
   it('reads and writes episode titles', () => {
@@ -271,7 +271,7 @@ describe('SeriesSeasonMetadataDialog', () => {
     component['onClose']();
 
     expect(customClosed).toHaveBeenCalled();
-    expect(portal.closeTop).not.toHaveBeenCalled();
+    expect(portal.close).not.toHaveBeenCalled();
   });
 
   it('refreshes series metadata after confirmation', async () => {
@@ -280,6 +280,11 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRefreshSeriesMetadata']();
 
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.RefreshSeriesMetadata', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.SeriesMetadata',
+      actionLabel: 'RefreshSeriesMetadata',
+    });
     expect(api.refreshTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', undefined);
     expect(component['seasons']()).toEqual([{ season: 1, episodes: 3 }]);
     expect(component['getEpisodeTitle'](0, 0)).toBe('Pilot');
@@ -309,6 +314,11 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRemoveSeriesMetadata']();
 
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.RemoveSeriesMetadata', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.SeriesMetadata',
+      actionLabel: 'RemoveSeriesMetadata',
+    });
     expect(api.deleteTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', undefined);
     expect(component['formModel']().seasons).toEqual([]);
     expect(saved).toHaveBeenCalledWith([], { hash: 'metadata-deleted-hash' });

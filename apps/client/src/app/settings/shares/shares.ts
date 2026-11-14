@@ -102,14 +102,22 @@ export class SettingsShares implements OnInit {
 
   protected onRemoveShare(sharedWithUserShareCode: string): void {
     this.confirm
-      .ifConfirmed(this.translations.confirmRemoveShare())
+      .ifConfirmed(this.translations.confirmRemoveShare(), {
+        destructive: true,
+        confirmationText: sharedWithUserShareCode,
+        actionLabel: this.translations.removeShare(),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.sharesService.removeShare(sharedWithUserShareCode));
   }
 
   protected onRevokeIncomingShare(ownerUserShareCode: string): void {
     this.confirm
-      .ifConfirmed(this.translations.confirmRevokeShare())
+      .ifConfirmed(this.translations.confirmRevokeShare(), {
+        destructive: true,
+        confirmationText: ownerUserShareCode,
+        actionLabel: this.translations.revokeShare(),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.sharesService.revokeIncomingShare(ownerUserShareCode));
   }

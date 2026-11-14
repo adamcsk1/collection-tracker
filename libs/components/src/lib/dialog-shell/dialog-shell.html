@@ -13,10 +13,12 @@
     #dialogRoot
     class="dialog-frame"
     data-test-id="dialog-frame"
-    role="dialog"
+    [attr.role]="dialogRole()"
+    [class.compact]="compact()"
     aria-modal="true"
     tabindex="-1"
     [attr.aria-labelledby]="ariaLabelledBy() || null"
+    [attr.aria-describedby]="ariaDescribedBy() || null"
     animate.enter="animation-slide-in-bottom"
     animate.leave="animation-slide-out-bottom"
     [style.--dialog-drag-offset]="dragOffsetCss()"

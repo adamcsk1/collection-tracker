@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { createExportImportPage } from '../page-objects/export-import.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test } from '../support/test';
 
 let exportImportPage: ReturnType<typeof createExportImportPage>;
@@ -90,10 +91,8 @@ test.describe('Export/Import — tag management export and import', () => {
     await getLocalTagManagementResponsePromise;
 
     const importTagManagementResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/users/me/tags');
-    page.on('dialog', async (dialog) => {
-      await dialog.dismiss();
-    });
     await exportImportPage.getTagManagementImportFileInput().setInputFiles(exportPath);
+    await createMessageDialog(page).cancel();
     await importTagManagementResponsePromise;
 
     const tagManagementResponse = await api.request('GET', '/api/v1/users/me/tags');
@@ -182,10 +181,8 @@ test.describe('Export/Import — collection data export', () => {
     await api.request('POST', '/api/v1/users/me/tags', []);
     const importCollectionDataResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/users/me/imports');
 
-    page.on('dialog', async (dialog) => {
-      await dialog.accept();
-    });
     await exportImportPage.getCollectionDataImportFileInput().setInputFiles(exportPath);
+    await createMessageDialog(page).confirm('Collection data');
     expect((await importCollectionDataResponsePromise).status()).toBe(200);
 
     const libraryResponse = await api.request('GET', '/api/v1/collection-items?limit=100&listType=library');
@@ -242,10 +239,8 @@ test.describe('Export/Import — collection data export', () => {
     libraryItemsBeforeImport = libraryBeforeImportBody.data;
     const importCollectionDataResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/users/me/imports');
 
-    page.on('dialog', async (dialog) => {
-      await dialog.accept();
-    });
     await exportImportPage.getCollectionDataImportFileInput().setInputFiles(exportPath);
+    await createMessageDialog(page).confirm('Collection data');
     expect((await importCollectionDataResponsePromise).status()).toBe(400);
 
     await expect(exportImportPage.getToastMessage()).toContainText([

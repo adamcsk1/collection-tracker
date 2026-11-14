@@ -4,15 +4,17 @@ import { buildBooksItem } from '../fixtures/openlibrary';
 import { buildOmdbItem, buildOmdbSearchResult } from '../fixtures/omdb';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createCommonPage } from '../page-objects/common.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test, type ApiClient } from '../support/test';
 import { fillAutocomplete } from '../support/input-util';
 
 let collectionPage: ReturnType<typeof createCollectionPage>;
 let commonPage: ReturnType<typeof createCommonPage>;
+let messageDialog: ReturnType<typeof createMessageDialog>;
 test.beforeEach(({ page }) => {
   collectionPage = createCollectionPage(page);
   commonPage = createCommonPage(page);
-  page.on('dialog', (dialog) => dialog.accept());
+  messageDialog = createMessageDialog(page);
 });
 
 const seedItems = async (api: ApiClient, items: ReturnType<typeof buildCollectionItem>[]) => {
@@ -338,6 +340,7 @@ test.describe('Collection — delete an element', () => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
     await collectionPage.getItemDialogDeleteButton().click();
+    await messageDialog.confirm('Movie To Delete');
     await expect(collectionPage.getEmptyState()).toBeVisible();
   });
 });
@@ -683,6 +686,7 @@ test.describe('Collection — favorites', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogMarkFavoriteButton().click();
+    await messageDialog.confirm();
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.expectItemDialogActionsVisible();
     await expect(collectionPage.getItemDialogRemoveFavoriteButton()).toBeVisible();
@@ -919,6 +923,7 @@ test.describe('Collection — tracking movies', () => {
       (response) => response.request().method() === 'DELETE' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogDeleteButton().click();
+    await messageDialog.confirm('Delete Tracker Movie');
     expect((await responsePromise).status()).toBe(204);
     await expect(collectionPage.getEmptyState()).toBeVisible();
   });
@@ -1035,6 +1040,7 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await messageDialog.confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getItemDialogProgressChip()).toContainText('55 / 200');
     await collectionPage.closeActiveDialogByOverlay();
@@ -1060,6 +1066,7 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await messageDialog.confirm();
     const response = await responsePromise;
     expect(response.status()).toBe(200);
     const body = await response.json();
@@ -1092,6 +1099,7 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await messageDialog.confirm();
     const response = await responsePromise;
     expect(response.status()).toBe(200);
     const body = await response.json();
@@ -1145,6 +1153,7 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await messageDialog.confirm();
     const response = await responsePromise;
     expect(response.status()).toBe(200);
     const body = await response.json();

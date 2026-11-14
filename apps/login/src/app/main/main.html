@@ -1,7 +1,13 @@
 @defer (on idle) {
   <libc-poster-background />
 }
-<div class="card content" role="main" [attr.aria-label]="translations.title()">
+<div
+  class="card content"
+  role="main"
+  data-test-id="login-main"
+  data-dialog-background
+  [attr.aria-label]="translations.title()"
+>
   <div class="header">
     <img [src]="'icons/' + themeLogo()" [alt]="translations.title()" />
     <div>
@@ -13,3 +19,4 @@
 
 <libc-toast />
 <libc-blocker-loading />
+<ng-container #portalHost />

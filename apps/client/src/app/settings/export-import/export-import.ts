@@ -156,7 +156,10 @@ export class ExportImport {
     }
 
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.ImportTagManagementConflicts'))
+      .open(this.ngxSignalTranslate.translate('Confirm.ImportTagManagementConflicts'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('TagManagement'),
+      })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((overwriteConflicts) => syncImport(overwriteConflicts))
@@ -174,7 +177,10 @@ export class ExportImport {
     }
 
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.ImportCollectionData'))
+      .open(this.ngxSignalTranslate.translate('Confirm.ImportCollectionData'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.CollectionData'),
+      })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((confirmed) => {

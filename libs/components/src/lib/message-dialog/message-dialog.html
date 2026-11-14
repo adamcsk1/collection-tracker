@@ -1,0 +1,45 @@
+<libc-dialog-shell
+  data-test-id="message-dialog"
+  [compact]="true"
+  [closeWithPortal]="false"
+  [ariaLabelledBy]="titleId"
+  [ariaDescribedBy]="messageId"
+  [dialogRole]="request().mode === 'info' ? 'dialog' : 'alertdialog'"
+  (closed)="finish(false)"
+>
+  <h2 dialog-shell-top-content class="dialog-title" [id]="titleId" data-test-id="message-dialog-title">
+    <i class="material-icons" aria-hidden="true">{{
+      destructive() ? 'warning' : request().mode === 'info' ? 'info' : 'help_outline'
+    }}</i>
+    {{ translations.title() }}
+  </h2>
+  <div dialog-shell-content>
+    <p class="message" [id]="messageId" data-test-id="message-dialog-message">{{ request().message }}</p>
+    @if (destructive()) {
+      <libc-input
+        data-test-id="message-dialog-input"
+        [formField]="confirmationForm"
+        [label]="translations.typeToConfirm()"
+        [mandatory]="true"
+        autocomplete="off"
+      />
+    }
+  </div>
+  <ng-container dialog-shell-bottom-content>
+    @if (request().mode === 'confirm') {
+      <button type="button" class="button" data-test-id="message-dialog-cancel" (click)="finish(false)">
+        {{ translations.cancel() }}
+      </button>
+    }
+    <button
+      type="button"
+      class="button"
+      [class.button-danger]="destructive()"
+      data-test-id="message-dialog-confirm"
+      [disabled]="!canConfirm()"
+      (click)="finish(true)"
+    >
+      {{ translations.action() }}
+    </button>
+  </ng-container>
+</libc-dialog-shell>

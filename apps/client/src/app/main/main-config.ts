@@ -21,9 +21,12 @@ import { provideStore } from 'ngx-simple-signal-store';
 import { refreshTokenInterceptor } from '@services/api/refresh-token-interceptor';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { routes } from './main-routes';
+import { MessageDialog } from '@components/message-dialog/message-dialog';
+import { MESSAGE_DIALOG_COMPONENT } from '@services/message-dialog-const';
 
 export const mainConfig: ApplicationConfig = {
   providers: [
+    { provide: MESSAGE_DIALOG_COMPONENT, useValue: MessageDialog },
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(routes, withHashLocation()),

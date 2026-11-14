@@ -152,6 +152,7 @@ export const createCollectionPage = (page: Page) => {
     },
     getAiSearchTextarea: () => page.getByTestId('ai-search-textarea').locator('textarea'),
     getAiSearchSendButton: () => page.getByTestId('ai-search-send'),
+    getAiSearchInfoButton: () => page.getByTestId('ai-search-info'),
 
     // New item dialog
     openNewItemDialog: async () => {

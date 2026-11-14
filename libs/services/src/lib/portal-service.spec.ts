@@ -69,6 +69,31 @@ describe('PortalService', () => {
     hostElement.remove();
   });
 
+  it.each(['closeTop', 'closeAll'] as const)('removes background inert before restoring focus through %s', (close) => {
+    const background = document.createElement('main');
+    background.setAttribute('data-dialog-background', '');
+    const trigger = document.createElement('button');
+    background.append(trigger);
+    document.body.append(background, hostElement);
+    trigger.focus();
+    const focus = vi.spyOn(trigger, 'focus');
+    try {
+      service.open(DummyComponent);
+
+      expect(background.hasAttribute('inert')).toBe(true);
+      focus.mockImplementation(() => {
+        expect(background.hasAttribute('inert')).toBe(false);
+      });
+      service[close]();
+
+      expect(background.hasAttribute('inert')).toBe(false);
+      expect(focus).toHaveBeenCalledOnce();
+    } finally {
+      background.remove();
+      hostElement.remove();
+    }
+  });
+
   it.each(['closeTop', 'closeAll'] as const)('uses a fallback for a removed trigger on %s', (close) => {
     const trigger = document.createElement('button');
     const fallback = document.createElement('button');
@@ -285,4 +310,76 @@ describe('PortalService', () => {
     expect(clearSpy).toHaveBeenCalled();
     expect(service.componentRef()).toBeNull();
   });
+
+  it('ignores a close request for an unknown host', () => {
+    service.close(document.createElement('div'));
+    service.open(DummyComponent);
+
+    service.close(document.createElement('div'));
+
+    expect(destroy).not.toHaveBeenCalled();
+    expect(clearSpy).not.toHaveBeenCalled();
+    expect(service.componentRef()).toBe(componentRef);
+  });
+
+  it('closes the top portal when passed one of its descendant elements', () => {
+    const shell = document.createElement('div');
+    hostElement.append(shell);
+    service.open(DummyComponent);
+
+    service.close(shell);
+
+    expect(destroy).toHaveBeenCalledOnce();
+    expect(clearSpy).toHaveBeenCalledOnce();
+    expect(service.componentRef()).toBeNull();
+  });
+
+  it.each([false, true])(
+    'preserves the newer portal and transfers the lower focus chain with removed trigger: %s',
+    (removeTrigger) => {
+      const trigger = document.createElement('button');
+      const fallback = document.createElement('button');
+      const parentTrigger = document.createElement('button');
+      hostElement.append(parentTrigger);
+      const childHost = document.createElement('div');
+      const childButton = document.createElement('button');
+      childHost.append(childButton);
+      const childDestroy = vi.fn(() => childHost.remove());
+      const childRef = {
+        destroy: childDestroy,
+        location: { nativeElement: childHost },
+        setInput,
+      } as unknown as ComponentRef<unknown>;
+      destroy.mockImplementation(() => hostElement.remove());
+      createComponent.mockReturnValueOnce(componentRef).mockReturnValueOnce(childRef);
+      document.body.append(trigger, fallback, hostElement, childHost);
+      try {
+        trigger.focus();
+        service.open(DummyComponent, {}, () => fallback);
+        parentTrigger.focus();
+        service.openStacked(DummyComponent);
+        childButton.focus();
+
+        service.close(parentTrigger);
+
+        expect(destroy).toHaveBeenCalledOnce();
+        expect(childDestroy).not.toHaveBeenCalled();
+        expect(clearSpy).not.toHaveBeenCalled();
+        expect(service.componentRef()).toBe(childRef);
+        expect(childHost.hasAttribute('inert')).toBe(false);
+        expect(document.activeElement).toBe(childButton);
+        if (removeTrigger) trigger.remove();
+        service.close(childButton);
+
+        expect(childDestroy).toHaveBeenCalledOnce();
+        expect(service.componentRef()).toBeNull();
+        expect(document.activeElement).toBe(removeTrigger ? fallback : trigger);
+      } finally {
+        trigger.remove();
+        fallback.remove();
+        hostElement.remove();
+        childHost.remove();
+      }
+    }
+  );
 });

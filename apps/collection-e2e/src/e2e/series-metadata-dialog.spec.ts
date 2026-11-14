@@ -1,6 +1,7 @@
 import type { Page, Response } from '@playwright/test';
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { createCollectionPage } from '../page-objects/collection.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test } from '../support/test';
 
 let collectionPage: ReturnType<typeof createCollectionPage>;
@@ -39,8 +40,6 @@ test.describe('Series metadata dialog', () => {
   });
 
   test('saves manual season metadata', async ({ page }) => {
-    page.on('dialog', (dialog) => dialog.accept());
-
     await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
     await collectionPage.expectItemDialogActionsVisible();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
@@ -77,7 +76,6 @@ test.describe('Series metadata dialog', () => {
         { season: 2, episodes: 2 },
       ],
     });
-    page.on('dialog', (dialog) => dialog.accept());
 
     await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
     await collectionPage.expectItemDialogActionsVisible();
@@ -96,6 +94,7 @@ test.describe('Series metadata dialog', () => {
       (response) => response.request().method() === 'DELETE' && response.url().includes('/tracking/seasons')
     );
     await collectionPage.getSeriesMetadataRemoveAllButton().click();
+    await createMessageDialog(page).confirm('Series metadata');
 
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.closeDialogByOverlay();

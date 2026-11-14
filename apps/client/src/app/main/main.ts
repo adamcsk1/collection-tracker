@@ -27,7 +27,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { AndroidBackHandlerService } from './android-back-handler-service';
+import { AndroidBackHandlerService } from '@services/android-back-handler-service';
 
 @Component({
   selector: 'ct-root',

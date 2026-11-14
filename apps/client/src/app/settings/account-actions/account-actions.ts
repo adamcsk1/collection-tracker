@@ -35,7 +35,11 @@ export class AccountActions {
   };
   protected onCreateNewUserToken(): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.CreateNewUserToken'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.CreateNewUserToken'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Account'),
+        actionLabel: this.translations.createNewUserToken(),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.api
@@ -54,7 +58,11 @@ export class AccountActions {
 
   protected onDeleteUser(): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.DeleteUser'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.DeleteUser'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Account'),
+        actionLabel: this.translations.deleteUser(),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.api

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, OnInit, signal } from '@angular/core';
 import { applyEach, form, FormField, max, min, validate } from '@angular/forms/signals';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
@@ -28,6 +28,7 @@ import { firstValueFrom } from 'rxjs';
 export class SeriesSeasonMetadataDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly portal = inject(PortalService);
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly toastState = inject(toastStateToken);
   private readonly confirm = inject(ConfirmService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
@@ -41,7 +42,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   public readonly saved = input<(seasons: TrackingSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(
     () => undefined
   );
-  public readonly closed = input<() => void>(() => this.portal.closeTop());
+  public readonly closed = input<() => void>(() => this.portal.close(this.element.nativeElement));
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('Title.SeriesMetadata')),
     message: computed(() => this.ngxSignalTranslate.translate('Message.SeriesMetadata')),
@@ -182,7 +183,11 @@ export class SeriesSeasonMetadataDialog implements OnInit {
 
   protected async onRefreshSeriesMetadata(): Promise<void> {
     const confirmed = await firstValueFrom(
-      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.RefreshSeriesMetadata'))
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.RefreshSeriesMetadata'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.SeriesMetadata'),
+        actionLabel: this.translations.refreshSeriesMetadata(),
+      })
     );
     if (!confirmed) return;
 
@@ -205,7 +210,11 @@ export class SeriesSeasonMetadataDialog implements OnInit {
 
   protected async onRemoveSeriesMetadata(): Promise<void> {
     const confirmed = await firstValueFrom(
-      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.RemoveSeriesMetadata'))
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.RemoveSeriesMetadata'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.SeriesMetadata'),
+        actionLabel: this.translations.removeSeriesMetadata(),
+      })
     );
     if (!confirmed) return;
 

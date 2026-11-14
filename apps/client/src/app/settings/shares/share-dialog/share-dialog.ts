@@ -276,7 +276,10 @@ export class ShareDialog implements OnInit {
     const mode = this.readMode(listType, contentType);
     if (mode === 'selected' && enabled) {
       this.confirm
-        .open(this.translations.confirmSelectedToAll())
+        .open(this.translations.confirmSelectedToAll(), {
+          destructive: true,
+          confirmationText: `${this.listTypeLabel(listType)} / ${this.contentTypeLabel(contentType)}`,
+        })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((confirmed) => {
           if (confirmed) this.setReadMode(listType, contentType, 'all');
@@ -290,7 +293,10 @@ export class ShareDialog implements OnInit {
   protected onClearSelected(listType: CollectionListTypeModel, contentType: CollectionItemContentTypeModel): void {
     if (this.readMode(listType, contentType) !== 'selected') return;
     this.confirm
-      .open(this.translations.confirmSelectedToNone())
+      .open(this.translations.confirmSelectedToNone(), {
+        destructive: true,
+        confirmationText: `${this.listTypeLabel(listType)} / ${this.contentTypeLabel(contentType)}`,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) this.setReadMode(listType, contentType, 'none');

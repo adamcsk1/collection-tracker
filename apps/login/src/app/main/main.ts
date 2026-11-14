@@ -7,6 +7,8 @@ import {
   ElementRef,
   inject,
   signal,
+  viewChild,
+  ViewContainerRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -19,6 +21,8 @@ import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { isTransientHttpError } from '@services/api/http-error-util';
 import { ThemeService } from '@services/theme/theme-service';
+import { PortalService } from '@services/portal-service';
+import { AndroidBackHandlerService } from '@services/android-back-handler-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
@@ -35,6 +39,7 @@ import { catchError, EMPTY, filter } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Main implements AfterViewInit {
+  private readonly androidBackHandler = inject(AndroidBackHandlerService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly webstorage = inject(WebstorageService);
   private readonly api = inject(PublicApiService);
@@ -45,6 +50,8 @@ export class Main implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly documentTitle = inject(Title);
+  private readonly portal = inject(PortalService);
+  private readonly portalHost = viewChild('portalHost', { read: ViewContainerRef });
   private readonly path = signal(this.router.navigated ? this.getPath(this.router.url) : '');
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
@@ -54,6 +61,7 @@ export class Main implements AfterViewInit {
   protected readonly themeLogo = this.theme.themeLogo;
 
   constructor() {
+    this.androidBackHandler.listen();
     this.ngxSignalTranslate.setLanguage('en');
     effect(() => {
       const page = this.path() === 'sign-up' ? this.translations.signUp() : this.translations.signIn();
@@ -96,6 +104,7 @@ export class Main implements AfterViewInit {
   }
 
   public ngAfterViewInit(): void {
+    this.portal.setViewContainerRef(this.portalHost()!);
     if (this.webstorage.getItem(STORAGE_LOGGED_IN) !== 'true') {
       this.blockerLoadingState.setState('show', false);
       return;

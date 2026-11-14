@@ -4,6 +4,7 @@ import { createCollectionPage } from '../page-objects/collection.po';
 import { createCommonPage } from '../page-objects/common.po';
 import { createMusicPage } from '../page-objects/music.po';
 import { createSettingsPage } from '../page-objects/settings.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test } from '../support/test';
 
 let collectionPage: ReturnType<typeof createCollectionPage>;
@@ -95,11 +96,9 @@ test.describe('Music', () => {
     await expect(musicPage.getItemDialog()).toContainText('Artist One, Artist Two');
     await expect(musicPage.getItemDialogMbid()).toContainText(mbid);
 
-    page.on('dialog', async (dialog) => {
-      await dialog.accept();
-    });
     const deleteAlbumResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
     await musicPage.getItemDialogDeleteButton().click();
+    await createMessageDialog(page).confirm(title);
     expect((await deleteAlbumResponsePromise).status()).toBe(204);
     await expect(musicPage.getEmptyState()).toBeVisible();
   });
@@ -169,13 +168,11 @@ test.describe('Music', () => {
   test('clears all music list data from manage tracker data settings', async ({ api, page }) => {
     const createAlbumResponse = await api.request('POST', '/api/v1/collection-items', buildMusicItem('Album To Clear'));
     expect(createAlbumResponse.status()).toBe(200);
-    page.on('dialog', async (dialog) => {
-      await dialog.accept();
-    });
 
     await settingsPage.visitManageTrackerData();
     const clearMusicResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/music');
     await settingsPage.getRemoveAllTrackedMusicDataButton().click();
+    await createMessageDialog(page).confirm('Music');
     expect((await clearMusicResponsePromise).status()).toBe(200);
 
     await musicPage.visit();

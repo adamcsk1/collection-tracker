@@ -1,6 +1,7 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { buildBooksItem } from '../fixtures/openlibrary';
 import { createCollectionPage } from '../page-objects/collection.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test } from '../support/test';
 import { fillAutocomplete } from '../support/input-util';
 
@@ -10,10 +11,9 @@ test.beforeEach(({ page }) => {
 });
 
 test.describe('Item dialog — edit flow', () => {
-  test.beforeEach(async ({ autoLogin, api, page }) => {
+  test.beforeEach(async ({ autoLogin, api }) => {
     await autoLogin();
     await api.request('POST', '/api/v1/collection-items', buildCollectionItem('Edit Test Movie', 'movie', 'tt7000001'));
-    page.on('dialog', (dialog) => dialog.accept());
     await collectionPage.visit();
   });
 
@@ -80,6 +80,7 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(page.getByTestId('item-dialog-title')).toHaveCount(0);
     await expect(collectionPage.getItemDialogHost()).toContainText('Updated Title');
@@ -100,6 +101,7 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     for (const text of [
       '2025',
@@ -129,6 +131,7 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getItemDialogUserRateChip()).toContainText('9.4');
     await collectionPage.closeActiveDialogByOverlay();
@@ -146,6 +149,7 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     await firstResponsePromise;
     await collectionPage.expectItemDialogActionsVisible();
     await collectionPage.getItemDialogEditButton().click();
@@ -154,6 +158,7 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getItemDialogUserRateChip()).toHaveCount(0);
     await collectionPage.closeActiveDialogByOverlay();
@@ -231,14 +236,13 @@ test.describe('Item dialog — external links', () => {
 });
 
 test.describe('Item dialog — mark watched / unwatched', () => {
-  test.beforeEach(async ({ autoLogin, api, page }) => {
+  test.beforeEach(async ({ autoLogin, api }) => {
     await autoLogin();
     await api.request(
       'POST',
       '/api/v1/collection-items',
       buildCollectionItem('Watch Test Movie', 'movie', 'tt7000002')
     );
-    page.on('dialog', (dialog) => dialog.accept());
     await collectionPage.visit();
   });
   test('marks an unwatched item as watched', async ({ page }) => {

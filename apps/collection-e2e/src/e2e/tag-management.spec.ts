@@ -1,6 +1,7 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createTagManagementPage } from '../page-objects/tag-management.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import type { ApiEnvelope, TestUser } from '../support/share-helper-model';
 import { createShareHelpers, libraryMovieSeriesGrants } from '../support/share-helpers';
 import { expect, test, type ApiClient } from '../support/test';
@@ -174,8 +175,8 @@ test.describe('Tag Management — reset', () => {
     const resetResponsePromise = page.waitForResponse(
       (response) => response.url().includes('/api/v1/users/me/tags') && response.request().method() === 'POST'
     );
-    page.on('dialog', (dialog) => dialog.accept());
     await tagManagementPage.getResetButton().click();
+    await createMessageDialog(page).confirm('Tag management');
     await resetResponsePromise;
 
     await expect(tagManagementPage.getImageBorderCheckbox(customTag)).not.toBeChecked();
@@ -206,9 +207,9 @@ test.describe('Tag Management — rename', () => {
     await tagManagementPage.visit();
     await statisticsResponsePromise;
 
-    page.on('dialog', (dialog) => dialog.accept());
     await tagManagementPage.getRenameInput(oldTag).fill(newTag);
     await tagManagementPage.getRenameButton(oldTag).click();
+    await createMessageDialog(page).confirm();
     await renameResponsePromise;
 
     await expect(tagManagementPage.getRenameInput(newTag)).toHaveValue(newTag);
@@ -239,9 +240,9 @@ test.describe('Tag Management — rename', () => {
     await tagManagementPage.visit();
     await statisticsResponsePromise;
 
-    page.on('dialog', (dialog) => dialog.accept());
     await tagManagementPage.getRenameInput(oldTag).fill(newTag);
     await tagManagementPage.getRenameButton(oldTag).click();
+    await createMessageDialog(page).confirm();
     await renameResponsePromise;
 
     await expect(tagManagementPage.getRenameInput(newTag)).toHaveValue(newTag);
@@ -281,9 +282,9 @@ test.describe('Tag Management — rename', () => {
     await tagManagementPage.visit();
     await statisticsResponsePromise;
 
-    page.on('dialog', (dialog) => dialog.accept());
     await tagManagementPage.getRenameInput(oldTag).fill(newTag);
     await tagManagementPage.getRenameButton(oldTag).click();
+    await createMessageDialog(page).confirm();
     await renameResponsePromise;
 
     await expect(tagManagementPage.getRenameInput(oldTag)).toHaveValue(oldTag);
@@ -322,9 +323,9 @@ test.describe('Tag Management — rename', () => {
     await tagManagementPage.visit();
     await statisticsResponsePromise;
 
-    page.on('dialog', (dialog) => dialog.accept());
     await tagManagementPage.getRenameInput(oldTag).fill(newTag);
     await tagManagementPage.getRenameButton(oldTag).click();
+    await createMessageDialog(page).confirm();
     const renameResponse = await renameResponsePromise;
     const renameBody = (await renameResponse.json()) as ApiEnvelope<{ renamedItemCount: number }>;
     expect(renameBody.data.renamedItemCount).toBe(0);
@@ -362,9 +363,9 @@ test.describe('Tag Management — rename', () => {
     await tagManagementPage.visit();
     await statisticsResponsePromise;
 
-    page.on('dialog', (dialog) => dialog.accept());
     await tagManagementPage.getRenameInput(oldTag).fill(newTag);
     await tagManagementPage.getRenameButton(oldTag).click();
+    await createMessageDialog(page).confirm();
     await renameResponsePromise;
 
     const tagsResponse = await api.request('GET', '/api/v1/users/me/tags');

@@ -27,6 +27,32 @@ export class PortalService {
     this.createComponent(component, inputs, this.currentFocus());
   }
 
+  public close(hostElement: HTMLElement): void {
+    const componentRefs = this.componentRefs();
+    const index = componentRefs.findIndex((componentRef) => componentRef.location.nativeElement.contains(hostElement));
+    if (index < 0) return;
+    if (index === componentRefs.length - 1) {
+      this.closeTop();
+      return;
+    }
+
+    const [origin] = this.focusOrigins.splice(index, 1);
+    const [fallback] = this.focusFallbacks.splice(index, 1);
+    const nextOrigin = this.focusOrigins[index];
+    if (
+      !nextOrigin ||
+      nextOrigin === this.document.body ||
+      componentRefs[index].location.nativeElement.contains(nextOrigin)
+    ) {
+      this.focusOrigins[index] = origin;
+      this.focusFallbacks[index] = fallback;
+    }
+    const remaining = componentRefs.filter((componentRef) => componentRef !== componentRefs[index]);
+    this.componentRefs.set(remaining);
+    this.applyStackState();
+    componentRefs[index].destroy();
+  }
+
   public closeTop(): void {
     const componentRefs = this.componentRefs();
     const componentRef = componentRefs.at(-1);
@@ -66,6 +92,7 @@ export class PortalService {
     }
     this.portalViewContainerRef()?.clear();
     this.componentRefs.set([]);
+    this.applyStackState();
     this.focusOrigins.length = 0;
     this.focusFallbacks.length = 0;
     if (origin?.isConnected && !origin.closest('[inert]')) {
@@ -100,6 +127,9 @@ export class PortalService {
   }
 
   private applyStackState(componentRefs = this.componentRefs()): void {
+    for (const background of this.document.querySelectorAll<HTMLElement>('[data-dialog-background]')) {
+      background.toggleAttribute('inert', componentRefs.length > 0);
+    }
     componentRefs.forEach((componentRef, index) => {
       const hostElement = componentRef.location.nativeElement as HTMLElement;
       const isTopDialog = index === componentRefs.length - 1;

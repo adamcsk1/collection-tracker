@@ -40,6 +40,23 @@
   touch-action: manipulation;
   translate: -50% 0;
 
+  &.compact {
+    top: 50%;
+    translate: -50% -50%;
+    height: auto;
+    max-height: 90dvh;
+    width: min(480px, calc(100vw - 2 * var(--size-md)));
+    border-radius: var(--border-radius);
+
+    @media (width <= 650px) {
+      top: auto;
+      bottom: 0;
+      translate: -50% 0;
+      width: 100vw;
+      border-radius: var(--mobile-top-border-radius) var(--mobile-top-border-radius) 0 0;
+    }
+  }
+
   .dialog-top-bar {
     position: relative;
     min-height: calc(2 * var(--size-md));

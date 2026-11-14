@@ -59,6 +59,11 @@ describe('AccountActions component', () => {
   it('creates a new user token and opens the token dialog when confirmed', () => {
     component['onCreateNewUserToken']();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.CreateNewUserToken', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Account',
+      actionLabel: 'CreateNewUserToken',
+    });
     expect(api.createNewUserToken).toHaveBeenCalled();
     expect(portal.open).toHaveBeenCalled();
   });
@@ -84,6 +89,11 @@ describe('AccountActions component', () => {
 
     component['onDeleteUser']();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.DeleteUser', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Account',
+      actionLabel: 'DeleteUser',
+    });
     expect(api.deleteUser).toHaveBeenCalled();
     expect(webstorage.clear).toHaveBeenCalled();
 

@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { buildOmdbItem, buildOmdbSearchResult } from '../fixtures/omdb';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createSettingsPage } from '../page-objects/settings.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import type { CollectionPageEnvelope, ShareGrant, TestUser } from '../support/share-helper-model';
 import {
   createShareHelpers,
@@ -135,9 +136,9 @@ test.describe('Collection sharing - settings management', () => {
     await expect(settingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-update')).not.toBeChecked();
     await page.locator('body').press('Escape');
 
-    page.on('dialog', (dialog) => dialog.accept());
     const removeShareResponse = waitForResponse('DELETE', '/api/v1/users/me/shares/');
     await settingsPage.getRemoveShareButton(sharedUser.shareCode).click();
+    await createMessageDialog(page).confirm(sharedUser.shareCode);
     expect((await removeShareResponse).status()).toBe(204);
 
     // Re-share for revoke path with multi-scope grants.
@@ -165,6 +166,7 @@ test.describe('Collection sharing - settings management', () => {
 
     const revokeShareResponse = waitForResponse('DELETE', '/api/v1/users/me/shares/incoming/');
     await settingsPage.getRevokeIncomingShareButton(owner.shareCode).click();
+    await createMessageDialog(page).confirm(owner.shareCode);
     expect((await revokeShareResponse).status()).toBe(204);
   });
 });
@@ -341,8 +343,8 @@ test.describe('Collection sharing - library movie permissions', () => {
     await assertDialogPermissions({ update: true, delete: false });
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Updated Movie');
-    page.once('dialog', (dialog) => dialog.accept());
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     const response = await updateItemResponse;
     expect(response.status()).toBe(200);
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -357,10 +359,10 @@ test.describe('Collection sharing - library movie permissions', () => {
     await visitSharedList(sharedUser);
 
     const deleteItemResponse = waitForResponse('DELETE', '/api/v1/collection-items/');
-    page.on('dialog', (dialog) => dialog.accept());
     await collectionPage.getListItemImages().first().click();
     await assertDialogPermissions({ update: false, delete: true });
     await collectionPage.getItemDialogDeleteButton().click();
+    await createMessageDialog(page).confirm('Shared Delete Movie');
     const response = await deleteItemResponse;
     expect(response.status()).toBe(204);
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -439,8 +441,8 @@ test.describe('Collection sharing - non-library lists', () => {
     await assertDialogPermissions({ update: true, delete: true });
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Wishlist Updated');
-    page.once('dialog', (dialog) => dialog.accept());
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     const response = await updateWishlistItemResponse;
     expect(response.status()).toBe(200);
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -501,7 +503,6 @@ test.describe('Collection sharing - non-library lists', () => {
     await shareHelpers.signInThroughUi(sharedUser);
     await settingsPage.visitManageTrackerData();
     await settingsPage.getManageTrackerLibrarySelect().selectOption(owner.shareCode);
-    page.on('dialog', (dialog) => dialog.accept());
 
     const markSharedBooksCompletedResponse = waitForResponse(
       'POST',
@@ -509,6 +510,7 @@ test.describe('Collection sharing - non-library lists', () => {
     );
     await expect(settingsPage.getMarkAllBooksCompletedButton()).toBeEnabled();
     await settingsPage.getMarkAllBooksCompletedButton().click();
+    await createMessageDialog(page).confirm();
     const completedResponse = await markSharedBooksCompletedResponse;
     expect(completedResponse.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
     expect(completedResponse.status()).toBe(200);
@@ -519,6 +521,7 @@ test.describe('Collection sharing - non-library lists', () => {
     );
     await expect(settingsPage.getMarkAllBooksUncompletedButton()).toBeEnabled();
     await settingsPage.getMarkAllBooksUncompletedButton().click();
+    await createMessageDialog(page).confirm('Books');
     const uncompletedResponse = await markSharedBooksUncompletedResponse;
     expect(uncompletedResponse.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
     expect(uncompletedResponse.status()).toBe(200);
@@ -546,8 +549,8 @@ test.describe('Collection sharing - non-library lists', () => {
     await assertDialogPermissions({ update: true, delete: false });
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Tracking Renamed');
-    page.once('dialog', (dialog) => dialog.accept());
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     const response = await updateTrackingResponse;
     expect(response.status()).toBe(200);
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -643,8 +646,8 @@ test.describe('Collection sharing - image refresh', () => {
     await expect(settingsPage.getMediaRefreshLibrarySelect()).toBeVisible();
     await settingsPage.getMediaRefreshLibrarySelect().selectOption(owner.shareCode);
     const refreshImagesResponse = waitForResponse('POST', '/api/v1/collection-items/actions/refresh-images');
-    page.on('dialog', (dialog) => dialog.accept());
     await settingsPage.getImageRefreshStartButton().click();
+    await createMessageDialog(page).confirm();
 
     const response = await refreshImagesResponse;
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -674,7 +677,6 @@ test.describe('Collection sharing - tracking dual path', () => {
     await visitSharedList(sharedUser);
 
     const markWatchedResponse = waitForResponse('POST', '/tracking');
-    page.on('dialog', (dialog) => dialog.accept());
 
     await collectionPage.getListItemByTitle(title).click();
     await collectionPage.expectItemDialogActionsVisible();

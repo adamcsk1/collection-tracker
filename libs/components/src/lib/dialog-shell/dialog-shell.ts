@@ -41,6 +41,7 @@ export class DialogShell implements AfterViewInit {
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly dialogRoot = viewChild<ElementRef<HTMLDivElement>>('dialogRoot');
   private readonly menuContent = viewChild<ElementRef<HTMLDivElement>>('menuContent');
   private dragStartY: number | null = null;
@@ -51,6 +52,9 @@ export class DialogShell implements AfterViewInit {
   private edgeSwipeDirection: 1 | -1 | null = null;
   public readonly closeWithPortal = input(true);
   public readonly ariaLabelledBy = input('');
+  public readonly ariaDescribedBy = input('');
+  public readonly dialogRole = input<'dialog' | 'alertdialog'>('dialog');
+  public readonly compact = input(false);
   public readonly closed = output<void>();
   protected readonly hasMenuContent = signal(false);
   protected readonly closing = signal(false);
@@ -90,7 +94,7 @@ export class DialogShell implements AfterViewInit {
       .subscribe(() => {
         this.closed.emit();
         if (this.closeWithPortal()) {
-          this.portal.closeTop();
+          this.portal.close(this.element.nativeElement);
         }
       });
   }

@@ -39,6 +39,11 @@ describe('TokenItem component', () => {
 
     component['onRevokeAccessToken']('hash-1');
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RevokeAccessToken', {
+      destructive: true,
+      confirmationText: 'hash-1',
+      actionLabel: 'Revoke',
+    });
     expect(emitted).toEqual(['hash-1']);
   });
 

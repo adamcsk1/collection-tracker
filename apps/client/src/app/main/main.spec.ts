@@ -16,7 +16,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AndroidBackHandlerService } from './android-back-handler-service';
+import { AndroidBackHandlerService } from '@services/android-back-handler-service';
 import { Main } from './main';
 
 describe('Main component (client)', () => {

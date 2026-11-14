@@ -118,7 +118,7 @@ Issue description and why it matters. Suggested fix.
 - Only capability endpoints under `/api/v1/external-metadata/*`, `/api/v1/images/*`, and `/api/v1/ai/*` should normally have responses stubbed with `page.route`. Resource endpoints such as auth, collection items, settings, and tag management should hit the Docker test server unless an existing test pattern explicitly says otherwise. Observe real requests with `page.waitForResponse`, registered before the action.
 - Stubbed JSON success bodies must include the `{ data: ... }` envelope. Cursor-page stubs must also include `page`; binary image stubs are not enveloped.
 - Destructive account tests must use the `autoLoginWithNewUser` fixture, not the shared `autoLogin` user. Keep one worker until accounts and server state are isolated.
-- Tests involving `ConfirmService` actions must handle native dialogs with `page.on('dialog', ...)` before the action.
+- Tests involving `ConfirmService` or `AlertService` must explicitly act on the shared message-dialog page object after the trigger; never register background/native auto-accept handlers. Destructive confirmations must type the exact expected target through `.confirm(expectedTargetName)`. Preserve explicit accept/cancel ordering in multi-step flows and cover keyboard focus restoration for nested dialogs.
 - New pages should add `data-test-id` coverage, a page object, and relevant E2E coverage.
 
 ## Android

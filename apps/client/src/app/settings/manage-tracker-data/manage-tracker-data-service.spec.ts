@@ -79,6 +79,10 @@ describe('ManageTrackerDataService', () => {
 
     service.markAllMoviesAsUncompleted();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.MarkAllMoviesAsUncompleted', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Movies',
+    });
     expect(api.markAllMoviesAsUncompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
@@ -98,6 +102,10 @@ describe('ManageTrackerDataService', () => {
   it('marks all series as uncompleted and completes successfully', () => {
     service.markAllSeriesAsUncompleted();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.MarkAllSeriesAsUncompleted', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Series',
+    });
     expect(api.markAllSeriesAsUncompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
@@ -116,6 +124,10 @@ describe('ManageTrackerDataService', () => {
   it('marks all books as uncompleted and completes successfully', () => {
     service.markAllBooksAsUncompleted();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.MarkAllBooksAsUncompleted', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Books',
+    });
     expect(api.markAllBooksAsUncompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
@@ -134,6 +146,10 @@ describe('ManageTrackerDataService', () => {
   it('marks all music as uncompleted and completes successfully', () => {
     service.markAllMusicAsUncompleted();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.MarkAllMusicAsUncompleted', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Music',
+    });
     expect(api.markAllMusicAsUncompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
@@ -146,6 +162,21 @@ describe('ManageTrackerDataService', () => {
 
     expect(api.markAllMoviesAsCompleted).not.toHaveBeenCalled();
     expect(collectionService.triggerReload).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'markAllMoviesAsUncompleted',
+    'markAllSeriesAsUncompleted',
+    'markAllBooksAsUncompleted',
+    'markAllMusicAsUncompleted',
+  ] as const)('does not reset progress when %s is cancelled', (action) => {
+    confirm.ifConfirmed.mockReturnValue(EMPTY);
+
+    service[action]();
+
+    expect(api[action]).not.toHaveBeenCalled();
+    expect(collectionService.triggerReload).not.toHaveBeenCalled();
+    expect(TestBed.inject(blockerLoadingStateToken).state.show()).toBe(false);
   });
 
   it('does nothing when user declines marking all books as completed', () => {
@@ -263,7 +294,10 @@ describe('ManageTrackerDataService', () => {
   it('removes all tracked movie data and completes successfully', () => {
     service.removeAllTrackedMovieData();
 
-    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedMovieData');
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedMovieData', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Movies',
+    });
     expect(api.deleteAllCompletedMovies).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
@@ -273,7 +307,10 @@ describe('ManageTrackerDataService', () => {
   it('removes all tracked series data and completes successfully', () => {
     service.removeAllTrackedSeriesData();
 
-    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedSeriesData');
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedSeriesData', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Series',
+    });
     expect(api.deleteAllTrackingItems).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
@@ -283,7 +320,10 @@ describe('ManageTrackerDataService', () => {
   it('removes all tracked book data and completes successfully', () => {
     service.removeAllTrackedBookData();
 
-    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedBookData');
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedBookData', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Books',
+    });
     expect(api.deleteAllBooksItems).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
@@ -293,7 +333,10 @@ describe('ManageTrackerDataService', () => {
   it('removes all tracked music data and completes successfully', () => {
     service.removeAllTrackedMusicData();
 
-    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedMusicData');
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedMusicData', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Music',
+    });
     expect(api.deleteAllMusicItems).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;

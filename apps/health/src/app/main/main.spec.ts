@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { apiStateToken, initialApiState, type ApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
+import { PortalService } from '@services/portal-service';
+import { AndroidBackHandlerService } from '@services/android-back-handler-service';
 import { SharedApiService } from '@services/api/shared-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
@@ -30,12 +32,16 @@ describe('Main component', () => {
   let publicApiService: { getHealth: Mock };
   let webStorage: { getItem: Mock; setItem: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
+  let portal: { setViewContainerRef: Mock };
+  let androidBackHandler: { listen: Mock };
 
   beforeEach(() => {
     sharedApiService = { getHealthDiagnostics: vi.fn(() => of(healthData)) };
     publicApiService = { getHealth: vi.fn(() => of({ status: 'ok' })) };
     webStorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     ngxTranslate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
+    portal = { setViewContainerRef: vi.fn() };
+    androidBackHandler = { listen: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [Main],
@@ -44,6 +50,8 @@ describe('Main component', () => {
         { provide: PublicApiService, useValue: publicApiService },
         { provide: WebstorageService, useValue: webStorage },
         { provide: NgxSignalTranslateService, useValue: ngxTranslate },
+        { provide: PortalService, useValue: portal },
+        { provide: AndroidBackHandlerService, useValue: androidBackHandler },
         provideStore(initialApiState, apiStateToken),
       ],
     });
@@ -55,6 +63,7 @@ describe('Main component', () => {
     TestBed.createComponent(Main);
 
     expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('en');
+    expect(androidBackHandler.listen).toHaveBeenCalledOnce();
     expect(apiState.state.apiUrl()).toBe(`${window.location.origin}${getApiPrefix()}`);
   });
 
@@ -70,9 +79,13 @@ describe('Main component', () => {
     const fixture = TestBed.createComponent(Main);
     const component = fixture.componentInstance;
 
-    component.ngOnInit();
+    fixture.detectChanges();
 
     expect(sharedApiService.getHealthDiagnostics).toHaveBeenCalledTimes(1);
+    expect(portal.setViewContainerRef).toHaveBeenCalledWith(expect.anything());
+    expect(portal.setViewContainerRef.mock.invocationCallOrder[0]).toBeLessThan(
+      sharedApiService.getHealthDiagnostics.mock.invocationCallOrder[0]
+    );
     expect(publicApiService.getHealth).not.toHaveBeenCalled();
     expect(component['diagnostics']()).toEqual(healthData);
     expect(component['loading']()).toBe(false);
@@ -83,7 +96,7 @@ describe('Main component', () => {
     const fixture = TestBed.createComponent(Main);
     const component = fixture.componentInstance;
 
-    component.ngOnInit();
+    fixture.detectChanges();
 
     const loadedAt = component['loadedAt']();
     expect(loadedAt).toBeInstanceOf(Date);
@@ -98,7 +111,7 @@ describe('Main component', () => {
     const fixture = TestBed.createComponent(Main);
     const component = fixture.componentInstance;
 
-    component.ngOnInit();
+    fixture.detectChanges();
 
     expect(component['loading']()).toBe(false);
     expect(component['diagnostics']()).toBeNull();

@@ -107,7 +107,11 @@ export class TagManagement {
 
   protected onResetTagManagement(): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.ResetTagManagement'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.ResetTagManagement'), {
+        destructive: true,
+        confirmationText: this.translations.tagManagement(),
+        actionLabel: this.translations.resetToDefault(),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.storeTagManagement([]));
   }

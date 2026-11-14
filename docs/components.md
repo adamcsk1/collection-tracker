@@ -2,7 +2,7 @@
 
 Source: [`libs/components`](../libs/components)
 
-`libs/components` provides the shared standalone Angular UI components used by the client and login applications.
+`libs/components` provides the shared standalone Angular UI components used by the client, login, and health applications.
 
 ## Modules
 
@@ -13,6 +13,7 @@ Source: [`libs/components`](../libs/components)
 - `details`: wrapper around native expandable panels
 - `dialog-shell`: shared dialog layout for portal-driven overlays
 - `input`: reusable text and password input
+- `message-dialog`: compact alert, information, and typed destructive confirmation dialogs
 - `poster-background`: floating poster animation used by login and the client shell
 - `link-button`: router-aware link styled as a button
 - `reveal-label`: touch-hold behavior for icon buttons whose labels expand on fine pointers
@@ -36,6 +37,15 @@ Source: [`libs/components`](../libs/components)
   translated text, visibility, a stable ID, the desired horizontal anchor position, and trigger behavior.
 
 ### Dialog Actions
+
+`message-dialog` reuses the shell's compact layout, focus trap, close gestures, and portal stack. It exposes a labelled
+dialog (`alertdialog` for alerts and confirmations) with a described message. Destructive actions require an exact,
+case-sensitive target-name match in the shared input before the action becomes available. Enter cannot bypass the check.
+Long messages scroll within the dialog; actions remain outside the scrolling body.
+
+Client, login, and health bind `MESSAGE_DIALOG_COMPONENT` to `MessageDialog` in their application configuration and
+register a portal host. Mark background regions with `data-dialog-background`; the portal synchronously makes them inert
+while a dialog is open and restores interactivity before returning focus.
 
 Project actions through `dialog-shell-menu-content` or `dialog-shell-bottom-content`. Action buttons use
 `button-icon button-reveal-label`, apply `[libcRevealLabel]` with the translated label, include a translated `aria-label`

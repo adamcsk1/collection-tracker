@@ -1,4 +1,6 @@
+import { Component, viewChild, ViewContainerRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MessageDialog } from '@components/message-dialog/message-dialog';
 import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
@@ -6,8 +8,11 @@ import {
 import { initialToastState, toastStateToken, type ToastState } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
+import { MESSAGE_DIALOG_COMPONENT } from '@services/message-dialog-const';
+import { MessageDialogService } from '@services/message-dialog-service';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { TrackingCompletedEpisodesApiResponseModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, Subject } from 'rxjs';
@@ -25,7 +30,7 @@ describe('CompletedEpisodesDialog', () => {
     markAllTrackingCompletedByExternalId: ReturnType<typeof vi.fn>;
   };
   let portal: {
-    closeTop: ReturnType<typeof vi.fn>;
+    close: ReturnType<typeof vi.fn>;
     open: ReturnType<typeof vi.fn>;
     openStacked: ReturnType<typeof vi.fn>;
   };
@@ -53,7 +58,7 @@ describe('CompletedEpisodesDialog', () => {
         })
       ),
     };
-    portal = { closeTop: vi.fn(), open: vi.fn(), openStacked: vi.fn() };
+    portal = { close: vi.fn(), open: vi.fn(), openStacked: vi.fn() };
     confirm = { open: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
@@ -73,7 +78,6 @@ describe('CompletedEpisodesDialog', () => {
     toastState = TestBed.inject(toastStateToken);
     fixture.componentRef.setInput('imdbId', 'tt-series');
     fixture.componentRef.setInput('saved', vi.fn());
-    fixture.componentRef.setInput('closed', portal.closeTop);
     fixture.detectChanges();
   });
 
@@ -241,7 +245,7 @@ describe('CompletedEpisodesDialog', () => {
       undefined
     );
     expect(toastState.state.message()).toBe('Toast.CompletedEpisodesSaved');
-    expect(portal.closeTop).not.toHaveBeenCalled();
+    expect(portal.close).not.toHaveBeenCalled();
 
     api.updateTrackingCompletedEpisodesByExternalId.mockClear();
     api.updateTrackingCompletedEpisodesByExternalId.mockReturnValue(
@@ -326,7 +330,7 @@ describe('CompletedEpisodesDialog', () => {
       undefined
     );
     expect(toastState.state.message()).toBe('Toast.CompletedEpisodesSaved');
-    expect(portal.closeTop).not.toHaveBeenCalled();
+    expect(portal.close).not.toHaveBeenCalled();
   });
 
   it('does not apply stale auto-save responses over newer local edits', async () => {
@@ -367,10 +371,20 @@ describe('CompletedEpisodesDialog', () => {
     expect(component['completedEpisodes']()).toEqual([{ season: 1, episode: 1 }]);
   });
 
-  it('calls the closed callback when closed', async () => {
+  it('closes its own portal by default when closed', async () => {
     await component['onClose']();
 
-    expect(portal.closeTop).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(fixture.nativeElement);
+  });
+
+  it('uses a custom closed callback without closing the portal directly', async () => {
+    const closed = vi.fn();
+    fixture.componentRef.setInput('closed', closed);
+
+    await component['onClose']();
+
+    expect(closed).toHaveBeenCalledOnce();
+    expect(portal.close).not.toHaveBeenCalled();
   });
 
   it('waits for a pending auto-save before closing', async () => {
@@ -386,7 +400,7 @@ describe('CompletedEpisodesDialog', () => {
     const close = component['onClose']();
     await Promise.resolve();
 
-    expect(portal.closeTop).not.toHaveBeenCalled();
+    expect(portal.close).not.toHaveBeenCalled();
 
     pendingEpisodeSave.next({
       completedEpisodes: [
@@ -400,7 +414,7 @@ describe('CompletedEpisodesDialog', () => {
     await episodeSave;
     await close;
 
-    expect(portal.closeTop).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(fixture.nativeElement);
   });
 
   it('ignores a late initial completed episodes response after local edits', async () => {
@@ -416,7 +430,6 @@ describe('CompletedEpisodesDialog', () => {
     const lateLoadComponent = lateLoadFixture.componentInstance;
     lateLoadFixture.componentRef.setInput('imdbId', 'tt-series');
     lateLoadFixture.componentRef.setInput('saved', vi.fn());
-    lateLoadFixture.componentRef.setInput('closed', portal.closeTop);
     lateLoadFixture.detectChanges();
 
     await lateLoadComponent['onToggleEpisode'](1, 1);
@@ -605,6 +618,11 @@ describe('CompletedEpisodesDialog', () => {
 
     await component['onMarkAllEpisodesUncompleted']();
 
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.MarkAllEpisodesUncompleted', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.Series',
+      actionLabel: 'MarkAllEpisodesUncompleted',
+    });
     expect(api.updateTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       completedEpisodes: [],
     });
@@ -619,5 +637,83 @@ describe('CompletedEpisodesDialog', () => {
     await component['onMarkAllEpisodesUncompleted']();
 
     expect(api.updateTrackingCompletedEpisodesByExternalId).not.toHaveBeenCalled();
+  });
+});
+
+@Component({
+  selector: 'ct-test-completed-episodes-portal-host',
+  template:
+    '<main data-dialog-background><button data-test-id="trigger">Open</button></main><ng-container #portalHost />',
+})
+class CompletedEpisodesPortalHost {
+  public readonly portalHost = viewChild.required('portalHost', { read: ViewContainerRef });
+}
+
+describe('CompletedEpisodesDialog pending close', () => {
+  it('keeps a newer alert open when a rejected auto-save finishes the original close', async () => {
+    const pendingSave = new Subject<TrackingCompletedEpisodesApiResponseModel>();
+    const update = vi.fn(() => pendingSave.asObservable());
+    TestBed.configureTestingModule({
+      imports: [CompletedEpisodesPortalHost],
+      providers: [
+        { provide: MESSAGE_DIALOG_COMPONENT, useValue: MessageDialog },
+        {
+          provide: ApiService,
+          useValue: {
+            getTrackingSeasonsByExternalId: vi.fn(() => of({ seasons: [{ season: 1, episodes: 3 }] })),
+            getTrackingCompletedEpisodesByExternalId: vi.fn(() => of({ completedEpisodes: [] })),
+            updateTrackingCompletedEpisodesByExternalId: update,
+          },
+        },
+        { provide: ConfirmService, useValue: { open: vi.fn(() => of(true)) } },
+        { provide: WebstorageService, useValue: { getItem: vi.fn(() => null), setItem: vi.fn() } },
+        { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
+        provideStore(initialToastState, toastStateToken),
+        provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
+      ],
+    });
+    const fixture = TestBed.createComponent(CompletedEpisodesPortalHost);
+    fixture.detectChanges();
+    const portal = TestBed.inject(PortalService);
+    portal.setViewContainerRef(fixture.componentInstance.portalHost());
+    const trigger = fixture.nativeElement.querySelector('[data-test-id="trigger"]') as HTMLButtonElement;
+    trigger.focus();
+    const saved = vi.fn();
+    portal.open(CompletedEpisodesDialog, { imdbId: 'tt-series', saved });
+    fixture.detectChanges();
+    const original = portal.componentRef()!;
+    const originalHost = original.location.nativeElement as HTMLElement;
+    const component = original.instance as CompletedEpisodesDialog;
+    const episodeSave = component['onToggleEpisode'](1, 1);
+    const error = new Error('Auto-save failed');
+    const rejectedSave = expect(episodeSave).rejects.toBe(error);
+    await vi.waitFor(() => expect(update).toHaveBeenCalledOnce());
+    const close = component['onClose']();
+    const alertResult = vi.fn();
+    TestBed.inject(MessageDialogService)
+      .open({ message: 'Save failed', mode: 'alert', options: {} })
+      .subscribe(alertResult);
+    fixture.detectChanges();
+    const alert = portal.componentRef()!;
+    const alertHost = alert.location.nativeElement as HTMLElement;
+
+    expect(originalHost.isConnected).toBe(true);
+    pendingSave.error(error);
+    await rejectedSave;
+    await close;
+    fixture.detectChanges();
+
+    expect(originalHost.isConnected).toBe(false);
+    expect(saved).not.toHaveBeenCalled();
+    expect(portal.componentRef()).toBe(alert);
+    expect(alertHost.isConnected).toBe(true);
+    expect(alertResult).not.toHaveBeenCalled();
+    expect(alertHost.hasAttribute('inert')).toBe(false);
+    const confirm = alertHost.querySelector('[data-test-id="message-dialog-confirm"]') as HTMLButtonElement;
+    confirm.click();
+
+    expect(alertResult).toHaveBeenCalledExactlyOnceWith(true);
+    expect(portal.componentRef()).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 });

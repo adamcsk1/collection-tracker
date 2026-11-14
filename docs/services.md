@@ -2,7 +2,7 @@
 
 Source: [`libs/services`](../libs/services)
 
-`libs/services` contains the shared Angular service layer and signal stores used across the client and login applications.
+`libs/services` contains the shared Angular service layer and signal stores used across the client, login, and health applications.
 
 ## Modules
 
@@ -17,6 +17,21 @@ Source: [`libs/services`](../libs/services)
 - Import through the `@services/*` path alias.
 - `apiStateToken` and `themeStateToken` are the primary cross-application stores.
 - `PortalService` is the common primitive for dialog and dynamic component hosting.
+- `AndroidBackHandlerService` installs the WebView Back hook in client, login, and health so Back cancels the top dialog
+  before falling through to Android navigation.
+- `AlertService.show()` opens an alert, and `info()` opens an informational dialog. `ConfirmService.open()` emits one
+  boolean and completes; `ifConfirmed()` emits only affirmative results. These dialogs are asynchronous and do not block
+  JavaScript. They stack above an existing dialog without discarding its form state.
+- Destructive confirmations pass `{ destructive: true, confirmationText }`, with an optional translated `actionLabel`.
+  Use the target's actual name or identifier; bulk operations use the displayed scope. Account actions use the Account
+  scope because plaintext usernames are not retained by the application. Dismissal or destruction resolves as false.
+  Clearing all episode progress requires the Series scope; bulk uncompleted actions require Movies, Series, Books, or Music.
+- `MESSAGE_DIALOG_COMPONENT` keeps concrete UI imports out of the services library. Dialogs close before result handlers
+  run, so handlers may safely open a replacement dialog.
+- New-item duplicate checks are advisory and suppress global error dialogs. A selected-item share may allow creation
+  without permission to inspect other owner items. Lookup errors still propagate to the form's existing fallback; actual
+  saves retain error alerts and server-side uniqueness and authorization checks.
+  Closing a saved new-item dialog leaves any tracking-update failure alert open for acknowledgement.
 - `ApiService.getCollectionItemShares()` and `saveCollectionItemShares()` load and replace explicit recipients for one
   owned physical item.
 - The client uses the full library; the login app uses the API, theme, translation, and notification subset.

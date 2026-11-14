@@ -1006,7 +1006,9 @@ describe('NewItemDialog component', () => {
     component['searchForm'].targetOwnerShareCode().value.set('owner-code');
     await vi.advanceTimersByTimeAsync(150);
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code', undefined, undefined);
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code', undefined, undefined, {
+      suppressErrorAlert: true,
+    });
   });
 
   it('does not check duplicate IMDb IDs when the selected value has no provider item ID', async () => {
@@ -1016,16 +1018,26 @@ describe('NewItemDialog component', () => {
     expect(api.collectionItemExists).not.toHaveBeenCalled();
   });
 
-  it('checks search duplicates with internal list context and tolerates lookup errors', async () => {
-    api.collectionItemExists.mockReturnValue(throwError(() => new Error('offline')));
-    fixture.componentRef.setInput('upNext', true);
+  it.each([false, true])('tolerates forbidden search duplicate checks with upNext: %s', async (upNext) => {
+    api.collectionItemExists.mockReturnValue(throwError(() => ({ status: 403 })));
+    fixture.componentRef.setInput('upNext', upNext);
     service.matchedContent.set([{ text: 'IMDb id: tt123', value: matrixReference }]);
+    component['searchForm'].searchText().value.set('Matrix');
     component['searchForm'].selectedExternalReference().value.set(matrixReference);
 
     await vi.advanceTimersByTimeAsync(150);
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt123', undefined, 'up-next', undefined);
+    expect(api.collectionItemExists).toHaveBeenCalledWith(
+      'omdb',
+      'tt123',
+      undefined,
+      upNext ? 'up-next' : undefined,
+      undefined,
+      { suppressErrorAlert: true }
+    );
+    expect(component['searchIMDbIdLookupPending']()).toBe(false);
     expect(component['searchFormErrors'].selectedExternalReference.knownIMDbId()).toBe(false);
+    expect(component['searchForm']().valid()).toBe(true);
   });
 
   it('rechecks duplicate IMDb IDs when returning to search mode', async () => {
@@ -1240,9 +1252,14 @@ describe('NewItemDialog component', () => {
       component['manualForm'].IMDbId().value.set('tt1234567');
       await vi.advanceTimersByTimeAsync(150);
 
-      expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'library', [
-        { source: 'imdb', id: 'tt1234567' },
-      ]);
+      expect(api.collectionItemExists).toHaveBeenCalledWith(
+        'omdb',
+        'tt1234567',
+        undefined,
+        'library',
+        [{ source: 'imdb', id: 'tt1234567' }],
+        { suppressErrorAlert: true }
+      );
     });
 
     it('extracts IMDb id from URL for manual duplicate checks', async () => {
@@ -1250,9 +1267,14 @@ describe('NewItemDialog component', () => {
       component['manualForm'].IMDbId().value.set('https://www.imdb.com/title/tt0116213');
       await vi.advanceTimersByTimeAsync(150);
 
-      expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt0116213', undefined, 'library', [
-        { source: 'imdb', id: 'tt0116213' },
-      ]);
+      expect(api.collectionItemExists).toHaveBeenCalledWith(
+        'omdb',
+        'tt0116213',
+        undefined,
+        'library',
+        [{ source: 'imdb', id: 'tt0116213' }],
+        { suppressErrorAlert: true }
+      );
     });
 
     it('extracts ISBN from Open Library URL for manual book duplicate checks', async () => {
@@ -1263,9 +1285,14 @@ describe('NewItemDialog component', () => {
       component['manualForm'].IMDbId().value.set('https://openlibrary.org/isbn/9780306406157');
       await vi.advanceTimersByTimeAsync(150);
 
-      expect(api.collectionItemExists).toHaveBeenCalledWith('openlibrary', '9780306406157', undefined, 'books', [
-        { source: 'isbn', id: '9780306406157' },
-      ]);
+      expect(api.collectionItemExists).toHaveBeenCalledWith(
+        'openlibrary',
+        '9780306406157',
+        undefined,
+        'books',
+        [{ source: 'isbn', id: '9780306406157' }],
+        { suppressErrorAlert: true }
+      );
     });
 
     it('extracts MBID from MusicBrainz URL for tracking album duplicate checks', async () => {
@@ -1286,7 +1313,8 @@ describe('NewItemDialog component', () => {
         'f509c5ff-ad54-4dde-b61e-24f750965835',
         undefined,
         'tracking',
-        [{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }]
+        [{ source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' }],
+        { suppressErrorAlert: true }
       );
     });
 
@@ -1301,15 +1329,41 @@ describe('NewItemDialog component', () => {
       expect(component['manualFormErrors'].IMDbId.isbn()).toBe(true);
     });
 
-    it('tolerates manual duplicate lookup errors', async () => {
-      api.collectionItemExists.mockReturnValue(throwError(() => new Error('offline')));
-      component['manualForm'].IMDbId().value.set('tt1234567');
+    it.each([
+      ['movie', 'tt1234567', 'omdb', 'library', 'imdb'],
+      ['book', '9780306406157', 'openlibrary', 'books', 'isbn'],
+      ['album', 'f509c5ff-ad54-4dde-b61e-24f750965835', 'musicbrainz', 'music', 'musicbrainz'],
+    ] as const)(
+      'allows manual %s creation after a forbidden duplicate lookup',
+      async (contentType, identity, provider, listType, identitySource) => {
+        api.collectionItemExists.mockReturnValue(throwError(() => ({ status: 403 })));
+        fixture.componentRef.setInput('allowedContentTypes', [contentType]);
+        fixture.detectChanges();
+        component['manualForm'].contentType().value.set(contentType);
+        component['manualForm'].title().value.set('Manual Item');
+        component['manualForm'].IMDbId().value.set(identity);
 
-      await vi.advanceTimersByTimeAsync(150);
+        await vi.advanceTimersByTimeAsync(150);
 
-      expect(component['manualIMDbIdLookupPending']()).toBe(false);
-      expect(component['manualFormErrors'].IMDbId.knownIMDbId()).toBe(false);
-    });
+        expect(api.collectionItemExists).toHaveBeenCalledWith(
+          provider,
+          identity,
+          undefined,
+          listType,
+          [{ source: identitySource, id: identity }],
+          { suppressErrorAlert: true }
+        );
+        expect(component['manualIMDbIdLookupPending']()).toBe(false);
+        expect(component['manualFormErrors'].IMDbId.knownIMDbId()).toBe(false);
+        expect(component['manualForm']().valid()).toBe(true);
+        await component['onSave']('close');
+        expect(service.saveManual).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Manual Item', contentType }),
+          'close',
+          expect.any(Object)
+        );
+      }
+    );
 
     it('saves manual tracking book progress', async () => {
       fixture.componentRef.setInput('tracking', true);

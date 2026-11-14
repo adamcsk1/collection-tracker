@@ -186,7 +186,7 @@ describe('DialogShell component', () => {
     TestBed.configureTestingModule({
       imports: [HostComponent],
       providers: [
-        { provide: PortalService, useValue: { closeTop: closeSpy } },
+        { provide: PortalService, useValue: { close: closeSpy } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });
@@ -263,7 +263,7 @@ describe('DialogShell component', () => {
     expect(document.activeElement).toBe(fixture.nativeElement.querySelector('.dialog-frame'));
   });
 
-  it('calls portal.closeTop when the drag handle is pulled down', () => {
+  it('closes its owning portal when the drag handle is pulled down', () => {
     const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLElement;
 
     dispatchPointerEvent(dragHandle, 'pointerdown', 100);
@@ -299,7 +299,28 @@ describe('DialogShell component', () => {
     expect(dialogRoot.getAttribute('aria-labelledby')).toBe('test-dialog-title');
   });
 
-  it('calls portal.closeTop when the drag handle is activated by keyboard', () => {
+  it('defaults to a non-compact dialog without a description', () => {
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    expect(dialogRoot.getAttribute('role')).toBe('dialog');
+    expect(dialogRoot.getAttribute('aria-describedby')).toBeNull();
+    expect(dialogRoot.classList.contains('compact')).toBe(false);
+  });
+
+  it('supports compact alert dialogs with an accessible description', () => {
+    const shellFixture = TestBed.createComponent(DialogShell);
+    shellFixture.componentRef.setInput('compact', true);
+    shellFixture.componentRef.setInput('dialogRole', 'alertdialog');
+    shellFixture.componentRef.setInput('ariaDescribedBy', 'message-description');
+    shellFixture.detectChanges();
+    const dialogRoot = shellFixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    expect(dialogRoot.getAttribute('role')).toBe('alertdialog');
+    expect(dialogRoot.getAttribute('aria-describedby')).toBe('message-description');
+    expect(dialogRoot.classList.contains('compact')).toBe(true);
+  });
+
+  it('closes its owning portal when the drag handle is activated by keyboard', () => {
     const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLButtonElement;
 
     dragHandle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
@@ -352,7 +373,7 @@ describe('DialogShell component', () => {
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
-  it('calls portal.closeTop when swiping in from the mobile left edge', () => {
+  it('closes its owning portal when swiping in from the mobile left edge', () => {
     setViewport(390, true);
     const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
 
@@ -363,7 +384,7 @@ describe('DialogShell component', () => {
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('calls portal.closeTop when swiping in from the mobile right edge', () => {
+  it('closes its owning portal when swiping in from the mobile right edge', () => {
     setViewport(390, true);
     const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
 
@@ -477,15 +498,15 @@ describe('DialogShell component', () => {
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
-  it('calls portal.closeTop when Escape key is pressed', () => {
+  it('closes its owning portal when Escape key is pressed', () => {
     const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
     dialogRoot?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     finishCloseAnimation();
 
-    expect(closeSpy).toHaveBeenCalledTimes(1);
+    expect(closeSpy).toHaveBeenCalledExactlyOnceWith(fixture.nativeElement.querySelector('libc-dialog-shell'));
   });
 
-  it('calls portal.closeTop when backdrop is clicked', () => {
+  it('closes its owning portal when backdrop is clicked', () => {
     const overlay = fixture.nativeElement.querySelector('.dialog-overlay') as HTMLButtonElement;
     overlay?.click();
     finishCloseAnimation();

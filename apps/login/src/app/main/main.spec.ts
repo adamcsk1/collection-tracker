@@ -10,6 +10,8 @@ import {
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken, initialApiState, type ApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
+import { PortalService } from '@services/portal-service';
+import { AndroidBackHandlerService } from '@services/android-back-handler-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, themeStateToken, type ThemeState } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -33,6 +35,8 @@ describe('Main component', () => {
   let webStorage: { getItem: Mock; setItem: Mock; removeItem: Mock };
   let themeService: { listen: Mock; themeLogo: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
+  let portal: { setViewContainerRef: Mock };
+  let androidBackHandler: { listen: Mock };
   const initializeFixture = (): void => {
     fixture = TestBed.createComponent(Main);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
@@ -49,6 +53,8 @@ describe('Main component', () => {
     };
     themeService = { listen: vi.fn(), themeLogo: vi.fn(() => 'logo.png') };
     ngxTranslate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
+    portal = { setViewContainerRef: vi.fn() };
+    androidBackHandler = { listen: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [Main],
@@ -57,6 +63,8 @@ describe('Main component', () => {
         { provide: WebstorageService, useValue: webStorage },
         { provide: ThemeService, useValue: themeService },
         { provide: NgxSignalTranslateService, useValue: ngxTranslate },
+        { provide: PortalService, useValue: portal },
+        { provide: AndroidBackHandlerService, useValue: androidBackHandler },
         provideStore(initialApiState, apiStateToken),
         provideStore(initialThemeState, themeStateToken),
         provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
@@ -79,6 +87,7 @@ describe('Main component', () => {
     expect(blockerState.state.withoutDelay()).toBe(true);
     expect(themeState.state.theme()).toBe('light');
     expect(themeService.listen).toHaveBeenCalled();
+    expect(androidBackHandler.listen).toHaveBeenCalledOnce();
     expect(apiState.state.apiUrl()).toBe(expectedApiUrl);
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, expectedApiUrl);
     expect(webStorage.getItem).toHaveBeenCalledWith(STORAGE_API_URL);
@@ -123,15 +132,20 @@ describe('Main component', () => {
 
   it('calls validateSession on after view init when logged in flag is set', () => {
     webStorage.getItem.mockReturnValue('true');
-    fixture.componentInstance.ngAfterViewInit();
+    fixture.detectChanges();
 
     expect(apiService.validateSession).toHaveBeenCalled();
+    expect(portal.setViewContainerRef).toHaveBeenCalledWith(expect.anything());
+    expect(portal.setViewContainerRef.mock.invocationCallOrder[0]).toBeLessThan(
+      apiService.validateSession.mock.invocationCallOrder[0]
+    );
   });
 
   it('skips validateSession and hides blocker when logged in flag is not set', () => {
-    fixture.componentInstance.ngAfterViewInit();
+    fixture.detectChanges();
 
     expect(apiService.validateSession).not.toHaveBeenCalled();
+    expect(portal.setViewContainerRef).toHaveBeenCalledWith(expect.anything());
     expect(blockerState.state.show()).toBe(false);
   });
 
@@ -139,7 +153,7 @@ describe('Main component', () => {
     webStorage.getItem.mockReturnValue('true');
     apiService.validateSession.mockReturnValue(throwError(() => ({ status })));
 
-    fixture.componentInstance.ngAfterViewInit();
+    fixture.detectChanges();
 
     expect(blockerState.state.show()).toBe(false);
     expect(webStorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
@@ -149,7 +163,7 @@ describe('Main component', () => {
     webStorage.getItem.mockReturnValue('true');
     apiService.validateSession.mockReturnValue(throwError(() => ({ status })));
 
-    fixture.componentInstance.ngAfterViewInit();
+    fixture.detectChanges();
 
     expect(blockerState.state.show()).toBe(false);
     expect(webStorage.removeItem).not.toHaveBeenCalled();
@@ -164,7 +178,7 @@ describe('Main component', () => {
       value: { ...originalLocation, href: '' },
     });
 
-    fixture.componentInstance.ngAfterViewInit();
+    fixture.detectChanges();
 
     expect(window.location.href).toContain('/client/');
 

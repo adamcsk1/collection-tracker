@@ -4,6 +4,7 @@ import { createBooksPage } from '../page-objects/books.po';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createCommonPage } from '../page-objects/common.po';
 import { createSettingsPage } from '../page-objects/settings.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test } from '../support/test';
 
 let booksPage: ReturnType<typeof createBooksPage>;
@@ -95,11 +96,9 @@ test.describe('Books', () => {
     await expect(booksPage.getItemDialog()).toContainText('Author One, Author Two');
     await expect(booksPage.getItemDialogIsbn()).toContainText(isbn);
 
-    page.on('dialog', async (dialog) => {
-      await dialog.accept();
-    });
     const deleteBookResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
     await booksPage.getItemDialogDeleteButton().click();
+    await createMessageDialog(page).confirm(title);
     expect((await deleteBookResponsePromise).status()).toBe(204);
     await expect(booksPage.getEmptyState()).toBeVisible();
   });
@@ -167,13 +166,11 @@ test.describe('Books', () => {
   test('clears all books list data from manage tracker data settings', async ({ api, page }) => {
     const createBookResponse = await api.request('POST', '/api/v1/collection-items', buildBooksItem('Book To Clear'));
     expect(createBookResponse.status()).toBe(200);
-    page.on('dialog', async (dialog) => {
-      await dialog.accept();
-    });
 
     await settingsPage.visitManageTrackerData();
     const clearBooksResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/books');
     await settingsPage.getRemoveAllTrackedBookDataButton().click();
+    await createMessageDialog(page).confirm('Books');
     expect((await clearBooksResponsePromise).status()).toBe(200);
 
     await booksPage.visit();

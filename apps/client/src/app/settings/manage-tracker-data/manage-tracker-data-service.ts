@@ -56,7 +56,10 @@ export class ManageTrackerDataService {
 
   public markAllMoviesAsUncompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMoviesAsUncompleted'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMoviesAsUncompleted'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Movies'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
@@ -127,7 +130,10 @@ export class ManageTrackerDataService {
 
   public markAllSeriesAsUncompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllSeriesAsUncompleted'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllSeriesAsUncompleted'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Series'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
@@ -195,7 +201,10 @@ export class ManageTrackerDataService {
 
   public markAllBooksAsUncompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllBooksAsUncompleted'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllBooksAsUncompleted'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Books'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
@@ -230,7 +239,10 @@ export class ManageTrackerDataService {
 
   public removeAllTrackedMovieData(): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedMovieData'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedMovieData'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Movies'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
@@ -262,7 +274,10 @@ export class ManageTrackerDataService {
 
   public removeAllTrackedSeriesData(): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedSeriesData'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedSeriesData'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Series'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
@@ -327,7 +342,10 @@ export class ManageTrackerDataService {
 
   public markAllMusicAsUncompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMusicAsUncompleted'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMusicAsUncompleted'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Music'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
@@ -362,7 +380,10 @@ export class ManageTrackerDataService {
 
   public removeAllTrackedBookData(): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedBookData'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedBookData'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Books'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
@@ -394,7 +415,10 @@ export class ManageTrackerDataService {
 
   public removeAllTrackedMusicData(): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedMusicData'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedMusicData'), {
+        destructive: true,
+        confirmationText: this.ngxSignalTranslate.translate('Dialog.Scope.Music'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);

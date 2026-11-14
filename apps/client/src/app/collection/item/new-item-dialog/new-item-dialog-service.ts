@@ -1,4 +1,4 @@
-import { DestroyRef, effect, inject, Injectable } from '@angular/core';
+import { DestroyRef, effect, ElementRef, inject, Injectable } from '@angular/core';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -32,6 +32,7 @@ export class NewItemDialogService {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   public readonly matchedContent = this.externalMetadata.matchedContent;
   public readonly completedSearchText = this.externalMetadata.completedSearchText;
 
@@ -304,7 +305,7 @@ export class NewItemDialogService {
             'message',
             this.ngxSignalTranslate.translate(trackerUpdateFailed ? 'Toast.NewItemTrackerUpdateError' : 'Toast.NewItem')
           );
-          if (mode === 'close') this.portal.closeAll();
+          if (mode === 'close') this.portal.close(this.element.nativeElement);
         }),
         map(({ collectionItem }) => collectionItem)
       );

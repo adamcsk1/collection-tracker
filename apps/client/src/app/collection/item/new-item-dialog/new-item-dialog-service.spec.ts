@@ -1,4 +1,4 @@
-import { ApplicationRef, signal } from '@angular/core';
+import { ApplicationRef, Component, ElementRef, inject, signal, viewChild, ViewContainerRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { CollectionService } from '../../collection-service';
 import { NewItemDialogService } from './new-item-dialog-service';
@@ -13,9 +13,12 @@ import { ExternalMetadataService } from '@services/external-metadata/external-me
 import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';
 import { SelectInputModel } from '@shared/models/select-model';
 import { PortalService } from '@services/portal-service';
+import { MessageDialog } from '@components/message-dialog/message-dialog';
+import { MESSAGE_DIALOG_COMPONENT } from '@services/message-dialog-const';
+import { AlertService } from '@services/alert-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { firstValueFrom, of, throwError } from 'rxjs';
+import { defer, firstValueFrom, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const buildSelectedContent = (overrides: Partial<ExternalMetadataItemModel> = {}): ExternalMetadataItemModel => ({
@@ -76,7 +79,8 @@ describe('NewItemDialogService', () => {
   let collection: { addCollectionItem: ReturnType<typeof vi.fn>; triggerReload: ReturnType<typeof vi.fn> };
   let spinnerStore: NgxSimpleSignalStoreService<SpinnerLoadingState>;
   let toastStore: NgxSimpleSignalStoreService<ToastState>;
-  let portal: { closeAll: ReturnType<typeof vi.fn> };
+  let portal: { close: ReturnType<typeof vi.fn> };
+  let hostElement: HTMLElement;
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -126,12 +130,14 @@ describe('NewItemDialogService', () => {
       getProviderReference: vi.fn(),
     };
     collection = { addCollectionItem: vi.fn(), triggerReload: vi.fn() };
-    portal = { closeAll: vi.fn() };
+    portal = { close: vi.fn() };
+    hostElement = document.createElement('div');
     translate = { translate: vi.fn((key) => `t:${key}`) };
 
     TestBed.configureTestingModule({
       providers: [
         NewItemDialogService,
+        { provide: ElementRef, useValue: new ElementRef(hostElement) },
         { provide: ApiService, useValue: api },
         { provide: ExternalMetadataService, useValue: externalMetadata },
         { provide: CollectionService, useValue: collection },
@@ -289,7 +295,7 @@ describe('NewItemDialogService', () => {
     );
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
-    expect(portal.closeAll).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(hostElement);
     expect(spinnerStore.state.show()).toBe(false);
   });
 
@@ -332,7 +338,7 @@ describe('NewItemDialogService', () => {
     );
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
-    expect(portal.closeAll).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(hostElement);
     expect(spinnerStore.state.show()).toBe(false);
   });
 
@@ -414,7 +420,7 @@ describe('NewItemDialogService', () => {
     expect(collection.addCollectionItem).toHaveBeenCalledWith(createdItem, true);
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItemTrackerUpdateError');
-    expect(portal.closeAll).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(hostElement);
     expect(spinnerStore.state.show()).toBe(false);
   });
 
@@ -460,7 +466,7 @@ describe('NewItemDialogService', () => {
     expect(collection.addCollectionItem).toHaveBeenCalledWith(createdItem, true);
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItemTrackerUpdateError');
-    expect(portal.closeAll).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(hostElement);
     expect(spinnerStore.state.show()).toBe(false);
   });
 
@@ -540,7 +546,7 @@ describe('NewItemDialogService', () => {
       true
     );
     expect(collection.triggerReload).toHaveBeenCalled();
-    expect(portal.closeAll).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledExactlyOnceWith(hostElement);
   });
 
   it('saves wishlist items with the wishlist list type', async () => {
@@ -797,4 +803,90 @@ describe('NewItemDialogService', () => {
     expect(api.addTrackingItemByExternalId).not.toHaveBeenCalled();
     expect(api.markAllTrackingCompletedByExternalId).not.toHaveBeenCalled();
   });
+});
+
+@Component({
+  selector: 'ct-test-new-item-save-dialog',
+  template: '',
+  providers: [NewItemDialogService],
+})
+class NewItemSaveDialog {
+  public readonly service = inject(NewItemDialogService);
+}
+
+@Component({
+  selector: 'ct-test-new-item-save-host',
+  template:
+    '<main data-dialog-background><button data-test-id="trigger">Open</button></main><ng-container #portalHost />',
+})
+class NewItemSaveHost {
+  public readonly portalHost = viewChild.required('portalHost', { read: ViewContainerRef });
+}
+
+describe('NewItemDialogService partial-save alerts', () => {
+  it.each(['manual', 'metadata'] as const)(
+    'preserves the tracking error alert after a %s save closes',
+    async (source) => {
+      const createdItem = { title: 'Created movie', externalProvider: 'omdb', externalItemId: 'tt123' };
+      const addCollectionItem = vi.fn();
+      TestBed.configureTestingModule({
+        imports: [NewItemSaveHost],
+        providers: [
+          { provide: MESSAGE_DIALOG_COMPONENT, useValue: MessageDialog },
+          {
+            provide: ApiService,
+            useValue: {
+              create: vi.fn(() => createResponse(createdItem)),
+              addCompletedItemByExternalId: vi.fn(() =>
+                defer(() => {
+                  TestBed.inject(AlertService).show('Tracking update failed');
+                  return throwError(() => new Error('Tracking update failed'));
+                })
+              ),
+            },
+          },
+          {
+            provide: ExternalMetadataService,
+            useValue: {
+              matchedContent: signal([]),
+              completedSearchText: signal(''),
+              searchPending: signal(false),
+              getSelectedContent: vi.fn(() => of(null, buildSelectedContent())),
+            },
+          },
+          { provide: CollectionService, useValue: { addCollectionItem, triggerReload: vi.fn() } },
+          { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
+          provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
+          provideStore(initialToastState, toastStateToken),
+        ],
+      });
+      const fixture = TestBed.createComponent(NewItemSaveHost);
+      await fixture.whenStable();
+      const portal = TestBed.inject(PortalService);
+      portal.setViewContainerRef(fixture.componentInstance.portalHost());
+      const trigger = fixture.nativeElement.querySelector('[data-test-id="trigger"]') as HTMLButtonElement;
+      trigger.focus();
+      portal.open(NewItemSaveDialog);
+      await fixture.whenStable();
+      const original = portal.componentRef()!;
+      const service = (original.instance as NewItemSaveDialog).service;
+
+      const save =
+        source === 'manual'
+          ? service.saveManual(buildManualItem(), 'close', { finished: true })
+          : service.save('tt123', null, '', 'close', { finished: true });
+      await expect(firstValueFrom(save)).resolves.toEqual(createdItem);
+      await fixture.whenStable();
+
+      expect((original.location.nativeElement as HTMLElement).isConnected).toBe(false);
+      expect(addCollectionItem).toHaveBeenCalledExactlyOnceWith(createdItem, true);
+      const alertHost = portal.componentRef()!.location.nativeElement as HTMLElement;
+      expect(alertHost.isConnected).toBe(true);
+      expect(alertHost.hasAttribute('inert')).toBe(false);
+      expect(alertHost.textContent).toContain('Tracking update failed');
+      (alertHost.querySelector('[data-test-id="message-dialog-confirm"]') as HTMLButtonElement).click();
+      expect(portal.componentRef()).toBeNull();
+      expect(document.activeElement).toBe(trigger);
+    }
+  );
 });

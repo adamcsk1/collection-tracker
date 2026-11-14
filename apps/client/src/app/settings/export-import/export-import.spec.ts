@@ -218,7 +218,10 @@ describe('ExportImport component', () => {
 
     component['importCollectionData'](source);
 
-    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportCollectionData');
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportCollectionData', {
+      destructive: true,
+      confirmationText: 'Dialog.Scope.CollectionData',
+    });
     expect(api.importUserExport).toHaveBeenCalledWith(mockExportResponse);
     expect(settingsService.preloadUserSettings).toHaveBeenCalled();
     expect(tagManagementService.preloadUserTagManagement).toHaveBeenCalled();
@@ -330,7 +333,10 @@ describe('ExportImport component', () => {
       })
     );
 
-    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportTagManagementConflicts');
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportTagManagementConflicts', {
+      destructive: true,
+      confirmationText: 'TagManagement',
+    });
     expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([importedExistingConfig, newConfig]);
     expect(toastState.state.message()).toBe('Toast.TagManagementImported');
   });
@@ -352,7 +358,10 @@ describe('ExportImport component', () => {
       })
     );
 
-    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportTagManagementConflicts');
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportTagManagementConflicts', {
+      destructive: true,
+      confirmationText: 'TagManagement',
+    });
     expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([existingConfig, newConfig]);
     expect(toastState.state.message()).toBe('Toast.TagManagementImported');
   });

@@ -300,6 +300,11 @@ describe('TagManagement component', () => {
 
     component['onResetTagManagement']();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.ResetTagManagement', {
+      destructive: true,
+      confirmationText: 'TagManagement',
+      actionLabel: 'ResetToDefault',
+    });
     expect(tagManagementState.state.configs()).toEqual([]);
     expect(tagManagementService.syncUserTagManagement).toHaveBeenLastCalledWith([]);
   });

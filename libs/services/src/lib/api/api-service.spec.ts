@@ -194,6 +194,34 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ exists: false });
   });
 
+  it('alerts and propagates forbidden item existence checks by default', async () => {
+    const promise = lastValueFrom(service.collectionItemExists('omdb', 'tt1'));
+    const error = { detail: 'Read access denied' };
+
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/exists?externalIdentitySource=omdb&externalIdentityId=tt1'
+    );
+    request.flush(error, { status: 403, statusText: 'Forbidden' });
+
+    await expect(promise).rejects.toMatchObject({ status: 403, error });
+    expect(alertSpy).toHaveBeenCalledExactlyOnceWith('Read access denied');
+  });
+
+  it.each([403, 500])('propagates optional item existence errors without an alert for status %s', async (status) => {
+    const promise = lastValueFrom(
+      service.collectionItemExists('omdb', 'tt1', undefined, undefined, undefined, { suppressErrorAlert: true })
+    );
+    const error = { detail: 'Existence check unavailable' };
+
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/exists?externalIdentitySource=omdb&externalIdentityId=tt1'
+    );
+    request.flush(error, { status, statusText: status === 403 ? 'Forbidden' : 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status, error });
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
   it('updates an item by external identity', async () => {
     const item = {
       image: '',

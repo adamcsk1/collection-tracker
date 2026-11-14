@@ -1,13 +1,13 @@
 import type { Page, Response } from '@playwright/test';
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { createCollectionPage } from '../page-objects/collection.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test } from '../support/test';
 
 let collectionPage: ReturnType<typeof createCollectionPage>;
 
 test.beforeEach(({ page }) => {
   collectionPage = createCollectionPage(page);
-  page.on('dialog', (dialog) => dialog.accept());
 });
 
 const getTrackingItemsResponse = (page: Page) =>
@@ -216,6 +216,7 @@ test.describe('Completed episodes dialog', () => {
     await collectionPage.expectItemDialogActionsVisible();
     const markCompletedResponsePromise = getCompletedEpisodesResponse(page);
     await collectionPage.getCompletedEpisodesMarkAllCompletedButton().click();
+    await createMessageDialog(page).confirm();
     expect((await markCompletedResponsePromise).status()).toBe(200);
     await collectionPage.closeDialogByOverlay();
     await expect(collectionPage.getCompletedEpisodesDialogHost()).toHaveCount(0);
@@ -242,6 +243,7 @@ test.describe('Completed episodes dialog', () => {
     await expect(collectionPage.getCompletedEpisodesMarkAllCompletedButton()).toHaveCount(0);
     const markUncompletedResponsePromise = getCompletedEpisodesResponse(page);
     await collectionPage.getCompletedEpisodesMarkAllUncompletedButton().click();
+    await createMessageDialog(page).confirm('Series');
     const markUncompletedResponse = await markUncompletedResponsePromise;
     expect(markUncompletedResponse.request().postDataJSON()).toEqual({ completedEpisodes: [] });
     expect(markUncompletedResponse.status()).toBe(200);

@@ -1,6 +1,17 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  ViewContainerRef,
+} from '@angular/core';
+import { PortalService } from '@services/portal-service';
+import { AndroidBackHandlerService } from '@services/android-back-handler-service';
 import { LinkButton } from '@components/link-button/link-button';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
@@ -19,7 +30,10 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Main implements OnInit {
+export class Main implements AfterViewInit {
+  private readonly androidBackHandler = inject(AndroidBackHandlerService);
+  private readonly portal = inject(PortalService);
+  private readonly portalHost = viewChild('portalHost', { read: ViewContainerRef });
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly api = inject(SharedApiService);
   private readonly publicApi = inject(PublicApiService);
@@ -61,6 +75,7 @@ export class Main implements OnInit {
   protected readonly basePath = getBasePath();
 
   constructor() {
+    this.androidBackHandler.listen();
     this.ngxSignalTranslate.setLanguage('en');
 
     let apiUrl = this.webstorage.getItem(STORAGE_API_URL);
@@ -69,7 +84,8 @@ export class Main implements OnInit {
     this.apiState.setState('apiUrl', apiUrl);
   }
 
-  public ngOnInit(): void {
+  public ngAfterViewInit(): void {
+    this.portal.setViewContainerRef(this.portalHost()!);
     this.loadDiagnostics();
   }
 

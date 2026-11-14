@@ -33,7 +33,7 @@ describe('AiSearchDialog component', () => {
     TestBed.configureTestingModule({
       imports: [HostComponent],
       providers: [
-        { provide: AlertService, useValue: { show: alertSpy } },
+        { provide: AlertService, useValue: { info: alertSpy } },
         { provide: PortalService, useValue: { closeTop: portalCloseSpy } },
         provideSignalTranslateConfig({ path: '' }),
       ],
@@ -72,7 +72,7 @@ describe('AiSearchDialog component', () => {
     expect(portalCloseSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('shows an alert when the info button is clicked', () => {
+  it('shows an information dialog when the info button is clicked', () => {
     const infoButton: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="ai-search-info"]');
 
     expect(infoButton.classList.contains('button-reveal-label')).toBe(true);
@@ -84,6 +84,6 @@ describe('AiSearchDialog component', () => {
     infoButton.click();
     fixture.detectChanges();
 
-    expect(alertSpy).toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith('Message.AiSearch');
   });
 });

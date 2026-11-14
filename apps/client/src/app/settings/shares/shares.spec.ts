@@ -211,7 +211,23 @@ describe('SettingsShares', () => {
   it('revokes incoming shares after confirmation', () => {
     component['onRevokeIncomingShare']('owner-code');
 
+    expect(TestBed.inject(ConfirmService).ifConfirmed).toHaveBeenCalledWith('Confirm.RevokeShare', {
+      destructive: true,
+      confirmationText: 'owner-code',
+      actionLabel: 'RevokeShare',
+    });
     expect(sharesService.revokeIncomingShare).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('requires the share code before removing an outgoing share', () => {
+    component['onRemoveShare']('friend-code');
+
+    expect(TestBed.inject(ConfirmService).ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveShare', {
+      destructive: true,
+      confirmationText: 'friend-code',
+      actionLabel: 'RemoveShare',
+    });
+    expect(sharesService.removeShare).toHaveBeenCalledWith('friend-code');
   });
 
   it('copies the user share code and shows the clipboard toast', () => {

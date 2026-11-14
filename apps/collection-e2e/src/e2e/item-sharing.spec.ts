@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createItemSharingDialog } from '../page-objects/item-sharing.po';
 import { createSettingsPage } from '../page-objects/settings.po';
+import { createMessageDialog } from '../page-objects/message-dialog.po';
 import type { ApiEnvelope, ItemShareState, OutgoingShareResponse, TestUser } from '../support/share-helper-model';
 import {
   createShareHelpers,
@@ -92,9 +93,9 @@ test.describe('Individual item sharing - selection lifecycle', () => {
     await expect(collectionPage.getItemDialogShareButton()).toHaveCount(0);
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill(updatedFirstTitle);
-    page.once('dialog', (dialog) => dialog.accept());
     const updateResponse = waitForResponse('PUT', `/api/v1/collection-items/omdb/${firstId}?`);
     await collectionPage.getItemDialogSaveButton().click();
+    await createMessageDialog(page).confirm();
     expect((await updateResponse).status()).toBe(200);
     await expect(collectionPage.getListItemByTitle(updatedFirstTitle)).toBeVisible();
 
@@ -151,20 +152,17 @@ test.describe('Individual item sharing - scope transitions', () => {
     ]);
 
     await shareHelpers.signInThroughUi(owner);
-    const confirmationResults = [false, true, false, true];
-    page.on('dialog', async (dialog) => {
-      if (confirmationResults.shift() ?? true) await dialog.accept();
-      else await dialog.dismiss();
-    });
     await settingsPage.visitShares();
     await settingsPage.getEditShareButton(sharedUser.shareCode).click();
     const readCheckbox = settingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read');
     await expect(readCheckbox).toHaveJSProperty('indeterminate', true);
     await readCheckbox.click();
+    await createMessageDialog(page).cancel();
     await settingsPage.closeShareDialogByOverlay();
     await settingsPage.getEditShareButton(sharedUser.shareCode).click();
     await expect(readCheckbox).toHaveJSProperty('indeterminate', true);
     await readCheckbox.click();
+    await createMessageDialog(page).confirm('Library / Movies');
     await expect(readCheckbox).toBeChecked();
     await expect(readCheckbox).toHaveJSProperty('indeterminate', false);
     const promoteResponse = waitForResponse('POST', '/api/v1/users/me/shares');
@@ -215,8 +213,10 @@ test.describe('Individual item sharing - scope transitions', () => {
     await settingsPage.getEditShareButton(sharedUser.shareCode).click();
     await expect(readCheckbox).toHaveJSProperty('indeterminate', true);
     await settingsPage.getClearSelectedShareButton('library', 'movie').click();
+    await createMessageDialog(page).cancel();
     await expect(readCheckbox).toHaveJSProperty('indeterminate', true);
     await settingsPage.getClearSelectedShareButton('library', 'movie').click();
+    await createMessageDialog(page).confirm('Library / Movies');
     await expect(readCheckbox).not.toBeChecked();
     await expect(readCheckbox).toHaveJSProperty('indeterminate', false);
     const saveClearedResponse = waitForResponse('POST', '/api/v1/users/me/shares');
@@ -228,7 +228,6 @@ test.describe('Individual item sharing - scope transitions', () => {
     const clearedSharesResponse = await shareHelpers.getItemShares(owner, itemIdentity(selectedId));
     const clearedShares = (await clearedSharesResponse.json()) as ApiEnvelope<ItemShareState[]>;
     expectItemShare(clearedShares.data, sharedUser.shareCode, { readMode: 'none', permissions: null });
-    expect(confirmationResults).toEqual([]);
   });
 });
 
