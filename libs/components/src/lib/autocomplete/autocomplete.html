@@ -20,7 +20,7 @@
         [attr.aria-label]="translations.suggestions()"
       >
         @for (suggestion of suggestions(); track $index) {
-          <li>
+          <li role="none">
             <button
               type="button"
               role="option"

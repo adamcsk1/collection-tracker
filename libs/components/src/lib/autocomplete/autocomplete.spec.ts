@@ -104,6 +104,36 @@ describe('Autocomplete component', () => {
     vi.useRealTimers();
   });
 
+  it('exposes options through presentational wrappers and keeps keyboard selection accessible', async () => {
+    component['_suggestions'].set(['alpha', 'beta']);
+    await fixture.whenStable();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const listbox = fixture.nativeElement.querySelector('[role="listbox"]') as HTMLUListElement;
+    const options = [...listbox.querySelectorAll<HTMLButtonElement>('[role="option"]')];
+
+    expect([...listbox.children].map((wrapper) => wrapper.getAttribute('role'))).toEqual(['none', 'none']);
+    expect(options.map((option) => option.getAttribute('aria-label'))).toEqual(['alpha', 'beta']);
+    expect(options.map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'false']);
+    expect(input.getAttribute('aria-controls')).toBe(listbox.id);
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true }));
+    await fixture.whenStable();
+
+    expect(options.map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'true']);
+    expect(input.getAttribute('aria-activedescendant')).toBe(options[1].id);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter', bubbles: true }));
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.model()).toBe('beta-formatted');
+    expect(fixture.nativeElement.querySelector('[role="listbox"]')).toBeNull();
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.hasAttribute('aria-activedescendant')).toBe(false);
+  });
+
   it('resets value when reset button is clicked', () => {
     component['onKeyup']({
       code: 'KeyX',
