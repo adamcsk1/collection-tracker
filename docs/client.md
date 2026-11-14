@@ -10,12 +10,12 @@ Source: [`apps/client`](../apps/client)
 
 Top navigation is **intent-first**. Media type uses always-visible chips on Collection and other multi-media hubs.
 
-| Nav label  | Route                  | Internal `list_type`                    | Purpose                                                                                                          |
-| ---------- | ---------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Nav label  | Route                  | Internal `list_type`                            | Purpose                                                                                                                     |
+| ---------- | ---------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Collection | `/collection/library`  | `library` (+ readable `books`/`music` when All) | Library items plus readable books and albums, including shared items. Chips: **All \| Movies \| Series \| Books \| Music**. |
-| Wishlist   | `/collection/wishlist` | `wishlist`                              | Want to buy/own. Chips: **All \| Movies \| Series \| Books \| Music**.                                                    |
-| Up Next    | `/collection/up-next`  | `up-next`                               | Want to watch/read/listen later. Chips: **All \| Movies \| Series \| Books \| Music**.                                           |
-| Tracking   | `/collection/tracking` | `tracking`                              | Progress hub for movies, series, books, and albums. Chips: **All \| Movies \| Series \| Books \| Music**.                         |
+| Wishlist   | `/collection/wishlist` | `wishlist`                                      | Want to buy/own. Chips: **All \| Movies \| Series \| Books \| Music**.                                                      |
+| Up Next    | `/collection/up-next`  | `up-next`                                       | Want to watch/read/listen later. Chips: **All \| Movies \| Series \| Books \| Music**.                                      |
+| Tracking   | `/collection/tracking` | `tracking`                                      | Progress hub for movies, series, books, and albums. Chips: **All \| Movies \| Series \| Books \| Music**.                   |
 
 **Collection chips**
 
@@ -35,6 +35,23 @@ Top navigation is **intent-first**. Media type uses always-visible chips on Coll
 - about page: build metadata
 
 Inside the Android companion app, the settings menu includes **Companion app settings** when the native bridge supports it. This opens the native dialog for update preferences, manual update checks, and editing instance URLs. The action is hidden in ordinary browsers and older companions without `showSettings()` support.
+
+### Collection workflows
+
+Search and Add are available without opening the filters menu. Keyboard skip controls lead directly to search or page
+content; the toolbar precedes collection cards in keyboard order. Each card has one primary tab stop on its title.
+Active filters remain visible above results and can be cleared together without resetting sort order.
+Search expands with animation and keeps nonempty queries visible; empty search can collapse again.
+
+Compact confirmation and information panels have their own centered presentation, border, shadow, and fade/scale motion.
+They share focus trapping and stack ownership with full dialogs, but do not shrink the parent or inherit sheet drag handles.
+
+Edits and favorite changes save directly. Destructive deletion still requires typed confirmation. Dismissing a dirty new-item
+or edit dialog with its controls or in-app navigation asks before discarding changes; cancelling preserves the draft and
+route. Drafts are not persisted across page reloads or leaving the application. Manual entry keeps provider identifiers
+required and groups optional artwork, external ratings, and descriptive metadata under More details.
+
+Cards show fallback artwork when posters are missing or fail to load, and titles can span two lines.
 
 ### Sharing
 

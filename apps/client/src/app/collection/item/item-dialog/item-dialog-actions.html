@@ -28,35 +28,19 @@
     </button>
   }
   @if (finishedEnabled() && permissionWatch() && ownershipItem() && (movie() || book() || album())) {
-    @if (finished()) {
-      <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().markAsUnfinished()"
-        data-test-id="item-dialog-mark-unfinished"
-        [attr.aria-label]="translations().markAsUnfinished()"
-        [title]="translations().markAsUnfinished()"
-        (click)="markAsUnfinished.emit()"
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="finished() ? translations().markAsUnfinished() : translations().markAsFinished()"
+      [attr.data-test-id]="finished() ? 'item-dialog-mark-unfinished' : 'item-dialog-mark-finished'"
+      [attr.aria-label]="finished() ? translations().markAsUnfinished() : translations().markAsFinished()"
+      [title]="finished() ? translations().markAsUnfinished() : translations().markAsFinished()"
+      (click)="finished() ? markAsUnfinished.emit() : markAsFinished.emit()"
+    >
+      <i class="material-icons" aria-hidden="true">{{ finished() ? 'radio_button_unchecked' : 'check_circle' }}</i>
+      <span class="button-reveal-label-text"
+        ><span>{{ finished() ? translations().markAsUnfinished() : translations().markAsFinished() }}</span></span
       >
-        <i class="material-icons" aria-hidden="true"> radio_button_unchecked </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations().markAsUnfinished() }}</span></span
-        >
-      </button>
-    } @else {
-      <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().markAsFinished()"
-        data-test-id="item-dialog-mark-finished"
-        [attr.aria-label]="translations().markAsFinished()"
-        [title]="translations().markAsFinished()"
-        (click)="markAsFinished.emit()"
-      >
-        <i class="material-icons" aria-hidden="true"> check_circle </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations().markAsFinished() }}</span></span
-        >
-      </button>
-    }
+    </button>
   }
   @if (trackingEnabled() && permissionWatch() && ownershipItem() && (series() || book() || album())) {
     @if (inTracking()) {
@@ -133,35 +117,19 @@
     </button>
   }
   @if (permissionUpdate() && ownershipItem()) {
-    @if (favorite()) {
-      <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().removeFavorite()"
-        data-test-id="item-dialog-remove-favorite"
-        [attr.aria-label]="translations().removeFavorite()"
-        [title]="translations().removeFavorite()"
-        (click)="removeFavorite.emit()"
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="favorite() ? translations().removeFavorite() : translations().markAsFavorite()"
+      [attr.data-test-id]="favorite() ? 'item-dialog-remove-favorite' : 'item-dialog-mark-favorite'"
+      [attr.aria-label]="favorite() ? translations().removeFavorite() : translations().markAsFavorite()"
+      [title]="favorite() ? translations().removeFavorite() : translations().markAsFavorite()"
+      (click)="favorite() ? removeFavorite.emit() : markAsFavorite.emit()"
+    >
+      <i class="material-icons" aria-hidden="true">{{ favorite() ? 'star_outline' : 'star_rate' }}</i>
+      <span class="button-reveal-label-text"
+        ><span>{{ favorite() ? translations().removeFavorite() : translations().markAsFavorite() }}</span></span
       >
-        <i class="material-icons" aria-hidden="true"> star_outline </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations().removeFavorite() }}</span></span
-        >
-      </button>
-    } @else {
-      <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().markAsFavorite()"
-        data-test-id="item-dialog-mark-favorite"
-        [attr.aria-label]="translations().markAsFavorite()"
-        [title]="translations().markAsFavorite()"
-        (click)="markAsFavorite.emit()"
-      >
-        <i class="material-icons" aria-hidden="true"> star_rate </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations().markAsFavorite() }}</span></span
-        >
-      </button>
-    }
+    </button>
   }
   @if (permissionUpdate()) {
     <button

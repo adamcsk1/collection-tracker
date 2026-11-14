@@ -79,7 +79,7 @@ describe('FloatActionButtons', () => {
     opener.click();
     await fixture.whenStable();
 
-    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-test-id="add-new"]'));
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-test-id="random-pick"]'));
     expect(leavingPopup.contains(document.activeElement)).toBe(false);
   });
 
@@ -115,6 +115,7 @@ describe('FloatActionButtons', () => {
     await fixture.whenStable();
 
     expect(document.activeElement).toBe(button);
+    expect(button.getAttribute('aria-pressed')).toBe('true');
     expect(floatActions.actionButtonsVisible()).toBe(true);
   });
 
@@ -191,7 +192,7 @@ describe('FloatActionButtons', () => {
     expect(floatActions.actionButtonsVisible()).toBe(false);
   });
 
-  it('supplies the restored menu opener as the focus fallback', () => {
+  it('keeps Add visible and supplies it as the focus fallback', () => {
     const addNew = vi.fn();
     actionButtons.setCallbacks({
       addNew,
@@ -204,11 +205,11 @@ describe('FloatActionButtons', () => {
     component['onShowFunctions']();
     fixture.detectChanges();
     const leavingMenu = fixture.nativeElement.querySelector('.float-buttons-container') as HTMLElement;
-    (leavingMenu.querySelector('[data-test-id="add-new"]') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('[data-test-id="add-new"]') as HTMLButtonElement).click();
     expect(leavingMenu.hasAttribute('inert')).toBe(true);
     fixture.detectChanges();
 
-    expect(addNew.mock.calls[0][0]()).toBe(fixture.nativeElement.querySelector('[data-test-id="show-functions"]'));
+    expect(addNew.mock.calls[0][0]()).toBe(fixture.nativeElement.querySelector('[data-test-id="add-new"]'));
   });
 
   it.each(['closeTop', 'closeAll'] as const)(
@@ -244,7 +245,7 @@ describe('FloatActionButtons', () => {
 
       portal[close]();
 
-      expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-test-id="show-functions"]'));
+      expect(document.activeElement).toBe(trigger);
       fixture.nativeElement.remove();
     }
   );

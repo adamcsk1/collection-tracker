@@ -23,6 +23,19 @@
   height: calc(100dvh - var(--header-height) - 2 * var(--size-md));
   overflow: hidden auto;
   padding: var(--size-md);
+  padding-bottom: calc(var(--float-actions-safe-area) + 7rem);
+
+  .list-guidance {
+    margin-top: 0;
+    font-size: var(--font-size-sm);
+  }
+
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-xs);
+    margin-bottom: var(--size-md);
+  }
 
   .list-error {
     position: sticky;

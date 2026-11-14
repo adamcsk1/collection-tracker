@@ -115,6 +115,7 @@ test.describe('Music', () => {
     await musicPage.getNewItemManualModeButton().click();
     await musicPage.getNewItemManualTitleInput().fill(title);
     await musicPage.getNewItemManualMbidInput().fill(mbid);
+    await musicPage.getNewItemMoreDetails().click();
     await musicPage.getNewItemManualArtistsInput().fill(artists);
     await expect(musicPage.getNewItemSaveAndCloseButton()).toBeEnabled();
     const createManualAlbumResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items');

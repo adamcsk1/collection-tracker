@@ -63,6 +63,9 @@ describe('MenuNav', () => {
   });
 
   it('hides decorative navigation icons from assistive technology', () => {
+    const brand = fixture.nativeElement.querySelector('[data-test-id="navigation-brand"]') as HTMLElement;
+    expect(brand.getAttribute('role')).toBe('region');
+    expect(brand.getAttribute('aria-label')).toBe('AppTitle');
     const icons = fixture.nativeElement.querySelectorAll('nav .material-icons') as NodeListOf<HTMLElement>;
     expect(icons.length).toBeGreaterThan(0);
     expect(Array.from(icons).every((icon) => icon.getAttribute('aria-hidden') === 'true')).toBe(true);

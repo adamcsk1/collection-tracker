@@ -80,7 +80,6 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(page.getByTestId('item-dialog-title')).toHaveCount(0);
     await expect(collectionPage.getItemDialogHost()).toContainText('Updated Title');
@@ -101,7 +100,6 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     for (const text of [
       '2025',
@@ -131,7 +129,6 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getItemDialogUserRateChip()).toContainText('9.4');
     await collectionPage.closeActiveDialogByOverlay();
@@ -149,7 +146,6 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     await firstResponsePromise;
     await collectionPage.expectItemDialogActionsVisible();
     await collectionPage.getItemDialogEditButton().click();
@@ -158,7 +154,6 @@ test.describe('Item dialog — edit flow', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getItemDialogUserRateChip()).toHaveCount(0);
     await collectionPage.closeActiveDialogByOverlay();
@@ -193,6 +188,7 @@ test.describe('Item dialog — edit flow', () => {
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Discarded Title');
     await page.getByTestId('item-dialog-read-only').click();
+    await createMessageDialog(page).confirm();
     await expect(collectionPage.getItemDialogHost()).toContainText('Edit Test Movie');
     await expect(page.getByText('Discarded Title', { exact: true })).toHaveCount(0);
   });

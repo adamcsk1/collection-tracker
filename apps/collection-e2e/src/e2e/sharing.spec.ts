@@ -344,7 +344,6 @@ test.describe('Collection sharing - library movie permissions', () => {
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Updated Movie');
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     const response = await updateItemResponse;
     expect(response.status()).toBe(200);
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -442,7 +441,6 @@ test.describe('Collection sharing - non-library lists', () => {
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Wishlist Updated');
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     const response = await updateWishlistItemResponse;
     expect(response.status()).toBe(200);
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -550,7 +548,6 @@ test.describe('Collection sharing - non-library lists', () => {
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Tracking Renamed');
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     const response = await updateTrackingResponse;
     expect(response.status()).toBe(200);
     expect(response.request().url()).toContain(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);

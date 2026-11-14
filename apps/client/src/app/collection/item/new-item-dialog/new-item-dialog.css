@@ -82,6 +82,13 @@ form {
   gap: var(--size-md);
 }
 
+.manual-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--size-md);
+  padding-top: var(--size-md);
+}
+
 .manual-image-preview-card {
   justify-self: center;
   margin-top: var(--size-md);
@@ -104,4 +111,11 @@ form {
 
 .error {
   color: var(--color-crimson);
+}
+
+.primary-save-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2xs);
+  font-weight: bold;
 }

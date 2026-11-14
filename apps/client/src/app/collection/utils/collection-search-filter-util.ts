@@ -77,6 +77,7 @@ export const setupStandardCollectionSearch = ({
 
   effect(() => {
     floatActions.setSearchTemplate(floatSearchTemplate() ?? null);
+    floatActions.setSearchActive(!!searchTextModel().trim());
   });
 
   destroyRef.onDestroy(() => floatActions.setSearchTemplate(null));

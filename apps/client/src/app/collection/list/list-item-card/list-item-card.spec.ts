@@ -17,6 +17,8 @@ describe('ListItemCard', () => {
     const badge: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="list-item-image-badge"]');
     expect(fixture.nativeElement.querySelector('[data-test-id="list-item-title"]').tagName).toBe('H2');
     expect(image.getAttribute('role')).toBe('button');
+    expect(image.tabIndex).toBe(-1);
+    expect(fixture.nativeElement.querySelector('[data-test-id="list-item-title-button"]').tabIndex).toBe(0);
     expect(image.contains(badge)).toBe(false);
     expect(badge.tagName).toBe('BUTTON');
     badge.click();
@@ -41,6 +43,22 @@ describe('ListItemCard', () => {
     expect(badge.disabled).toBe(true);
     badge.click();
     expect(badgeClick).not.toHaveBeenCalled();
+  });
+
+  it('shows fallback artwork for missing or failed images and tries a changed URL', async () => {
+    const fixture = TestBed.createComponent(ListItemCard);
+    fixture.componentRef.setInput('title', 'Example');
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('[data-test-id="list-item-image-fallback"]')).not.toBeNull();
+    fixture.componentRef.setInput('imageUrl', '/broken.jpg');
+    await fixture.whenStable();
+    fixture.nativeElement.querySelector('img').dispatchEvent(new Event('error'));
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('img')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="list-item-image-fallback"]')).not.toBeNull();
+    fixture.componentRef.setInput('imageUrl', '/new.jpg');
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('img').getAttribute('src')).toBe('/new.jpg');
   });
 
   it('does not expose an image button when noninteractive and names status icons', async () => {

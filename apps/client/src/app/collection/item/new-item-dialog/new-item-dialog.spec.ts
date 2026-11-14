@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ApiService } from '@services/api/api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -50,6 +51,7 @@ describe('NewItemDialog component', () => {
     TestBed.configureTestingModule({
       imports: [NewItemDialog],
       providers: [
+        { provide: ConfirmService, useValue: { open: vi.fn(() => of(false)) } },
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
@@ -76,6 +78,30 @@ describe('NewItemDialog component', () => {
     mainState = TestBed.inject(mainStateToken);
     sharesState = TestBed.inject(sharesStateToken);
     fixture.detectChanges();
+  });
+
+  it('only requests discard confirmation for a dirty draft and keeps it when cancelled', async () => {
+    const confirm = TestBed.inject(ConfirmService);
+    expect(await component['canDiscard']()).toBe(true);
+    expect(confirm.open).not.toHaveBeenCalled();
+    component['manualForm'].title().value.set('Unsaved draft');
+    component['manualForm'].title().markAsDirty();
+    expect(await component['canDiscard']()).toBe(false);
+    expect(component['manualForm'].title().value()).toBe('Unsaved draft');
+    vi.mocked(confirm.open).mockReturnValue(of(true));
+    expect(await component['canDiscard']()).toBe(true);
+  });
+
+  it('keeps optional details expanded after an invalid rating is corrected', () => {
+    component['manualForm'].rate().value.set('invalid');
+    fixture.detectChanges();
+    expect(component['moreDetailsOpen']()).toBe(true);
+    component['manualForm'].rate().value.set('8.1');
+    fixture.detectChanges();
+    expect(component['moreDetailsOpen']()).toBe(true);
+    const details = document.createElement('details');
+    component['onMoreDetailsToggle']({ target: details } as unknown as Event);
+    expect(component['moreDetailsOpen']()).toBe(false);
   });
 
   it('reports each expected validation error for invalid form values', () => {

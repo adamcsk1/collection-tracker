@@ -197,7 +197,7 @@ describe('ListItem', () => {
     expect(completed?.getAttribute('role')).toBe('img');
     expect(completed?.closest('[role="button"]')).toBeNull();
     expect(completed?.getAttribute('title')).toBe('Completed');
-    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).toContain(
+    expect((fixture.nativeElement as HTMLElement).querySelector('.image-action')?.classList).toContain(
       'completed-image'
     );
   });
@@ -217,7 +217,7 @@ describe('ListItem', () => {
     expect(completed?.textContent?.trim()).toBe('check_circle');
     expect(completed?.getAttribute('aria-label')).toBe('Completed');
     expect(completed?.getAttribute('title')).toBe('Completed');
-    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).toContain(
+    expect((fixture.nativeElement as HTMLElement).querySelector('.image-action')?.classList).toContain(
       'completed-image'
     );
   });
@@ -246,7 +246,7 @@ describe('ListItem', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-tracking-completed"]')
     ).toBeNull();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).not.toContain(
+    expect((fixture.nativeElement as HTMLElement).querySelector('.image-action')?.classList).not.toContain(
       'completed-image'
     );
   });
@@ -264,7 +264,7 @@ describe('ListItem', () => {
       (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-tracking-completed"]')
     ).toBeNull();
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-finished"]')).toBeNull();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).not.toContain(
+    expect((fixture.nativeElement as HTMLElement).querySelector('.image-action')?.classList).not.toContain(
       'completed-image'
     );
   });

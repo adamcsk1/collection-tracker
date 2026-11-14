@@ -45,7 +45,7 @@ export class FloatActionButtons implements OnDestroy {
     orderDirectionDescendingShort: computed(() => this.ngxSignalTranslate.translate('SortDescendingShort')),
     orderDirectionAscendingShort: computed(() => this.ngxSignalTranslate.translate('SortAscendingShort')),
     hideFunctions: computed(() => this.ngxSignalTranslate.translate('HideFunctions')),
-    showFunctions: computed(() => this.ngxSignalTranslate.translate('ShowFunctions')),
+    showFunctions: computed(() => this.ngxSignalTranslate.translate('FiltersAndSort')),
     filterMovie: computed(() => this.ngxSignalTranslate.translate('Movies')),
     filterSeries: computed(() => this.ngxSignalTranslate.translate('Series')),
     filterBook: computed(() => this.ngxSignalTranslate.translate('Books')),
@@ -71,9 +71,7 @@ export class FloatActionButtons implements OnDestroy {
       (filter) => filter !== 'movie' && filter !== 'series' && filter !== 'book' && filter !== 'album'
     )
   );
-  protected readonly showActionSection = computed(
-    () => this.config().showAddButton || this.config().showRandomPickButton
-  );
+  protected readonly showActionSection = computed(() => this.config().showRandomPickButton);
   protected readonly canShowActionButton = computed(() => {
     const config = this.config();
     return (
@@ -167,23 +165,9 @@ export class FloatActionButtons implements OnDestroy {
     this.onHideFunctions();
   }
 
-  protected onAddNew(event?: Event): void {
-    this.actionButtons.addNew(
-      this.actionButtonsVisible()
-        ? () => {
-            if (
-              !this.host.nativeElement.querySelector('[data-test-id="show-functions"]') &&
-              !this.actionButtonsVisible()
-            ) {
-              this.changeDetector.detectChanges();
-            }
-            return this.host.nativeElement.querySelector<HTMLElement>('[data-test-id="show-functions"]');
-          }
-        : undefined
-    );
-    if (event?.currentTarget instanceof HTMLElement) {
-      event.currentTarget.closest('.float-buttons-container')?.setAttribute('inert', '');
-    }
+  protected onAddNew(): void {
+    this.actionButtons.addNew(() => this.host.nativeElement.querySelector<HTMLElement>('[data-test-id="add-new"]'));
+    this.host.nativeElement.querySelector('.float-buttons-container')?.setAttribute('inert', '');
     this.showFloatButtons.set(false);
   }
 

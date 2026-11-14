@@ -115,6 +115,7 @@ test.describe('Books', () => {
     await booksPage.getNewItemManualModeButton().click();
     await booksPage.getNewItemManualTitleInput().fill(title);
     await booksPage.getNewItemManualIsbnInput().fill(isbn);
+    await booksPage.getNewItemMoreDetails().click();
     await booksPage.getNewItemManualAuthorsInput().fill(authors);
     await expect(booksPage.getNewItemSaveAndCloseButton()).toBeEnabled();
     const createManualBookResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items');

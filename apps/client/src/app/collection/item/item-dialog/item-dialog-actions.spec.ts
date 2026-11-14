@@ -92,6 +92,22 @@ describe('ItemDialogActions', () => {
     expect(deleteItem).toHaveBeenCalled();
   });
 
+  it('preserves the focused completion and favorite controls when state changes', async () => {
+    createComponent();
+    const completion = getButton('item-dialog-mark-finished');
+    completion.focus();
+    fixture.componentRef.setInput('finished', true);
+    await fixture.whenStable();
+    expect(getButton('item-dialog-mark-unfinished')).toBe(completion);
+    expect(document.activeElement).toBe(completion);
+    const favorite = getButton('item-dialog-mark-favorite');
+    favorite.focus();
+    fixture.componentRef.setInput('favorite', true);
+    await fixture.whenStable();
+    expect(getButton('item-dialog-remove-favorite')).toBe(favorite);
+    expect(document.activeElement).toBe(favorite);
+  });
+
   it('shows sharing for owned items and emits its action', () => {
     createComponent();
     const share = vi.fn();

@@ -8,6 +8,29 @@
   [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
   (scroll)="onScroll()"
 >
+  <p class="list-guidance" data-test-id="collection-list-guidance">{{ translations.listGuidance() }}</p>
+  @if (hasActiveFilters()) {
+    <section
+      class="active-filters"
+      data-test-id="collection-active-filters"
+      [attr.aria-label]="translations.activeFilters()"
+    >
+      @for (filter of activeFilters(); track filter.value) {
+        <button
+          type="button"
+          [attr.data-test-id]="'active-filter-' + filter.value"
+          [attr.aria-label]="filter.label"
+          aria-pressed="true"
+          (click)="onRemoveFilter(filter.value)"
+        >
+          {{ filter.label }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      <button type="button" data-test-id="collection-clear-filters" (click)="onClearFilters()">
+        {{ translations.clearFilters() }}
+      </button>
+    </section>
+  }
   @if ((!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') && visibleCollection().length === 0) {
     <div class="list-loading" aria-hidden="true">
       <ct-list-item-skeleton />

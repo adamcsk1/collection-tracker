@@ -128,15 +128,19 @@ describe('FloatActions', () => {
 
     expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeNull();
+    const controls = fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]') as HTMLElement;
+    expect(controls.getAttribute('role')).toBe('region');
+    expect(controls.getAttribute('aria-label')).toBe('PageControls');
   });
 
-  it('shows and focuses the registered search template from the collapsed search button', async () => {
+  it('shows and focuses the registered search template from the search button', async () => {
     const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
     service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
     fixture.detectChanges();
 
     fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
     fixture.detectChanges();
+
     await Promise.resolve();
     await Promise.resolve();
 
@@ -166,10 +170,9 @@ describe('FloatActions', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeTruthy();
   });
 
-  it('collapses the registered search template when clicking outside float actions', async () => {
+  it('keeps the search and its query visible when clicking outside float actions', async () => {
     service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
-    fixture.detectChanges();
-    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    service.setSearchActive(true);
     fixture.detectChanges();
     await Promise.resolve();
     await Promise.resolve();
@@ -177,14 +180,13 @@ describe('FloatActions', () => {
     document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeTruthy();
   });
 
-  it('collapses the registered search template when scrolling starts', async () => {
+  it('keeps the search mounted when scrolling starts', async () => {
     service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
-    fixture.detectChanges();
-    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    service.setSearchActive(true);
     fixture.detectChanges();
     await Promise.resolve();
     await Promise.resolve();
@@ -192,8 +194,75 @@ describe('FloatActions', () => {
     service.updateConfig({ scrolling: true });
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeTruthy();
+  });
+
+  it('collapses an empty search when clicking outside', async () => {
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    await fixture.whenStable();
+    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    await fixture.whenStable();
+
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    await fixture.whenStable();
+
     expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeNull();
+  });
+
+  it('collapses an empty search when scrolling starts', async () => {
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    await fixture.whenStable();
+    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    await fixture.whenStable();
+
+    service.updateConfig({ scrolling: true });
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
+  });
+
+  it('shows an active query without stealing focus and allows collapse after clearing it', async () => {
+    const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    service.setSearchActive(true);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeTruthy();
+    expect(focusSpy).not.toHaveBeenCalled();
+
+    service.setSearchActive(false);
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
+  });
+
+  it('clears active search state when its template is removed or actions reset', () => {
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    service.setSearchActive(true);
+    service.setSearchTemplate(null);
+    expect(service.searchActive()).toBe(false);
+
+    service.setSearchActive(true);
+    service.resetActions();
+    expect(service.searchActive()).toBe(false);
+  });
+
+  it('keeps search open and focuses it when filters are cleared after an outside click', async () => {
+    document.body.appendChild(fixture.nativeElement);
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    service.setSearchActive(true);
+    await fixture.whenStable();
+
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    service.setSearchActive(false);
+    service.focusSearch();
+    await fixture.whenStable();
+
+    const search = fixture.nativeElement.querySelector('[data-test-id="projected-search"]');
+    expect(search).toBeTruthy();
+    expect(document.activeElement).toBe(search);
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeNull();
   });
 
   it('runs the registered search action without rendering a search template', () => {

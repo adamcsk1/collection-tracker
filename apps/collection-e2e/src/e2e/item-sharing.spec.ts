@@ -95,7 +95,6 @@ test.describe('Individual item sharing - selection lifecycle', () => {
     await collectionPage.getItemDialogTitleInput().fill(updatedFirstTitle);
     const updateResponse = waitForResponse('PUT', `/api/v1/collection-items/omdb/${firstId}?`);
     await collectionPage.getItemDialogSaveButton().click();
-    await createMessageDialog(page).confirm();
     expect((await updateResponse).status()).toBe(200);
     await expect(collectionPage.getListItemByTitle(updatedFirstTitle)).toBeVisible();
 

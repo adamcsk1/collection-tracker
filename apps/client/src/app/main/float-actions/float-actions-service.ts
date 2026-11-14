@@ -7,6 +7,8 @@ export class FloatActionsService {
   private readonly _config = signal<FloatActionsConfig>(initialConfig);
   private readonly _searchTemplate = signal<TemplateRef<unknown> | null>(null);
   private readonly _searchActionAvailable = signal(false);
+  private readonly _searchActive = signal(false);
+  private readonly _searchFocusRequest = signal(0);
   private readonly _aiSearchAvailable = signal(false);
   private readonly _aiSearchActive = signal(false);
   private readonly _actionsComponent = signal<Type<unknown> | null>(null);
@@ -15,6 +17,8 @@ export class FloatActionsService {
   public readonly config = this._config.asReadonly();
   public readonly searchTemplate = this._searchTemplate.asReadonly();
   public readonly searchActionAvailable = this._searchActionAvailable.asReadonly();
+  public readonly searchActive = this._searchActive.asReadonly();
+  public readonly searchFocusRequest = this._searchFocusRequest.asReadonly();
   public readonly aiSearchAvailable = this._aiSearchAvailable.asReadonly();
   public readonly aiSearchActive = this._aiSearchActive.asReadonly();
   public readonly actionsComponent = this._actionsComponent.asReadonly();
@@ -37,6 +41,8 @@ export class FloatActionsService {
     this._actionsComponent.set(null);
     this._actionButtonsVisible.set(false);
     this._searchActionAvailable.set(false);
+    this._searchActive.set(false);
+    this._searchFocusRequest.set(0);
     this._aiSearchAvailable.set(false);
     this._aiSearchActive.set(false);
     this.scrollToTopCallback = (): void => void 0;
@@ -46,8 +52,24 @@ export class FloatActionsService {
 
   public setSearchTemplate(template: TemplateRef<unknown> | null, searchActionCallback?: () => void): void {
     this._searchTemplate.set(template);
+    if (!template) {
+      this._searchActive.set(false);
+      this._searchFocusRequest.set(0);
+    }
     this.searchActionCallback = searchActionCallback ?? (() => void 0);
     this._searchActionAvailable.set(!!searchActionCallback);
+  }
+
+  public setSearchActive(active: boolean): void {
+    this._searchActive.set(active);
+  }
+
+  public focusSearch(): void {
+    if (this.searchActionAvailable()) {
+      this.triggerSearchAction();
+      return;
+    }
+    this._searchFocusRequest.update((request) => request + 1);
   }
 
   public setAiSearchAction(available: boolean, active: boolean, callback?: () => void): void {

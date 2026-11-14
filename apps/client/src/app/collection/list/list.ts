@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -59,6 +60,7 @@ import { ListItem } from './list-item/list-item';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class List implements OnDestroy {
+  private readonly document = inject(DOCUMENT);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly collectionState = inject(collectionStateToken);
@@ -82,6 +84,24 @@ export class List implements OnDestroy {
   private readonly routeSearchVersion = signal(0);
   private lastRouteSearchText: string | null = null;
   protected readonly translations = {
+    clearFilters: computed(() => this.ngxSignalTranslate.translate('ClearFilters')),
+    activeFilters: computed(() => this.ngxSignalTranslate.translate('ActiveFilters')),
+    listGuidance: computed(() => {
+      switch (this.listType()) {
+        case 'wishlist':
+          return this.ngxSignalTranslate.translate('Message.ListGuidance.Wishlist');
+        case 'up-next':
+          return this.ngxSignalTranslate.translate('Message.ListGuidance.UpNext');
+        case 'tracking':
+          return this.ngxSignalTranslate.translate('Message.ListGuidance.Tracking');
+        case 'books':
+          return this.ngxSignalTranslate.translate('Message.ListGuidance.Books');
+        case 'music':
+          return this.ngxSignalTranslate.translate('Message.ListGuidance.Music');
+        default:
+          return this.ngxSignalTranslate.translate('Message.ListGuidance.Library');
+      }
+    }),
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
     messageEmptyCollection: computed(() => this.ngxSignalTranslate.translate('Message.EmptyCollection')),
     messageAddFirstCollectionItem: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstCollectionItem')),
@@ -91,6 +111,29 @@ export class List implements OnDestroy {
     retry: computed(() => this.ngxSignalTranslate.translate('Retry')),
   };
   protected readonly visibleCollection = signal<CollectionItemModel[]>([]);
+  protected readonly activeFilters = computed(() => {
+    const keys: Record<FloatActionFilter, string> = {
+      movie: 'Movies',
+      series: 'Series',
+      book: 'Books',
+      album: 'Music',
+      unwatched: 'Unwatched',
+      favorite: 'Favorites',
+      completed: 'Completed',
+      uncompleted: 'Uncompleted',
+      sharedMine: 'FilterSharedMine',
+      sharedOnly: 'FilterSharedOnly',
+    };
+    return this.getActiveFilterActions()
+      .filter(
+        (filter) =>
+          !(this.listType() === 'books' && filter === 'book') && !(this.listType() === 'music' && filter === 'album')
+      )
+      .map((filter) => ({ value: filter, label: this.ngxSignalTranslate.translate(keys[filter]) }));
+  });
+  protected readonly hasActiveFilters = computed(
+    () => this.activeFilters().length > 0 || !!this.collectionState.state.searchText().trim() || this.aiFilterActive()
+  );
   protected readonly collectionLength = signal(0);
   protected readonly emptySearchResult = signal(false);
   private readonly nextCursor = signal<string | null>(null);
@@ -306,7 +349,7 @@ export class List implements OnDestroy {
     const active = this.getActiveFilterActions().includes(filter);
 
     const queryParams: Record<string, string | null> =
-      filter === 'movie' || filter === 'series' || filter === 'book'
+      filter === 'movie' || filter === 'series' || filter === 'book' || filter === 'album'
         ? { type: active ? null : filter }
         : filter === 'unwatched'
           ? { watched: active ? null : 'false' }
@@ -319,6 +362,26 @@ export class List implements OnDestroy {
               : { completed: active ? null : filter === 'completed' ? 'true' : 'false' };
 
     void this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
+  }
+
+  protected onClearFilters(): void {
+    this.collectionState.setState('searchText', '');
+    this.collectionState.setState('aiSearchPromptText', '');
+    this.collectionState.setState('forceStandardSearch', true);
+    void this.router.navigate([], {
+      queryParams: { search: null, type: null, watched: null, favorite: null, completed: null, shared: null },
+      queryParamsHandling: 'merge',
+    });
+    this.focusSearch();
+  }
+
+  protected onRemoveFilter(filter: FloatActionFilter): void {
+    this.onApplyFilter(filter);
+    this.focusSearch();
+  }
+
+  private focusSearch(): void {
+    this.floatActions.focusSearch();
   }
 
   protected onShowFunctions(): void {

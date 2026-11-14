@@ -136,7 +136,6 @@ test.describe('Route accessibility', () => {
     await expect(collectionPage.getItemDialogComponentHost()).toHaveAttribute('aria-hidden', 'true');
     await expect(messageDialog.getDialog()).toBeFocused();
     await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
     await expect(messageDialog.getInput()).toBeFocused();
     await expect(messageDialog.getInput()).toHaveAccessibleName(`Type "${title}" to confirm`);
     await expect(messageDialog.getConfirmButton()).toBeDisabled();
@@ -152,7 +151,7 @@ test.describe('Route accessibility', () => {
     await page.keyboard.press('Tab');
     await expect(messageDialog.getConfirmButton()).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(messageDialog.getDragHandle()).toBeFocused();
+    await expect(messageDialog.getInput()).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(messageDialog.getConfirmButton()).toBeFocused();
     await page.keyboard.press('Escape');
@@ -196,7 +195,7 @@ test.describe('Route accessibility', () => {
     await scan(page, testInfo);
   });
 
-  test('ordinary confirmation supports keyboard cancellation and restores draft focus', async ({
+  test('discard confirmation supports keyboard cancellation and restores draft focus', async ({
     page,
     autoLogin,
     api,
@@ -209,7 +208,7 @@ test.describe('Route accessibility', () => {
     await collectionPage.getListItemImages().first().press('Enter');
     await collectionPage.getItemDialogEditButton().press('Enter');
     await collectionPage.getItemDialogTitleInput().fill('Preserved Draft');
-    await collectionPage.getItemDialogSaveButton().press('Enter');
+    await collectionPage.getItemDialogReadOnlyButton().press('Enter');
     await expect(messageDialog.getDialog()).toHaveAttribute('role', 'alertdialog');
     await expect(messageDialog.getInput()).toHaveCount(0);
     await expect(messageDialog.getConfirmButton()).toBeEnabled();
@@ -217,13 +216,12 @@ test.describe('Route accessibility', () => {
     await scan(page, testInfo);
     await messageDialog.getCancelButton().press('Enter');
     await expect(messageDialog.getDialogHost()).toHaveCount(0);
-    await expect(collectionPage.getItemDialogSaveButton()).toBeFocused();
+    await expect(collectionPage.getItemDialogReadOnlyButton()).toBeFocused();
     await expect(collectionPage.getItemDialogTitleInput()).toHaveValue('Preserved Draft');
-    await collectionPage.getItemDialogSaveButton().press('Enter');
     const responsePromise = page.waitForResponse(
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
-    await messageDialog.getConfirmButton().press('Enter');
+    await collectionPage.getItemDialogSaveButton().press('Enter');
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getItemDialogHost()).toContainText('Preserved Draft');
   });

@@ -1,3 +1,15 @@
+@if (showFloatActions() && config().showAddButton) {
+  <button
+    type="button"
+    data-test-id="add-new"
+    class="add-item-button"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onAddNew()"
+  >
+    <i class="material-icons" aria-hidden="true">add</i>
+    <span>{{ translations.addNew() }}</span>
+  </button>
+}
 @if (actionButtonsVisible()) {
   <div
     class="float-buttons-container"
@@ -17,6 +29,7 @@
                   [attr.data-test-id]="'collection-filter-' + filter"
                   [attr.aria-label]="filterActionLabel(filter)"
                   [attr.aria-current]="isFilterActive(filter) ? 'true' : null"
+                  [attr.aria-pressed]="isFilterActive(filter)"
                   [title]="filterActionLabel(filter)"
                   [disabled]="apiLoadNetworkStatus() === 'pending'"
                   (click)="onApplyFilter(filter)"
@@ -34,6 +47,7 @@
               [attr.data-test-id]="'collection-filter-' + filter"
               [attr.aria-label]="filterActionLabel(filter)"
               [attr.aria-current]="isFilterActive(filter) ? 'true' : null"
+              [attr.aria-pressed]="isFilterActive(filter)"
               [title]="filterActionLabel(filter)"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
               (click)="onApplyFilter(filter)"
@@ -54,6 +68,7 @@
               data-test-id="list-order-by-created-at"
               [attr.aria-label]="translations.orderByCreatedAtShort() + ' - ' + translations.orderByCreatedAt()"
               [attr.aria-current]="isOrderByActive('createdAt') ? 'true' : null"
+              [attr.aria-pressed]="isOrderByActive('createdAt')"
               [title]="translations.orderByCreatedAt()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
               (click)="onSelectOrderBy('createdAt')"
@@ -67,6 +82,7 @@
               data-test-id="list-order-by-alphabet"
               [attr.aria-label]="translations.orderByAlphabetShort() + ' - ' + translations.orderByAlphabet()"
               [attr.aria-current]="isOrderByActive('alphabet') ? 'true' : null"
+              [attr.aria-pressed]="isOrderByActive('alphabet')"
               [title]="translations.orderByAlphabet()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
               (click)="onSelectOrderBy('alphabet')"
@@ -84,6 +100,7 @@
                 translations.orderDirectionDescendingShort() + ' - ' + translations.orderDirectionDescending()
               "
               [attr.aria-current]="isOrderDirectionActive('desc') ? 'true' : null"
+              [attr.aria-pressed]="isOrderDirectionActive('desc')"
               [title]="translations.orderDirectionDescending()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
               (click)="onSelectOrderDirection('desc')"
@@ -99,6 +116,7 @@
                 translations.orderDirectionAscendingShort() + ' - ' + translations.orderDirectionAscending()
               "
               [attr.aria-current]="isOrderDirectionActive('asc') ? 'true' : null"
+              [attr.aria-pressed]="isOrderDirectionActive('asc')"
               [title]="translations.orderDirectionAscending()"
               [disabled]="apiLoadNetworkStatus() === 'pending'"
               (click)="onSelectOrderDirection('asc')"
@@ -113,20 +131,6 @@
     @if (showActionSection()) {
       <div class="float-action-section">
         <div class="float-action-section-title">{{ translations.actions() }}</div>
-        @if (config().showAddButton) {
-          <div class="float-action">
-            <button
-              data-test-id="add-new"
-              [attr.aria-label]="translations.addNew()"
-              [title]="translations.addNew()"
-              [disabled]="apiLoadNetworkStatus() === 'pending'"
-              (click)="onAddNew($event)"
-            >
-              <i class="material-icons">add</i>
-              <span>{{ translations.addNew() }}</span>
-            </button>
-          </div>
-        }
         @if (config().showRandomPickButton) {
           <div class="float-action">
             <button
@@ -155,29 +159,16 @@
       close
     </button>
   </div>
-} @else if (showFloatActions()) {
+} @else if (showFloatActions() && !addOnlyMode()) {
   <div class="float-button float-show-button float-button-basic">
-    @if (addOnlyMode()) {
-      <button
-        data-test-id="add-new"
-        class="button-icon material-icons"
-        [attr.aria-label]="translations.addNew()"
-        [title]="translations.addNew()"
-        [disabled]="apiLoadNetworkStatus() === 'pending'"
-        (click)="onAddNew()"
-      >
-        add
-      </button>
-    } @else {
-      <button
-        data-test-id="show-functions"
-        class="button-icon material-icons"
-        [attr.aria-label]="translations.showFunctions()"
-        [title]="translations.showFunctions()"
-        (click)="onShowFunctions()"
-      >
-        apps
-      </button>
-    }
+    <button
+      data-test-id="show-functions"
+      class="button-icon material-icons"
+      [attr.aria-label]="translations.showFunctions()"
+      [title]="translations.showFunctions()"
+      (click)="onShowFunctions()"
+    >
+      apps
+    </button>
   </div>
 }

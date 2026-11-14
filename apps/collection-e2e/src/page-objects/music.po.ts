@@ -16,6 +16,7 @@ export const createMusicPage = (page: Page) => {
     getNewItemContentOptions: () => page.getByTestId('new-item-content-option'),
     getNewItemSaveAndCloseButton: () => page.getByTestId('new-item-save-and-close'),
     getNewItemManualModeButton: () => page.getByTestId('new-item-manual-mode'),
+    getNewItemMoreDetails: () => page.getByTestId('new-item-more-details'),
     getNewItemManualTitleInput: () => page.getByTestId('new-item-manual-title').locator('input'),
     getNewItemManualMbidInput: () => page.getByTestId('new-item-manual-imdb-id').locator('input'),
     getNewItemManualArtistsInput: () => page.getByTestId('new-item-manual-actors').locator('input'),

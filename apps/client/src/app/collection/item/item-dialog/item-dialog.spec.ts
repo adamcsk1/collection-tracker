@@ -12,7 +12,7 @@ import { PortalService } from '@services/portal-service';
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainState, mainStateToken } from '../../../main/main-store';
 import { initialSharesState, sharesStateToken, type SharesState } from '../../../shares/shares-store';
@@ -850,14 +850,14 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('');
   });
 
-  it('saves changes after confirmation and updates state', async () => {
+  it('saves changes directly and updates state', async () => {
     const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
     confirm.open.mockReturnValue(of(true));
     component['form'].title().value.set('Updated Title');
 
     await component['onSaveChanges']();
 
-    expect(confirm.open).toHaveBeenCalled();
+    expect(confirm.open).not.toHaveBeenCalled();
     expect(api.updateByExternalId).toHaveBeenCalledWith(
       'omdb',
       'tt1234567',
@@ -1167,15 +1167,21 @@ describe('ItemDialog', () => {
     );
   });
 
-  it('does not save when confirmation is declined', async () => {
+  it('preserves an edited draft when discard confirmation is declined', async () => {
     confirm.open.mockReturnValue(of(false));
+    component['editMode'].set(true);
     component['form'].title().value.set('Updated Title');
+    component['form'].title().markAsDirty();
 
-    await component['onSaveChanges']();
+    await component['onDiscardEdits']();
 
     expect(api.updateByExternalId).not.toHaveBeenCalled();
     expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('');
+    expect(component['editMode']()).toBe(true);
+    expect(component['form'].title().value()).toBe('Updated Title');
+    confirm.open.mockReturnValue(of(true));
+    await component['onDiscardEdits']();
+    expect(component['editMode']()).toBe(false);
   });
 
   it('does not save when title is empty', async () => {
@@ -1317,7 +1323,7 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(confirm.open).toHaveBeenCalled();
+    expect(confirm.open).not.toHaveBeenCalled();
     expect(api.updateByExternalId).toHaveBeenCalledWith(
       'omdb',
       'tt1234567',
@@ -1729,7 +1735,7 @@ describe('ItemDialog', () => {
 
     await component['onMarkAsFavorite']();
 
-    expect(confirm.open).toHaveBeenCalled();
+    expect(confirm.open).not.toHaveBeenCalled();
     expect(api.updateByExternalId).toHaveBeenCalledWith(
       'omdb',
       'tt1234567',
@@ -1737,7 +1743,7 @@ describe('ItemDialog', () => {
       'testhash',
       undefined
     );
-    expect(toastState.state.message()).toBe('Toast.EditItem');
+    expect(toastState.state.message()).toBe('Toast.FavoriteAdded');
   });
 
   it('does not re-save when already favorite', async () => {
@@ -1750,6 +1756,14 @@ describe('ItemDialog', () => {
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.updateByExternalId).not.toHaveBeenCalled();
+  });
+
+  it('keeps favorite state unchanged and clears loading when saving fails', async () => {
+    api.updateByExternalId.mockReturnValue(throwError(() => new Error('Update failed')));
+    await expect(component['onMarkAsFavorite']()).rejects.toThrow('Update failed');
+    expect(component.collectionItem().favorite).toBe(false);
+    expect(spinnerLoadingState.state.show()).toBe(false);
+    expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
   });
 
   it('does not mark wishlist items as favorite', async () => {
@@ -1772,7 +1786,7 @@ describe('ItemDialog', () => {
 
     await component['onRemoveFavorite']();
 
-    expect(confirm.open).toHaveBeenCalled();
+    expect(confirm.open).not.toHaveBeenCalled();
     expect(api.updateByExternalId).toHaveBeenCalledWith(
       'omdb',
       'tt1234567',
@@ -1780,7 +1794,7 @@ describe('ItemDialog', () => {
       'testhash',
       undefined
     );
-    expect(toastState.state.message()).toBe('Toast.EditItem');
+    expect(toastState.state.message()).toBe('Toast.FavoriteRemoved');
   });
 
   it('updates year to interval when valid', () => {

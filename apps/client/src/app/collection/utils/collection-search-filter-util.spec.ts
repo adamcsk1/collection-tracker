@@ -1,9 +1,49 @@
+import { DestroyRef, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideStore } from 'ngx-simple-signal-store';
 import { describe, expect, it } from 'vitest';
+import { FloatActionsService } from '../../main/float-actions/float-actions-service';
+import { collectionStateToken, initialCollectionState } from '../collection-store';
 import {
   buildCollectionRouteFilterKey,
   buildCollectionRouteFilters,
   buildStandardSearchFilters,
+  setupStandardCollectionSearch,
 } from './collection-search-filter-util';
+
+describe('setupStandardCollectionSearch', () => {
+  it('keeps toolbar search state in sync with nonempty search text', () => {
+    TestBed.configureTestingModule({
+      providers: [provideStore(initialCollectionState, collectionStateToken), FloatActionsService],
+    });
+    const searchTextModel = signal('');
+    const floatActions = TestBed.inject(FloatActionsService);
+
+    TestBed.runInInjectionContext(() => {
+      setupStandardCollectionSearch({
+        collectionState: TestBed.inject(collectionStateToken),
+        searchTextModel,
+        floatActions,
+        floatSearchTemplate: signal(undefined),
+        destroyRef: TestBed.inject(DestroyRef),
+        initialSearchText: 'dark',
+      });
+    });
+    TestBed.tick();
+    expect(floatActions.searchActive()).toBe(true);
+
+    searchTextModel.set(' ');
+    TestBed.tick();
+    expect(floatActions.searchActive()).toBe(false);
+
+    searchTextModel.set('#drama');
+    TestBed.tick();
+    expect(floatActions.searchActive()).toBe(true);
+
+    TestBed.resetTestingModule();
+    expect(floatActions.searchActive()).toBe(false);
+  });
+});
 
 describe('buildStandardSearchFilters', () => {
   it('builds default list type filters without search text', () => {

@@ -1,7 +1,19 @@
+<div class="skip-links" data-dialog-background>
+  @if (searchAvailable()) {
+    <button type="button" data-test-id="skip-to-search" (click)="onSkipToSearch()">
+      {{ translations.skipToSearch() }}
+    </button>
+  }
+  <button type="button" data-test-id="skip-to-content" (click)="onSkipToContent()">
+    {{ translations.skipToContent() }}
+  </button>
+</div>
 <ct-header class="main-header" data-dialog-background />
+<ct-float-actions data-dialog-background />
 <div class="layout-body" data-dialog-background>
   <ct-menu-nav class="sidebar" />
-  <div #mainContent class="main-body" role="main" tabindex="-1">
+  <div #mainContent class="main-body" role="main" tabindex="-1" data-test-id="main-content">
+    <h1 class="page-heading" data-test-id="page-heading">{{ translations.pageTitle() }}</h1>
     <router-outlet />
   </div>
 </div>
@@ -11,7 +23,6 @@
   }
 }
 <libc-spinner-loading />
-<ct-float-actions data-dialog-background />
 <libc-toast />
 <libc-blocker-loading />
 <ng-container #portal />

@@ -1,6 +1,8 @@
 <section
   class="float-search-bar"
   data-test-id="float-search-bar"
+  role="region"
+  [attr.aria-label]="translations.pageControls()"
   [class.float-search-bar-no-search]="!searchAvailable()"
   [class.float-search-bar-menu-only]="showMenuOnlyBar()"
   [class.float-search-bar-search-expanded]="searchAvailable() && searchExpanded()"

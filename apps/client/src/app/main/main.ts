@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   ElementRef,
   inject,
@@ -14,6 +15,7 @@ import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { PosterBackground } from '@components/poster-background/poster-background';
 import { FloatActions } from './float-actions/float-actions';
+import { FloatActionsService } from './float-actions/float-actions-service';
 import { Header } from './header/header';
 import { MenuNav } from './menu-nav/menu-nav';
 import { MainService } from './main-service';
@@ -37,6 +39,7 @@ import { AndroidBackHandlerService } from '@services/android-back-handler-servic
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Main implements OnInit {
+  private readonly floatActions = inject(FloatActionsService);
   private readonly androidBackHandler = inject(AndroidBackHandlerService);
   private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);
@@ -53,6 +56,22 @@ export class Main implements OnInit {
   private readonly titleKey = signal('AppTitle');
   protected readonly useAnimatedBackground = this.mainState.state.animatedBackground;
   protected readonly backgroundImagesRefreshTrigger = this.mainState.state.backgroundImagesRefreshTrigger;
+  protected readonly searchAvailable = computed(
+    () => !!this.floatActions.searchTemplate() || this.floatActions.searchActionAvailable()
+  );
+  protected readonly translations = {
+    pageTitle: computed(() => this.ngxSignalTranslate.translate(this.titleKey())),
+    skipToSearch: computed(() => this.ngxSignalTranslate.translate('SkipToSearch')),
+    skipToContent: computed(() => this.ngxSignalTranslate.translate('SkipToContent')),
+  };
+
+  protected onSkipToSearch(): void {
+    this.floatActions.focusSearch();
+  }
+
+  protected onSkipToContent(): void {
+    this.mainContent()?.nativeElement.focus();
+  }
 
   constructor() {
     let previousPath: string | undefined;

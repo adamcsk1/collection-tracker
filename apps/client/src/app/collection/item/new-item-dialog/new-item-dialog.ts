@@ -21,6 +21,7 @@ import type { TabOption } from '@components/tabs/tabs-model';
 import { Tabs } from '@components/tabs/tabs';
 import { Textarea } from '@components/textarea/textarea';
 import { ApiService } from '@services/api/api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared/models/api-model';
@@ -126,6 +127,11 @@ export class NewItemDialog {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
+  private readonly confirm = inject(ConfirmService);
+  public readonly canDiscard = async (): Promise<boolean> => {
+    if (!this.searchForm().dirty() && !this.manualForm().dirty()) return true;
+    return firstValueFrom(this.confirm.open(this.ngxSignalTranslate.translate('Confirm.DiscardChanges')));
+  };
   private readonly apiState = inject(apiStateToken);
   private readonly service = inject(NewItemDialogService);
   private readonly mainState = inject(mainStateToken);
@@ -138,6 +144,7 @@ export class NewItemDialog {
   private readonly knownSearchIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownSearchIMDbIdExists);
   private readonly knownManualIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownManualIMDbIdExists);
   protected readonly translations = {
+    moreDetails: computed(() => this.ngxSignalTranslate.translate('MoreDetails')),
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
     titleNewUpNextItem: computed(() => this.ngxSignalTranslate.translate('Title.NewUpNextItem')),
     titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
@@ -233,6 +240,7 @@ export class NewItemDialog {
   ]);
   protected readonly submitMode = signal<SaveMode | null>(null);
   protected readonly mode = signal<NewItemMode>('search');
+  protected readonly moreDetailsOpen = signal(false);
   protected readonly searchModel = signal<NewItemSearchModel>(defaultSearchModel());
   protected readonly manualModel = signal<ItemFormModel>(defaultManualModel());
   protected readonly searchForm = form(
@@ -601,6 +609,11 @@ export class NewItemDialog {
     if (this.isAlbumAdd()) return this.translations.mbid();
     return this.translations.labelIMDbId();
   });
+  protected readonly identityHint = computed(() => {
+    if (this.isBookAdd()) return this.ngxSignalTranslate.translate('Hint.ManualISBN');
+    if (this.isAlbumAdd()) return this.ngxSignalTranslate.translate('Hint.ManualMBID');
+    return this.ngxSignalTranslate.translate('Hint.ManualIMDbId');
+  });
   protected readonly contributorLabel = computed(() => {
     if (this.isBookAdd()) return this.translations.authors();
     if (this.isAlbumAdd()) return this.translations.artists();
@@ -640,6 +653,15 @@ export class NewItemDialog {
   });
 
   constructor() {
+    effect(() => {
+      if (
+        this.manualForm.rate().invalid() ||
+        this.manualForm.rottenTomatoesRate().invalid() ||
+        this.manualForm.metacriticRate().invalid()
+      ) {
+        this.moreDetailsOpen.set(true);
+      }
+    });
     effect(() => {
       const matchedContent = this.matchedContent();
       const selectedExternalReference = this.searchForm.selectedExternalReference();
@@ -903,6 +925,10 @@ export class NewItemDialog {
 
   protected isMatchedContentSelected(content: ExternalMetadataSelectDataModel): boolean {
     return `${content.value}` === this.selectedExternalReference();
+  }
+
+  protected onMoreDetailsToggle(event: Event): void {
+    this.moreDetailsOpen.set((event.target as HTMLDetailsElement).open);
   }
 
   protected onSelectMatchedContent(content: ExternalMetadataSelectDataModel): void {

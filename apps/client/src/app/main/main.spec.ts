@@ -18,6 +18,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AndroidBackHandlerService } from '@services/android-back-handler-service';
 import { Main } from './main';
+import { FloatActionsService } from './float-actions/float-actions-service';
 
 describe('Main component (client)', () => {
   let fixture: ComponentFixture<Main>;
@@ -98,8 +99,23 @@ describe('Main component (client)', () => {
     expect(spinnerState.state.show()).toBe(false);
   });
 
+  it('provides a translated page heading and a content skip target', async () => {
+    route.data = { titleKey: 'Tracking' };
+    routerEvents.next(new NavigationEnd(1, '/collection/tracking', '/collection/tracking'));
+    await fixture.whenStable();
+    expect(fixture.componentInstance['translations'].pageTitle()).toBe('Tracking');
+    fixture.componentInstance['onSkipToContent']();
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('div'));
+  });
+
   it('starts token validation on init', () => {
     expect(tokenValidation.startValidation).toHaveBeenCalled();
+  });
+
+  it('requests search expansion and focus from the skip link', () => {
+    const focusSearch = vi.spyOn(TestBed.inject(FloatActionsService), 'focusSearch');
+    fixture.componentInstance['onSkipToSearch']();
+    expect(focusSearch).toHaveBeenCalledOnce();
   });
 
   it('sets the language and theme on init', () => {

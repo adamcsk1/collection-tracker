@@ -1,8 +1,9 @@
 <div class="image">
   <div
     class="image-action"
+    [class.completed-image]="completedImage()"
     [attr.data-test-id]="imageTestId()"
-    [attr.tabindex]="interactive() ? 0 : null"
+    [attr.tabindex]="interactive() ? -1 : null"
     [attr.role]="interactive() ? 'button' : null"
     [attr.aria-label]="interactive() ? title() : null"
     (click)="onOpen($event)"
@@ -10,15 +11,21 @@
     (keydown.space)="$event.preventDefault()"
     (keyup.space)="onOpen($event)"
   >
-    <img
-      class="poster-image"
-      [class.completed-image]="completedImage()"
-      [attr.src]="imageUrl() || null"
-      alt=""
-      aria-hidden="true"
-      loading="lazy"
-      decoding="async"
-    />
+    @if (imageUrl() && failedImageUrl() !== imageUrl()) {
+      <img
+        class="poster-image"
+        [attr.src]="imageUrl() || null"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+        (error)="failedImageUrl.set(imageUrl())"
+      />
+    } @else {
+      <span class="poster-fallback material-icons" data-test-id="list-item-image-fallback" aria-hidden="true"
+        >perm_media</span
+      >
+    }
   </div>
   @if (completed()) {
     <span

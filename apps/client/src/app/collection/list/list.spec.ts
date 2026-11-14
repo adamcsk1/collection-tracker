@@ -138,6 +138,31 @@ describe('List', () => {
     (component as any).scrollContainer = () => ({ nativeElement: { scrollTo: scrollSpy } }) as ElementRef;
   });
 
+  it('exposes active filters and clears query filters without changing ordering', () => {
+    const focusSearch = vi.spyOn(floatActions, 'focusSearch');
+    fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ type: 'album', favorite: true }));
+    collectionState.setState('searchText', 'Album');
+    collectionState.setState('aiSearchPromptText', 'Calm music');
+    expect(component['activeFilters']().map((filter) => filter.value)).toEqual(['album', 'favorite']);
+    expect(component['hasActiveFilters']()).toBe(true);
+    component['onClearFilters']();
+    expect(focusSearch).toHaveBeenCalledOnce();
+    expect(collectionState.state.searchText()).toBe('');
+    expect(collectionState.state.aiSearchPromptText()).toBe('');
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { search: null, type: null, watched: null, favorite: null, completed: null, shared: null },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('removes an album scope through the type query parameter', () => {
+    const focusSearch = vi.spyOn(floatActions, 'focusSearch');
+    fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ type: 'album' }));
+    component['onRemoveFilter']('album');
+    expect(focusSearch).toHaveBeenCalledOnce();
+    expect(router.navigate).toHaveBeenCalledWith([], { queryParams: { type: null }, queryParamsHandling: 'merge' });
+  });
+
   it('fires only one initial items request on creation', async () => {
     vi.useFakeTimers();
     try {

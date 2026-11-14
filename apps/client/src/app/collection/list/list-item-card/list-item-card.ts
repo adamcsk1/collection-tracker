@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { ListItemCardRatingModel } from './list-item-card-model';
 
 @Component({
@@ -30,6 +30,7 @@ export class ListItemCard {
   public readonly sharedLabel = input('');
   public readonly open = output<void>();
   public readonly imageBadgeClick = output<void>();
+  protected readonly failedImageUrl = signal<string | null>(null);
 
   protected onOpen(event?: Event): void {
     if (!this.interactive()) return;

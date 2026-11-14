@@ -2,6 +2,14 @@
   display: contents;
 }
 
+.add-item-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2xs);
+  white-space: nowrap;
+  min-height: var(--float-button-container-size);
+}
+
 .float-scale-in {
   animation: float-scale-in 0.2s ease-in-out forwards;
 }
@@ -41,7 +49,7 @@
   left: 50%;
   bottom: calc(100% + var(--size-md));
   box-sizing: border-box;
-  max-height: calc(100dvh - var(--size-2xl) - var(--float-search-height) - 2 * var(--size-md));
+  max-height: calc(100dvh - var(--size-2xl) - var(--float-search-height) - 7rem);
   overflow-y: auto;
   translate: -50%;
   transform-origin: bottom center;

@@ -1,4 +1,9 @@
-<libc-dialog-shell data-test-id="item-dialog" ariaLabelledBy="item-dialog-heading" (closed)="onDialogClosed()">
+<libc-dialog-shell
+  data-test-id="item-dialog"
+  ariaLabelledBy="item-dialog-heading"
+  [beforeClose]="canDiscard"
+  (closed)="onDialogClosed()"
+>
   <ng-container dialog-shell-top-content>
     <h2 id="item-dialog-heading" class="dialog-title" tabindex="-1">
       <i class="material-icons" aria-hidden="true" data-test-id="item-dialog-icon">{{ dialogIcon() }}</i>
@@ -185,7 +190,7 @@
         type="button"
         [attr.aria-label]="translations.backToDetails()"
         [title]="translations.backToDetails()"
-        (click)="onReadOnly()"
+        (click)="onDiscardEdits()"
       >
         <i class="material-icons" aria-hidden="true"> arrow_back </i>
         <span class="button-reveal-label-text"

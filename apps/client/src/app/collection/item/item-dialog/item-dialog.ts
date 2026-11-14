@@ -99,6 +99,14 @@ export class ItemDialog implements OnInit {
   private readonly elementRef: ElementRef<HTMLElement> = inject(ElementRef);
   private readonly mainState = inject(mainStateToken);
   private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
+  public readonly canDiscard = async (): Promise<boolean> => {
+    if (!this.editMode() || !this.form().dirty()) return true;
+    return firstValueFrom(this.confirm.open(this.ngxSignalTranslate.translate('Confirm.DiscardChanges')));
+  };
+
+  protected async onDiscardEdits(): Promise<void> {
+    if (await this.canDiscard()) this.onReadOnly();
+  }
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
     titleTrackingItem: computed(() => this.ngxSignalTranslate.translate('Title.TrackingItem')),
@@ -729,60 +737,44 @@ export class ItemDialog implements OnInit {
     await submit(this.form);
   }
 
-  private async doSave(item = this.buildItemFromForm()): Promise<void> {
+  private async doSave(
+    item = this.buildItemFromForm(),
+    message = this.ngxSignalTranslate.translate('Toast.EditItem')
+  ): Promise<void> {
     const ownerShareCode = this.collectionItem().ownerShareCode;
-    const confirmed = await firstValueFrom(
-      this.confirm
-        .open(this.ngxSignalTranslate.translate('Confirm.Change', { name: this.collectionItem().title }))
-        .pipe(
-          mergeMap((confirmed) => {
-            if (confirmed) {
-              this.spinnerLoadingState.setState('show', true);
-              let updateListType: 'tracking' | 'books' | 'music' | 'up-next' | 'wishlist' | undefined;
-              if (this.tracking()) {
-                updateListType = 'tracking';
-              } else if (this.books() || this.music()) {
-                updateListType = this.music() ? 'music' : 'books';
-              } else if (this.upNext()) {
-                updateListType = 'up-next';
-              } else if (this.wishlist()) {
-                updateListType = 'wishlist';
-              }
-              const updateRequest = updateListType
-                ? this.api.updateByExternalId(
-                    this.collectionItem().externalProvider,
-                    this.collectionItem().externalItemId,
-                    item,
-                    this.collectionItem().hash,
-                    ownerShareCode,
-                    updateListType
-                  )
-                : this.api.updateByExternalId(
-                    this.collectionItem().externalProvider,
-                    this.collectionItem().externalItemId,
-                    item,
-                    this.collectionItem().hash,
-                    ownerShareCode
-                  );
-              return updateRequest.pipe(
-                map((result) => ({ confirmed, item: result.item })),
-                finalize(() => this.spinnerLoadingState.setState('show', false))
-              );
-            } else return of({ confirmed, item: null });
-          })
+    this.spinnerLoadingState.setState('show', true);
+    const updateListType = this.collectionItem().listType === 'library' ? undefined : this.collectionItem().listType;
+    const sourceItem = this.collectionItem();
+    const updateRequest = updateListType
+      ? this.api.updateByExternalId(
+          sourceItem.externalProvider,
+          sourceItem.externalItemId,
+          item,
+          sourceItem.hash,
+          ownerShareCode,
+          updateListType
         )
+      : this.api.updateByExternalId(
+          sourceItem.externalProvider,
+          sourceItem.externalItemId,
+          item,
+          sourceItem.hash,
+          ownerShareCode
+        );
+    const result = await firstValueFrom(
+      updateRequest.pipe(finalize(() => this.spinnerLoadingState.setState('show', false)))
     );
-    if (confirmed.confirmed && confirmed.item) {
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
+    if (result.item) {
+      this.toastState.setState('message', message);
       this.collectionService.updateCollectionItem(
         this.collectionItem(),
-        confirmed.item,
+        result.item,
         ownerShareCode,
         this.collectionItem().listType
       );
       this.collectionService.triggerReload();
-      this.collectionItem.set(confirmed.item);
-      this.lastSavedItem.set(toCollectionItemChange(confirmed.item));
+      this.collectionItem.set(result.item);
+      this.lastSavedItem.set(toCollectionItemChange(result.item));
       this.posterImageFailed.set(false);
       this.onReadOnly();
     }
@@ -1016,12 +1008,18 @@ export class ItemDialog implements OnInit {
 
   protected async onMarkAsFavorite(): Promise<void> {
     if (!this.ownershipItem() || this.collectionItem().favorite) return;
-    await this.doSave({ ...this.buildItemFromForm(), favorite: true });
+    await this.doSave(
+      { ...this.buildItemFromForm(), favorite: true },
+      this.ngxSignalTranslate.translate('Toast.FavoriteAdded')
+    );
   }
 
   protected async onRemoveFavorite(): Promise<void> {
     if (!this.ownershipItem()) return;
-    await this.doSave({ ...this.buildItemFromForm(), favorite: false });
+    await this.doSave(
+      { ...this.buildItemFromForm(), favorite: false },
+      this.ngxSignalTranslate.translate('Toast.FavoriteRemoved')
+    );
   }
 
   protected onManageSeriesMetadata(): void {

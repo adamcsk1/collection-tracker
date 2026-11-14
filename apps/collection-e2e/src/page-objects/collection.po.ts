@@ -100,16 +100,20 @@ export const createCollectionPage = (page: Page) => {
     getListItemMetacriticRatings: () => page.getByTestId('list-item-rating-metacritic'),
     getListItemUserRates: () => page.getByTestId('list-item-user-rate'),
     getListItemImages: () => page.getByTestId('list-item-image'),
-    tabToFirstListItemImage: async () => {
-      const image = page.getByTestId('list-item-image').first();
+    getListItemTitleButtons: () => page.getByTestId('list-item-title-button'),
+    getClearFiltersButton: () => page.getByTestId('collection-clear-filters'),
+    getVisibleStandardSearchInput: () => page.getByTestId('collection-search').locator('input'),
+    getSkipToSearchButton: () => page.getByTestId('skip-to-search'),
+    tabToFirstListItemTitle: async () => {
+      const titleButton = page.getByTestId('list-item-title-button').first();
       for (
         let index = 0;
-        index < 50 && !(await image.evaluate((element) => element === document.activeElement));
+        index < 50 && !(await titleButton.evaluate((element) => element === document.activeElement));
         index++
       ) {
         await page.keyboard.press('Tab');
       }
-      await expect(image).toBeFocused();
+      await expect(titleButton).toBeFocused();
     },
     getListItemImageBadges: () => page.getByTestId('list-item-image-badge'),
     getListItemImageByTitle: (title: string) =>
@@ -156,7 +160,6 @@ export const createCollectionPage = (page: Page) => {
 
     // New item dialog
     openNewItemDialog: async () => {
-      await page.getByTestId('show-functions').click();
       await page.getByTestId('add-new').click();
     },
     getNewItemSearch: () => page.getByTestId('new-item-search'),
@@ -167,6 +170,7 @@ export const createCollectionPage = (page: Page) => {
     getNewItemSearchPanel: () => page.getByTestId('new-item-mode-first-panel'),
     getNewItemManualPanel: () => page.getByTestId('new-item-mode-second-panel'),
     getNewItemManualHint: () => page.getByTestId('new-item-manual-hint'),
+    getNewItemMoreDetails: () => page.getByTestId('new-item-more-details'),
     getNewItemManualHintAndPreview: () =>
       getActiveDialogFrame().locator(
         '[data-test-id="new-item-manual-hint"], [data-test-id="new-item-manual-image-preview"]'

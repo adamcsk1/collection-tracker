@@ -119,20 +119,19 @@ test.describe('Collection — add a new element', () => {
     await autoLogin();
   });
 
-  test('opens the new-item dialog via float buttons', async () => {
-    await collectionPage.getShowFunctionsButton().click();
+  test('opens the new-item dialog directly with a visible primary save action', async () => {
     await collectionPage.getAddNewButton().click();
     await expect(collectionPage.getNewItemSearchInput()).toBeVisible();
     await expect(collectionPage.getNewItemActionButtons()).toHaveCount(3);
     for (const button of await collectionPage.getNewItemActionButtons().all()) {
-      await expect(button).toHaveClass(/button-icon/);
-      await expect(button).toHaveClass(/button-reveal-label/);
       await expect(button).toHaveAttribute('aria-label', /\S/);
       await expect(button).toHaveAttribute('title', /\S/);
       await expect(
         button.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " dialog-footer ")]')
       ).toHaveCount(1);
     }
+    await expect(collectionPage.getNewItemSaveAndCloseButton()).toHaveClass(/primary-save-action/);
+    await expect(collectionPage.getNewItemSaveAndCloseButton()).toContainText('Save and close');
   });
 
   test('searches external metadata, saves the item, and it appears in the list', async () => {
@@ -283,6 +282,7 @@ test.describe('Collection — add a new element', () => {
     await collectionPage.getShowFunctionsButton().click();
     await collectionPage.getAddNewButton().click();
     await collectionPage.getNewItemManualModeButton().click();
+    await collectionPage.getNewItemMoreDetails().click();
     await collectionPage.getNewItemManualImageInput().fill('data:image/gif;base64,R0lGODlhAQABAAAAACw=');
     for (const viewport of [
       { width: 375, height: 667 },
@@ -345,16 +345,15 @@ test.describe('Collection — delete an element', () => {
   });
 });
 
-test('shows an inset focus indicator when tabbing to a poster', async ({ page, autoLogin, api }) => {
+test('reaches a single card title action with visible keyboard focus', async ({ page, autoLogin, api }) => {
   await autoLogin();
   await seedItems(api, [buildCollectionItem('Keyboard Focus Movie')]);
   await collectionPage.visit();
-  const poster = collectionPage.getListItemImages().first();
+  const poster = collectionPage.getListItemTitleButtons().first();
   await expect(poster).toBeVisible();
-  await collectionPage.tabToFirstListItemImage();
+  await collectionPage.tabToFirstListItemTitle();
   expect(await poster.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
   await expect(poster).toHaveCSS('outline-style', 'solid');
-  await expect(poster).toHaveCSS('outline-offset', '-2px');
   const outline = await poster.evaluate((element) => {
     const style = getComputedStyle(element);
     return { width: parseFloat(style.outlineWidth), color: style.outlineColor };
@@ -686,7 +685,6 @@ test.describe('Collection — favorites', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogMarkFavoriteButton().click();
-    await messageDialog.confirm();
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.expectItemDialogActionsVisible();
     await expect(collectionPage.getItemDialogRemoveFavoriteButton()).toBeVisible();
@@ -1040,7 +1038,6 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await messageDialog.confirm();
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getItemDialogProgressChip()).toContainText('55 / 200');
     await collectionPage.closeActiveDialogByOverlay();
@@ -1066,7 +1063,6 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await messageDialog.confirm();
     const response = await responsePromise;
     expect(response.status()).toBe(200);
     const body = await response.json();
@@ -1099,7 +1095,6 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await messageDialog.confirm();
     const response = await responsePromise;
     expect(response.status()).toBe(200);
     const body = await response.json();
@@ -1153,7 +1148,6 @@ test.describe('Collection — unified tracking gaps', () => {
       (response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/collection-items/')
     );
     await collectionPage.getItemDialogSaveButton().click();
-    await messageDialog.confirm();
     const response = await responsePromise;
     expect(response.status()).toBe(200);
     const body = await response.json();

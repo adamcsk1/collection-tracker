@@ -1,10 +1,13 @@
 import { Routes } from '@angular/router';
 import { Collection } from './collection';
+import { itemDraftGuard } from './item/item-dialog/item-draft-guard';
 
 export const collectionRoutes: Routes = [
   {
     path: '',
     component: Collection,
+    canDeactivate: [itemDraftGuard],
+    runGuardsAndResolvers: 'always',
     children: [
       {
         path: 'library',

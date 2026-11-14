@@ -15,8 +15,6 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { MenuDialog } from '../menu-dialog/menu-dialog';
 import { FloatActionsService } from './float-actions-service';
 
-const FOCUSABLE_SEARCH_SELECTOR = 'button[data-test-id="ai-search-trigger"], input, textarea, select, button';
-
 @Component({
   selector: 'ct-float-actions',
   templateUrl: './float-actions.html',
@@ -31,12 +29,13 @@ export class FloatActions {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  protected readonly service = inject(FloatActionsService);
   private readonly searchContent = viewChild<ElementRef<HTMLElement>>('searchContent');
+  private readonly searchOpened = signal(false);
   private readonly searchFocusRequest = signal(0);
-  private previousSearchTemplate: unknown = null;
+  protected readonly service = inject(FloatActionsService);
 
   protected readonly translations = {
+    pageControls: computed(() => this.ngxSignalTranslate.translate('PageControls')),
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
@@ -49,7 +48,9 @@ export class FloatActions {
   protected readonly aiSearchActive = this.service.aiSearchActive;
   protected readonly actionsComponent = this.service.actionsComponent;
   protected readonly actionButtonsVisible = this.service.actionButtonsVisible;
-  protected readonly searchExpanded = signal(false);
+  protected readonly searchExpanded = computed(
+    () => !!this.searchTemplate() && (this.searchOpened() || this.service.searchActive())
+  );
   protected readonly searchAvailable = computed(() => !!this.searchTemplate() || this.searchActionAvailable());
   protected readonly showFloatActions = computed(() => this.config().actionsAvailable && !!this.actionsComponent());
   protected readonly showMenuOnlyBar = computed(
@@ -58,25 +59,32 @@ export class FloatActions {
 
   constructor() {
     effect(() => {
-      const searchTemplate = this.searchTemplate();
-      if (this.previousSearchTemplate === searchTemplate) return;
-
-      this.previousSearchTemplate = searchTemplate;
-      this.searchExpanded.set(false);
+      this.searchTemplate();
+      this.searchOpened.set(false);
+      this.searchFocusRequest.set(0);
     });
 
     effect(() => {
-      if (this.config().scrolling && this.searchExpanded()) {
-        this.searchExpanded.set(false);
-      }
+      if (this.config().scrolling) this.searchOpened.set(false);
     });
 
     effect(() => {
-      const searchFocusRequest = this.searchFocusRequest();
+      const request = this.service.searchFocusRequest();
+      if (!request) return;
+      this.searchOpened.set(true);
+      this.searchFocusRequest.set(request);
+    });
+
+    effect(() => {
+      const focusRequest = this.searchFocusRequest();
       const searchContent = this.searchContent();
-      if (!searchFocusRequest || !searchContent) return;
+      if (!focusRequest || !searchContent) return;
 
-      queueMicrotask(() => this.focusSearchControl());
+      queueMicrotask(() => {
+        this.searchFocusRequest.set(0);
+        if (this.searchContent() !== searchContent) return;
+        searchContent.nativeElement.querySelector<HTMLElement>('input, textarea, select, button')?.focus();
+      });
     });
   }
 
@@ -85,39 +93,20 @@ export class FloatActions {
   }
 
   protected onShowSearch(): void {
-    if (this.searchActionAvailable()) {
-      this.service.triggerSearchAction();
-      return;
-    }
+    this.service.focusSearch();
+  }
 
-    this.searchExpanded.set(true);
-    this.searchFocusRequest.update((request) => request + 1);
+  @HostListener('document:pointerdown', ['$event'])
+  protected onDocumentPointerDown(event: PointerEvent): void {
+    if (this.elementRef.nativeElement.contains(event.target as Node)) return;
+    this.searchOpened.set(false);
   }
 
   protected onOpenAiSearch(): void {
     this.service.triggerAiSearchAction();
   }
 
-  @HostListener('document:pointerdown', ['$event'])
-  protected onDocumentPointerDown(event: PointerEvent): void {
-    if (!this.searchExpanded()) return;
-    if (this.elementRef.nativeElement.contains(event.target as Node)) return;
-
-    this.searchExpanded.set(false);
-  }
-
   protected onScrollToTop(): void {
     this.service.scrollToTop();
-  }
-
-  private focusSearchControl(): void {
-    const searchContentElement = this.searchContent()?.nativeElement;
-    const focusableElement = searchContentElement?.querySelector<HTMLElement>(FOCUSABLE_SEARCH_SELECTOR);
-    if (!focusableElement) return;
-
-    focusableElement.focus();
-    if (focusableElement.matches('[data-test-id="ai-search-trigger"]')) {
-      focusableElement.click();
-    }
   }
 }
