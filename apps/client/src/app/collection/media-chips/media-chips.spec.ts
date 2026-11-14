@@ -46,6 +46,20 @@ describe('CollectionMediaChips', () => {
     ).toBe('movie');
   });
 
+  it('moves the pressed state when the active media type changes', async () => {
+    const host = fixture.nativeElement as HTMLElement;
+    fixture.componentRef.setInput('active', 'movie');
+    await fixture.whenStable();
+
+    expect(host.querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
+    expect(host.querySelector('[data-test-id="collection-media-chip-movie"]')?.getAttribute('aria-pressed')).toBe(
+      'true'
+    );
+    expect(host.querySelector('[data-test-id="collection-media-chip-all"]')?.getAttribute('aria-pressed')).toBe(
+      'false'
+    );
+  });
+
   it('hides books chip when books feature is disabled', () => {
     fixture.componentRef.setInput('booksEnabled', false);
     fixture.detectChanges();

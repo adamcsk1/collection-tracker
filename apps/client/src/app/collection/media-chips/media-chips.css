@@ -12,9 +12,12 @@
   padding: var(--size-md) var(--size-md) 0;
 
   button {
-    &[aria-selected='true'] {
+    &[aria-pressed='true'] {
       background-color: var(--main-color);
       color: var(--background-color);
+      outline: var(--outline-style);
+      outline-color: var(--main-color);
+      outline-offset: var(--outline-offset);
     }
   }
 }
