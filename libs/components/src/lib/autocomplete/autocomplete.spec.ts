@@ -86,7 +86,7 @@ describe('Autocomplete component', () => {
     expect(input.getAttribute('aria-required')).toBe('true');
     expect(input.hasAttribute('aria-multiline')).toBe(false);
     vi.useFakeTimers();
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
@@ -135,7 +135,7 @@ describe('Autocomplete component', () => {
   });
 
   it('resets value when reset button is clicked', () => {
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyX',
       target: { value: 'x' },
     } as unknown as KeyboardEvent);
@@ -157,7 +157,7 @@ describe('Autocomplete component', () => {
     } as Pick<KeyboardEvent, 'preventDefault' | 'stopPropagation'>;
 
     vi.useFakeTimers();
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
@@ -185,7 +185,7 @@ describe('Autocomplete component', () => {
 
   it('clears suggestions when Escape is pressed', () => {
     vi.useFakeTimers();
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
@@ -194,8 +194,9 @@ describe('Autocomplete component', () => {
 
     expect(component['suggestions']()).toHaveLength(2);
 
-    component['onKeyup']({
+    component['onKeydown']({
       code: 'Escape',
+      stopPropagation: vi.fn(),
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
     fixture.detectChanges();
@@ -217,11 +218,17 @@ describe('Autocomplete component', () => {
     expect(keyboardEvent.stopPropagation).toHaveBeenCalled();
   });
 
+  it('allows Escape to reach the containing dialog when suggestions are closed', () => {
+    const stopPropagation = vi.fn();
+    component['onKeydown']({ code: 'Escape', stopPropagation } as unknown as KeyboardEvent);
+    expect(stopPropagation).not.toHaveBeenCalled();
+  });
+
   it('does not show suggestions when current value already matches', () => {
     vi.useFakeTimers();
     serviceStub.getSuggestion.mockReturnValue(['alpha']);
 
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyA',
       target: { value: 'alpha' },
     } as unknown as KeyboardEvent);
@@ -295,8 +302,10 @@ describe('Autocomplete component', () => {
     component['_suggestions'].set(['alpha', 'beta']);
     serviceStub.getSuggestion.mockClear();
 
-    component['onKeyup']({
+    component['onKeydown']({
       code: 'ArrowDown',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
     vi.advanceTimersByTime(300);
@@ -348,7 +357,7 @@ describe('Autocomplete component', () => {
   it('does not set suggestions when service returns empty array', () => {
     vi.useFakeTimers();
     serviceStub.getSuggestion.mockReturnValue([]);
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyZ',
       target: { value: 'z' },
     } as unknown as KeyboardEvent);
@@ -378,7 +387,7 @@ describe('Autocomplete component', () => {
 
   it('uses formatted value when accepting a suggestion', () => {
     vi.useFakeTimers();
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
@@ -396,7 +405,7 @@ describe('Autocomplete component', () => {
     vi.useFakeTimers();
     serviceStub.getSuggestion.mockClear();
 
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyX',
       target: { value: '' },
     } as unknown as KeyboardEvent);
@@ -516,10 +525,35 @@ describe('Autocomplete component', () => {
     expect(suggestionsPane.classList.contains('input-suggestions-pane-above')).toBe(true);
   });
 
+  it('updates the form and suggestions from input events without keyboard events', () => {
+    vi.useFakeTimers();
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.value = 'pasted text';
+    input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertFromPaste' }));
+    expect(fixture.componentInstance.model()).toBe('pasted text');
+    vi.advanceTimersByTime(300);
+    expect(serviceStub.getSuggestion).toHaveBeenCalledWith('pasted text');
+  });
+
+  it('waits for composition to finish before updating the model and suggestions', () => {
+    vi.useFakeTimers();
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    input.value = '日本';
+    input.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+    vi.advanceTimersByTime(300);
+    expect(fixture.componentInstance.model()).toBe('');
+    expect(serviceStub.getSuggestion).not.toHaveBeenCalled();
+    input.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    expect(fixture.componentInstance.model()).toBe('日本');
+    vi.advanceTimersByTime(300);
+    expect(serviceStub.getSuggestion).toHaveBeenCalledWith('日本');
+  });
+
   it('handles observable suggestions from the injected service', () => {
     serviceStub.getSuggestion.mockReturnValue(of(['zeta', 'eta']));
     vi.useFakeTimers();
-    component['onKeyup']({
+    component['onInput']({
       code: 'KeyZ',
       target: { value: 'z' },
     } as unknown as KeyboardEvent);

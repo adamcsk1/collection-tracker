@@ -66,7 +66,9 @@
       [value]="value() ?? ''"
       (keypress)="onKeypress($event)"
       (keydown)="onKeydown($event)"
-      (keyup)="onKeyup($event)"
+      (input)="onInput($event)"
+      (compositionstart)="onCompositionStart()"
+      (compositionend)="onCompositionEnd($event)"
       (blur)="onBlur()"
       (focus)="onFocus()"
     />
