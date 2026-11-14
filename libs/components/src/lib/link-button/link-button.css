@@ -22,7 +22,6 @@
 
   &:is(:hover, :focus-visible) {
     text-decoration: none;
-    outline: none;
   }
 
   > i.material-icons {
