@@ -1,14 +1,17 @@
 import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
+import { ThemeService } from '@services/theme/theme-service';
 import { CollectionStatisticsApiResponseModel, CollectionStatisticsStatus } from '@shared/models/api-model';
-import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { STATISTICS_CHART_COLORS } from './statistics-chart-color-const';
+import { statisticsChartColor } from './statistics-chart-color-util';
 
 @Injectable()
 export class StatisticsChartService {
   private readonly document = inject(DOCUMENT);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly theme = inject(ThemeService);
 
   public createTagChart(chart: Chart<'pie', number[], string> | null): Chart<'pie', number[], string> | null {
     if (chart) return chart;
@@ -17,7 +20,7 @@ export class StatisticsChartService {
     return new Chart(canvas, {
       type: 'pie',
       data: { labels: [], datasets: [] },
-      options: { responsive: true, maintainAspectRatio: false },
+      options: { responsive: true, maintainAspectRatio: false, ...this.textOptions() },
     });
   }
 
@@ -30,7 +33,7 @@ export class StatisticsChartService {
     return new Chart(canvas, {
       type: 'doughnut',
       data: { labels: [], datasets: [] },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '60%' },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', ...this.textOptions() },
     });
   }
 
@@ -58,10 +61,12 @@ export class StatisticsChartService {
       {
         label: this.ngxSignalTranslate.translate('Count'),
         data: selectedTags.map((tag) => countByTag.get(tag) ?? 0),
-        backgroundColor: selectedTags.map((tag) => textToHexColor(tag.replace('#', ''))),
+        backgroundColor: selectedTags.map((tag) => this.fillColor(tag.replace('#', ''))),
+        borderColor: this.colors().background,
+        borderWidth: 2,
       },
     ];
-    chart.update();
+    this.updateTheme(chart);
   }
 
   public updateOverviewChart(
@@ -78,10 +83,12 @@ export class StatisticsChartService {
       {
         label: this.ngxSignalTranslate.translate('Count'),
         data: entries.map(({ count }) => count),
-        backgroundColor: entries.map(({ key }) => textToHexColor(key)),
+        backgroundColor: entries.map(({ key }) => this.fillColor(key)),
+        borderColor: this.colors().background,
+        borderWidth: 2,
       },
     ];
-    chart.update();
+    this.updateTheme(chart);
   }
 
   public updateGenreChart(
@@ -95,10 +102,10 @@ export class StatisticsChartService {
       {
         label: this.ngxSignalTranslate.translate('Count'),
         data: entries.map(({ count }) => count),
-        backgroundColor: entries.map(({ genre }) => textToHexColor(genre)),
+        backgroundColor: entries.map(({ genre }) => this.fillColor(genre)),
       },
     ];
-    chart.update();
+    this.updateTheme(chart);
   }
 
   public updateReleaseYearChart(
@@ -111,10 +118,10 @@ export class StatisticsChartService {
       {
         label: this.ngxSignalTranslate.translate('Count'),
         data: releaseYearCounts.map(({ count }) => count),
-        backgroundColor: textToHexColor('releaseYear'),
+        backgroundColor: this.fillColor('releaseYear'),
       },
     ];
-    chart.update();
+    this.updateTheme(chart);
   }
 
   public updateRatingChart(
@@ -127,10 +134,10 @@ export class StatisticsChartService {
       {
         label: this.ngxSignalTranslate.translate('Count'),
         data: userRatingCounts.map(({ count }) => count),
-        backgroundColor: textToHexColor('userRating'),
+        backgroundColor: this.fillColor('userRating'),
       },
     ];
-    chart.update();
+    this.updateTheme(chart);
   }
 
   private createBarChart(
@@ -148,10 +155,42 @@ export class StatisticsChartService {
         responsive: true,
         maintainAspectRatio: false,
         indexAxis: horizontal ? 'y' : 'x',
-        plugins: { legend: { display: false } },
-        scales: { x: { ticks: { precision: 0 } }, y: { ticks: { precision: 0 } } },
+        ...this.textOptions(false),
+        scales: {
+          x: { ticks: { precision: 0, color: this.colors().text } },
+          y: { ticks: { precision: 0, color: this.colors().text } },
+        },
       },
     });
+  }
+
+  private colors() {
+    return STATISTICS_CHART_COLORS[this.theme.darkTheme() ? 'dark' : 'light'];
+  }
+
+  private fillColor(text: string): string {
+    return statisticsChartColor(text, this.theme.darkTheme());
+  }
+
+  private textOptions(showLegend = true) {
+    const { text, background } = this.colors();
+    return {
+      color: text,
+      plugins: {
+        legend: { display: showLegend, labels: { color: text }, title: { color: text } },
+        title: { color: text },
+        subtitle: { color: text },
+        tooltip: { backgroundColor: background, titleColor: text, bodyColor: text, footerColor: text },
+      },
+    };
+  }
+
+  private updateTheme(chart: Chart<'pie'> | Chart<'doughnut'> | Chart<'bar'>): void {
+    Object.assign(chart.options, this.textOptions(chart.options.plugins?.legend?.display !== false));
+    for (const scale of Object.values(chart.options.scales ?? {})) {
+      if (scale?.ticks) scale.ticks.color = this.colors().text;
+    }
+    chart.update();
   }
 
   private getCanvas(elementId: string): HTMLCanvasElement | null {

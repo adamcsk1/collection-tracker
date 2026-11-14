@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { ThemeService } from '@services/theme/theme-service';
 import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -18,6 +20,7 @@ vi.mock('chart.js/auto', () => ({ default: chartConstructorMock }));
 
 describe('StatisticsChartService', () => {
   let service: StatisticsChartService;
+  const darkTheme = signal(false);
 
   const emptyCommonCharts = {
     tagCounts: [],
@@ -28,10 +31,12 @@ describe('StatisticsChartService', () => {
 
   beforeEach(() => {
     chartConstructorMock.mockClear();
+    darkTheme.set(false);
     document.body.replaceChildren();
     TestBed.configureTestingModule({
       providers: [
         StatisticsChartService,
+        { provide: ThemeService, useValue: { darkTheme } },
         { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
       ],
     });
@@ -78,6 +83,51 @@ describe('StatisticsChartService', () => {
     expect(service.createTagChart(existingChart)).toBe(existingChart);
     expect(service.createTagChart(null)).toBeNull();
     expect(chartConstructorMock).not.toHaveBeenCalled();
+  });
+
+  it('refreshes text, tick, fill and separator colours on existing charts for both themes', () => {
+    const pie = buildChart<'pie'>();
+    const overview = buildChart<'doughnut'>();
+    const bar = buildChart<'bar'>();
+    bar.options = {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { precision: 0 } }, y: { ticks: { precision: 0 } } },
+    };
+
+    for (const isDark of [false, true, false]) {
+      darkTheme.set(isDark);
+      service.updateTagChart(pie, [{ tag: '#abc', count: 1 }], ['#abc']);
+      service.updateOverviewChart(overview, buildScopedStatistics('movie'));
+      service.updateGenreChart(bar, [{ genre: 'abc', count: 1 }]);
+      const text = isDark ? '#e9e2d3' : '#162630';
+      const background = isDark ? '#162630' : '#e9e2d3';
+      for (const chart of [pie, overview, bar]) {
+        expect(chart.options.color).toBe(text);
+        expect(chart.options.plugins?.legend?.labels?.color).toBe(text);
+        expect(chart.options.plugins?.title?.color).toBe(text);
+        expect(chart.options.plugins?.subtitle?.color).toBe(text);
+        expect(chart.options.plugins?.tooltip).toEqual({
+          backgroundColor: background,
+          titleColor: text,
+          bodyColor: text,
+          footerColor: text,
+        });
+      }
+      for (const chart of [pie, overview]) {
+        expect(chart.data.datasets[0].borderColor).toBe(background);
+        expect(chart.data.datasets[0].borderWidth).toBe(2);
+      }
+      expect(pie.data.datasets[0].backgroundColor).toEqual([`hsl(234, 50%, ${isDark ? 70 : 30}%)`]);
+      expect(bar.options.scales?.x?.ticks?.color).toBe(text);
+      expect(bar.options.scales?.y?.ticks?.color).toBe(text);
+      expect(bar.options.scales?.x?.ticks).toEqual(expect.objectContaining({ precision: 0 }));
+      expect(bar.options.indexAxis).toBe('y');
+      expect(bar.options.plugins?.legend?.display).toBe(false);
+    }
+    expect(pie.update).toHaveBeenCalledTimes(3);
+    expect(overview.update).toHaveBeenCalledTimes(3);
+    expect(bar.update).toHaveBeenCalledTimes(3);
   });
 
   it('reuses overview and bar charts and returns null for missing canvases', () => {
@@ -187,6 +237,7 @@ describe('StatisticsChartService', () => {
   const buildChart = <TType extends 'pie' | 'doughnut' | 'bar'>() =>
     ({
       data: { labels: [], datasets: [] },
+      options: {},
       update: vi.fn(),
     }) as unknown as Chart<TType, number[], string>;
 

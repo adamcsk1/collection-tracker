@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
+import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
 import { AllCollectionStatisticsChartsApiModel, CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
@@ -27,6 +29,7 @@ describe('Statistics component', () => {
   };
   let portal: { closeAll: ReturnType<typeof vi.fn> };
   let routerNavigate: ReturnType<typeof vi.fn>;
+  const darkTheme = signal(false);
 
   const charts: AllCollectionStatisticsChartsApiModel = {
     tagCounts: [
@@ -114,6 +117,7 @@ describe('Statistics component', () => {
   };
 
   beforeEach(() => {
+    darkTheme.set(false);
     api = {
       getStatistics: vi.fn((filters: { type?: 'movie' | 'series' | 'book' | 'album' }) =>
         of(responses[filters.type ?? 'all'])
@@ -130,6 +134,7 @@ describe('Statistics component', () => {
         provideStore(initialApiState, apiStateToken),
         provideStore(initialMainState, mainStateToken),
         { provide: ApiService, useValue: api },
+        { provide: ThemeService, useValue: { darkTheme } },
         {
           provide: NgxSignalTranslateService,
           useValue: {
@@ -175,6 +180,9 @@ describe('Statistics component', () => {
     expect(hasCard('statistics-summary-read-books')).toBe(false);
     expect(hasCard('statistics-summary-wishlist')).toBe(false);
     expect(hasCard('statistics-summary-up-next')).toBe(false);
+    const totalCard = fixture.nativeElement.querySelector('[data-test-id="statistics-summary-all"]') as HTMLElement;
+    expect(totalCard.hasAttribute('aria-label')).toBe(false);
+    expect(Array.from(totalCard.children, (child) => child.textContent)).toEqual(['4', 'ItemsInCollection']);
   });
 
   it('provides text alternatives for every chart', () => {
@@ -192,6 +200,25 @@ describe('Statistics component', () => {
       'Genre chart. Drama: 2'
     );
     expect(component['overviewChart']()?.resize).toHaveBeenCalled();
+  });
+
+  it('refreshes existing charts when the applied theme changes without reloading statistics', async () => {
+    await fixture.whenStable();
+    const overviewChart = component['overviewChart']();
+    vi.clearAllMocks();
+
+    for (const isDark of [true, false]) {
+      darkTheme.set(isDark);
+      await fixture.whenStable();
+      expect(component['overviewChart']()).toBe(overviewChart);
+      expect(chartService.updateOverviewChart).toHaveBeenLastCalledWith(overviewChart, responses.all);
+    }
+    expect(chartService.updateOverviewChart).toHaveBeenCalledTimes(2);
+    expect(chartService.updateTagChart).toHaveBeenCalledTimes(2);
+    expect(chartService.updateGenreChart).toHaveBeenCalledTimes(2);
+    expect(chartService.updateReleaseYearChart).toHaveBeenCalledTimes(2);
+    expect(chartService.updateRatingChart).toHaveBeenCalledTimes(2);
+    expect(api.getStatistics).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -240,7 +267,13 @@ describe('Statistics component', () => {
     fixture.detectChanges();
 
     expect(api.getStatistics).toHaveBeenLastCalledWith({ type: scope });
-    for (const testId of expectedCards) expect(hasCard(testId)).toBe(true);
+    for (const testId of expectedCards) {
+      expect(hasCard(testId)).toBe(true);
+      const card = fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) as HTMLElement;
+      expect(card.hasAttribute('aria-label')).toBe(false);
+      expect(card.children[0].textContent).toMatch(/^\d+$/);
+      expect(card.children[1].textContent?.trim()).not.toBe('');
+    }
     expect(hasCard('statistics-summary-all')).toBe(false);
     const cards = fixture.nativeElement.querySelectorAll('[data-test-id^="statistics-summary-"]');
     expect(cards.length).toBe(expectedCards.length);

@@ -15,6 +15,7 @@ import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
+import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
 import { CollectionItemTypeFilter, CollectionStatisticsStatus } from '@shared/models/api-model';
@@ -47,6 +48,7 @@ export class Statistics implements OnDestroy {
   private readonly router = inject(Router);
   private readonly portal = inject(PortalService);
   private readonly charts = inject(StatisticsChartService);
+  private readonly theme = inject(ThemeService);
   protected readonly featurePreferences = inject(mainStateToken).state.collectionFeaturePreferences;
   protected readonly translations = {
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
@@ -183,6 +185,7 @@ export class Statistics implements OnDestroy {
       const statistics = this.statistics();
       const networkStatus = this.statisticsLoadStatus();
       this.applicableSelectedTags();
+      this.theme.darkTheme();
       if (!statistics || networkStatus !== 'finished') return;
       untracked(() => {
         this.createCharts();

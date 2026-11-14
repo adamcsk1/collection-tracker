@@ -38,7 +38,6 @@
               data-test-id="statistics-summary-all"
               class="card card-interactive stat-card"
               (click)="navigateToCollection()"
-              [attr.aria-label]="translations.itemsInCollection() + ': ' + statistics.summary.total"
             >
               <span class="stat-value">{{ statistics.summary.total }}</span>
               <span class="stat-label">{{ translations.itemsInCollection() }}</span>
@@ -47,7 +46,6 @@
               data-test-id="statistics-summary-movies"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('movie')"
-              [attr.aria-label]="translations.movies() + ': ' + statistics.summary.movies"
             >
               <span class="stat-value">{{ statistics.summary.movies }}</span>
               <span class="stat-label">{{ translations.movies() }}</span>
@@ -56,7 +54,6 @@
               data-test-id="statistics-summary-series"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('series')"
-              [attr.aria-label]="translations.series() + ': ' + statistics.summary.series"
             >
               <span class="stat-value">{{ statistics.summary.series }}</span>
               <span class="stat-label">{{ translations.series() }}</span>
@@ -66,7 +63,6 @@
                 data-test-id="statistics-summary-books"
                 class="card card-interactive stat-card"
                 (click)="navigateToCollection('book')"
-                [attr.aria-label]="translations.books() + ': ' + statistics.summary.books"
               >
                 <span class="stat-value">{{ statistics.summary.books }}</span>
                 <span class="stat-label">{{ translations.books() }}</span>
@@ -77,7 +73,6 @@
                 data-test-id="statistics-summary-music"
                 class="card card-interactive stat-card"
                 (click)="navigateToCollection('album')"
-                [attr.aria-label]="translations.music() + ': ' + statistics.summary.music"
               >
                 <span class="stat-value">{{ statistics.summary.music }}</span>
                 <span class="stat-label">{{ translations.music() }}</span>
@@ -87,7 +82,6 @@
               data-test-id="statistics-summary-favorites"
               class="card card-interactive stat-card"
               (click)="navigateToCollection(undefined, { favorite: true })"
-              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
             >
               <span class="stat-value">{{ statistics.summary.favorites }}</span>
               <span class="stat-label">{{ translations.favorites() }}</span>
@@ -98,7 +92,6 @@
               data-test-id="statistics-summary-movies"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('movie')"
-              [attr.aria-label]="translations.movies() + ': ' + statistics.summary.total"
             >
               <span class="stat-value">{{ statistics.summary.total }}</span>
               <span class="stat-label">{{ translations.movies() }}</span>
@@ -107,7 +100,6 @@
               data-test-id="statistics-summary-favorites"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('movie', { favorite: true })"
-              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
             >
               <span class="stat-value">{{ statistics.summary.favorites }}</span>
               <span class="stat-label">{{ translations.favorites() }}</span>
@@ -116,7 +108,6 @@
               data-test-id="statistics-summary-watched-movies"
               class="card card-interactive stat-card"
               (click)="navigateToTracking('movie', { completed: true })"
-              [attr.aria-label]="translations.watched() + ': ' + statistics.summary.watched"
             >
               <span class="stat-value">{{ statistics.summary.watched }}</span>
               <span class="stat-label">{{ translations.watched() }}</span>
@@ -125,7 +116,6 @@
               data-test-id="statistics-summary-unwatched-movies"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('movie', { watched: false })"
-              [attr.aria-label]="translations.unwatched() + ': ' + statistics.summary.unwatched"
             >
               <span class="stat-value">{{ statistics.summary.unwatched }}</span>
               <span class="stat-label">{{ translations.unwatched() }}</span>
@@ -136,7 +126,6 @@
               data-test-id="statistics-summary-series"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('series')"
-              [attr.aria-label]="translations.series() + ': ' + statistics.summary.total"
             >
               <span class="stat-value">{{ statistics.summary.total }}</span>
               <span class="stat-label">{{ translations.series() }}</span>
@@ -145,7 +134,6 @@
               data-test-id="statistics-summary-favorites"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('series', { favorite: true })"
-              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
             >
               <span class="stat-value">{{ statistics.summary.favorites }}</span>
               <span class="stat-label">{{ translations.favorites() }}</span>
@@ -154,7 +142,6 @@
               data-test-id="statistics-summary-tracked-series"
               class="card card-interactive stat-card"
               (click)="navigateToTracking('series')"
-              [attr.aria-label]="translations.tracked() + ': ' + statistics.summary.tracked"
             >
               <span class="stat-value">{{ statistics.summary.tracked }}</span>
               <span class="stat-label">{{ translations.tracked() }}</span>
@@ -163,7 +150,6 @@
               data-test-id="statistics-summary-untracked-series"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('series', { watched: false })"
-              [attr.aria-label]="translations.untracked() + ': ' + statistics.summary.untracked"
             >
               <span class="stat-value">{{ statistics.summary.untracked }}</span>
               <span class="stat-label">{{ translations.untracked() }}</span>
@@ -172,7 +158,6 @@
               data-test-id="statistics-summary-completed-series"
               class="card card-interactive stat-card"
               (click)="navigateToTracking('series', { completed: true })"
-              [attr.aria-label]="translations.completed() + ': ' + statistics.summary.completed"
             >
               <span class="stat-value">{{ statistics.summary.completed }}</span>
               <span class="stat-label">{{ translations.completed() }}</span>
@@ -181,7 +166,6 @@
               data-test-id="statistics-summary-in-progress-series"
               class="card card-interactive stat-card"
               (click)="navigateToTracking('series', { completed: false })"
-              [attr.aria-label]="translations.inProgress() + ': ' + statistics.summary.inProgress"
             >
               <span class="stat-value">{{ statistics.summary.inProgress }}</span>
               <span class="stat-label">{{ translations.inProgress() }}</span>
@@ -192,7 +176,6 @@
               data-test-id="statistics-summary-books"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('book')"
-              [attr.aria-label]="translations.books() + ': ' + statistics.summary.total"
             >
               <span class="stat-value">{{ statistics.summary.total }}</span>
               <span class="stat-label">{{ translations.books() }}</span>
@@ -201,7 +184,6 @@
               data-test-id="statistics-summary-favorites"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('book', { favorite: true })"
-              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
             >
               <span class="stat-value">{{ statistics.summary.favorites }}</span>
               <span class="stat-label">{{ translations.favorites() }}</span>
@@ -210,24 +192,15 @@
               data-test-id="statistics-summary-read-books"
               class="card card-interactive stat-card"
               (click)="navigateToTracking('book', { completed: true })"
-              [attr.aria-label]="translations.read() + ': ' + statistics.summary.read"
             >
               <span class="stat-value">{{ statistics.summary.read }}</span>
               <span class="stat-label">{{ translations.read() }}</span>
             </button>
-            <div
-              data-test-id="statistics-summary-unread-books"
-              class="card stat-card"
-              [attr.aria-label]="translations.unread() + ': ' + statistics.summary.unread"
-            >
+            <div data-test-id="statistics-summary-unread-books" class="card stat-card">
               <span class="stat-value">{{ statistics.summary.unread }}</span>
               <span class="stat-label">{{ translations.unread() }}</span>
             </div>
-            <div
-              data-test-id="statistics-summary-in-progress-books"
-              class="card stat-card"
-              [attr.aria-label]="translations.inProgress() + ': ' + statistics.summary.inProgress"
-            >
+            <div data-test-id="statistics-summary-in-progress-books" class="card stat-card">
               <span class="stat-value">{{ statistics.summary.inProgress }}</span>
               <span class="stat-label">{{ translations.inProgress() }}</span>
             </div>
@@ -237,7 +210,6 @@
               data-test-id="statistics-summary-music"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('album')"
-              [attr.aria-label]="translations.music() + ': ' + statistics.summary.total"
             >
               <span class="stat-value">{{ statistics.summary.total }}</span>
               <span class="stat-label">{{ translations.music() }}</span>
@@ -246,7 +218,6 @@
               data-test-id="statistics-summary-favorites"
               class="card card-interactive stat-card"
               (click)="navigateToCollection('album', { favorite: true })"
-              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
             >
               <span class="stat-value">{{ statistics.summary.favorites }}</span>
               <span class="stat-label">{{ translations.favorites() }}</span>
@@ -255,24 +226,15 @@
               data-test-id="statistics-summary-listened-music"
               class="card card-interactive stat-card"
               (click)="navigateToTracking('album', { completed: true })"
-              [attr.aria-label]="translations.listened() + ': ' + statistics.summary.listened"
             >
               <span class="stat-value">{{ statistics.summary.listened }}</span>
               <span class="stat-label">{{ translations.listened() }}</span>
             </button>
-            <div
-              data-test-id="statistics-summary-unlistened-music"
-              class="card stat-card"
-              [attr.aria-label]="translations.unlistened() + ': ' + statistics.summary.unlistened"
-            >
+            <div data-test-id="statistics-summary-unlistened-music" class="card stat-card">
               <span class="stat-value">{{ statistics.summary.unlistened }}</span>
               <span class="stat-label">{{ translations.unlistened() }}</span>
             </div>
-            <div
-              data-test-id="statistics-summary-in-progress-music"
-              class="card stat-card"
-              [attr.aria-label]="translations.inProgress() + ': ' + statistics.summary.inProgress"
-            >
+            <div data-test-id="statistics-summary-in-progress-music" class="card stat-card">
               <span class="stat-value">{{ statistics.summary.inProgress }}</span>
               <span class="stat-label">{{ translations.inProgress() }}</span>
             </div>
