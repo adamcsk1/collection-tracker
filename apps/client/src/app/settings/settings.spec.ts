@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,7 @@ describe('Settings companion menu', () => {
     TestBed.configureTestingModule({
       imports: [Settings],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'settings/:section', children: [] }]),
         provideStore(initialMainState, mainStateToken),
         { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
       ],
@@ -27,6 +27,45 @@ describe('Settings companion menu', () => {
     const fixture = TestBed.createComponent(Settings);
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-nav-companion-app"]')).toBeNull();
+  });
+
+  it('toggles the controlled navigation and hides the decorative toggle icon', async () => {
+    const fixture = TestBed.createComponent(Settings);
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    const toggle = element.querySelector<HTMLButtonElement>('[data-test-id="settings-nav-toggle"]')!;
+    const navigation = element.querySelector<HTMLElement>('#settings-nav')!;
+
+    expect(toggle.getAttribute('aria-controls')).toBe(navigation.id);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(navigation.classList.contains('is-expanded')).toBe(false);
+    expect(toggle.querySelector('i')!.getAttribute('aria-hidden')).toBe('true');
+
+    toggle.click();
+    await fixture.whenStable();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(navigation.classList.contains('is-expanded')).toBe(true);
+
+    toggle.click();
+    await fixture.whenStable();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(navigation.classList.contains('is-expanded')).toBe(false);
+  });
+
+  it('marks only the current settings page and updates on navigation', async () => {
+    const fixture = TestBed.createComponent(Settings);
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/settings/basics');
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+    expect(element.querySelector('[data-test-id="settings-nav-basics"]')!.getAttribute('aria-current')).toBe('page');
+
+    await router.navigateByUrl('/settings/account');
+    await fixture.whenStable();
+    expect(element.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+    expect(element.querySelector('[data-test-id="settings-nav-basics"]')!.hasAttribute('aria-current')).toBe(false);
+    expect(element.querySelector('[data-test-id="settings-nav-account"]')!.getAttribute('aria-current')).toBe('page');
   });
 
   it('opens native settings and collapses mobile navigation without routing', async () => {

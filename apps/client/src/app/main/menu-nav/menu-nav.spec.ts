@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
@@ -37,7 +37,10 @@ describe('MenuNav', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         provideSignalTranslateConfig({ path: '' }),
         provideStore(initialMainState, mainStateToken),
-        provideRouter([]),
+        provideRouter([
+          { path: 'collection/:list', children: [] },
+          { path: 'settings', children: [] },
+        ]),
       ],
     });
 
@@ -64,6 +67,27 @@ describe('MenuNav', () => {
     expect(icons.length).toBeGreaterThan(0);
     expect(Array.from(icons).every((icon) => icon.getAttribute('aria-hidden') === 'true')).toBe(true);
   });
+
+  it.each(['library', 'books', 'music'])(
+    'marks the collection link current for %s and clears it on leaving',
+    async (list) => {
+      const router = TestBed.inject(Router);
+      await router.navigateByUrl(`/collection/${list}`);
+      await fixture.whenStable();
+      const element: HTMLElement = fixture.nativeElement;
+      const collection = element.querySelector('[data-test-id="nav-collection"]')!;
+      expect(collection.classList.contains('active')).toBe(true);
+      expect(collection.getAttribute('aria-current')).toBe('page');
+      expect(element.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+
+      await router.navigateByUrl('/settings');
+      await fixture.whenStable();
+      expect(collection.classList.contains('active')).toBe(false);
+      expect(collection.hasAttribute('aria-current')).toBe(false);
+      expect(element.querySelector('[data-test-id="nav-settings"]')!.getAttribute('aria-current')).toBe('page');
+      expect(element.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+    }
+  );
 
   it('shows only navigation links for enabled collection features', () => {
     const mainState = TestBed.inject(mainStateToken);

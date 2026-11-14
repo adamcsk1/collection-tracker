@@ -8,7 +8,7 @@
     (click)="onToggleNav()"
   >
     <span>{{ translations.settings() }}</span>
-    <i class="material-icons nav-toggle-icon" [class.is-expanded]="navExpanded()">expand_more</i>
+    <i class="material-icons nav-toggle-icon" aria-hidden="true" [class.is-expanded]="navExpanded()">expand_more</i>
   </button>
   <nav
     id="settings-nav"
@@ -21,6 +21,7 @@
       data-test-id="settings-nav-basics"
       [routerLink]="['/', 'settings', 'basics']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.basics() }}
@@ -29,6 +30,7 @@
       data-test-id="settings-nav-account"
       [routerLink]="['/', 'settings', 'account']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.user() }}
@@ -37,6 +39,7 @@
       data-test-id="settings-nav-access-tokens"
       [routerLink]="['/', 'settings', 'access-tokens']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.accessTokens() }}
@@ -45,6 +48,7 @@
       data-test-id="settings-nav-tag-management"
       [routerLink]="['/', 'settings', 'tag-management']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.tagManagement() }}
@@ -53,6 +57,7 @@
       data-test-id="settings-nav-collection-list-display"
       [routerLink]="['/', 'settings', 'collection-list-display']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.collectionListDisplay() }}
@@ -61,6 +66,7 @@
       data-test-id="settings-nav-features"
       [routerLink]="['/', 'settings', 'features']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.features() }}
@@ -69,6 +75,7 @@
       data-test-id="settings-nav-media-refresh"
       [routerLink]="['/', 'settings', 'media-refresh']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.mediaRefresh() }}
@@ -77,6 +84,7 @@
       data-test-id="settings-nav-manage-tracker-data"
       [routerLink]="['/', 'settings', 'manage-tracker-data']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.manageTrackerData() }}
@@ -85,6 +93,7 @@
       data-test-id="settings-nav-shares"
       [routerLink]="['/', 'settings', 'shares']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.shares() }}
@@ -93,6 +102,7 @@
       data-test-id="settings-nav-export-import"
       [routerLink]="['/', 'settings', 'export-import']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       (click)="onNavLinkClick()"
     >
       {{ translations.exportImport() }}

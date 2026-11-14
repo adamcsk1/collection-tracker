@@ -11,6 +11,7 @@
     [routerLink]="['/', 'collection', 'library']"
     class="highlight"
     [class.active]="collectionNavActive()"
+    [attr.aria-current]="collectionNavActive() ? 'page' : null"
     (click)="onClose()"
   >
     <i class="material-icons" aria-hidden="true">local_library</i>
@@ -21,6 +22,7 @@
       data-test-id="nav-wishlist"
       [routerLink]="['/', 'collection', 'wishlist']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       class="highlight"
       (click)="onClose()"
     >
@@ -33,6 +35,7 @@
       data-test-id="nav-up-next"
       [routerLink]="['/', 'collection', 'up-next']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       class="highlight"
       (click)="onClose()"
     >
@@ -45,6 +48,7 @@
       data-test-id="nav-tracking"
       [routerLink]="['/', 'collection', 'tracking']"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
       class="highlight"
       (click)="onClose()"
     >
@@ -56,6 +60,7 @@
     data-test-id="nav-settings"
     [routerLink]="['/', 'settings']"
     routerLinkActive="active"
+    ariaCurrentWhenActive="page"
     class="highlight"
     (click)="onClose()"
   >
@@ -66,13 +71,20 @@
     data-test-id="nav-statistics"
     [routerLink]="['/', 'statistics']"
     routerLinkActive="active"
+    ariaCurrentWhenActive="page"
     class="highlight space"
     (click)="onClose()"
   >
     <i class="material-icons" aria-hidden="true">bar_chart</i>
     {{ translations.statistics() }}
   </a>
-  <a data-test-id="nav-about" [routerLink]="['/', 'about']" routerLinkActive="active" (click)="onClose()">
+  <a
+    data-test-id="nav-about"
+    [routerLink]="['/', 'about']"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    (click)="onClose()"
+  >
     <i class="material-icons" aria-hidden="true">info</i>
     {{ translations.about() }}
   </a>

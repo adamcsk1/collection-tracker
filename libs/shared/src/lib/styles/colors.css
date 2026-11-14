@@ -18,6 +18,7 @@
   --text-color: var(--base-color-lighter);
   --border-color: var(--base-color-light);
   --main-color: var(--color-olive);
+  --navigation-active-color: var(--main-color);
   --theme-color: var(--background-color-alt);
 }
 
@@ -30,6 +31,7 @@
   --text-color: var(--base-color-darker);
   --border-color: var(--base-color-dark);
   --main-color: var(--color-darkgoldenrod);
+  --navigation-active-color: #704600;
   --app-title-shadow-color: #7c4d00;
   --theme-color: var(--background-color-alt);
 }

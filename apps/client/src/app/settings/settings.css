@@ -47,6 +47,7 @@
   overflow: hidden;
   max-height: 0;
   opacity: 0;
+  visibility: hidden;
   transition:
     max-height 250ms ease,
     opacity 200ms ease;
@@ -55,6 +56,7 @@
     max-height: 500px;
     overflow-y: auto;
     opacity: 1;
+    visibility: visible;
   }
 
   a,
@@ -73,7 +75,7 @@
       color 150ms ease;
 
     &:is(:hover, .active) {
-      color: var(--main-color);
+      color: var(--navigation-active-color);
       background-color: rgb(from var(--main-color) r g b / 0.08);
     }
   }
@@ -85,6 +87,7 @@
     max-height: unset;
     opacity: 1;
     overflow: visible;
+    visibility: visible;
   }
 
   hr {

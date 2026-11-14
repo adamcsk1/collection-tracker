@@ -36,7 +36,7 @@
     }
 
     &:is(:hover, .active) {
-      color: var(--main-color);
+      color: var(--navigation-active-color);
       background-color: rgb(from var(--main-color) r g b / 0.08);
     }
   }
