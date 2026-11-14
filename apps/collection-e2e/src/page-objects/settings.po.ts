@@ -3,6 +3,9 @@ import type { Page } from '@playwright/test';
 export const createSettingsPage = (page: Page) => ({
   getCompanionAppSettings: () => page.getByTestId('settings-nav-companion-app'),
   getNavToggle: () => page.getByTestId('settings-nav-toggle'),
+  getNavLink: (section: string) => page.getByTestId(`settings-nav-${section}`),
+  getBasicsScrollRegion: () => page.getByTestId('settings-basics-form').locator('../..'),
+  getSavedToast: () => page.getByTestId('toast-message'),
   visitBasics: async () => {
     await page.goto('/client/#/settings/basics');
   },
@@ -17,6 +20,9 @@ export const createSettingsPage = (page: Page) => ({
 
   visitShares: async () => {
     await page.goto('/client/#/settings/shares');
+  },
+  reloadShares: async () => {
+    await page.reload();
   },
 
   visitMediaRefresh: async () => {

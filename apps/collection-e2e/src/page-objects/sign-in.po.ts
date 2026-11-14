@@ -23,6 +23,7 @@ export const createSignInPage = (page: Page) => {
     },
 
     getUsernameInput,
+    getBrandHeading: () => page.getByRole('main').getByRole('heading', { level: 1 }),
     getTokenInput,
     getSubmitButton,
     getToggleSecretButton: () => page.getByTestId('sign-in-toggle-secret'),

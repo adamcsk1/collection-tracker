@@ -10,6 +10,8 @@ export const createStatisticsPage = (page: Page) => ({
   getEmptyMessage: () => page.getByTestId('statistics-empty'),
   getSummary: () => page.getByTestId('statistics-summary'),
   getSummaryCard: (card: string) => page.getByTestId(`statistics-summary-${card}`),
+  getSummaryCards: () => page.getByTestId('statistics-summary').getByRole('button'),
+  getOverviewCanvas: () => page.getByTestId('statistics-overview-chart-card').locator('canvas'),
   selectScope: async (scope: StatisticsScope) => {
     await page.getByTestId(`collection-media-chip-${scope}`).click();
   },

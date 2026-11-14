@@ -81,6 +81,7 @@ export const createCollectionPage = (page: Page) => {
     // Search
     getSearchInput: () => getFloatSearchInput('collection-search'),
     getSearchHost: () => page.getByTestId('collection-search'),
+    getSearchSuggestions: () => page.getByTestId('collection-search').getByRole('option'),
     getTrackingSearchInput: () => getFloatSearchInput('tracking-search'),
     getUpNextSearchInput: () => getFloatSearchInput('up-next-search'),
     getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
@@ -101,7 +102,11 @@ export const createCollectionPage = (page: Page) => {
     getListItemImages: () => page.getByTestId('list-item-image'),
     tabToFirstListItemImage: async () => {
       const image = page.getByTestId('list-item-image').first();
-      for (let index = 0; index < 50 && !(await image.evaluate((element) => element === document.activeElement)); index++) {
+      for (
+        let index = 0;
+        index < 50 && !(await image.evaluate((element) => element === document.activeElement));
+        index++
+      ) {
         await page.keyboard.press('Tab');
       }
       await expect(image).toBeFocused();
@@ -111,6 +116,7 @@ export const createCollectionPage = (page: Page) => {
       page.getByTestId('list-item-image').and(page.getByLabel(title, { exact: true })),
     getAllItems: () => page.getByTestId('list-item-title'),
     getEmptyState: () => page.getByTestId('list-empty'),
+    getSearchStatus: () => page.getByTestId('collection-search-status'),
     getAddFirstItemLink: () => page.getByTestId('add-first-item'),
     getAddFirstUpNextItemLink: () => page.getByTestId('add-first-up-next-item'),
     getAddFirstWishlistItemLink: () => page.getByTestId('add-first-wishlist-item'),
@@ -128,6 +134,7 @@ export const createCollectionPage = (page: Page) => {
 
     // Float buttons
     getShowFunctionsButton: () => page.getByTestId('show-functions'),
+    getHideFunctionsButton: () => page.getByTestId('hide-functions'),
     getAddNewButton: () => page.getByTestId('add-new'),
     getRandomPickButton: () => page.getByTestId('random-pick'),
     getScrollToTopButton: () => page.getByTestId('scroll-to-top'),
@@ -321,6 +328,10 @@ export const createCollectionPage = (page: Page) => {
       getSeriesMetadataDialog().locator('[data-test-id="series-metadata-season"] input'),
     getSeriesMetadataEpisodeInputs: () =>
       getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episodes"] input'),
+    getSeriesMetadataSeasonErrors: () =>
+      getSeriesMetadataDialog().getByTestId('series-metadata-season').getByRole('alert'),
+    getSeriesMetadataEpisodeErrors: () =>
+      getSeriesMetadataDialog().getByTestId('series-metadata-episodes').getByRole('alert'),
     getSeriesMetadataRemoveButtons: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-remove"]'),
     getSeriesMetadataEpisodeTitleToggles: () =>
       getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episode-titles-toggle"] summary'),

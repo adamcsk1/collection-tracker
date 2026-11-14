@@ -12,6 +12,9 @@ export const createSignUpPage = (page: Page) => {
     },
 
     getUsernameInput,
+    getBrandHeading: () => page.getByRole('main').getByRole('heading', { level: 1 }),
+    getChangeApiUrlButton: () => page.getByTestId('sign-up-change-api-url'),
+    getApiUrlInput: () => page.getByTestId('sign-up-api-url').locator('input'),
     getSubmitButton,
     getSecretValue: () => page.getByTestId('sign-up-secret-value'),
     getSignInLink: () => page.getByTestId('sign-in-link'),

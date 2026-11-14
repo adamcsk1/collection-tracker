@@ -13,6 +13,18 @@ Source: [`apps/collection-e2e`](../apps/collection-e2e)
 - Tests run serially because the shared `playwright` user is cleaned by `autoLogin()` before each test.
 - Playwright owns these `.spec.ts` files; the root Vitest configuration excludes the E2E project.
 - Accessibility specs run axe against authentication, selected client and health routes, and representative dialogs in both browser projects. Full results are attached to the Playwright report. These scans do not replace keyboard and screen-reader testing.
+- `accessibility-regressions.spec.ts` covers settings navigation at 320, 1000, and 1440 pixels in light/dark themes,
+  library autocomplete suggestions, populated statistics and native summary names, selected tag colours, empty and
+  populated shares, titled completed episodes, and keyboard focus on About links. Its expanded scans use WCAG A/AA
+  tags only: known best-practice heading/region findings are outside these scans, not suppressed WCAG failures.
+  Existing accessibility scans retain their best-practice checks. Statistics screenshots and full axe results are
+  attached to the report; chart palette and theme contrast calculations are covered by unit tests.
+- The focused regressions also exercise Enter/Tab focus through every Functions control, including scrolling at
+  320×256; sign-in and sign-up from branding to the last control with API URL expanded and WCAG text spacing;
+  selected media chips after removing hover/focus in both themes (3:1 contrast measured from screenshot pixels);
+  a persistent no-results live status without focus movement; and field-linked season 51/episode 101 errors with
+  successful real-server saving at the corrected 50/100 limits. These checks do not claim actual NVDA speech,
+  native browser zoom, or exhaustive visual contrast coverage.
 
 ## Execution
 
@@ -21,6 +33,8 @@ Install the browser binaries once, then run a browser project:
 ```powershell
 npx playwright install chromium firefox
 npm run playwright:chrome
+# Focused WCAG regressions, after collection-e2e:prepare has started the test instance
+npx playwright test --config apps/collection-e2e/playwright.config.ts --project=chromium accessibility-regressions.spec.ts
 # or
 npm run playwright:firefox
 # Interactive runner (Chromium)
