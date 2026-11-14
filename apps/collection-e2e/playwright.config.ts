@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import { firefox as patchedFirefox } from 'playwright-firefox-patched';
 
 export default defineConfig({
   testDir: './src/e2e',
@@ -20,6 +21,10 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
-    { name: 'firefox', use: { browserName: 'firefox' } },
+    // Remove the Firefox-only override once stable Playwright includes the fix for #43967.
+    {
+      name: 'firefox',
+      use: { browserName: 'firefox', launchOptions: { executablePath: patchedFirefox.executablePath() } },
+    },
   ],
 });

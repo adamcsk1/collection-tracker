@@ -35,7 +35,12 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps ${{ matrix.browser }}
+        run: |
+          if [ "${{ matrix.browser }}" = "firefox" ]; then
+            node node_modules/playwright-firefox-patched/cli.js install --with-deps firefox
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Run Playwright and axe (${{ matrix.browser }})
         run: npm run playwright:${{ matrix.script }}

@@ -31,7 +31,8 @@ Source: [`apps/collection-e2e`](../apps/collection-e2e)
 Install the browser binaries once, then run a browser project:
 
 ```powershell
-npx playwright install chromium firefox
+npx playwright install chromium
+node node_modules/playwright-firefox-patched/cli.js install firefox
 npm run playwright:chrome
 # Focused WCAG regressions, after collection-e2e:prepare has started the test instance
 npx playwright test --config apps/collection-e2e/playwright.config.ts --project=chromium accessibility-regressions.spec.ts
@@ -43,6 +44,12 @@ npm run playwright:ui
 
 ## Operational Notes
 
+- Firefox temporarily uses build 1578 from the exact `playwright-firefox-patched` package alias, while the test runner
+  and Chromium stay on their existing versions. This build fixes the cross-world ARIA reflection crash tracked in
+  [Playwright #43967](https://github.com/microsoft/playwright/issues/43967) and
+  [Mozilla bug 2090055](https://bugzilla.mozilla.org/show_bug.cgi?id=2090055). Install it with the command above in local
+  and CI environments. Remove the alias and `executablePath` override once stable Playwright ships the browser fix.
+  `aria-reflection.spec.ts` covers page-world and locator-world reads without changing application markup or axe rules.
 - Playwright uses `http://localhost:2999` as its base URL and `data-test-id` as its test ID attribute.
 - `npm run playwright:chrome` and `npm run playwright:firefox` run `collection-e2e:prepare` first, which builds the app and metadata-provider images, seeds the database, and starts both containers on a private network with the app published on port `2999`.
 - Screenshots and traces for failed tests are written to `apps/collection-e2e/playwright-results`.

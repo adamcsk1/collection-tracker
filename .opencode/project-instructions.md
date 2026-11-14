@@ -141,6 +141,11 @@ Always follow the existing test style in the file being tested.
 
 E2E tests live in `apps/collection-e2e/src/` and run against the Docker test container on port `2999`. The `.opencode/agents/testing.md` agent file contains the full Playwright conventions.
 
+Firefox temporarily uses build 1578 through the exact `playwright-firefox-patched` package alias and an `executablePath`
+override. Install it with `node node_modules/playwright-firefox-patched/cli.js install firefox`; CI uses the same CLI
+with `--with-deps`. Remove this override once stable Playwright includes the fix for upstream issue #43967. See
+`docs/collection-e2e.md`. Chromium and the test runner retain their existing versions.
+
 ## Release Publication
 
 The CI → Docker GHCR → Release chain publishes the current default-branch commit as a rolling `snapshot` prerelease, never stable Latest. Matching `vX.Y.Z` tags also publish stable releases. Both channels require all seven CI workflows and both Docker image pushes. Docker GHCR embeds the actual build SHA in its run name because nested `workflow_run` context SHAs may differ from the checked-out source. Release checks out and publishes that explicit SHA.

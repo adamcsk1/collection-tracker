@@ -98,6 +98,7 @@
     "husky": "^9.1.7",
     "jsdom": "^30.1.3",
     "nx": "24.0.1",
+    "playwright-firefox-patched": "npm:playwright-core@1.66.0-alpha-2026-11-14",
     "prettier": "^3.9.10",
     "random-words": "^2.0.1",
     "ts-node": "^10.9.2",

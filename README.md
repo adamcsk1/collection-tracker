@@ -56,6 +56,8 @@ npm start
 
 Common workspace commands:
 
+See [Collection E2E](docs/collection-e2e.md) for browser installation, including the temporary patched Firefox build.
+
 ```powershell
 npm run build
 npm run test
