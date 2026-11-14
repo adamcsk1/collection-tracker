@@ -44,9 +44,7 @@ testem.log
 # Playwright
 /**/playwright-results/
 /**/playwright-report/
-apps/collection-e2e/playwright-results-diagnostic
-apps/collection-e2e/playwright-results-regression-fixes
-apps/collection-e2e/playwright-results-six-issues
+/**/playwright-results-*/
 
 # System files
 .DS_Store
