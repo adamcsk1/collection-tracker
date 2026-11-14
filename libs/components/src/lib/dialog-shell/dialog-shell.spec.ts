@@ -11,13 +11,16 @@ import { DialogShell } from './dialog-shell';
   selector: 'libc-test-dialog-shell-host',
   imports: [DialogShell],
   template: `
-    <libc-dialog-shell>
+    <libc-dialog-shell [beforeClose]="beforeClose()" [compact]="compact()">
       <div dialog-shell-content>Content</div>
     </libc-dialog-shell>
     <button id="other">Other focusable</button>
   `,
 })
-class HostComponent {}
+class HostComponent {
+  public readonly beforeClose = signal<(() => Promise<boolean>) | null>(null);
+  public readonly compact = signal(false);
+}
 
 @Component({
   selector: 'libc-test-dialog-shell-custom-close-host',
@@ -127,6 +130,33 @@ describe('DialogShell component', () => {
   let closeSpy: ReturnType<typeof vi.fn>;
   let fixture: ComponentFixture<HostComponent>;
 
+  it('waits for dismissal approval and prevents duplicate requests', async () => {
+    let resolveClose!: (approved: boolean) => void;
+    const guard = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveClose = resolve;
+        })
+    );
+    fixture.componentInstance.beforeClose.set(guard);
+    fixture.detectChanges();
+    const shell = fixture.debugElement.query(By.directive(DialogShell)).componentInstance as DialogShell;
+    const close = shell['onClose']();
+    await shell['onClose']();
+    expect(guard).toHaveBeenCalledTimes(1);
+    finishCloseAnimation();
+    expect(closeSpy).not.toHaveBeenCalled();
+    resolveClose(false);
+    await close;
+    finishCloseAnimation();
+    expect(closeSpy).not.toHaveBeenCalled();
+    fixture.componentInstance.beforeClose.set(async () => true);
+    fixture.detectChanges();
+    await shell['onClose']();
+    finishCloseAnimation();
+    expect(closeSpy).toHaveBeenCalled();
+  });
+
   const finishCloseAnimation = (): void => {
     vi.advanceTimersByTime(200);
   };
@@ -201,6 +231,20 @@ describe('DialogShell component', () => {
   it('focuses dialog root on init', () => {
     const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
     expect(document.activeElement).toBe(dialogRoot);
+  });
+
+  it('gives compact dialogs a distinct overlay without sheet drag controls', () => {
+    fixture.componentInstance.compact.set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.dialog-frame.compact')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.compact-overlay')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]')).toBeNull();
+    setViewport(390, true);
+    const frame = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+    dispatchPointerEvent(frame, 'pointerdown', 100, 1);
+    dispatchPointerEvent(frame, 'pointerup', 100, 100);
+    finishCloseAnimation();
+    expect(closeSpy).not.toHaveBeenCalled();
   });
 
   it('keeps tab focus inside the dialog', () => {

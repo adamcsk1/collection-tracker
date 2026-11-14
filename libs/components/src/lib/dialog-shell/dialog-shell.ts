@@ -51,6 +51,8 @@ export class DialogShell implements AfterViewInit {
   private edgeSwipePointerId: number | null = null;
   private edgeSwipeDirection: 1 | -1 | null = null;
   public readonly closeWithPortal = input(true);
+  public readonly beforeClose = input<(() => Promise<boolean>) | null>(null);
+  private closePending = false;
   public readonly ariaLabelledBy = input('');
   public readonly ariaDescribedBy = input('');
   public readonly dialogRole = input<'dialog' | 'alertdialog'>('dialog');
@@ -86,8 +88,20 @@ export class DialogShell implements AfterViewInit {
     }
   }
 
-  protected onClose(): void {
-    if (this.closing()) return;
+  protected async onClose(): Promise<void> {
+    if (this.closing() || this.closePending) return;
+    const beforeClose = this.beforeClose();
+    if (beforeClose) {
+      this.closePending = true;
+      try {
+        if (!(await beforeClose()) || this.destroyRef.destroyed) {
+          this.dragOffset.set(0);
+          return;
+        }
+      } finally {
+        this.closePending = false;
+      }
+    }
     this.closing.set(true);
     timer(closeAnimationDuration, asyncScheduler)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -125,6 +139,7 @@ export class DialogShell implements AfterViewInit {
   }
 
   protected onDialogFramePointerDown(event: PointerEvent): void {
+    if (this.compact()) return;
     if (!this.canStartEdgeSwipe(event)) return;
 
     this.edgeSwipeStartX = event.clientX;

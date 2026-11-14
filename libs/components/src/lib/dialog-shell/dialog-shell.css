@@ -2,6 +2,33 @@
   --mobile-top-border-radius: 1rem;
 }
 
+.compact-enter {
+  animation: compact-appear 160ms ease-out;
+}
+
+.compact-leave {
+  animation: compact-appear 160ms ease-in reverse;
+}
+
+@keyframes compact-appear {
+  from {
+    transform: scale(0.97);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compact-enter,
+  .compact-leave {
+    animation: none;
+  }
+}
+
 .dialog-overlay {
   position: absolute;
   top: 0;
@@ -14,6 +41,11 @@
   padding: 0;
   margin: 0;
   cursor: default;
+
+  &.compact-overlay {
+    background-color: rgb(0 0 0 / 35%);
+    backdrop-filter: none;
+  }
 }
 
 .dialog-frame {
@@ -47,14 +79,9 @@
     max-height: 90dvh;
     width: min(480px, calc(100vw - 2 * var(--size-md)));
     border-radius: var(--border-radius);
-
-    @media (width <= 650px) {
-      top: auto;
-      bottom: 0;
-      translate: -50% 0;
-      width: 100vw;
-      border-radius: var(--mobile-top-border-radius) var(--mobile-top-border-radius) 0 0;
-    }
+    background-color: var(--background-color-alt);
+    border: 1px solid var(--main-color);
+    box-shadow: 0 12px 40px rgb(0 0 0 / 45%);
   }
 
   .dialog-top-bar {

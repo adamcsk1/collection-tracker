@@ -2,6 +2,7 @@
   <button
     type="button"
     class="dialog-overlay"
+    [class.compact-overlay]="compact()"
     data-test-id="dialog-overlay"
     tabindex="-1"
     animate.enter="animation-fade-in"
@@ -19,8 +20,8 @@
     tabindex="-1"
     [attr.aria-labelledby]="ariaLabelledBy() || null"
     [attr.aria-describedby]="ariaDescribedBy() || null"
-    animate.enter="animation-slide-in-bottom"
-    animate.leave="animation-slide-out-bottom"
+    [animate.enter]="compact() ? 'compact-enter' : 'animation-slide-in-bottom'"
+    [animate.leave]="compact() ? 'compact-leave' : 'animation-slide-out-bottom'"
     [style.--dialog-drag-offset]="dragOffsetCss()"
     [style.transform]="dragFrameTransform()"
     (pointerdown)="onDialogFramePointerDown($event)"
@@ -29,21 +30,23 @@
     (keydown.escape)="onClose()"
     (keydown)="onTrapFocus($event)"
   >
-    <div class="dialog-top-bar">
-      <button
-        type="button"
-        class="dialog-drag-handle"
-        data-test-id="dialog-drag-handle"
-        [attr.aria-label]="translations.dragToClose()"
-        [title]="translations.dragToClose()"
-        (keydown.enter)="onClose()"
-        (keydown.space)="onClose(); $event.preventDefault()"
-        (pointerdown)="onDragHandlePointerDown($event)"
-        (pointermove)="onDragHandlePointerMove($event)"
-        (pointerup)="onDragHandlePointerUp($event)"
-        (pointercancel)="onDragHandlePointerCancel()"
-      ></button>
-    </div>
+    @if (!compact()) {
+      <div class="dialog-top-bar">
+        <button
+          type="button"
+          class="dialog-drag-handle"
+          data-test-id="dialog-drag-handle"
+          [attr.aria-label]="translations.dragToClose()"
+          [title]="translations.dragToClose()"
+          (keydown.enter)="onClose()"
+          (keydown.space)="onClose(); $event.preventDefault()"
+          (pointerdown)="onDragHandlePointerDown($event)"
+          (pointermove)="onDragHandlePointerMove($event)"
+          (pointerup)="onDragHandlePointerUp($event)"
+          (pointercancel)="onDragHandlePointerCancel()"
+        ></button>
+      </div>
+    }
     <div class="dialog-header">
       <div>
         <ng-content select="[dialog-shell-top-content]" />
