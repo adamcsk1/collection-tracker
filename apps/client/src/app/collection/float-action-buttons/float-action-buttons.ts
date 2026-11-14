@@ -114,12 +114,27 @@ export class FloatActionButtons implements OnDestroy {
       return;
     }
 
+    const transferFocus = this.host.nativeElement.contains(this.host.nativeElement.ownerDocument.activeElement);
     this.showFloatButtons.set(true);
     this.actionButtons.showFunctions();
+    if (transferFocus) {
+      this.changeDetector.detectChanges();
+      this.host.nativeElement
+        .querySelector<HTMLElement>(
+          '.float-buttons-container:not([inert]) button:not(:disabled), [data-test-id="hide-functions"]'
+        )
+        ?.focus();
+    }
   }
 
   protected onHideFunctions(): void {
+    const restoreFocus = this.host.nativeElement.contains(this.host.nativeElement.ownerDocument.activeElement);
+    this.host.nativeElement.querySelector('.float-buttons-container:not([inert])')?.setAttribute('inert', '');
     this.showFloatButtons.set(false);
+    if (restoreFocus) {
+      this.changeDetector.detectChanges();
+      this.host.nativeElement.querySelector<HTMLElement>('[data-test-id="show-functions"]')?.focus();
+    }
   }
 
   protected onRandomPick(): void {
@@ -129,12 +144,12 @@ export class FloatActionButtons implements OnDestroy {
 
   protected onToggleOrderBy(): void {
     this.actionButtons.toggleOrderBy();
-    this.showFloatButtons.set(false);
+    this.onHideFunctions();
   }
 
   protected onToggleOrderDirection(): void {
     this.actionButtons.toggleOrderDirection();
-    this.showFloatButtons.set(false);
+    this.onHideFunctions();
   }
 
   protected onSelectOrderBy(orderBy: CollectionItemOrderBy): void {
@@ -149,7 +164,7 @@ export class FloatActionButtons implements OnDestroy {
 
   protected onApplyFilter(filter: FloatActionFilter): void {
     this.actionButtons.applyFilter(filter);
-    this.showFloatButtons.set(false);
+    this.onHideFunctions();
   }
 
   protected onAddNew(event?: Event): void {

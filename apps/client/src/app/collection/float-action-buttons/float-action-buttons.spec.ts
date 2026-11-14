@@ -4,7 +4,7 @@ import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { FloatActionButtons } from './float-action-buttons';
@@ -34,6 +34,105 @@ describe('FloatActionButtons', () => {
     actionButtons = TestBed.inject(FloatActionButtonsService);
     actionButtons.updateConfig({ showActions: true, collectionLength: 1 });
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.nativeElement.remove();
+  });
+
+  it('moves focus from the removed opener to the first popup action', async () => {
+    actionButtons.updateConfig({ filterActions: ['unwatched', 'favorite'], showOrderButtons: true });
+    await fixture.whenStable();
+    document.body.append(fixture.nativeElement);
+    const opener = fixture.nativeElement.querySelector('[data-test-id="show-functions"]') as HTMLButtonElement;
+    opener.focus();
+    opener.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('[data-test-id="collection-filter-unwatched"]')
+    );
+    expect(document.activeElement?.closest('[role="region"]')?.getAttribute('aria-label')).toBe('Actions');
+  });
+
+  it('focuses close when all popup actions are disabled', async () => {
+    TestBed.inject(apiStateToken).setState('loadNetworkStatus', 'pending');
+    await fixture.whenStable();
+    document.body.append(fixture.nativeElement);
+    const opener = fixture.nativeElement.querySelector('[data-test-id="show-functions"]') as HTMLButtonElement;
+    opener.focus();
+    opener.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-test-id="hide-functions"]'));
+  });
+
+  it('skips inert actions still present during a previous popup leave animation', async () => {
+    document.body.append(fixture.nativeElement);
+    const leavingPopup = document.createElement('div');
+    leavingPopup.className = 'float-buttons-container';
+    leavingPopup.setAttribute('inert', '');
+    leavingPopup.append(document.createElement('button'));
+    fixture.nativeElement.prepend(leavingPopup);
+    const opener = fixture.nativeElement.querySelector('[data-test-id="show-functions"]') as HTMLButtonElement;
+    opener.focus();
+    opener.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-test-id="add-new"]'));
+    expect(leavingPopup.contains(document.activeElement)).toBe(false);
+  });
+
+  it.each(['hide-functions', 'list-order-by-alphabet', 'list-order-direction-asc', 'collection-filter-favorite'])(
+    'restores opener focus after activating %s and makes leaving actions inert',
+    async (action) => {
+      actionButtons.updateConfig({ showOrderButtons: true, filterActions: ['favorite'] });
+      component['onShowFunctions']();
+      await fixture.whenStable();
+      document.body.append(fixture.nativeElement);
+      const popup = fixture.nativeElement.querySelector('.float-buttons-container') as HTMLElement;
+      const button = fixture.nativeElement.querySelector(`[data-test-id="${action}"]`) as HTMLButtonElement;
+      button.focus();
+      button.click();
+      await fixture.whenStable();
+
+      expect(popup.hasAttribute('inert')).toBe(true);
+      expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-test-id="show-functions"]'));
+      expect(floatActions.actionButtonsVisible()).toBe(false);
+    }
+  );
+
+  it('keeps focus on an already selected sort action without closing the popup', async () => {
+    actionButtons.updateConfig({ showOrderButtons: true });
+    component['onShowFunctions']();
+    await fixture.whenStable();
+    document.body.append(fixture.nativeElement);
+    const button = fixture.nativeElement.querySelector(
+      '[data-test-id="list-order-by-created-at"]'
+    ) as HTMLButtonElement;
+    button.focus();
+    button.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(button);
+    expect(floatActions.actionButtonsVisible()).toBe(true);
+  });
+
+  it('does not steal external focus when showing or hiding functions programmatically', async () => {
+    const externalControl = document.createElement('button');
+    document.body.append(fixture.nativeElement, externalControl);
+    try {
+      externalControl.focus();
+      component['onShowFunctions']();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(externalControl);
+
+      component['onHideFunctions']();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(externalControl);
+    } finally {
+      externalControl.remove();
+    }
   });
 
   it('opens the action menu from the float button', () => {
