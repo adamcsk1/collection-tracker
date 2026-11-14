@@ -15,7 +15,6 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.webkit.CookieManager
-import android.webkit.JsResult
 import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -384,43 +383,6 @@ class MainActivity : AppCompatActivity() {
         }
       }
 
-      override fun onJsAlert(
-        view: WebView?,
-        url: String?,
-        message: String?,
-        result: JsResult,
-      ): Boolean {
-        if (isFinishing || isDestroyed) {
-          result.cancel()
-          return true
-        }
-
-        showJsDialog(
-          message = message,
-          result = result,
-          isConfirm = false,
-        )
-        return true
-      }
-
-      override fun onJsConfirm(
-        view: WebView?,
-        url: String?,
-        message: String?,
-        result: JsResult,
-      ): Boolean {
-        if (isFinishing || isDestroyed) {
-          result.cancel()
-          return true
-        }
-
-        showJsDialog(
-          message = message,
-          result = result,
-          isConfirm = true,
-        )
-        return true
-      }
     }
 
     val downloadHandler = AndroidDownloadHandler(this, webView)
@@ -671,23 +633,4 @@ class MainActivity : AppCompatActivity() {
     imm.hideSoftInputFromWindow(view.windowToken, 0)
   }
 
-  private fun showJsDialog(message: String?, result: JsResult, isConfirm: Boolean) {
-    val dialogButtonColor = getColor(R.color.dialog_button)
-    val dialog = AlertDialog.Builder(this)
-      .setMessage(message.orEmpty())
-      .setOnCancelListener { result.cancel() }
-      .apply {
-        if (!isConfirm) {
-          setCancelable(false)
-        }
-        setPositiveButton(android.R.string.ok) { _, _ -> result.confirm() }
-        if (isConfirm) {
-          setNegativeButton(android.R.string.cancel) { _, _ -> result.cancel() }
-        }
-      }
-      .show()
-
-    dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(dialogButtonColor)
-    dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(dialogButtonColor)
-  }
 }

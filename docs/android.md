@@ -14,6 +14,9 @@ The Android project is a thin WebView wrapper around a deployed Collection Track
 - If permission is denied, displays an explanation with Retry and App permissions buttons. If Android stops prompting, allow Nearby devices in the app's system permissions, return to the app, and tap Retry.
 - Injects runtime config into the loaded page as `window.COLLECTION_TRACKER_CONFIG` and `localStorage.CT.ApiUrl`.
 - Opens Android's document picker for web file inputs, including tag management import.
+- Web alerts, information, and confirmations use the application's styled dialogs, including typed confirmation for
+  destructive actions. The wrapper does not provide custom JavaScript alert/confirm handlers. Android Back dismisses the
+  top web dialog; native settings and update dialogs remain native.
 - Saves WebView downloads to Android Downloads, including tag management exports created from `blob:` URLs.
 - Displays a native error screen when the page cannot be loaded or the device is offline.
 - Checks instance content only for the current, non-failed navigation; failed loads and stale validation callbacks do not produce an invalid-instance message.

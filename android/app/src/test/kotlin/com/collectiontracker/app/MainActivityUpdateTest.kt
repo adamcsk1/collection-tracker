@@ -73,6 +73,15 @@ class MainActivityUpdateTest {
   private fun bridge(activity: MainActivity): CollectionTrackerBridge =
     shadowOf(activity.findViewById<WebView>(R.id.webView)).getJavascriptInterface("CollectionTrackerInterface") as CollectionTrackerBridge
 
+  @Test fun webChromeClientDoesNotOverrideNativeJavascriptDialogs() {
+    val activity = launch()
+    val chromeClient = assertNotNull(activity.findViewById<WebView>(R.id.webView).webChromeClient)
+    val overriddenMethods = chromeClient.javaClass.declaredMethods.map { it.name }
+    assertFalse(overriddenMethods.contains("onJsAlert"))
+    assertFalse(overriddenMethods.contains("onJsConfirm"))
+    assertTrue(overriddenMethods.contains("onShowFileChooser"))
+  }
+
   @Test fun savedInstanceHidesWholeBarAndBridgeOpensSameSettingsDialog() {
     prefs.edit().putString("page_url", "https://collection.example/client/").commit()
     val activity = launch()
