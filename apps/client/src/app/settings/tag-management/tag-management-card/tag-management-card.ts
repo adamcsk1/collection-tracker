@@ -17,6 +17,12 @@ export class TagManagementCard {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   protected readonly translations = {
     selectColor: computed(() => this.ngxSignalTranslate.translate('SelectColor')),
+    selectColorLabel: computed(() => {
+      const { tag, color } = this.tagManagement();
+      return color === null
+        ? this.ngxSignalTranslate.translate('Aria.SelectTagColor', { tag })
+        : this.ngxSignalTranslate.translate('Aria.SelectedTagColor', { tag, color });
+    }),
     rename: computed(() => this.ngxSignalTranslate.translate('Rename')),
     newTagName: computed(() => this.ngxSignalTranslate.translate('Placeholder.NewTagName')),
     weight: computed(() => this.ngxSignalTranslate.translate('Weight')),

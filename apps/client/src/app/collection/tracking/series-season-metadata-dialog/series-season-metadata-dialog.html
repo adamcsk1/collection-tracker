@@ -26,14 +26,22 @@
                 data-test-id="series-metadata-season"
                 type="number"
                 [label]="translations.season()"
+                [hint]="translations.seasonHint()"
+                [step]="1"
                 [formField]="season.season"
-              />
+              >
+                <ng-container errors>{{ translations.seasonError() }}</ng-container>
+              </libc-input>
               <libc-input
                 data-test-id="series-metadata-episodes"
                 type="number"
                 [label]="translations.episodes()"
+                [hint]="translations.episodesHint()"
+                [step]="1"
                 [formField]="season.episodes"
-              />
+              >
+                <ng-container errors>{{ translations.episodesError() }}</ng-container>
+              </libc-input>
 
               <div>
                 <button
@@ -68,9 +76,11 @@
         </div>
       }
     </div>
-    @if (!valid()) {
-      <p class="validation-message" data-test-id="series-metadata-validation">{{ translations.validation() }}</p>
-    }
+    <div aria-live="polite" aria-atomic="true">
+      @if (!valid()) {
+        <p class="validation-message" data-test-id="series-metadata-validation">{{ translations.validation() }}</p>
+      }
+    </div>
     <button data-test-id="series-metadata-add" type="button" (click)="onAddSeason()">
       <i class="material-icons" aria-hidden="true"> add </i>
       {{ translations.addSeason() }}

@@ -55,6 +55,18 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     refreshSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('RefreshSeriesMetadata')),
     removeSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('RemoveSeriesMetadata')),
     validation: computed(() => this.ngxSignalTranslate.translate('Validation.SeriesMetadata')),
+    seasonHint: computed(() =>
+      this.ngxSignalTranslate.translate('Message.SeriesMetadataSeasonRange', { max: `${MAX_SERIES_SEASONS}` })
+    ),
+    episodesHint: computed(() =>
+      this.ngxSignalTranslate.translate('Message.SeriesMetadataEpisodeRange', { max: `${MAX_SERIES_EPISODES}` })
+    ),
+    seasonError: computed(() =>
+      this.ngxSignalTranslate.translate('Validation.SeriesMetadataSeason', { max: `${MAX_SERIES_SEASONS}` })
+    ),
+    episodesError: computed(() =>
+      this.ngxSignalTranslate.translate('Validation.SeriesMetadataEpisodes', { max: `${MAX_SERIES_EPISODES}` })
+    ),
     noMetadata: computed(() => this.ngxSignalTranslate.translate('Message.SetSeasonMetadata')),
   };
   protected readonly formModel = signal<{ seasons: TrackingSeasonMetadataModel[] }>({ seasons: [] });
@@ -64,6 +76,13 @@ export class SeriesSeasonMetadataDialog implements OnInit {
       max(season.season, MAX_SERIES_SEASONS, { error: { kind: 'max' } });
       min(season.episodes, 1, { error: { kind: 'min' } });
       max(season.episodes, MAX_SERIES_EPISODES, { error: { kind: 'max' } });
+      validate(season.season, ({ value }) => (Number.isInteger(value()) ? undefined : { kind: 'integer' }));
+      validate(season.episodes, ({ value }) => (Number.isInteger(value()) ? undefined : { kind: 'integer' }));
+      validate(season.season, ({ value, valueOf }) =>
+        valueOf(metadata.seasons).filter((entry) => entry.season === value()).length > 1
+          ? { kind: 'duplicate' }
+          : undefined
+      );
     });
     validate(metadata.seasons, ({ value }) =>
       this.hasValidUniqueSeasons(value()) ? undefined : { kind: 'seriesMetadata' }

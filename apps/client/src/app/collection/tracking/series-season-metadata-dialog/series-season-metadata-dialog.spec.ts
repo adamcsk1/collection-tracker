@@ -8,6 +8,7 @@ import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/tracking-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -100,6 +101,102 @@ describe('SeriesSeasonMetadataDialog', () => {
     component['form'].seasons[0].episodes().value.set(101);
 
     expect(component['valid']()).toBe(false);
+  });
+
+  it('provides named fields with linked range instructions and native numeric limits', async () => {
+    await fixture.whenStable();
+    const translate = TestBed.inject(NgxSignalTranslateService).translate;
+    for (const [field, label, maximum, hintKey] of [
+      ['season', 'Season', MAX_SERIES_SEASONS, 'Message.SeriesMetadataSeasonRange'],
+      ['episodes', 'Episodes', MAX_SERIES_EPISODES, 'Message.SeriesMetadataEpisodeRange'],
+    ] as const) {
+      const input = fixture.nativeElement.querySelector(
+        `[data-test-id="series-metadata-${field}"] input`
+      ) as HTMLInputElement;
+      expect(input.getAttribute('aria-label')).toBe(label);
+      expect(fixture.nativeElement.querySelector(`label[for="${input.id}"]`).textContent).toContain(label);
+      expect(input.min).toBe('1');
+      expect(input.max).toBe(`${maximum}`);
+      expect(input.step).toBe('1');
+      const hintId = input.getAttribute('aria-describedby');
+      expect(fixture.nativeElement.querySelector(`[id="${hintId}"]`).textContent).toContain(hintKey);
+      expect(translate).toHaveBeenCalledWith(hintKey, { max: `${maximum}` });
+      expect(input.getAttribute('aria-invalid')).toBeNull();
+    }
+  });
+
+  it.each([
+    ['season', 0],
+    ['season', MAX_SERIES_SEASONS + 1],
+    ['season', 1.5],
+    ['season', null],
+    ['episodes', 0],
+    ['episodes', MAX_SERIES_EPISODES + 1],
+    ['episodes', 1.5],
+    ['episodes', null],
+  ] as const)('links and announces actionable errors for %s value %s', async (field, value) => {
+    const input = fixture.nativeElement.querySelector(
+      `[data-test-id="series-metadata-${field}"] input`
+    ) as HTMLInputElement;
+    input.value = value === null ? '' : `${value}`;
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+
+    expect(component['valid']()).toBe(false);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    const error = fixture.nativeElement.querySelector(`[id="${input.id}-error"]`) as HTMLElement;
+    expect(input.getAttribute('aria-describedby')?.split(' ')).toContain(error.id);
+    expect(error.getAttribute('role')).toBe('alert');
+    const errorKey = field === 'season' ? 'Validation.SeriesMetadataSeason' : 'Validation.SeriesMetadataEpisodes';
+    expect(error.textContent).toContain(errorKey);
+    expect(TestBed.inject(NgxSignalTranslateService).translate).toHaveBeenCalledWith(errorKey, {
+      max: `${field === 'season' ? MAX_SERIES_SEASONS : MAX_SERIES_EPISODES}`,
+    });
+    const summary = fixture.nativeElement.querySelector('[data-test-id="series-metadata-validation"]');
+    expect(summary.parentElement.getAttribute('aria-live')).toBe('polite');
+    expect(fixture.nativeElement.querySelector('[data-test-id="series-metadata-save"]').disabled).toBe(true);
+    await component['onSave']();
+    expect(api.updateTrackingSeasonsByExternalId).not.toHaveBeenCalled();
+  });
+
+  it('links duplicate season errors to each affected season field', async () => {
+    component['form']().reset({
+      seasons: [
+        { season: 1, episodes: 2 },
+        { season: 1, episodes: 3 },
+      ],
+    });
+    component['form'].seasons[0].season().markAsTouched();
+    component['form'].seasons[1].season().markAsTouched();
+    await fixture.whenStable();
+
+    expect(component['valid']()).toBe(false);
+    const inputs = fixture.nativeElement.querySelectorAll('[data-test-id="series-metadata-season"] input');
+    for (const input of inputs) {
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(fixture.nativeElement.querySelector(`[id="${input.id}-error"]`).textContent).toContain(
+        'Validation.SeriesMetadataSeason'
+      );
+    }
+  });
+
+  it('clears errors and enables save when values return to supported boundaries', async () => {
+    component['form'].seasons[0].season().value.set(MAX_SERIES_SEASONS + 1);
+    component['form'].seasons[0].season().markAsTouched();
+    component['form'].seasons[0].episodes().value.set(MAX_SERIES_EPISODES + 1);
+    component['form'].seasons[0].episodes().markAsTouched();
+    await fixture.whenStable();
+
+    component['form'].seasons[0].season().value.set(MAX_SERIES_SEASONS);
+    component['form'].seasons[0].episodes().value.set(MAX_SERIES_EPISODES);
+    await fixture.whenStable();
+
+    expect(component['valid']()).toBe(true);
+    expect(fixture.nativeElement.querySelectorAll('[role="alert"]').length).toBe(0);
+    expect(fixture.nativeElement.querySelector('[data-test-id="series-metadata-validation"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="series-metadata-save"]').disabled).toBe(false);
+    expect(fixture.nativeElement.querySelectorAll('input[aria-invalid="true"]').length).toBe(0);
   });
 
   it('saves sorted metadata with titles and closes', async () => {

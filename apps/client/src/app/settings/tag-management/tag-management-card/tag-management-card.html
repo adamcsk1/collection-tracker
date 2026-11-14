@@ -26,7 +26,7 @@
         [style.color]="tagManagement().color"
         [style.borderColor]="tagManagement().color"
         [style.backgroundColor]="contrastColor(tagManagement().color)"
-        [attr.aria-label]="translations.selectColor()"
+        [attr.aria-label]="translations.selectColorLabel()"
         (click)="onColorButtonClick(colorInput, tagManagement().color)"
       >
         <i class="material-icons" [title]="translations.selectColor()">palette</i>

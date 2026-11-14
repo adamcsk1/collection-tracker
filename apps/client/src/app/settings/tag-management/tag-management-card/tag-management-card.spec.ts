@@ -115,6 +115,25 @@ describe('TagManagementCard', () => {
   });
 
   it.each([
+    { tag: '#old', color: '#Ab12Ef', label: 'Select color for #old: #Ab12Ef' },
+    { tag: '#new', color: '#000000', label: 'Select color for #new: #000000' },
+    { tag: '#old', color: null, label: 'Select color for #old' },
+  ])('names the color button for $tag with color $color', async ({ tag, color, label }) => {
+    const translate = vi.spyOn(TestBed.inject(NgxSignalTranslateService), 'translate').mockReturnValue(label);
+    fixture.componentRef.setInput('tagManagement', { ...tagManagement, tag, color });
+    await fixture.whenStable();
+
+    const colorButton = fixture.nativeElement.querySelector('.color-button') as HTMLButtonElement;
+    expect(translate).toHaveBeenCalledWith(
+      color === null ? 'Aria.SelectTagColor' : 'Aria.SelectedTagColor',
+      color === null ? { tag } : { tag, color }
+    );
+    expect(colorButton.getAttribute('aria-label')).toBe(label);
+    expect(colorButton.textContent).toContain(color ?? component['translations'].selectColor());
+    expect(colorButton.getAttribute('aria-label')).not.toContain('null');
+  });
+
+  it.each([
     [null, 0],
     ['', 0],
     ['2.5', 2.5],
