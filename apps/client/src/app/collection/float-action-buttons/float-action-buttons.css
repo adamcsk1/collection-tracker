@@ -4,10 +4,24 @@
 
 .add-item-button {
   display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
   align-items: center;
   gap: var(--size-2xs);
   white-space: nowrap;
   min-height: var(--float-button-container-size);
+}
+
+@media (width <= 350px) {
+  .add-item-button {
+    width: var(--float-button-container-size);
+    justify-content: center;
+    padding: 0;
+
+    span {
+      display: none;
+    }
+  }
 }
 
 .float-scale-in {
@@ -49,13 +63,14 @@
   left: 50%;
   bottom: calc(100% + var(--size-md));
   box-sizing: border-box;
-  max-height: calc(100dvh - var(--size-2xl) - var(--float-search-height) - 7rem);
+  width: min(24rem, calc(100vw - 2 * var(--size-md)));
+  max-height: calc(100dvh - var(--float-actions-safe-area) - var(--size-md));
   overflow-y: auto;
   translate: -50%;
   transform-origin: bottom center;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
   gap: var(--size-xs);
   flex-shrink: 0;
   background-color: var(--glassy-background);
@@ -71,7 +86,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  pointer-events: auto;
 
   button {
     height: 100%;
@@ -84,11 +98,11 @@
 }
 
 .float-action {
-  pointer-events: auto;
   flex: 1;
 
   button {
     min-width: 12rem;
+    width: 100%;
     background-color: var(--background-color);
     justify-content: flex-start;
   }

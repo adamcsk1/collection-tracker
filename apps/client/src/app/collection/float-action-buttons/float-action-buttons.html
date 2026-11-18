@@ -3,6 +3,7 @@
     type="button"
     data-test-id="add-new"
     class="add-item-button"
+    [attr.aria-label]="translations.addNew()"
     [disabled]="apiLoadNetworkStatus() === 'pending'"
     (click)="onAddNew()"
   >
@@ -13,6 +14,7 @@
 @if (actionButtonsVisible()) {
   <div
     class="float-buttons-container"
+    data-test-id="collection-actions-popup"
     role="region"
     [attr.aria-label]="translations.actions()"
     animate.enter="float-scale-in"

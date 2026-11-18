@@ -50,6 +50,7 @@
 
 .dialog-frame {
   --dialog-frame-default-height: 99vh;
+  --dialog-frame-default-height: 99dvh;
   --dialog-frame-height: min(
     var(--dialog-frame-default-height),
     var(--dialog-frame-max-height, var(--dialog-frame-default-height))
@@ -59,6 +60,7 @@
   box-sizing: border-box;
   position: absolute;
   top: var(--dialog-frame-top, calc(100vh - var(--dialog-frame-height)));
+  top: var(--dialog-frame-top, calc(100dvh - var(--dialog-frame-height)));
   left: 50%;
   z-index: 1;
   display: flex;
@@ -71,6 +73,17 @@
   border-radius: var(--mobile-top-border-radius) var(--mobile-top-border-radius) 0 0;
   touch-action: manipulation;
   translate: -50% 0;
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &.content-sized:not(.compact) {
+    top: auto;
+    bottom: 0;
+    height: auto;
+    max-height: var(--dialog-frame-default-height);
+  }
 
   &.compact {
     top: 50%;
@@ -126,6 +139,7 @@
 
   @media (width <= 650px) {
     --dialog-frame-default-height: 95vh;
+    --dialog-frame-default-height: 95dvh;
 
     width: 100vw;
   }

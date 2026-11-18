@@ -11,7 +11,7 @@ import { DialogShell } from './dialog-shell';
   selector: 'libc-test-dialog-shell-host',
   imports: [DialogShell],
   template: `
-    <libc-dialog-shell [beforeClose]="beforeClose()" [compact]="compact()">
+    <libc-dialog-shell [beforeClose]="beforeClose()" [compact]="compact()" [contentSized]="contentSized()">
       <div dialog-shell-content>Content</div>
     </libc-dialog-shell>
     <button id="other">Other focusable</button>
@@ -20,6 +20,7 @@ import { DialogShell } from './dialog-shell';
 class HostComponent {
   public readonly beforeClose = signal<(() => Promise<boolean>) | null>(null);
   public readonly compact = signal(false);
+  public readonly contentSized = signal(false);
 }
 
 @Component({
@@ -231,6 +232,16 @@ describe('DialogShell component', () => {
   it('focuses dialog root on init', () => {
     const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
     expect(document.activeElement).toBe(dialogRoot);
+  });
+
+  it('opts into content sizing without changing full-size dialogs or sheet controls', () => {
+    const frame = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+    expect(frame.classList.contains('content-sized')).toBe(false);
+    fixture.componentInstance.contentSized.set(true);
+    fixture.detectChanges();
+    expect(frame.classList.contains('content-sized')).toBe(true);
+    expect(frame.classList.contains('compact')).toBe(false);
+    expect(fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]')).not.toBeNull();
   });
 
   it('gives compact dialogs a distinct overlay without sheet drag controls', () => {

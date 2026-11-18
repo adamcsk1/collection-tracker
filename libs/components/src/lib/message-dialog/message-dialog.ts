@@ -7,6 +7,7 @@ import {
   input,
   OnDestroy,
   signal,
+  viewChild,
 } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { MessageDialogRequest } from '@services/message-dialog-model';
@@ -27,7 +28,9 @@ export class MessageDialog implements OnDestroy {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly dialogShell = viewChild(DialogShell);
   private settled = false;
+  private resolution: boolean | null = null;
   public readonly request = input.required<MessageDialogRequest>();
   protected readonly titleId = `message-dialog-title-${crypto.randomUUID()}`;
   protected readonly messageId = `message-dialog-message-${crypto.randomUUID()}`;
@@ -67,11 +70,17 @@ export class MessageDialog implements OnDestroy {
   };
 
   protected finish(confirmed: boolean): void {
-    if (this.settled || (confirmed && !this.canConfirm())) return;
+    if (this.resolution !== null || (confirmed && !this.canConfirm())) return;
+    this.resolution = confirmed;
+    this.dialogShell()?.close();
+  }
+
+  protected onClosed(): void {
+    if (this.settled) return;
     this.settled = true;
     const resolve = this.request().resolve;
     this.portal.close(this.element.nativeElement);
-    resolve(confirmed);
+    resolve(this.resolution ?? false);
   }
 
   public ngOnDestroy(): void {

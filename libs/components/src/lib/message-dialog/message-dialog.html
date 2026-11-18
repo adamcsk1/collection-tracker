@@ -5,7 +5,7 @@
   [ariaLabelledBy]="titleId"
   [ariaDescribedBy]="messageId"
   [dialogRole]="request().mode === 'info' ? 'dialog' : 'alertdialog'"
-  (closed)="finish(false)"
+  (closed)="onClosed()"
 >
   <h2 dialog-shell-top-content class="dialog-title" [id]="titleId" data-test-id="message-dialog-title">
     <i class="material-icons" aria-hidden="true">{{

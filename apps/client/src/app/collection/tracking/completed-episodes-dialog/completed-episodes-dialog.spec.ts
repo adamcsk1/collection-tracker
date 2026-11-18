@@ -712,7 +712,7 @@ describe('CompletedEpisodesDialog pending close', () => {
     const confirm = alertHost.querySelector('[data-test-id="message-dialog-confirm"]') as HTMLButtonElement;
     confirm.click();
 
-    expect(alertResult).toHaveBeenCalledExactlyOnceWith(true);
+    await vi.waitFor(() => expect(alertResult).toHaveBeenCalledExactlyOnceWith(true));
     expect(portal.componentRef()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });

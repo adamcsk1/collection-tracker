@@ -1,11 +1,11 @@
-<libc-dialog-shell ariaLabelledBy="new-item-dialog-heading" [beforeClose]="canDiscard">
+<libc-dialog-shell ariaLabelledBy="new-item-dialog-heading" [beforeClose]="canDiscard" [contentSized]="true">
   <ng-container dialog-shell-top-content>
     <h2 id="new-item-dialog-heading" class="dialog-title">
       <i class="material-icons" aria-hidden="true" data-test-id="new-item-dialog-icon">{{ dialogIcon() }}</i>
       {{ dialogTitle() }}
     </h2>
   </ng-container>
-  <ng-container dialog-shell-content>
+  <div dialog-shell-content class="new-item-content">
     <libc-tabs
       idPrefix="new-item-mode"
       [ariaLabel]="translations.ariaNewItemEntryMethod()"
@@ -364,8 +364,8 @@
         [label]="translations.copyToTrackingAsCompleted()"
       />
     }
-  </ng-container>
-  <ng-container dialog-shell-bottom-content>
+  </div>
+  <div dialog-shell-bottom-content class="save-actions">
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations.save()"
@@ -411,5 +411,5 @@
       <i class="material-icons" aria-hidden="true"> door_back </i>
       <span>{{ translations.saveAndClose() }}</span>
     </button>
-  </ng-container>
+  </div>
 </libc-dialog-shell>

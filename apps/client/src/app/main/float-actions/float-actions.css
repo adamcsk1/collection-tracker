@@ -1,6 +1,6 @@
 :host {
-  --float-button-container-size: 45px;
-  --float-search-height: 58px;
+  --float-button-container-size: var(--float-actions-button-height, 45px);
+  --float-search-height: var(--float-actions-bar-height, 61px);
   --float-search-side-margin: 0.45rem;
   --float-search-expanded-width: calc(var(--container-max-width) * 0.9);
 
@@ -14,11 +14,12 @@
   transition: opacity 160ms ease;
 }
 
-:host(.float-actions-scrolling) {
+:host(.float-actions-scrolling:not(:focus-within)) {
   opacity: 0;
 
-  &:focus-within {
-    opacity: 1;
+  .float-search-bar,
+  .float-button {
+    pointer-events: none;
   }
 }
 
@@ -48,6 +49,17 @@
   width: var(--float-search-expanded-width);
   flex-wrap: wrap;
   justify-content: center;
+}
+
+@media (width > 650px) {
+  .float-search-bar-search-expanded {
+    flex-wrap: nowrap;
+
+    .float-search-content {
+      flex: 1 1 0;
+      width: auto;
+    }
+  }
 }
 
 .search-toggle-button,
@@ -104,12 +116,10 @@
 
 .float-search-content-enter {
   animation: float-search-content-enter 0.2s ease-out forwards;
-  overflow: hidden;
 }
 
 .float-search-content-leave {
   animation: float-search-content-leave 0.16s ease-in forwards;
-  overflow: hidden;
 }
 
 .float-actions-slot {
@@ -142,12 +152,11 @@
 
 .float-button-scroll-to-top {
   position: absolute;
-  bottom: calc(var(--float-search-height) + 7rem);
-  left: 50%;
+  bottom: var(--float-actions-safe-area);
+  right: calc(var(--size-xs) + var(--float-search-side-margin));
   z-index: 1;
-  height: auto;
-  width: max-content;
-  transform: translateX(-50%);
+  height: var(--float-button-container-size);
+  width: var(--float-button-container-size);
 }
 
 .scroll-to-top-button {
@@ -155,31 +164,22 @@
   align-items: center;
   justify-content: center;
   gap: var(--size-2xs);
-  height: auto;
+  height: 100%;
   min-width: 100%;
-  padding-block: var(--size-3xs);
-  padding-inline: var(--size-2xs);
   color: var(--main-color);
   white-space: nowrap;
   background: transparent;
   border: none;
   font: inherit;
-  font-size: var(--font-size-sm);
-
-  .material-icons {
-    font-size: var(--font-size-sm);
-  }
 }
 
 @keyframes float-search-content-enter {
   from {
-    max-height: 0;
     opacity: 0;
     transform: translateX(var(--size-xs));
   }
 
   to {
-    max-height: var(--float-search-height);
     opacity: 1;
     transform: translateX(0);
   }
@@ -187,13 +187,11 @@
 
 @keyframes float-search-content-leave {
   from {
-    max-height: var(--float-search-height);
     opacity: 1;
     transform: translateX(0);
   }
 
   to {
-    max-height: 0;
     opacity: 0;
     transform: translateX(var(--size-xs));
   }

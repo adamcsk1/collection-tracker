@@ -1,5 +1,8 @@
 :host {
-  --float-actions-safe-area: 72px;
+  --float-actions-button-height: 45px;
+  --float-actions-collapsed-height: calc(var(--float-actions-button-height) + 2 * var(--size-xs));
+  --float-actions-bar-height: var(--float-actions-collapsed-height);
+  --float-actions-safe-area: calc(var(--float-actions-bar-height) + var(--size-2xl) + var(--size-md));
 
   width: 100%;
   display: flex;
@@ -9,6 +12,12 @@
 
 .main-header {
   z-index: 2;
+}
+
+@media (width <= 650px) {
+  :host:has(.float-search-bar-search-expanded) {
+    --float-actions-bar-height: calc(var(--float-actions-collapsed-height) + var(--input-height) + var(--size-xs));
+  }
 }
 
 .page-heading {

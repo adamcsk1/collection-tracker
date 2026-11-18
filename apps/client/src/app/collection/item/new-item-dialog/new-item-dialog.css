@@ -1,11 +1,18 @@
-form {
-  height: inherit;
+.new-item-content,
+#new-item-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-md);
+}
+
+#new-item-search-form [aria-live]:empty {
+  display: none;
 }
 
 .external-search-help {
   color: var(--text-color);
   font-size: 0.95rem;
-  margin: -0.5rem 0;
+  margin-bottom: var(--size-md);
 
   a {
     color: var(--main-color);
@@ -67,7 +74,7 @@ form {
 
 .manual-form {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(calc(14 * var(--size-md)), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
   gap: var(--size-md);
   width: min(calc(70 * var(--size-md)), 100%);
 
@@ -115,7 +122,22 @@ form {
 
 .primary-save-action {
   display: inline-flex;
+  width: auto;
   align-items: center;
   gap: var(--size-2xs);
   font-weight: bold;
+}
+
+.save-actions {
+  display: flex;
+  align-items: center;
+  justify-content: safe center;
+  gap: var(--size-xs);
+  width: 100%;
+  overflow-x: auto;
+  padding: var(--size-2xs);
+
+  button {
+    flex-shrink: 0;
+  }
 }

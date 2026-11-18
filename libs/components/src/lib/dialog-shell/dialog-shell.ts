@@ -57,6 +57,7 @@ export class DialogShell implements AfterViewInit {
   public readonly ariaDescribedBy = input('');
   public readonly dialogRole = input<'dialog' | 'alertdialog'>('dialog');
   public readonly compact = input(false);
+  public readonly contentSized = input(false);
   public readonly closed = output<void>();
   protected readonly hasMenuContent = signal(false);
   protected readonly closing = signal(false);
@@ -86,6 +87,10 @@ export class DialogShell implements AfterViewInit {
       observer.observe(menuContentElement, { childList: true, subtree: true });
       this.destroyRef.onDestroy(() => observer.disconnect());
     }
+  }
+
+  public close(): void {
+    void this.onClose();
   }
 
   protected async onClose(): Promise<void> {

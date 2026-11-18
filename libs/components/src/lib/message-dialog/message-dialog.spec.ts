@@ -91,6 +91,9 @@ describe('MessageDialog component', () => {
     }
 
     action().click();
+    action().click();
+    expect(resolve).not.toHaveBeenCalled();
+    fixture.debugElement.query(By.directive(DialogShell)).componentInstance.closed.emit();
     expect(resolve).toHaveBeenCalledExactlyOnceWith(true);
   });
 
@@ -108,6 +111,10 @@ describe('MessageDialog component', () => {
     resolve.mockImplementation(() => expect(close).toHaveBeenCalledExactlyOnceWith(fixture.nativeElement));
 
     action().click();
+    expect(close).not.toHaveBeenCalled();
+    expect(resolve).not.toHaveBeenCalled();
+
+    fixture.debugElement.query(By.directive(DialogShell)).componentInstance.closed.emit();
 
     expect(resolve).toHaveBeenCalledExactlyOnceWith(true);
   });
@@ -116,6 +123,10 @@ describe('MessageDialog component', () => {
     await initialize({ options: { destructive: true, confirmationText: 'My Item' } });
     fixture.nativeElement.querySelector('[data-test-id="message-dialog-cancel"]').click();
     fixture.componentInstance['finish'](true);
+    expect(close).not.toHaveBeenCalled();
+    expect(resolve).not.toHaveBeenCalled();
+
+    fixture.debugElement.query(By.directive(DialogShell)).componentInstance.closed.emit();
     fixture.destroy();
 
     expect(close).toHaveBeenCalledExactlyOnceWith(fixture.nativeElement);
@@ -199,6 +210,9 @@ describe('MessageDialog stacked dismissal', () => {
     expect(secondHost.hasAttribute('inert')).toBe(false);
     const confirm = secondHost.querySelector('[data-test-id="message-dialog-confirm"]') as HTMLButtonElement;
     confirm.click();
+    expect(secondResult).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(200);
+    fixture.detectChanges();
 
     expect(secondResult).toHaveBeenCalledExactlyOnceWith(true);
     expect(portal.componentRef()).toBeNull();

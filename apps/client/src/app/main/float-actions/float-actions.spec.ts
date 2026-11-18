@@ -84,7 +84,9 @@ describe('FloatActions', () => {
     const scrollButton = fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]');
     expect(fixture.nativeElement.querySelector('.float-actions-slot [data-test-id="scroll-to-top"]')).toBeNull();
     expect(scrollButton.querySelector('.material-icons')?.textContent.trim()).toBe('arrow_upward');
-    expect(scrollButton.textContent).toContain('ScrollToTop');
+    expect(scrollButton.getAttribute('aria-label')).toBe('ScrollToTop');
+    expect(scrollButton.getAttribute('title')).toBe('ScrollToTop');
+    expect(scrollButton.textContent.trim()).toBe('arrow_upward');
   });
 
   it('renders scroll-to-top when no action component is registered', () => {

@@ -23,10 +23,11 @@
   height: calc(100dvh - var(--header-height) - 2 * var(--size-md));
   overflow: hidden auto;
   padding: var(--size-md);
-  padding-bottom: calc(var(--float-actions-safe-area) + 7rem);
+  padding-bottom: var(--float-actions-safe-area);
 
   .list-guidance {
     margin-top: 0;
+    margin-bottom: var(--size-md);
     font-size: var(--font-size-sm);
   }
 

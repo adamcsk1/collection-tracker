@@ -885,7 +885,7 @@ describe('NewItemDialogService partial-save alerts', () => {
       expect(alertHost.hasAttribute('inert')).toBe(false);
       expect(alertHost.textContent).toContain('Tracking update failed');
       (alertHost.querySelector('[data-test-id="message-dialog-confirm"]') as HTMLButtonElement).click();
-      expect(portal.componentRef()).toBeNull();
+      await vi.waitFor(() => expect(portal.componentRef()).toBeNull());
       expect(document.activeElement).toBe(trigger);
     }
   );
