@@ -16,6 +16,7 @@ export interface PhotoImportRowModel {
   id: string;
   photoId: string;
   title: string;
+  identifier?: string;
   photoName: string;
   details: string;
   matches: ExternalMetadataItemModel[];

@@ -4167,7 +4167,7 @@ paths:
   /ai/vision/recognize:
     post:
       operationId: recognizePhoto
-      summary: Extract titles from one photo for a single media type
+      summary: Extract titles and printed identifiers from one photo for a single media type
       description: >-
         Requires independently configured vision AI. Accepts raw base64 JPEG, PNG, or WebP, at most 10 MiB decoded
         and 50 megapixels, single frame only. Images are validated, resized and stripped of metadata before inference.
@@ -4190,7 +4190,7 @@ paths:
                   maxLength: 13981016
       responses:
         '200':
-          description: Recognized title suggestions, empty if none are readable.
+          description: Recognized title or identifier suggestions, empty if none are readable.
           content:
             application/json:
               schema:
@@ -4211,6 +4211,14 @@ paths:
                             title:
                               type: string
                               maxLength: 300
+                              description: Empty when only an identifier is readable.
+                            identifier:
+                              type: string
+                              maxLength: 300
+                              description: >-
+                                Optional normalized IMDb ID for movies/series, ISBN-13 for books, or MusicBrainz
+                                release ID or checksum-valid UPC/EAN digits for albums. Invalid or wrong-media
+                                identifiers are omitted. At least a nonempty title or valid identifier is required.
                             year:
                               type: [string, 'null']
                               maxLength: 20

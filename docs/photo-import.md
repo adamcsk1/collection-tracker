@@ -1,6 +1,6 @@
 # Photo import
 
-The **From photos** tab in Add recognizes titles from cover or spine photos, then searches the existing metadata providers. A batch uses
+The **From photos** tab in Add recognizes titles and printed identifiers from cover, spine or label photos, then queries the existing metadata providers. A batch uses
 one media type only: movies, series, books, or music. It never guesses a mixed collection or adds an unreviewed AI result.
 
 ## Configure vision
@@ -35,7 +35,7 @@ They do not prevent the application from starting or affect ordinary Add and AI 
 
 1. Select the media type and destination in Add, then open **From photos**. These choices stay fixed for the batch.
 2. Select up to ten JPEG, PNG or WebP photos and start recognition. Each photo can contain several items of the same type.
-3. Review extracted titles and matching provider results. Correct the search text when necessary and select a match or skip.
+3. Review extracted titles or identifiers and matching provider results. Correct the search text when necessary and select a match or skip.
 4. Use **Add selected**. Full metadata is fetched through the existing provider service; IMDb IDs, normalized ISBNs and
    MusicBrainz release identities come from metadata, never from an AI guess.
 5. Retry failures. Completed photos are not recognized again; successfully added or existing items are not submitted again.
@@ -44,6 +44,13 @@ They do not prevent the application from starting or affect ordinary Add and AI 
 Selecting a match exposes per-item **Tags**, with the usual tag suggestions, and **User rating** for Library additions.
 Ratings are optional, from 0 to 10 with at most one decimal place. Each row keeps its own values through searches,
 skipping and retries; invalid ratings prevent that row from being added. Skipped or unselected rows hide these inputs.
+
+Readable identifiers take priority over titles: IMDb IDs for movies/series, ISBN-10 or ISBN-13 for books, and MusicBrainz
+release IDs or printed UPC/EAN digits for music. ISBNs are normalized to ISBN-13; ISBN and barcode checksums are validated.
+IMDb, ISBN and MusicBrainz release IDs use exact item lookup; barcodes use the provider's barcode search. When no matching
+item is found, a readable title is tried instead. Provider errors remain retryable rather than silently triggering fallback.
+An identifier-only photo does not need a readable title. Results still require selection before adding; vision never creates
+an item directly. Barcode stripes are not decoded: include legible printed digits, and verify the suggested release.
 
 For Library additions with tracking enabled, selecting a movie exposes **Finished** and selecting a series exposes
 **Copy to tracking as completed**. Each row keeps its own choice. Skipped or unselected rows show neither option.
@@ -73,5 +80,6 @@ close/back behavior; there is no separate Done button. Successful collection add
 
 - `GET /api/v1/ai/vision/availability`: `{ data: { available, reason } }`.
 - `POST /api/v1/ai/vision/recognize`: `{ contentType, imageBase64 }`; raw base64, not a data URL.
-  Returns `{ data: { titles: [{ title, year, contributor }] } }`, with at most 50 suggestions per photo.
+  Returns `{ data: { titles: [{ title, year, contributor, identifier? }] } }`, with at most 50 suggestions per photo.
+  `identifier` is included only when valid for the selected media type; `title` may be empty for identifier-only results.
 - Errors use the existing RFC 9457 problem-details contract. See the [OpenAPI reference](../apps/server/public/server-api.yaml).

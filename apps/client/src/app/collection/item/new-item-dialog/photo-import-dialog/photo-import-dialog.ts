@@ -22,6 +22,8 @@ import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared
 import { PHOTO_IMPORT_MAX_BYTES, PHOTO_IMPORT_MAX_PHOTOS } from '@shared/constants/photo-import-const';
 import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';
 import { parseTagText } from '@shared/utils/collection-item-text-util';
+import { normalizePhotoImportIdentifier } from '@shared/utils/photo-import-identifier-util';
+import { normalizeMbid } from '@shared/utils/mbid-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom } from 'rxjs';
@@ -269,8 +271,9 @@ export class PhotoImportDialog implements OnInit {
             id: crypto.randomUUID(),
             photoId: photo.id,
             photoName: photo.file.name,
-            title: title.title,
-            details: [title.contributor, title.year].filter(Boolean).join(', '),
+            title: title.title || title.identifier || '',
+            identifier: title.identifier,
+            details: [title.identifier, title.contributor, title.year].filter(Boolean).join(', '),
             matches: [],
             selected: null,
             status: 'ready',
@@ -282,7 +285,9 @@ export class PhotoImportDialog implements OnInit {
             ...Object.fromEntries(rows.map((row) => [row.id, { tags: '', userRate: null }])),
           }));
           this.store.setState('rows', [...this.state.rows(), ...rows]);
-          this.searchModel.update((model) => ({ queries: [...model.queries, ...rows.map((row) => row.title)] }));
+          this.searchModel.update((model) => ({
+            queries: [...model.queries, ...rows.map((row) => row.identifier || row.title)],
+          }));
           this.updatePhoto(photo.id, 'recognized');
           for (let index = firstIndex; index < firstIndex + rows.length; index++) {
             if (this.destroyed || this.state.stopRequested()) break;
@@ -304,6 +309,7 @@ export class PhotoImportDialog implements OnInit {
   protected async onSearchRow(index: number): Promise<void> {
     if (this.state.busy()) return;
     this.store.setState('busy', true);
+    this.store.setState('stopRequested', false);
     try {
       await this.searchRow(index);
     } finally {
@@ -315,21 +321,59 @@ export class PhotoImportDialog implements OnInit {
     const row = this.state.rows()[index];
     const query = this.searchModel().queries[index]?.trim();
     if (!row || !query || ['added', 'exists'].includes(row.status)) return;
+    const fallbackTitle = query === row.identifier ? row.title : undefined;
     this.updateRow(row.id, { status: 'searching', selected: null });
     try {
-      const provider =
-        this.contentType() === 'book' ? 'openlibrary' : this.contentType() === 'album' ? 'musicbrainz' : 'omdb';
-      const response = await firstValueFrom(
-        this.api.searchExternalMetadata({ s: query, provider }, { suppressErrorAlert: true })
-      );
+      let matches = await this.findMatches(query);
+      if (
+        !matches.length &&
+        fallbackTitle &&
+        fallbackTitle !== query &&
+        !this.destroyed &&
+        !this.state.stopRequested()
+      ) {
+        this.searchModel.update((model) => ({
+          queries: model.queries.map((value, queryIndex) => (queryIndex === index ? fallbackTitle : value)),
+        }));
+        matches = await this.findMatches(fallbackTitle);
+      }
       this.updateRow(row.id, {
-        matches: response.results.filter((match) => match.contentType === this.contentType()),
+        matches,
         status: 'ready',
         searched: true,
       });
     } catch {
       this.updateRow(row.id, { status: 'error', searched: true });
     }
+  }
+
+  private async findMatches(query: string): Promise<ExternalMetadataItemModel[]> {
+    const contentType = this.contentType();
+    const provider = contentType === 'book' ? 'openlibrary' : contentType === 'album' ? 'musicbrainz' : 'omdb';
+    const identifier = normalizePhotoImportIdentifier(query, contentType);
+    let matches: ExternalMetadataItemModel[];
+    if (identifier && (contentType !== 'album' || normalizeMbid(identifier))) {
+      try {
+        matches = [
+          await firstValueFrom(
+            this.api.getExternalMetadataItem(
+              { externalIdentitySource: provider === 'omdb' ? 'imdb' : provider, externalIdentityId: identifier },
+              { suppressErrorAlert: true }
+            )
+          ),
+        ];
+      } catch (error) {
+        if (!(error instanceof HttpErrorResponse) || error.status !== 404) throw error;
+        matches = [];
+      }
+    } else {
+      matches = (
+        await firstValueFrom(
+          this.api.searchExternalMetadata({ s: identifier ?? query, provider }, { suppressErrorAlert: true })
+        )
+      ).results;
+    }
+    return matches.filter((match) => match.contentType === contentType);
   }
 
   protected onSelect(index: number, match: ExternalMetadataItemModel): void {

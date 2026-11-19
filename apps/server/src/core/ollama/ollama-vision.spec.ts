@@ -70,6 +70,31 @@ describe('ollama vision', () => {
     });
   });
 
+  it('accepts identifier-only photos and discards invalid identifiers when a title is readable', async () => {
+    const { parseRecognizedTitles } = await importVision();
+    expect(
+      parseRecognizedTitles(
+        {
+          titles: [
+            { title: '', identifier: 'ISBN-10: 0-441-17271-7' },
+            { title: 'Dune', identifier: '9780441172718' },
+            { title: 'Dune', identifier: 'tt0133093' },
+          ],
+        },
+        'book'
+      )
+    ).toEqual({
+      titles: [
+        { title: '', identifier: '9780441172719', year: null, contributor: null },
+        { title: 'Dune', year: null, contributor: null },
+        { title: 'Dune', year: null, contributor: null },
+      ],
+    });
+    expect(() => parseRecognizedTitles({ titles: [{ title: '', identifier: '9780441172718' }] }, 'book')).toThrow(
+      expect.objectContaining({ statusCode: 502 })
+    );
+  });
+
   it.each([
     null,
     [],
@@ -200,13 +225,16 @@ describe('ollama vision', () => {
   it('normalizes recognized titles and optional visible details', async () => {
     const { parseRecognizedTitles } = await importVision();
     expect(
-      parseRecognizedTitles({
-        titles: [
-          { title: ' Dune ', year: ' 1965 ', contributor: ' Frank Herbert ' },
-          { title: 'Unknown', year: '', contributor: ' ' },
-          { title: 'Other' },
-        ],
-      })
+      parseRecognizedTitles(
+        {
+          titles: [
+            { title: ' Dune ', year: ' 1965 ', contributor: ' Frank Herbert ' },
+            { title: 'Unknown', year: '', contributor: ' ' },
+            { title: 'Other' },
+          ],
+        },
+        'book'
+      )
     ).toEqual({
       titles: [
         { title: 'Dune', year: '1965', contributor: 'Frank Herbert' },
@@ -214,11 +242,14 @@ describe('ollama vision', () => {
         { title: 'Other', year: null, contributor: null },
       ],
     });
-    expect(parseRecognizedTitles({ titles: [] })).toEqual({ titles: [] });
+    expect(parseRecognizedTitles({ titles: [] }, 'book')).toEqual({ titles: [] });
     expect(
-      parseRecognizedTitles({
-        titles: [{ title: 'x'.repeat(300), year: 'x'.repeat(20), contributor: 'x'.repeat(300) }],
-      }).titles
+      parseRecognizedTitles(
+        {
+          titles: [{ title: 'x'.repeat(300), year: 'x'.repeat(20), contributor: 'x'.repeat(300) }],
+        },
+        'book'
+      ).titles
     ).toHaveLength(1);
   });
 
@@ -239,7 +270,7 @@ describe('ollama vision', () => {
     { titles: [{ title: 'Dune', contributor: 'x'.repeat(301) }] },
   ])('rejects malformed recognition results %j', async (result) => {
     const { parseRecognizedTitles } = await importVision();
-    expect(() => parseRecognizedTitles(result)).toThrow(expect.objectContaining({ statusCode: 502 }));
+    expect(() => parseRecognizedTitles(result, 'book')).toThrow(expect.objectContaining({ statusCode: 502 }));
   });
 
   it('sends only sanitized images with configured generation settings and a 180-second timeout', async () => {
@@ -269,6 +300,8 @@ describe('ollama vision', () => {
       options: { temperature: 0, num_predict: 1000 },
     });
     expect(payload.prompt).toContain('One media type only: book');
+    expect(payload.prompt).toContain('never infer identifiers');
+    expect(payload.format.properties.titles.items.required).toContain('identifier');
     expect(payload.format.properties.titles.maxItems).toBe(50);
     expect(await sharp(Buffer.from(payload.images[0], 'base64')).metadata()).toMatchObject({ format: 'jpeg' });
     expect(timeoutSpy).toHaveBeenCalledWith(180_000);

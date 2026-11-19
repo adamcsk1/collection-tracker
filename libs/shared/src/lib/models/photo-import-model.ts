@@ -15,6 +15,7 @@ export interface PhotoImportRecognizeRequestModel {
 
 export interface PhotoImportRecognizedTitleModel {
   title: string;
+  identifier?: string;
   year: string | null;
   contributor: string | null;
 }

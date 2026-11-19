@@ -6,6 +6,8 @@ import { ConfirmService } from '@services/confirm-service';
 import { PHOTO_IMPORT_MAX_BYTES, PHOTO_IMPORT_MAX_PHOTOS } from '@shared/constants/photo-import-const';
 import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';
 import { PhotoImportRecognizeResponseModel } from '@shared/models/photo-import-model';
+import { CollectionItemContentTypeModel } from '@shared/models/collection-item-model';
+import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { of, Subject, throwError } from 'rxjs';
@@ -136,6 +138,153 @@ describe('PhotoImportDialog', () => {
   afterEach(() => {
     fixture.destroy();
     vi.restoreAllMocks();
+  });
+
+  it.each<[CollectionItemContentTypeModel, ExternalMetadataProviderNameModel, string]>([
+    ['movie', 'omdb', 'tt0133093'],
+    ['series', 'omdb', 'tt0944947'],
+    ['book', 'openlibrary', '9780441172719'],
+    ['album', 'musicbrainz', '6d6e2b1b-5e60-4a85-8d69-e9d513ec2b00'],
+  ])(
+    'looks up identifier-only %s photos exactly and still requires selection',
+    async (contentType, provider, identifier) => {
+      fixture.componentRef.setInput('contentType', contentType);
+      const metadata = buildMetadata({ contentType, provider, providerItemId: identifier });
+      api.recognizePhoto.mockReturnValue(of({ titles: [{ title: '', identifier, year: null, contributor: null }] }));
+      api.getExternalMetadataItem.mockReturnValue(of(metadata));
+      await selectFiles([new File(['photo'], 'identifier.jpg', { type: 'image/jpeg' })]);
+      await component['readPhotos']();
+
+      expect(api.getExternalMetadataItem).toHaveBeenCalledExactlyOnceWith(
+        { externalIdentitySource: provider === 'omdb' ? 'imdb' : provider, externalIdentityId: identifier },
+        { suppressErrorAlert: true }
+      );
+      expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+      expect(component['state'].rows()[0]).toMatchObject({ title: identifier, matches: [metadata], selected: null });
+      expect(component['searchModel']().queries).toEqual([identifier]);
+      expect(api.create).not.toHaveBeenCalled();
+    }
+  );
+
+  it('searches printed music barcode digits before a visible title', async () => {
+    fixture.componentRef.setInput('contentType', 'album');
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'Album', identifier: '012345678905' }] }));
+    api.searchExternalMetadata.mockReturnValue(of({ results: [buildMetadata({ contentType: 'album' })] }));
+    await selectFiles([new File(['photo'], 'barcode.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    expect(api.searchExternalMetadata).toHaveBeenCalledExactlyOnceWith(
+      { s: '012345678905', provider: 'musicbrainz' },
+      { suppressErrorAlert: true }
+    );
+    expect(api.getExternalMetadataItem).not.toHaveBeenCalled();
+  });
+
+  it.each(['not-found', 'wrong-media'])(
+    'falls back to the visible title when identifier lookup returns %s',
+    async (failure) => {
+      api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'The Matrix', identifier: 'tt0133093' }] }));
+      api.getExternalMetadataItem.mockReturnValue(
+        failure === 'not-found'
+          ? throwError(() => new HttpErrorResponse({ status: 404 }))
+          : of(buildMetadata({ contentType: 'series' }))
+      );
+      await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+      await component['readPhotos']();
+      expect(api.searchExternalMetadata).toHaveBeenCalledExactlyOnceWith(
+        { s: 'The Matrix', provider: 'omdb' },
+        { suppressErrorAlert: true }
+      );
+      expect(component['searchModel']().queries).toEqual(['The Matrix']);
+      expect(component['state'].rows()[0]).toMatchObject({ status: 'ready', matches: [buildMetadata()] });
+    }
+  );
+
+  it('keeps identifier lookup failures retryable without hiding provider outages behind title search', async () => {
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'The Matrix', identifier: 'tt0133093' }] }));
+    api.getExternalMetadataItem.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    expect(component['state'].rows()[0].status).toBe('error');
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+    expect(component['searchModel']().queries).toEqual(['tt0133093']);
+    api.getExternalMetadataItem.mockReturnValue(of(buildMetadata()));
+    await component['onSearchRow'](0);
+    expect(component['state'].rows()[0].status).toBe('ready');
+  });
+
+  it('falls back to the album title after an empty barcode search', async () => {
+    fixture.componentRef.setInput('contentType', 'album');
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'Album', identifier: '012345678905' }] }));
+    const metadata = buildMetadata({ contentType: 'album' });
+    api.searchExternalMetadata
+      .mockReturnValueOnce(of({ results: [] }))
+      .mockReturnValueOnce(of({ results: [metadata] }));
+    await selectFiles([new File(['photo'], 'barcode.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    expect(api.searchExternalMetadata).toHaveBeenNthCalledWith(
+      1,
+      { s: '012345678905', provider: 'musicbrainz' },
+      { suppressErrorAlert: true }
+    );
+    expect(api.searchExternalMetadata).toHaveBeenNthCalledWith(
+      2,
+      { s: 'Album', provider: 'musicbrainz' },
+      { suppressErrorAlert: true }
+    );
+    expect(component['state'].rows()[0].matches).toEqual([metadata]);
+  });
+
+  it('leaves unmatched identifier-only rows editable without an empty title search', async () => {
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: '', identifier: 'tt0133093' }] }));
+    api.getExternalMetadataItem.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    await selectFiles([new File(['photo'], 'identifier.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    expect(component['state'].rows()[0]).toMatchObject({
+      status: 'ready',
+      searched: true,
+      matches: [],
+      selected: null,
+    });
+    expect(component['searchModel']().queries).toEqual(['tt0133093']);
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+  });
+
+  it('allows a manually corrected identifier after title recognition', async () => {
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    component['searchModel'].set({ queries: ['tt0133093'] });
+    await component['onSearchRow'](0);
+    expect(api.getExternalMetadataItem).toHaveBeenCalledExactlyOnceWith(
+      { externalIdentitySource: 'imdb', externalIdentityId: 'tt0133093' },
+      { suppressErrorAlert: true }
+    );
+  });
+
+  it('retains title fallback when retrying a recognized identifier after an outage', async () => {
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'The Matrix', identifier: 'tt0133093' }] }));
+    api.getExternalMetadataItem
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })))
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 404 })));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    component['requestStop']();
+    await component['onSearchRow'](0);
+    expect(api.searchExternalMetadata).toHaveBeenCalledExactlyOnceWith(
+      { s: 'The Matrix', provider: 'omdb' },
+      { suppressErrorAlert: true }
+    );
+    expect(component['state'].rows()[0]).toMatchObject({ status: 'ready', matches: [buildMetadata()] });
+  });
+
+  it('does not replace a manually changed identifier with the original recognized title', async () => {
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'The Matrix', identifier: 'tt0133093' }] }));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    component['searchModel'].set({ queries: ['tt0944947'] });
+    api.getExternalMetadataItem.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    await component['onSearchRow'](0);
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+    expect(component['searchModel']().queries).toEqual(['tt0944947']);
   });
 
   it('provides isolated dialog state and checks vision availability on initialization', () => {
