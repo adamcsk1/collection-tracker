@@ -41,6 +41,15 @@ They do not prevent the application from starting or affect ordinary Add and AI 
 5. Retry failures. Completed photos are not recognized again; successfully added or existing items are not submitted again.
    Before every create attempt, the normal existence endpoint checks the destination, including after an ambiguous failure.
 
+Selecting a match exposes per-item **Tags**, with the usual tag suggestions, and **User rating** for Library additions.
+Ratings are optional, from 0 to 10 with at most one decimal place. Each row keeps its own values through searches,
+skipping and retries; invalid ratings prevent that row from being added. Skipped or unselected rows hide these inputs.
+
+For Library additions with tracking enabled, selecting a movie exposes **Finished** and selecting a series exposes
+**Copy to tracking as completed**. Each row keeps its own choice. Skipped or unselected rows show neither option.
+These use the same tracking updates as ordinary Add. If a tracking update fails after creation, the row stays added and
+shows a warning; manage its tracking separately rather than adding the item again.
+
 Choose Type and Library before selecting photos; both stay locked for the batch. The tab remains available when vision
 is unavailable and shows configuration guidance without blocking Search or Manual. Search and Manual drafts are preserved.
 

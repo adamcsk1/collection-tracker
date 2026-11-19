@@ -1,5 +1,10 @@
 import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';
 
+export interface PhotoImportDetailsModel {
+  tags: string;
+  userRate: number | null;
+}
+
 export interface PhotoImportPhotoModel {
   id: string;
   file: File;
@@ -17,4 +22,7 @@ export interface PhotoImportRowModel {
   selected: ExternalMetadataItemModel | null;
   status: 'ready' | 'searching' | 'error' | 'adding' | 'added' | 'exists' | 'skipped';
   searched: boolean;
+  finished?: boolean;
+  copyToTrackingAsCompleted?: boolean;
+  trackerUpdateFailed?: boolean;
 }

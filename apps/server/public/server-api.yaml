@@ -3720,6 +3720,7 @@ paths:
     put:
       operationId: markAllTrackingCompletedByExternalId
       summary: Mark all episodes as completed by external identity
+      description: Updates the authenticated user's tracking series by default, or a shared owner's tracking series when `ownerShareCode` is supplied and exact update permission exists, including selected-item restrictions.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -3731,6 +3732,12 @@ paths:
         - name: externalIdentityId
           in: path
           required: true
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Optional owner share code for a writable shared `tracking`/`series` scope.
           schema:
             type: string
       responses:

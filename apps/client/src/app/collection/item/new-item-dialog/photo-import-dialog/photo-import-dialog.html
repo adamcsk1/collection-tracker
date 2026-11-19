@@ -83,6 +83,9 @@
           @if (row.details) {
             <p>{{ row.details }}</p>
           }
+          @if (row.trackerUpdateFailed) {
+            <p role="alert" data-test-id="photo-import-tracking-error">{{ translations.trackerUpdateError() }}</p>
+          }
           @if (row.status !== 'added' && row.status !== 'exists' && row.status !== 'skipped') {
             <div class="search-row">
               <libc-input
@@ -116,6 +119,52 @@
                 testIdPrefix="photo-import"
                 (selected)="onMatchSelected(index, $event)"
               />
+            }
+            @if (showRowOptions(row)) {
+              @if (detailsForm[row.id]; as details) {
+                @if (listType() === 'library') {
+                  <libc-input
+                    data-test-id="photo-import-user-rate"
+                    type="number"
+                    [label]="translations.userRate()"
+                    [formField]="details.userRate"
+                    [step]="0.1"
+                  >
+                    <ng-container errors>
+                      @if (details.userRate().invalid()) {
+                        {{ translations.validationUserRate() }}
+                      }
+                    </ng-container>
+                  </libc-input>
+                }
+                <libc-autocomplete
+                  data-test-id="photo-import-tags"
+                  [label]="translations.tags()"
+                  [hint]="translations.tagsHint()"
+                  [formField]="details.tags"
+                  ctTagSuggestions
+                />
+              }
+            }
+            @if (showTrackingOptions(row)) {
+              @if (row.selected?.contentType === 'movie') {
+                <libc-checkbox
+                  data-test-id="photo-import-finished"
+                  [label]="translations.finished()"
+                  [value]="row.finished ?? false"
+                  [disabled]="state.busy()"
+                  (valueChange)="onTrackingOptionChange(index, 'finished', $event)"
+                />
+              }
+              @if (row.selected?.contentType === 'series') {
+                <libc-checkbox
+                  data-test-id="photo-import-copy-to-tracking-as-completed"
+                  [label]="translations.copyToTrackingAsCompleted()"
+                  [value]="row.copyToTrackingAsCompleted ?? false"
+                  [disabled]="state.busy()"
+                  (valueChange)="onTrackingOptionChange(index, 'copyToTrackingAsCompleted', $event)"
+                />
+              }
             }
           }
           @if (row.status !== 'added' && row.status !== 'exists') {

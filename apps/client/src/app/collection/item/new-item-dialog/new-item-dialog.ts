@@ -563,6 +563,7 @@ export class NewItemDialog {
   protected readonly activeAddContentType = computed(() =>
     this.mode() === 'manual' ? this.manualForm.contentType().value() : this.selectedAddContentType()
   );
+  protected readonly trackingEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().tracking);
   protected readonly showFinishedCheckbox = computed(() => {
     if (this.mode() === 'photos') return false;
     if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().tracking) return false;

@@ -481,11 +481,12 @@ export class ApiService extends BaseApiService {
   public markAllTrackingCompletedByExternalId(
     externalProvider: string,
     externalItemId: string,
-    options: ApiRequestOptions = {}
+    options: ApiRequestOptions = {},
+    ownerShareCode?: string
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
-      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/actions/mark-completed`,
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/actions/mark-completed${this.buildQuery({ ownerShareCode })}`,
       undefined,
       options
     );

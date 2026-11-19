@@ -469,25 +469,39 @@ describe('NewItemDialogService', () => {
     expect(spinnerStore.state.show()).toBe(false);
   });
 
-  it('saveManual creates a tracking copy for watched library series', async () => {
-    api.create.mockReturnValue(
-      createResponse({
-        title: 'Manual Title',
-        IMDbId: 'tt1234567',
-        externalProvider: 'omdb',
-        externalItemId: 'tt1234567',
-      })
-    );
+  it.each([undefined, 'owner-code'])(
+    'saveManual creates and completes a tracking copy for owner %s',
+    async (targetOwnerShareCode) => {
+      api.create.mockReturnValue(
+        createResponse({
+          title: 'Manual Title',
+          IMDbId: 'tt1234567',
+          externalProvider: 'omdb',
+          externalItemId: 'tt1234567',
+        })
+      );
 
-    await firstValueFrom(
-      service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', {
-        copyToTrackingAsCompleted: true,
-      })
-    );
+      await firstValueFrom(
+        service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', {
+          copyToTrackingAsCompleted: true,
+          targetOwnerShareCode,
+        })
+      );
 
-    expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
-    expect(api.markAllTrackingCompletedByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
-  });
+      expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith(
+        'omdb',
+        'tt1234567',
+        undefined,
+        targetOwnerShareCode
+      );
+      expect(api.markAllTrackingCompletedByExternalId).toHaveBeenCalledWith(
+        'omdb',
+        'tt1234567',
+        {},
+        targetOwnerShareCode
+      );
+    }
+  );
 
   it('saveManual finalizes the created item when marking the tracker series watched fails', async () => {
     const createdItem = {
@@ -791,7 +805,7 @@ describe('NewItemDialogService', () => {
     );
 
     expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', undefined, 'owner-code');
-    expect(api.markAllTrackingCompletedByExternalId).toHaveBeenCalledWith('omdb', 'tt123');
+    expect(api.markAllTrackingCompletedByExternalId).toHaveBeenCalledWith('omdb', 'tt123', {}, 'owner-code');
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
       { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' },
       true

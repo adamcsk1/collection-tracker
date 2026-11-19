@@ -11,6 +11,7 @@ import { provideStore } from 'ngx-simple-signal-store';
 import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionService } from '../../../collection-service';
+import { NewItemDialogService } from '../new-item-dialog-service';
 import { PhotoImportDialog } from './photo-import-dialog';
 import { PhotoImportRowModel } from './photo-import-model';
 import { photoImportStateToken } from './photo-import-store';
@@ -50,11 +51,34 @@ describe('PhotoImportDialog', () => {
     recognizePhoto: ReturnType<typeof vi.fn>;
     searchExternalMetadata: ReturnType<typeof vi.fn>;
     getExternalMetadataItem: ReturnType<typeof vi.fn>;
+    getTagSuggestions: ReturnType<typeof vi.fn>;
     collectionItemExists: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
   };
   let collection: { addCollectionItem: ReturnType<typeof vi.fn>; triggerReload: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
+  let newItem: { applySideEffects: ReturnType<typeof vi.fn> };
+
+  const renderTemplate = async () => {
+    fixture.destroy();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [PhotoImportDialog],
+      providers: [
+        { provide: ApiService, useValue: api },
+        { provide: CollectionService, useValue: collection },
+        { provide: NewItemDialogService, useValue: newItem },
+        { provide: ConfirmService, useValue: confirm },
+        { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
+        provideStore(initialApiState, apiStateToken),
+      ],
+    });
+    fixture = TestBed.createComponent(PhotoImportDialog);
+    component = fixture.componentInstance;
+    fixture.componentRef.setInput('contentType', 'movie');
+    fixture.componentRef.setInput('listType', 'library');
+    await fixture.whenStable();
+  };
 
   const selectFiles = async (files: File[]) => {
     const picker = document.createElement('input');
@@ -79,16 +103,23 @@ describe('PhotoImportDialog', () => {
       recognizePhoto: vi.fn(() => of({ titles: [{ title: 'The Matrix', contributor: 'Wachowski', year: '1999' }] })),
       searchExternalMetadata: vi.fn(() => of({ results: [buildMetadata()] })),
       getExternalMetadataItem: vi.fn(() => of(buildMetadata())),
+      getTagSuggestions: vi.fn(() => of({ tags: [] })),
       collectionItemExists: vi.fn(() => of({ exists: false })),
       create: vi.fn(() => of({ item: { title: 'The Matrix', id: 1 } })),
     };
     collection = { addCollectionItem: vi.fn(), triggerReload: vi.fn() };
+    newItem = {
+      applySideEffects: vi.fn(({ collectionItem }: Parameters<NewItemDialogService['applySideEffects']>[0]) =>
+        of({ collectionItem, finishedItem: null, trackingItem: null, trackerUpdateFailed: false })
+      ),
+    };
     confirm = { open: vi.fn(() => of(false)) };
     TestBed.configureTestingModule({
       imports: [PhotoImportDialog],
       providers: [
         { provide: ApiService, useValue: api },
         { provide: CollectionService, useValue: collection },
+        { provide: NewItemDialogService, useValue: newItem },
         { provide: ConfirmService, useValue: confirm },
         { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
         provideStore(initialApiState, apiStateToken),
@@ -115,23 +146,7 @@ describe('PhotoImportDialog', () => {
   });
 
   it('renders an embedded workflow and shared review cards, exposing actions for the parent footer', async () => {
-    fixture.destroy();
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      imports: [PhotoImportDialog],
-      providers: [
-        { provide: ApiService, useValue: api },
-        { provide: CollectionService, useValue: collection },
-        { provide: ConfirmService, useValue: confirm },
-        { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
-        provideStore(initialApiState, apiStateToken),
-      ],
-    });
-    fixture = TestBed.createComponent(PhotoImportDialog);
-    component = fixture.componentInstance;
-    fixture.componentRef.setInput('contentType', 'movie');
-    fixture.componentRef.setInput('listType', 'library');
-    await fixture.whenStable();
+    await renderTemplate();
     const element: HTMLElement = fixture.nativeElement;
     const control = (id: string) => element.querySelector(`[data-test-id="photo-import-${id}"]`);
     expect(element.querySelector('libc-dialog-shell')).toBeNull();
@@ -174,6 +189,309 @@ describe('PhotoImportDialog', () => {
     store.setState('availability', { available: false, reason: 'not-configured' });
     await fixture.whenStable();
     expect(control('unavailable')?.textContent).toContain('PhotoImport.Availability.NotConfigured');
+  });
+
+  it.each([
+    ['movie', 'photo-import-finished'],
+    ['series', 'photo-import-copy-to-tracking-as-completed'],
+    ['book', null],
+    ['album', null],
+  ] as const)('renders only the applicable tracking option for selected %s rows', async (contentType, testId) => {
+    await renderTemplate();
+    fixture.componentRef.setInput('contentType', contentType);
+    const store = fixture.debugElement.injector.get(photoImportStateToken);
+    store.setState('rows', [buildRow('selected', buildMetadata({ contentType }))]);
+    component['searchModel'].set({ queries: ['Selected'] });
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    const options = () => element.querySelectorAll('libc-checkbox');
+    expect(component.trackingEnabled()).toBe(false);
+    expect(options()).toHaveLength(0);
+    fixture.componentRef.setInput('trackingEnabled', true);
+    await fixture.whenStable();
+    expect(options()).toHaveLength(testId ? 1 : 0);
+    if (testId) {
+      const checkbox = element.querySelector<HTMLInputElement>(`[data-test-id="${testId}"] input`)!;
+      expect(checkbox.checked).toBe(false);
+      expect(checkbox.disabled).toBe(false);
+      checkbox.click();
+      await fixture.whenStable();
+      expect(component['state'].rows()[0]).toEqual(
+        expect.objectContaining(contentType === 'movie' ? { finished: true } : { copyToTrackingAsCompleted: true })
+      );
+      store.setState('busy', true);
+      await fixture.whenStable();
+      expect(checkbox.disabled).toBe(true);
+    }
+  });
+
+  it('keeps row options independent and hides them after skip until explicitly reselected', async () => {
+    await renderTemplate();
+    fixture.componentRef.setInput('trackingEnabled', true);
+    const store = fixture.debugElement.injector.get(photoImportStateToken);
+    const metadata = buildMetadata();
+    store.setState('rows', [
+      buildRow('first', metadata),
+      buildRow('second', buildMetadata({ providerItemId: 'tt456' })),
+      buildRow('unselected'),
+      { ...buildRow('added', buildMetadata({ providerItemId: 'tt-added' })), status: 'added' },
+      { ...buildRow('exists', buildMetadata({ providerItemId: 'tt-exists' })), status: 'exists' },
+      { ...buildRow('error', buildMetadata({ providerItemId: 'tt-error' })), status: 'error' },
+    ]);
+    component['searchModel'].set({ queries: ['First', 'Second', 'Unselected', 'Added', 'Exists', 'Error'] });
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    const options = () => element.querySelectorAll<HTMLInputElement>('[data-test-id="photo-import-finished"] input');
+    expect(options()).toHaveLength(3);
+    options()[0]!.click();
+    await fixture.whenStable();
+    expect(options()[0]!.checked).toBe(true);
+    expect(options()[1]!.checked).toBe(false);
+    expect(component['state'].rows()[0]!.finished).toBe(true);
+    expect(component['state'].rows()[1]!.finished).toBeUndefined();
+    component['onSkip'](0);
+    await fixture.whenStable();
+    expect(options()).toHaveLength(2);
+    component['onSkip'](0);
+    await fixture.whenStable();
+    expect(options()).toHaveLength(2);
+    component['onSelect'](0, metadata);
+    await fixture.whenStable();
+    expect(options()).toHaveLength(3);
+    expect(options()[0]!.checked).toBe(true);
+    component['onTrackingOptionChange'](0, 'finished', null);
+    await fixture.whenStable();
+    expect(options()[0]!.checked).toBe(false);
+    fixture.componentRef.setInput('trackingEnabled', false);
+    await fixture.whenStable();
+    expect(options()).toHaveLength(0);
+  });
+
+  it.each([
+    ['tracking', 'movie'],
+    ['wishlist', 'series'],
+    ['up-next', 'movie'],
+    ['books', 'book'],
+    ['music', 'album'],
+  ] as const)(
+    'hides tracking options and ignores stored choices in the %s destination',
+    async (listType, contentType) => {
+      await renderTemplate();
+      fixture.componentRef.setInput('trackingEnabled', true);
+      fixture.componentRef.setInput('listType', listType);
+      fixture.componentRef.setInput('contentType', contentType);
+      api.getExternalMetadataItem.mockReturnValue(of(buildMetadata({ contentType })));
+      const store = fixture.debugElement.injector.get(photoImportStateToken);
+      const row = {
+        ...buildRow('row', buildMetadata({ contentType })),
+        finished: true,
+        copyToTrackingAsCompleted: true,
+      };
+      store.setState('rows', [row]);
+      component['searchModel'].set({ queries: ['The Matrix'] });
+      component['detailsModel'].set({ row: { tags: '  custom\t#favorite  ', userRate: 11.25 } });
+      await fixture.whenStable();
+      const element: HTMLElement = fixture.nativeElement;
+      expect(element.querySelector('libc-checkbox')).toBeNull();
+      expect(element.querySelector('[data-test-id="photo-import-tags"]')).not.toBeNull();
+      expect(element.querySelector('[data-test-id="photo-import-user-rate"]')).toBeNull();
+      expect(component['detailsForm']['row']!.userRate().disabled()).toBe(true);
+      component['onTrackingOptionChange'](0, 'finished', false);
+      expect(component['state'].rows()[0]).toEqual(row);
+      await component['addSelected']();
+      expect(api.create).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: ['custom', '#favorite'], userRate: null }),
+        undefined,
+        listType,
+        { suppressErrorAlert: true }
+      );
+      expect(newItem.applySideEffects).toHaveBeenCalledWith(
+        expect.objectContaining({ listType, finished: false, copyToTrackingAsCompleted: false })
+      );
+    }
+  );
+
+  it('ignores tracking option changes while busy, disabled, or terminal', () => {
+    const store = fixture.debugElement.injector.get(photoImportStateToken);
+    const row = buildRow('row', buildMetadata());
+    store.setState('rows', [row]);
+    component['onTrackingOptionChange'](0, 'finished', true);
+    expect(component['state'].rows()[0]).toEqual(row);
+    fixture.componentRef.setInput('trackingEnabled', true);
+    store.setState('busy', true);
+    component['onTrackingOptionChange'](0, 'finished', true);
+    expect(component['state'].rows()[0]).toEqual(row);
+    store.setState('busy', false);
+    for (const status of ['adding', 'added', 'exists', 'skipped'] as const) {
+      store.setState('rows', [{ ...row, status }]);
+      component['onTrackingOptionChange'](0, 'finished', true);
+      expect(component['state'].rows()[0]).toEqual({ ...row, status });
+    }
+    component['onTrackingOptionChange'](10, 'finished', true);
+    expect(component['state'].rows()).toHaveLength(1);
+  });
+
+  it('initializes independent details drafts and renders controls only for selected ready or failed rows', async () => {
+    await renderTemplate();
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'First' }, { title: 'Second' }] }));
+    await selectFiles([new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    const [first, second] = component['state'].rows();
+    expect(component['detailsModel']()).toEqual({
+      [first!.id]: { tags: '', userRate: null },
+      [second!.id]: { tags: '', userRate: null },
+    });
+    const element: HTMLElement = fixture.nativeElement;
+    const controls = (name: string) => element.querySelectorAll(`[data-test-id="photo-import-${name}"] input`);
+    expect(controls('tags')).toHaveLength(0);
+    expect(controls('user-rate')).toHaveLength(0);
+    component['onSelect'](0, buildMetadata());
+    component['onSelect'](1, buildMetadata({ providerItemId: 'tt456' }));
+    await fixture.whenStable();
+    expect(controls('tags')).toHaveLength(2);
+    expect(controls('user-rate')).toHaveLength(2);
+    const tags = controls('tags')[0] as HTMLInputElement;
+    const rating = controls('user-rate')[0] as HTMLInputElement;
+    tags.value = 'custom #favorite';
+    tags.dispatchEvent(new Event('input', { bubbles: true }));
+    rating.value = '8.5';
+    rating.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(component['detailsModel']()[first!.id]).toEqual({ tags: 'custom #favorite', userRate: 8.5 });
+    expect(component['detailsModel']()[second!.id]).toEqual({ tags: '', userRate: null });
+    expect(rating.step).toBe('0.1');
+    const store = fixture.debugElement.injector.get(photoImportStateToken);
+    store.setState('busy', true);
+    await fixture.whenStable();
+    expect(tags.disabled).toBe(true);
+    expect(rating.disabled).toBe(true);
+    store.setState('busy', false);
+    await fixture.whenStable();
+    expect(tags.disabled).toBe(false);
+    expect(rating.disabled).toBe(false);
+    rating.value = '8.25';
+    rating.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(element.querySelector('[data-test-id="photo-import-user-rate"]')?.textContent).toContain(
+      'Validation.UserRate'
+    );
+    expect(component['selectedCount']()).toBe(1);
+    rating.value = '';
+    rating.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(component['detailsModel']()[first!.id]!.userRate).toBeNull();
+    expect(component['selectedCount']()).toBe(2);
+    for (const status of ['error', 'searching', 'adding', 'added', 'exists', 'skipped'] as const) {
+      store.setState('rows', [{ ...first!, selected: buildMetadata(), status }]);
+      await fixture.whenStable();
+      expect(controls('tags')).toHaveLength(status === 'error' ? 1 : 0);
+      expect(controls('user-rate')).toHaveLength(status === 'error' ? 1 : 0);
+    }
+  });
+
+  it.each([
+    [null, true],
+    [0, true],
+    [10, true],
+    [8.1, true],
+    [-0.1, false],
+    [10.1, false],
+    [8.25, false],
+  ] as const)('validates library rating %s before adding a row', async (userRate, valid) => {
+    await selectFiles([new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    const row = component['state'].rows()[0]!;
+    component['onSelect'](0, buildMetadata());
+    component['detailsForm'][row.id]!.userRate().value.set(userRate);
+    expect(component['detailsForm'][row.id]!.userRate().invalid()).toBe(!valid);
+    expect(component['selectedCount']()).toBe(valid ? 1 : 0);
+    await component['addSelected']();
+    if (valid) {
+      expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ tags: [], userRate }), undefined, 'library', {
+        suppressErrorAlert: true,
+      });
+    } else {
+      expect(api.getExternalMetadataItem).not.toHaveBeenCalled();
+      expect(api.create).not.toHaveBeenCalled();
+      expect(component['state'].rows()[0]!.status).toBe('ready');
+    }
+  });
+
+  it('excludes invalid drafts from a mixed batch before busy disables validation', async () => {
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'Invalid' }, { title: 'Valid' }] }));
+    await selectFiles([new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    const [invalid, valid] = component['state'].rows();
+    component['onSelect'](0, buildMetadata({ providerItemId: 'tt-invalid' }));
+    component['onSelect'](1, buildMetadata({ providerItemId: 'tt-valid' }));
+    component['detailsModel'].set({
+      [invalid!.id]: { tags: 'invalid', userRate: 10.5 },
+      [valid!.id]: { tags: '  custom\t#favorite\nother  ', userRate: 9.5 },
+    });
+    const pending = new Subject<ExternalMetadataItemModel>();
+    api.getExternalMetadataItem.mockReturnValue(pending);
+    expect(component['selectedCount']()).toBe(1);
+    const adding = component['addSelected']();
+    expect(component.busy()).toBe(true);
+    expect(component['detailsForm'][invalid!.id]!.userRate().disabled()).toBe(true);
+    expect(component['detailsForm'][invalid!.id]!().invalid()).toBe(false);
+    expect(api.getExternalMetadataItem).toHaveBeenCalledExactlyOnceWith(
+      { externalIdentitySource: 'omdb', externalIdentityId: 'tt-valid' },
+      { suppressErrorAlert: true }
+    );
+    pending.next(buildMetadata({ providerItemId: 'tt-valid' }));
+    await adding;
+    expect(api.create).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ tags: ['custom', '#favorite', 'other'], userRate: 9.5 }),
+      undefined,
+      'library',
+      { suppressErrorAlert: true }
+    );
+    expect(component['state'].rows().map((row) => row.status)).toEqual(['ready', 'added']);
+    expect(component['detailsForm'][invalid!.id]!().invalid()).toBe(true);
+    expect(component['selectedCount']()).toBe(0);
+  });
+
+  it('preserves details through photo retry, corrected search, skip, and failed create retry', async () => {
+    api.recognizePhoto
+      .mockReturnValueOnce(of({ titles: [{ title: 'First' }] }))
+      .mockReturnValueOnce(throwError(() => new Error('offline')))
+      .mockReturnValueOnce(of({ titles: [{ title: 'Second' }] }));
+    await selectFiles([
+      new File(['first'], 'first.jpg', { type: 'image/jpeg' }),
+      new File(['second'], 'second.jpg', { type: 'image/jpeg' }),
+    ]);
+    await component['readPhotos']();
+    const first = component['state'].rows()[0]!;
+    const draft = { tags: 'custom #favorite', userRate: 7.5 };
+    component['detailsModel'].update((details) => ({ ...details, [first.id]: draft }));
+    await component['readPhotos']();
+    const second = component['state'].rows()[1]!;
+    expect(component['detailsModel']()).toEqual({
+      [first.id]: draft,
+      [second.id]: { tags: '', userRate: null },
+    });
+    component['onSelect'](0, buildMetadata());
+    component['searchForm'].queries[0]!().value.set('Corrected');
+    await component['onSearchRow'](0);
+    expect(component['state'].rows()[0]!.selected).toBeNull();
+    expect(component['detailsModel']()[first.id]).toEqual(draft);
+    component['onSelect'](0, buildMetadata());
+    component['onSkip'](0);
+    component['onSkip'](0);
+    expect(component['detailsModel']()[first.id]).toEqual(draft);
+    component['onSelect'](0, buildMetadata());
+    api.create.mockReturnValueOnce(throwError(() => new Error('offline')));
+    await component['addSelected']();
+    expect(component['state'].rows()[0]!.status).toBe('error');
+    expect(component['detailsModel']()[first.id]).toEqual(draft);
+    await component['addSelected']();
+    expect(api.create).toHaveBeenCalledTimes(2);
+    for (const [payload] of api.create.mock.calls) {
+      expect(payload).toEqual(expect.objectContaining({ tags: ['custom', '#favorite'], userRate: 7.5 }));
+    }
+    expect(component['state'].rows()[0]!.status).toBe('added');
   });
 
   it('turns availability failures into an unavailable state without processing photos', async () => {
@@ -528,6 +846,101 @@ describe('PhotoImportDialog', () => {
     expect(component['state'].rows()[0]!.status).toBe('added');
     expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'The Matrix', id: 1 }, true);
     expect(collection.triggerReload).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['movie', 'finished'],
+    ['series', 'copyToTrackingAsCompleted'],
+  ] as const)(
+    'applies each %s row choice in the shared destination and inserts returned items',
+    async (contentType, option) => {
+      fixture.componentRef.setInput('trackingEnabled', true);
+      fixture.componentRef.setInput('contentType', contentType);
+      fixture.componentRef.setInput('targetOwnerShareCode', 'owner');
+      const metadata = buildMetadata({ contentType });
+      api.getExternalMetadataItem.mockReturnValue(of(metadata));
+      const collectionItem = { id: 10, title: 'Updated library item', watched: true };
+      const finishedItem = contentType === 'movie' ? { id: 11, title: 'Completed movie' } : null;
+      const trackingItem = contentType === 'series' ? { id: 12, title: 'Completed series' } : null;
+      newItem.applySideEffects
+        .mockReturnValueOnce(of({ collectionItem, finishedItem, trackingItem, trackerUpdateFailed: false }))
+        .mockReturnValueOnce(
+          of({ collectionItem, finishedItem: null, trackingItem: null, trackerUpdateFailed: false })
+        );
+      fixture.debugElement.injector
+        .get(photoImportStateToken)
+        .setState('rows', [
+          { ...buildRow('selected', metadata), [option]: true },
+          buildRow('unchecked', buildMetadata({ contentType, providerItemId: 'tt456' })),
+        ]);
+
+      await component['addSelected']();
+
+      const expectedOptions = {
+        collectionItem: { title: 'The Matrix', id: 1 },
+        listType: 'library',
+        targetOwnerShareCode: 'owner',
+        selectedContentIsMovie: contentType === 'movie',
+        selectedContentIsSeries: contentType === 'series',
+        finished: false,
+        copyToTrackingAsCompleted: false,
+      };
+      expect(newItem.applySideEffects).toHaveBeenNthCalledWith(1, { ...expectedOptions, [option]: true });
+      expect(newItem.applySideEffects).toHaveBeenNthCalledWith(2, expectedOptions);
+      expect(collection.addCollectionItem.mock.calls).toEqual([
+        [collectionItem, true],
+        [finishedItem ?? trackingItem, true],
+        [collectionItem, true],
+      ]);
+      expect(component['state'].rows().map((row) => row.status)).toEqual(['added', 'added']);
+    }
+  );
+
+  it('does not apply stored tracking choices when the preference is disabled', async () => {
+    fixture.debugElement.injector
+      .get(photoImportStateToken)
+      .setState('rows', [{ ...buildRow('row', buildMetadata()), finished: true, copyToTrackingAsCompleted: true }]);
+    await component['addSelected']();
+    expect(newItem.applySideEffects).toHaveBeenCalledWith(
+      expect.objectContaining({ finished: false, copyToTrackingAsCompleted: false })
+    );
+  });
+
+  it('warns about partial tracking failure, continues the batch, and never recreates successful library items', async () => {
+    await renderTemplate();
+    fixture.componentRef.setInput('trackingEnabled', true);
+    const collectionItem = { id: 1, title: 'The Matrix' };
+    newItem.applySideEffects
+      .mockReturnValueOnce(of({ collectionItem, finishedItem: null, trackingItem: null, trackerUpdateFailed: true }))
+      .mockReturnValueOnce(of({ collectionItem, finishedItem: null, trackingItem: null, trackerUpdateFailed: false }));
+    fixture.debugElement.injector
+      .get(photoImportStateToken)
+      .setState('rows', [
+        { ...buildRow('first', buildMetadata()), finished: true },
+        buildRow('second', buildMetadata({ providerItemId: 'tt456' })),
+      ]);
+    component['searchModel'].set({ queries: ['First', 'Second'] });
+
+    await component['addSelected']();
+    await fixture.whenStable();
+
+    expect(component['state'].rows()).toEqual([
+      expect.objectContaining({ status: 'added', trackerUpdateFailed: true }),
+      expect.objectContaining({ status: 'added', trackerUpdateFailed: false }),
+    ]);
+    const element: HTMLElement = fixture.nativeElement;
+    const warnings = element.querySelectorAll('[data-test-id="photo-import-tracking-error"]');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]!.getAttribute('role')).toBe('alert');
+    expect(warnings[0]!.textContent).toBe('Toast.NewItemTrackerUpdateError');
+    expect(component['selectedCount']()).toBe(0);
+    expect(await component.canClose()).toBe(true);
+    expect(component.busy()).toBe(false);
+    expect(collection.addCollectionItem).toHaveBeenCalledTimes(2);
+    expect(collection.triggerReload).toHaveBeenCalledOnce();
+    await component['addSelected']();
+    expect(api.create).toHaveBeenCalledTimes(2);
+    expect(newItem.applySideEffects).toHaveBeenCalledTimes(2);
   });
 
   it('keeps failed rows selected for retry without resubmitting added, existing, or skipped rows', async () => {

@@ -28,6 +28,11 @@ export const createPhotoImportDialog = (page: Page) => {
     getStatus: (index: number) => getRow(index).getByTestId('photo-import-row-status'),
     getSearchInput,
     getMatchButtons,
+    getTagsInput: (index: number) => getRow(index).getByTestId('photo-import-tags').locator('input'),
+    getUserRateInput: (index: number) => getRow(index).getByTestId('photo-import-user-rate').locator('input'),
+    getFinishedCheckbox: (index: number) => getRow(index).getByTestId('photo-import-finished').locator('input'),
+    getCopyToTrackingCheckbox: (index: number) =>
+      getRow(index).getByTestId('photo-import-copy-to-tracking-as-completed').locator('input'),
     getReadButton,
     getChooseButton: () => getDialog().getByTestId('photo-import-choose'),
     getAddButton,

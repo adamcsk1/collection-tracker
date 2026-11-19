@@ -190,7 +190,7 @@ export class NewItemDialogService {
     return response$.pipe(map((response) => response.item));
   }
 
-  private applySideEffects(input: {
+  public applySideEffects(input: {
     collectionItem: CollectionItemApiModel;
     listType: CollectionListTypeModel;
     finished: boolean;
@@ -248,7 +248,12 @@ export class NewItemDialogService {
         .pipe(
           mergeMap((response) =>
             this.api
-              .markAllTrackingCompletedByExternalId(collectionItem.externalProvider, collectionItem.externalItemId)
+              .markAllTrackingCompletedByExternalId(
+                collectionItem.externalProvider,
+                collectionItem.externalItemId,
+                {},
+                targetOwnerShareCode
+              )
               .pipe(
                 map((watchedResponse) => ({
                   collectionItem,

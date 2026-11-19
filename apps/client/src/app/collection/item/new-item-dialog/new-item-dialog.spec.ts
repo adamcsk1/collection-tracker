@@ -232,6 +232,20 @@ describe('NewItemDialog component', () => {
     expect(element.querySelector('[data-test-id="new-item-finished"]')).toBeNull();
     expect(element.querySelector('[data-test-id="new-item-copy-to-tracking-as-completed"]')).toBeNull();
     expect(child.destinationLabel()).toBe('MyLibrary');
+    const renderedMainState = TestBed.inject(mainStateToken);
+    expect(child.trackingEnabled()).toBe(true);
+    renderedMainState.setState('collectionFeaturePreferences', {
+      ...initialMainState.collectionFeaturePreferences,
+      tracking: false,
+    });
+    await fixture.whenStable();
+    expect(child.trackingEnabled()).toBe(false);
+    renderedMainState.setState('collectionFeaturePreferences', {
+      ...initialMainState.collectionFeaturePreferences,
+      tracking: true,
+    });
+    await fixture.whenStable();
+    expect(child.trackingEnabled()).toBe(true);
     childStore.setState('photos', [
       { id: 'photo', file: new File(['photo'], 'cover.jpg'), preview: '', status: 'ready' },
     ]);

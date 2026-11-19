@@ -10,28 +10,33 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { applyEach, disabled, form, FormField } from '@angular/forms/signals';
+import { applyEach, disabled, form, FormField, max, min, validate } from '@angular/forms/signals';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Callout } from '@components/callout/callout';
+import { Checkbox } from '@components/checkbox/checkbox';
+import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { Input } from '@components/input/input';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { PHOTO_IMPORT_MAX_BYTES, PHOTO_IMPORT_MAX_PHOTOS } from '@shared/constants/photo-import-const';
 import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';
+import { parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom } from 'rxjs';
 import { CollectionService } from '../../../collection-service';
+import { TagSuggestionsProvider } from '../../item-form/suggestion/item-autocomplete-providers';
 import { buildMetadataItem } from '../metadata-item-util';
 import { MetadataResults } from '../metadata-results/metadata-results';
 import { MetadataResultOptionModel } from '../metadata-results/metadata-results-model';
-import { PhotoImportRowModel } from './photo-import-model';
+import { NewItemDialogService } from '../new-item-dialog-service';
+import { PhotoImportDetailsModel, PhotoImportRowModel } from './photo-import-model';
 import { initialPhotoImportState, photoImportStateToken } from './photo-import-store';
 
 @Component({
   selector: 'ct-photo-import-dialog',
-  imports: [Input, FormField, Callout, MetadataResults],
+  imports: [Input, FormField, Callout, Checkbox, Autocomplete, TagSuggestionsProvider, MetadataResults],
   providers: [provideStore(initialPhotoImportState, photoImportStateToken)],
   templateUrl: './photo-import-dialog.html',
   styleUrl: './photo-import-dialog.css',
@@ -41,6 +46,7 @@ import { initialPhotoImportState, photoImportStateToken } from './photo-import-s
 export class PhotoImportDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly collection = inject(CollectionService);
+  private readonly newItem = inject(NewItemDialogService);
   private readonly confirm = inject(ConfirmService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
@@ -51,6 +57,7 @@ export class PhotoImportDialog implements OnInit {
   public readonly listType = input.required<CollectionListTypeModel>();
   public readonly targetOwnerShareCode = input<string | undefined>();
   public readonly destinationLabel = input('');
+  public readonly trackingEnabled = input(false);
   protected readonly state = this.store.state;
   public readonly actions = viewChild.required<TemplateRef<unknown>>('actions');
   public readonly busy = this.state.busy;
@@ -62,6 +69,20 @@ export class PhotoImportDialog implements OnInit {
   protected readonly searchModel = signal<{ queries: string[] }>({ queries: [] });
   protected readonly searchForm = form(this.searchModel, (fields) => {
     applyEach(fields.queries, (query) => disabled(query, () => this.state.busy()));
+  });
+  protected readonly detailsModel = signal<Record<string, PhotoImportDetailsModel>>({});
+  protected readonly detailsForm = form(this.detailsModel, (fields) => {
+    applyEach(fields, (details) => {
+      disabled(details.tags, () => this.state.busy());
+      disabled(details.userRate, () => this.state.busy() || this.listType() !== 'library');
+      min(details.userRate, 0);
+      max(details.userRate, 10);
+      validate(details.userRate, ({ value }) => {
+        const rating = value();
+        if (rating === null) return null;
+        return Math.abs(rating * 10 - Math.round(rating * 10)) <= 1e-9 ? null : { kind: 'userRate' };
+      });
+    });
   });
   protected readonly selectedCount = computed(() => this.state.rows().filter((row) => this.canAddRow(row)).length);
   protected readonly hasPendingPhotos = computed(() =>
@@ -82,6 +103,13 @@ export class PhotoImportDialog implements OnInit {
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     searchHint: computed(() => this.ngxSignalTranslate.translate('PhotoImport.SearchHint')),
     selectedContent: computed(() => this.ngxSignalTranslate.translate('SelectedContent')),
+    finished: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
+    copyToTrackingAsCompleted: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsCompleted')),
+    trackerUpdateError: computed(() => this.ngxSignalTranslate.translate('Toast.NewItemTrackerUpdateError')),
+    tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
+    tagsHint: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
+    userRate: computed(() => this.ngxSignalTranslate.translate('UserRate')),
+    validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
     skip: computed(() => this.ngxSignalTranslate.translate('PhotoImport.Skip')),
     restore: computed(() => this.ngxSignalTranslate.translate('PhotoImport.Restore')),
     noMatches: computed(() => this.ngxSignalTranslate.translate('PhotoImport.NoMatches')),
@@ -249,6 +277,10 @@ export class PhotoImportDialog implements OnInit {
             searched: false,
           }));
           const firstIndex = this.state.rows().length;
+          this.detailsModel.update((details) => ({
+            ...details,
+            ...Object.fromEntries(rows.map((row) => [row.id, { tags: '', userRate: null }])),
+          }));
           this.store.setState('rows', [...this.state.rows(), ...rows]);
           this.searchModel.update((model) => ({ queries: [...model.queries, ...rows.map((row) => row.title)] }));
           this.updatePhoto(photo.id, 'recognized');
@@ -314,7 +346,25 @@ export class PhotoImportDialog implements OnInit {
   }
 
   protected canAddRow(row: PhotoImportRowModel): boolean {
+    return this.showRowOptions(row) && !this.detailsForm[row.id]?.().invalid();
+  }
+
+  protected showRowOptions(row: PhotoImportRowModel): boolean {
     return !!row.selected && (row.status === 'ready' || row.status === 'error');
+  }
+
+  protected showTrackingOptions(row: PhotoImportRowModel): boolean {
+    return this.trackingEnabled() && this.listType() === 'library' && this.showRowOptions(row);
+  }
+
+  protected onTrackingOptionChange(
+    index: number,
+    option: 'finished' | 'copyToTrackingAsCompleted',
+    value: boolean | null
+  ): void {
+    const row = this.state.rows()[index];
+    if (!row || this.state.busy() || !this.showTrackingOptions(row)) return;
+    this.updateRow(row.id, { [option]: !!value });
   }
 
   protected isDuplicate(match: ExternalMetadataItemModel, rowId: string): boolean {
@@ -357,10 +407,11 @@ export class PhotoImportDialog implements OnInit {
 
   protected async addSelected(): Promise<void> {
     if (this.state.busy() || !this.selectedCount()) return;
+    const rows = this.state.rows().filter((row) => this.canAddRow(row));
     this.store.setState('busy', true);
     this.store.setState('stopRequested', false);
     try {
-      for (const row of this.state.rows()) {
+      for (const row of rows) {
         if (this.destroyed || this.state.stopRequested()) break;
         if (!this.canAddRow(row) || !row.selected) continue;
         this.updateRow(row.id, { status: 'adding' });
@@ -394,12 +445,34 @@ export class PhotoImportDialog implements OnInit {
             continue;
           }
           const response = await firstValueFrom(
-            this.api.create(buildMetadataItem(metadata), this.targetOwnerShareCode(), this.listType(), {
-              suppressErrorAlert: true,
+            this.api.create(
+              {
+                ...buildMetadataItem(metadata),
+                tags: parseTagText(this.detailsModel()[row.id]?.tags ?? ''),
+                userRate: this.listType() === 'library' ? (this.detailsModel()[row.id]?.userRate ?? null) : null,
+              },
+              this.targetOwnerShareCode(),
+              this.listType(),
+              {
+                suppressErrorAlert: true,
+              }
+            )
+          );
+          const result = await firstValueFrom(
+            this.newItem.applySideEffects({
+              collectionItem: response.item,
+              listType: this.listType(),
+              finished: this.showTrackingOptions(row) && !!row.finished,
+              copyToTrackingAsCompleted: this.showTrackingOptions(row) && !!row.copyToTrackingAsCompleted,
+              targetOwnerShareCode: this.targetOwnerShareCode(),
+              selectedContentIsMovie: metadata.contentType === 'movie',
+              selectedContentIsSeries: metadata.contentType === 'series',
             })
           );
-          this.updateRow(row.id, { status: 'added' });
-          this.collection.addCollectionItem(response.item, true);
+          this.updateRow(row.id, { status: 'added', trackerUpdateFailed: result.trackerUpdateFailed });
+          this.collection.addCollectionItem(result.collectionItem, true);
+          if (result.finishedItem) this.collection.addCollectionItem(result.finishedItem, true);
+          if (result.trackingItem) this.collection.addCollectionItem(result.trackingItem, true);
         } catch (error) {
           this.updateRow(row.id, {
             status: error instanceof HttpErrorResponse && error.status === 409 ? 'exists' : 'error',

@@ -1177,6 +1177,35 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ completedEpisodes: [] });
   });
 
+  it('encodes the fourth owner argument when marking shared series episodes completed', async () => {
+    const promise = lastValueFrom(
+      service.markAllTrackingCompletedByExternalId('provider/id', 'item/id', {}, 'owner/code&extra=true')
+    );
+
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/actions/mark-completed?ownerShareCode=owner%2Fcode%26extra%3Dtrue'
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toBeNull();
+    request.flush({ data: { completedEpisodes: [{ season: 1, episode: 1 }] } });
+
+    await expect(promise).resolves.toEqual({ completedEpisodes: [{ season: 1, episode: 1 }] });
+  });
+
+  it('retains third-argument error suppression with a fourth owner argument', async () => {
+    const promise = lastValueFrom(
+      service.markAllTrackingCompletedByExternalId('omdb', 'tt1', { suppressErrorAlert: true }, 'owner/code')
+    );
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/omdb/tt1/tracking/actions/mark-completed?ownerShareCode=owner%2Fcode'
+    );
+    const error = { detail: 'Update denied' };
+    request.flush(error, { status: 403, statusText: 'Forbidden' });
+
+    await expect(promise).rejects.toMatchObject({ status: 403, error });
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
   it('alerts and rethrows completed episode update errors by default', async () => {
     const promise = lastValueFrom(
       service.updateTrackingCompletedEpisodesByExternalId('omdb', 'tt1', { completedEpisodes: [] })
