@@ -55,4 +55,26 @@ describe('AndroidBackHandlerService', () => {
     expect(escapeListener).toHaveBeenCalledOnce();
     expect(escapeListener.mock.calls[0][0]).toMatchObject({ key: 'Escape' });
   });
+
+  it('dismisses an open native menu before its parent portal dialog', () => {
+    const host = document.createElement('div');
+    host.setAttribute('data-test-id', 'android-back-test-host');
+    host.innerHTML = '<div class="dialog-frame"><dialog open></dialog></div>';
+    document.body.append(host);
+    const parent = host.querySelector<HTMLElement>('.dialog-frame')!;
+    const menu = host.querySelector('dialog')!;
+    const parentEscape = vi.fn();
+    parent.addEventListener('keydown', parentEscape);
+    const menuEscape = vi.fn((event: KeyboardEvent) => {
+      event.stopPropagation();
+      menu.removeAttribute('open');
+    });
+    menu.addEventListener('keydown', menuEscape);
+
+    expect((window as AndroidBackWindow).CollectionTrackerAndroidBack?.()).toBe(true);
+    expect(menuEscape).toHaveBeenCalledOnce();
+    expect(parentEscape).not.toHaveBeenCalled();
+    expect((window as AndroidBackWindow).CollectionTrackerAndroidBack?.()).toBe(true);
+    expect(parentEscape).toHaveBeenCalledOnce();
+  });
 });

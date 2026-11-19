@@ -28,7 +28,7 @@ const setMobileViewport = async (page: Page) => {
 };
 
 test.describe('Dialog gesture close', () => {
-  test('returns focus to the floating actions opener after closing new item', async ({ page, autoLogin, api }) => {
+  test('returns focus to the Add opener after closing new item', async ({ page, autoLogin, api }) => {
     await autoLogin();
     await api.request(
       'POST',
@@ -42,7 +42,7 @@ test.describe('Dialog gesture close', () => {
     await page.keyboard.press('Enter');
     await expect(collectionPage.getNewItemSearch()).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(collectionPage.getShowFunctionsButton()).toBeFocused();
+    await expect(collectionPage.getAddNewButton()).toBeFocused();
   });
 
   test('closes the active dialog from the mobile left screen edge', async ({ page, autoLogin, api }) => {

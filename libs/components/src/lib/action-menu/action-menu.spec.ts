@@ -66,6 +66,7 @@ describe('ActionMenu', () => {
     }
     const divider = getButton('tracking-delete').previousElementSibling;
     expect(divider?.tagName).toBe('HR');
+    expect(divider?.getAttribute('data-test-id')).toBe('tracking-destructive-divider');
     expect(divider?.getAttribute('aria-hidden')).toBe('true');
     expect(getButton('tracking-delete').classList.contains('button-danger')).toBe(true);
   });

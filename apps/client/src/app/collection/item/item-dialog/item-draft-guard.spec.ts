@@ -6,6 +6,8 @@ import { MessageDialog } from '@components/message-dialog/message-dialog';
 import { PortalService } from '@services/portal-service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { collectionRoutes } from '../../collection-routes';
+import { CompletedEpisodesDialog } from '../../tracking/completed-episodes-dialog/completed-episodes-dialog';
+import { SeriesSeasonMetadataDialog } from '../../tracking/series-season-metadata-dialog/series-season-metadata-dialog';
 import { ItemDialog } from './item-dialog';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 
@@ -62,6 +64,42 @@ describe('itemDraftGuard', () => {
     await harness.navigateByUrl('/about');
     expect(TestBed.inject(Router).url).toBe('/about');
     expect(canDiscard).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { name: 'season metadata', dialogType: SeriesSeasonMetadataDialog },
+    { name: 'completed episodes', dialogType: CompletedEpisodesDialog },
+  ])('guards stacked drafts in $name before removing the item query', async ({ dialogType }) => {
+    const harness = await RouterTestingHarness.create('/collection/tracking?item=omdb:tt1234567');
+    portal.componentRef.mockReturnValue({
+      instance: Object.assign(Object.create(dialogType.prototype), { canDiscard, canClose: canDiscard }),
+    });
+    await harness.navigateByUrl('/collection/tracking');
+    expect(TestBed.inject(Router).url).toBe('/collection/tracking?item=omdb:tt1234567');
+    expect(canDiscard).toHaveBeenCalledOnce();
+
+    canDiscard.mockResolvedValue(true);
+    await harness.navigateByUrl('/collection/tracking');
+    expect(TestBed.inject(Router).url).toBe('/collection/tracking');
+  });
+
+  it('waits for the episode close check before navigating', async () => {
+    const harness = await RouterTestingHarness.create('/collection/tracking?item=omdb:tt1234567');
+    let finishCheck!: (approved: boolean) => void;
+    canDiscard.mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        finishCheck = resolve;
+      })
+    );
+    portal.componentRef.mockReturnValue({
+      instance: Object.assign(Object.create(CompletedEpisodesDialog.prototype), { canClose: canDiscard }),
+    });
+    const navigation = harness.navigateByUrl('/about');
+    await vi.waitFor(() => expect(canDiscard).toHaveBeenCalledOnce());
+    expect(TestBed.inject(Router).url).toBe('/collection/tracking?item=omdb:tt1234567');
+    finishCheck(false);
+    await navigation;
+    expect(TestBed.inject(Router).url).toBe('/collection/tracking?item=omdb:tt1234567');
   });
 
   it('guards additions when leaving the collection', async () => {

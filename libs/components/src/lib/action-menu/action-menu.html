@@ -53,7 +53,11 @@
       </button>
     }
     @if (destructiveActions().length) {
-      <hr class="destructive-divider" aria-hidden="true" />
+      <hr
+        class="destructive-divider"
+        [attr.data-test-id]="testIdPrefix() + '-destructive-divider'"
+        aria-hidden="true"
+      />
       @for (action of destructiveActions(); track action.id) {
         <button
           type="button"

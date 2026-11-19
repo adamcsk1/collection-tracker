@@ -1,5 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ActionMenu } from '@components/action-menu/action-menu';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ItemDialogTranslations } from '../item-form/item-form-model';
@@ -109,12 +111,50 @@ describe('ItemDialogActions', () => {
     fixture.componentInstance.edit.subscribe(edit);
     fixture.componentInstance.delete.subscribe(deleteItem);
 
+    getButton('item-dialog-more').click();
     getButton('item-dialog-edit').click();
+    getButton('item-dialog-more').click();
     getButton('item-dialog-delete').click();
 
     expect(edit).toHaveBeenCalled();
     expect(deleteItem).toHaveBeenCalled();
   });
+
+  it('uses the shared menu and maps season metadata selection to its output', () => {
+    createComponent({ tracking: true, movie: false, series: true });
+    const metadata = vi.fn();
+    fixture.componentInstance.manageSeriesMetadata.subscribe(metadata);
+    expect(fixture.debugElement.query(By.directive(ActionMenu))).not.toBeNull();
+    getButton('item-dialog-more').click();
+    getButton('item-dialog-manage-series-metadata').click();
+    expect(metadata).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { overrides: {}, testId: 'item-dialog-mark-finished', description: 'Mark as watched' },
+    { overrides: { finished: true }, testId: 'item-dialog-mark-unfinished', description: 'Mark as unwatched' },
+    { overrides: {}, testId: 'item-dialog-mark-favorite', description: 'Mark as favorite' },
+    { overrides: { favorite: true }, testId: 'item-dialog-remove-favorite', description: 'Remove favorite' },
+    {
+      overrides: { tracking: true, movie: false, series: true },
+      testId: 'item-dialog-manage-completed-episodes',
+      description: 'Manage watched episodes',
+    },
+    {
+      overrides: { libraryItem: false, upNext: true },
+      testId: 'item-dialog-move-finished',
+      description: 'Move to Watched',
+    },
+  ])(
+    'includes the visible label and action description in $testId accessible name',
+    ({ overrides, testId, description }) => {
+      createComponent(overrides);
+      const button = getButton(testId);
+      const visibleLabel = button.querySelector('span')?.textContent?.trim();
+      expect(visibleLabel).toBeTruthy();
+      expect(button.getAttribute('aria-label')).toBe(`${visibleLabel} - ${description}`);
+    }
+  );
 
   it('preserves the focused completion and favorite controls when state changes', async () => {
     createComponent();
@@ -341,6 +381,7 @@ describe('ItemDialogActions', () => {
     fixture.componentInstance.share.subscribe(share);
 
     const button = getButton('item-dialog-share');
+    getButton('item-dialog-more').click();
     button.click();
 
     expect(button.getAttribute('aria-label')).toBe('Share item');
@@ -408,6 +449,7 @@ describe('ItemDialogActions', () => {
     const copyToTracking = vi.fn();
     fixture.componentInstance.copyToTracking.subscribe(copyToTracking);
 
+    getButton('item-dialog-more').click();
     getButton('item-dialog-copy-tracking').click();
 
     expect(copyToTracking).toHaveBeenCalled();
@@ -428,7 +470,9 @@ describe('ItemDialogActions', () => {
     fixture.componentInstance.openInTracking.subscribe(openInTracking);
     fixture.componentInstance.removeFromTracking.subscribe(removeFromTracking);
 
+    getButton('item-dialog-more').click();
     getButton('item-dialog-open-in-tracking').click();
+    getButton('item-dialog-more').click();
     getButton('item-dialog-remove-tracking').click();
 
     expect(openInTracking).toHaveBeenCalled();
@@ -447,6 +491,7 @@ describe('ItemDialogActions', () => {
     createComponent({ libraryItem: false, upNext: true, movie: false, series: true });
     const moveToTracking = vi.fn();
     fixture.componentInstance.moveToTracking.subscribe(moveToTracking);
+    getButton('item-dialog-more').click();
     getButton('item-dialog-move-tracking').click();
     expect(queryButton('item-dialog-mark-finished')).toBeNull();
     expect(queryButton('item-dialog-copy-tracking')).toBeNull();

@@ -4,7 +4,7 @@
       type="button"
       class="dialog-action quick-action"
       data-test-id="item-dialog-manage-completed-episodes"
-      [attr.aria-label]="translations().manageCompletedEpisodes()"
+      [attr.aria-label]="actionTranslations.episodes() + ' - ' + translations().manageCompletedEpisodes()"
       (click)="manageCompletedEpisodes.emit()"
     >
       <i class="material-icons" aria-hidden="true">check_circle</i>
@@ -16,7 +16,11 @@
       type="button"
       class="dialog-action quick-action"
       [attr.data-test-id]="finished() ? 'item-dialog-mark-unfinished' : 'item-dialog-mark-finished'"
-      [attr.aria-label]="finished() ? translations().markAsUnfinished() : translations().markAsFinished()"
+      [attr.aria-label]="
+        finished()
+          ? actionTranslations.finished() + ' - ' + translations().markAsUnfinished()
+          : actionTranslations.finish() + ' - ' + translations().markAsFinished()
+      "
       [attr.aria-pressed]="finished()"
       (click)="finished() ? markAsUnfinished.emit() : markAsFinished.emit()"
     >
@@ -29,7 +33,7 @@
       type="button"
       class="dialog-action quick-action"
       data-test-id="item-dialog-move-finished"
-      [attr.aria-label]="translations().moveToFinished()"
+      [attr.aria-label]="actionTranslations.finish() + ' - ' + translations().moveToFinished()"
       (click)="moveToFinished.emit()"
     >
       <i class="material-icons" aria-hidden="true">check_circle</i>
@@ -41,7 +45,11 @@
       type="button"
       class="dialog-action quick-action"
       [attr.data-test-id]="favorite() ? 'item-dialog-remove-favorite' : 'item-dialog-mark-favorite'"
-      [attr.aria-label]="favorite() ? translations().removeFavorite() : translations().markAsFavorite()"
+      [attr.aria-label]="
+        actionTranslations.favorite() +
+        ' - ' +
+        (favorite() ? translations().removeFavorite() : translations().markAsFavorite())
+      "
       [attr.aria-pressed]="favorite()"
       (click)="favorite() ? removeFavorite.emit() : markAsFavorite.emit()"
     >
@@ -49,148 +57,12 @@
       <span>{{ actionTranslations.favorite() }}</span>
     </button>
   }
-  @if (hasSecondaryActions()) {
-    <button
-      #moreButton
-      type="button"
-      class="dialog-action quick-action"
-      data-test-id="item-dialog-more"
-      aria-haspopup="dialog"
-      [attr.aria-expanded]="actionsOpen()"
-      (click)="openActions(actionDialog, moreButton)"
-    >
-      <i class="material-icons" aria-hidden="true">more_horiz</i>
-      <span>{{ actionTranslations.more() }}</span>
-    </button>
-    <dialog
-      #actionDialog
-      class="secondary-actions"
-      data-test-id="item-dialog-more-actions"
-      [attr.hidden]="actionsOpen() ? null : ''"
-      [attr.aria-label]="actionTranslations.title()"
-      (keydown)="onActionsKeydown($event, actionDialog)"
-      (click)="onBackdropClick($event, actionDialog)"
-      (close)="actionsOpen.set(false)"
-      (cancel)="$event.preventDefault(); closeActions(actionDialog)"
-      (animationend)="onActionsAnimationEnd($event, actionDialog)"
-      (animationcancel)="onActionsAnimationEnd($event, actionDialog)"
-      (pointerdown)="$event.stopPropagation()"
-      (pointerup)="$event.stopPropagation()"
-    >
-      <header class="actions-heading" data-test-id="item-dialog-more-heading">
-        <h3>{{ actionTranslations.title() }}</h3>
-        <button
-          type="button"
-          class="button-icon"
-          data-test-id="item-dialog-more-close"
-          [attr.aria-label]="actionTranslations.close()"
-          (click)="closeActions(actionDialog)"
-        >
-          <i class="material-icons" aria-hidden="true">close</i>
-        </button>
-      </header>
-      <div class="action-list">
-        @if (permissionUpdate()) {
-          <button
-            type="button"
-            class="dialog-action"
-            data-test-id="item-dialog-edit"
-            [attr.aria-label]="translations().edit()"
-            [title]="translations().edit()"
-            (click)="closeActions(actionDialog, edit)"
-          >
-            <i class="material-icons" aria-hidden="true">edit</i>
-            <span>{{ translations().edit() }}</span>
-          </button>
-        }
-        @if (ownItem()) {
-          <button
-            type="button"
-            class="dialog-action"
-            data-test-id="item-dialog-share"
-            [attr.aria-label]="translations().share()"
-            [title]="translations().share()"
-            (click)="closeActions(actionDialog, share)"
-          >
-            <i class="material-icons" aria-hidden="true">share</i>
-            <span>{{ translations().share() }}</span>
-          </button>
-        }
-        @if (trackingEnabled() && permissionWatch() && ownershipItem() && (series() || book() || album())) {
-          @if (inTracking()) {
-            <button
-              type="button"
-              class="dialog-action"
-              data-test-id="item-dialog-open-in-tracking"
-              [attr.aria-label]="translations().openInTracking()"
-              (click)="closeActions(actionDialog, openInTracking)"
-            >
-              <i class="material-icons" aria-hidden="true">open_in_new</i>
-              <span>{{ translations().openInTracking() }}</span>
-            </button>
-            <button
-              type="button"
-              class="dialog-action"
-              data-test-id="item-dialog-remove-tracking"
-              [attr.aria-label]="translations().removeFromTracking()"
-              (click)="closeActions(actionDialog, removeFromTracking)"
-            >
-              <i class="material-icons" aria-hidden="true">format_list_numbered</i>
-              <span>{{ translations().removeFromTracking() }}</span>
-            </button>
-          } @else {
-            <button
-              type="button"
-              class="dialog-action"
-              data-test-id="item-dialog-copy-tracking"
-              [attr.aria-label]="translations().copyToTracking()"
-              (click)="closeActions(actionDialog, copyToTracking)"
-            >
-              <i class="material-icons" aria-hidden="true">playlist_add</i>
-              <span>{{ translations().copyToTracking() }}</span>
-            </button>
-          }
-        }
-        @if (trackingEnabled() && upNext() && (series() || book() || album()) && !inTracking()) {
-          <button
-            type="button"
-            class="dialog-action"
-            data-test-id="item-dialog-move-tracking"
-            [attr.aria-label]="translations().moveToTracking()"
-            (click)="closeActions(actionDialog, moveToTracking)"
-          >
-            <i class="material-icons" aria-hidden="true">playlist_add</i>
-            <span>{{ translations().moveToTracking() }}</span>
-          </button>
-        }
-        @if (permissionUpdate() && tracking() && series()) {
-          <button
-            type="button"
-            class="dialog-action"
-            data-test-id="item-dialog-manage-series-metadata"
-            [attr.aria-label]="translations().manageSeriesMetadata()"
-            [title]="translations().manageSeriesMetadata()"
-            (click)="closeActions(actionDialog, manageSeriesMetadata)"
-          >
-            <i class="material-icons" aria-hidden="true">list</i>
-            <span>{{ translations().manageSeriesMetadata() }}</span>
-          </button>
-        }
-        @if (permissionDelete()) {
-          <hr class="destructive-divider" data-test-id="item-dialog-destructive-divider" aria-hidden="true" />
-          <button
-            type="button"
-            class="dialog-action button-danger"
-            data-test-id="item-dialog-delete"
-            [attr.aria-label]="translations().delete()"
-            [title]="translations().delete()"
-            (click)="closeActions(actionDialog, delete)"
-          >
-            <i class="material-icons" aria-hidden="true">delete</i>
-            <span>{{ translations().delete() }}</span>
-          </button>
-        }
-      </div>
-    </dialog>
+  @if (secondaryActions().length) {
+    <libc-action-menu
+      testIdPrefix="item-dialog"
+      [title]="actionTranslations.title()"
+      [actions]="secondaryActions()"
+      (selected)="onSecondaryAction($event)"
+    />
   }
 }

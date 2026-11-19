@@ -18,9 +18,14 @@ export class AndroidBackHandlerService {
 
     this.listening = true;
     window.CollectionTrackerAndroidBack = (): boolean => {
-      const topDialog = Array.from(this.document.querySelectorAll<HTMLElement>('.dialog-frame'))
+      const nativeDialog = Array.from(this.document.querySelectorAll<HTMLDialogElement>('dialog[open]'))
         .filter((dialog) => !dialog.closest('[inert]'))
         .at(-1);
+      const topDialog =
+        nativeDialog ??
+        Array.from(this.document.querySelectorAll<HTMLElement>('.dialog-frame'))
+          .filter((dialog) => !dialog.closest('[inert]'))
+          .at(-1);
       if (!topDialog) return false;
 
       topDialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));

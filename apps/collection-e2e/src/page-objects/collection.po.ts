@@ -238,6 +238,10 @@ export const createCollectionPage = (page: Page) => {
     getItemDialogMoreDialog: () => getItemDialog().getByTestId('item-dialog-more-actions'),
     getItemDialogMoreCloseButton: () => getItemDialog().getByTestId('item-dialog-more-close'),
     waitForItemActionsAnimation,
+    closeItemActions: async () => {
+      await getItemDialog().getByTestId('item-dialog-more-close').click();
+      await expect(getItemDialog().getByTestId('item-dialog-more-actions')).toBeHidden();
+    },
     getItemDialogDragHandle: () => getItemDialog().getByTestId('dialog-drag-handle'),
     openItemActions: async () => {
       if (!(await getItemDialog().getByTestId('item-dialog-more-actions').isVisible())) {

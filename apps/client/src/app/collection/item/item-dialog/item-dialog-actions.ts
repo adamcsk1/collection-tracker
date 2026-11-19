@@ -1,45 +1,64 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  output,
-  OutputEmitterRef,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, OutputEmitterRef } from '@angular/core';
+import { ActionMenu } from '@components/action-menu/action-menu';
+import { ActionMenuActionModel } from '@components/action-menu/action-menu-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { ItemDialogTranslations } from '../item-form/item-form-model';
 
 @Component({
   selector: 'ct-item-dialog-actions',
+  imports: [ActionMenu],
   templateUrl: './item-dialog-actions.html',
   styleUrl: './item-dialog-actions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ItemDialogActions {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private closingActions = false;
-  private pendingAction: OutputEmitterRef<void> | null = null;
-  protected readonly actionsOpen = signal(false);
   protected readonly actionTranslations = {
     finish: computed(() => this.ngxSignalTranslate.translate('ItemAction.Finish')),
     finished: computed(() => this.ngxSignalTranslate.translate('ItemAction.Finished')),
     favorite: computed(() => this.ngxSignalTranslate.translate('ItemAction.Favorite')),
     episodes: computed(() => this.ngxSignalTranslate.translate('ItemAction.Episodes')),
-    more: computed(() => this.ngxSignalTranslate.translate('ItemAction.More')),
     title: computed(() => this.ngxSignalTranslate.translate('ItemAction.Title')),
-    close: computed(() => this.ngxSignalTranslate.translate('Close')),
   };
-  protected readonly hasSecondaryActions = computed(
-    () =>
-      this.permissionUpdate() ||
-      this.ownItem() ||
-      this.permissionDelete() ||
-      (this.trackingEnabled() &&
-        ((this.permissionWatch() && this.ownershipItem() && (this.series() || this.book() || this.album())) ||
-          (this.upNext() && (this.series() || this.book() || this.album()) && !this.inTracking())))
-  );
+  protected readonly secondaryActions = computed<ActionMenuActionModel[]>(() => {
+    const translations = this.translations();
+    const actions: ActionMenuActionModel[] = [];
+    if (this.permissionUpdate()) actions.push({ id: 'item-dialog-edit', label: translations.edit(), icon: 'edit' });
+    if (this.ownItem()) actions.push({ id: 'item-dialog-share', label: translations.share(), icon: 'share' });
+    if (
+      this.trackingEnabled() &&
+      this.permissionWatch() &&
+      this.ownershipItem() &&
+      (this.series() || this.book() || this.album())
+    ) {
+      if (this.inTracking()) {
+        actions.push(
+          { id: 'item-dialog-open-in-tracking', label: translations.openInTracking(), icon: 'open_in_new' },
+          { id: 'item-dialog-remove-tracking', label: translations.removeFromTracking(), icon: 'format_list_numbered' }
+        );
+      } else {
+        actions.push({ id: 'item-dialog-copy-tracking', label: translations.copyToTracking(), icon: 'playlist_add' });
+      }
+    }
+    if (
+      this.trackingEnabled() &&
+      this.upNext() &&
+      (this.series() || this.book() || this.album()) &&
+      !this.inTracking()
+    ) {
+      actions.push({ id: 'item-dialog-move-tracking', label: translations.moveToTracking(), icon: 'playlist_add' });
+    }
+    if (this.permissionUpdate() && this.tracking() && this.series()) {
+      actions.push({
+        id: 'item-dialog-manage-series-metadata',
+        label: translations.manageSeriesMetadata(),
+        icon: 'list',
+      });
+    }
+    if (this.permissionDelete())
+      actions.push({ id: 'item-dialog-delete', label: translations.delete(), icon: 'delete', destructive: true });
+    return actions;
+  });
   public readonly translations = input.required<ItemDialogTranslations>();
   public readonly editMode = input.required<boolean>();
   public readonly permissionUpdate = input.required<boolean>();
@@ -76,69 +95,17 @@ export class ItemDialogActions {
   public readonly share = output<void>();
   public readonly delete = output<void>();
 
-  protected openActions(dialog: HTMLDialogElement, trigger: HTMLButtonElement): void {
-    if (this.closingActions) return;
-    const bounds = trigger.getBoundingClientRect();
-    const viewport = trigger.ownerDocument.documentElement;
-    dialog.style.setProperty('--actions-right', `${Math.max(16, viewport.clientWidth - bounds.right)}px`);
-    dialog.style.setProperty('--actions-bottom', `${Math.max(16, viewport.clientHeight - bounds.top + 8)}px`);
-    trigger.focus();
-    dialog.hidden = false;
-    dialog.showModal();
-    this.actionsOpen.set(true);
-  }
-
-  protected closeActions(dialog: HTMLDialogElement, action?: OutputEmitterRef<void>): void {
-    if (this.closingActions) return;
-    this.pendingAction = action ?? null;
-    if (!dialog.open || dialog.ownerDocument.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      this.finishClosingActions(dialog);
-      return;
-    }
-    this.closingActions = true;
-    dialog.classList.add('actions-closing');
-  }
-
-  protected onActionsAnimationEnd(event: AnimationEvent, dialog: HTMLDialogElement): void {
-    if (
-      this.closingActions &&
-      event.target === dialog &&
-      !event.pseudoElement &&
-      (event.animationName.endsWith('actions-popup-leave') || event.animationName.endsWith('actions-sheet-leave'))
-    ) {
-      this.finishClosingActions(dialog);
-    }
-  }
-
-  private finishClosingActions(dialog: HTMLDialogElement): void {
-    const action = this.pendingAction;
-    this.pendingAction = null;
-    if (dialog.open) dialog.close();
-    dialog.hidden = true;
-    this.actionsOpen.set(false);
-    dialog.classList.remove('actions-closing');
-    this.closingActions = false;
-    action?.emit();
-  }
-
-  protected onActionsKeydown(event: KeyboardEvent, dialog: HTMLDialogElement): void {
-    event.stopPropagation();
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      this.closeActions(dialog);
-    }
-  }
-
-  protected onBackdropClick(event: MouseEvent, dialog: HTMLDialogElement): void {
-    if (event.target !== dialog) return;
-    const bounds = dialog.getBoundingClientRect();
-    if (
-      event.clientX < bounds.left ||
-      event.clientX > bounds.right ||
-      event.clientY < bounds.top ||
-      event.clientY > bounds.bottom
-    ) {
-      this.closeActions(dialog);
-    }
+  protected onSecondaryAction(action: string): void {
+    const outputs: Record<string, OutputEmitterRef<void>> = {
+      'item-dialog-edit': this.edit,
+      'item-dialog-share': this.share,
+      'item-dialog-open-in-tracking': this.openInTracking,
+      'item-dialog-remove-tracking': this.removeFromTracking,
+      'item-dialog-copy-tracking': this.copyToTracking,
+      'item-dialog-move-tracking': this.moveToTracking,
+      'item-dialog-manage-series-metadata': this.manageSeriesMetadata,
+      'item-dialog-delete': this.delete,
+    };
+    outputs[action]?.emit();
   }
 }

@@ -171,7 +171,7 @@ export class CompletedEpisodesDialog implements OnInit {
   });
 
   protected readonly openSeasons = signal(new Set<number>());
-  protected readonly canClose = async (): Promise<boolean> => {
+  public readonly canClose = async (): Promise<boolean> => {
     await this.waitForSaves();
     return (
       this.saveStatus() !== 'error' ||

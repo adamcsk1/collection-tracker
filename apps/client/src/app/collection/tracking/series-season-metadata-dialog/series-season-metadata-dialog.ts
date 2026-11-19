@@ -165,7 +165,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
         : []),
     ];
   });
-  protected readonly canDiscard = async (): Promise<boolean> => {
+  public readonly canDiscard = async (): Promise<boolean> => {
     if (this.busy() || this.discardPending) return false;
     if (!this.hasChanges()) return true;
     this.discardPending = true;

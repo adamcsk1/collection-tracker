@@ -78,6 +78,9 @@ test.describe('WCAG regressions', () => {
       const collectionPage = createCollectionPage(page);
       await collectionPage.visit();
       await expect(collectionPage.getListItems()).toHaveText(['Reachable actions']);
+      await collectionPage.getAddNewButton().focus();
+      await expect(collectionPage.getAddNewButton()).toBeFocused();
+      await expectFullyReachable(collectionPage.getAddNewButton());
       await collectionPage.getShowFunctionsButton().focus();
       await page.keyboard.press('Enter');
       const controls = [
@@ -87,7 +90,6 @@ test.describe('WCAG regressions', () => {
         collectionPage.getOrderByAlphabetButton(),
         collectionPage.getOrderDirectionDescButton(),
         collectionPage.getOrderDirectionAscButton(),
-        collectionPage.getAddNewButton(),
         collectionPage.getRandomPickButton(),
         collectionPage.getHideFunctionsButton(),
       ];
