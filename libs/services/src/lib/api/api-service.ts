@@ -42,6 +42,11 @@ import {
   UserSharesApiResponseModel,
 } from '@shared/models/api-model';
 import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-model';
+import {
+  PhotoImportAvailabilityResponseModel,
+  PhotoImportRecognizeRequestModel,
+  PhotoImportRecognizeResponseModel,
+} from '@shared/models/photo-import-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import {
   ExternalMetadataItemModel,
@@ -56,6 +61,13 @@ import { ApiRequestOptions } from './api-request-model';
   providedIn: 'root',
 })
 export class ApiService extends BaseApiService {
+  public getPhotoImportAvailability(): Observable<PhotoImportAvailabilityResponseModel> {
+    return this.request('GET', '/ai/vision/availability', undefined, { suppressErrorAlert: true });
+  }
+
+  public recognizePhoto(request: PhotoImportRecognizeRequestModel): Observable<PhotoImportRecognizeResponseModel> {
+    return this.request('POST', '/ai/vision/recognize', request, { suppressErrorAlert: true });
+  }
   private buildQuery(params: Record<string, string | number | boolean | string[] | undefined>): string {
     const queryParams = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -246,9 +258,10 @@ export class ApiService extends BaseApiService {
   public create(
     item: CollectionItemChangeApiModel,
     targetOwnerShareCode?: string,
-    listType?: CollectionListTypeModel
+    listType?: CollectionListTypeModel,
+    options: ApiRequestOptions = {}
   ): Observable<CreateApiResponseModel> {
-    return this.request('POST', '/collection-items', { ...item, targetOwnerShareCode, listType });
+    return this.request('POST', '/collection-items', { ...item, targetOwnerShareCode, listType }, options);
   }
 
   public updateByExternalId(
@@ -357,13 +370,18 @@ export class ApiService extends BaseApiService {
     return this.request('POST', '/users/me/tags/rename', { oldTag, newTag });
   }
 
-  public getExternalMetadataItem(queryParams: {
-    externalIdentitySource: string | null;
-    externalIdentityId: string | null;
-  }): Observable<ExternalMetadataItemModel> {
+  public getExternalMetadataItem(
+    queryParams: {
+      externalIdentitySource: string | null;
+      externalIdentityId: string | null;
+    },
+    options: ApiRequestOptions = {}
+  ): Observable<ExternalMetadataItemModel> {
     return this.request(
       'GET',
-      `/external-metadata/items?externalIdentitySource=${encodeURIComponent(queryParams.externalIdentitySource ?? '')}&externalIdentityId=${encodeURIComponent(queryParams.externalIdentityId ?? '')}`
+      `/external-metadata/items?externalIdentitySource=${encodeURIComponent(queryParams.externalIdentitySource ?? '')}&externalIdentityId=${encodeURIComponent(queryParams.externalIdentityId ?? '')}`,
+      undefined,
+      options
     );
   }
 
@@ -371,14 +389,19 @@ export class ApiService extends BaseApiService {
     return this.request('GET', '/external-metadata/providers');
   }
 
-  public searchExternalMetadata(queryParams: {
-    s: string | null;
-    provider?: string | null;
-  }): Observable<ExternalMetadataSearchResponseModel> {
+  public searchExternalMetadata(
+    queryParams: {
+      s: string | null;
+      provider?: string | null;
+    },
+    options: ApiRequestOptions = {}
+  ): Observable<ExternalMetadataSearchResponseModel> {
     const providerQuery = queryParams.provider ? `&provider=${encodeURIComponent(queryParams.provider)}` : '';
     return this.request(
       'GET',
-      `/external-metadata/search?s=${encodeURIComponent(queryParams.s ?? '')}${providerQuery}`
+      `/external-metadata/search?s=${encodeURIComponent(queryParams.s ?? '')}${providerQuery}`,
+      undefined,
+      options
     );
   }
 

@@ -38,6 +38,16 @@ Inside the Android companion app, the settings menu includes **Companion app set
 
 ### Collection workflows
 
+Settings offers separate background-cover visibility and animation controls. Turning off animation keeps the posters
+visible, including when refreshing them; system reduced-motion preferences always suppress movement. Existing accounts
+keep their visibility preference and default to animation enabled.
+
+Add has **Search**, **Manual**, and **From photos** tabs. The photo tab shows setup guidance when the independently
+configured vision model is unavailable. Choose one media type and destination before selecting photos; both remain fixed
+throughout the batch. Photo actions share the parent dialog footer, without a separate Done button. Photos are recognized sequentially and every
+metadata match requires explicit selection before adding. Failed recognition, search, or additions can be retried
+without repeating successful additions. See [Photo import](./photo-import.md).
+
 Search and Add are available without opening the filters menu. Keyboard skip controls lead directly to search or page
 content; the toolbar precedes collection cards in keyboard order. Each card has one primary tab stop on its title.
 Active filters remain visible above results and can be cleared together without resetting sort order.

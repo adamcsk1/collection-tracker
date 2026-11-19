@@ -121,6 +121,31 @@ describe('PosterBackground component', () => {
     expect(api.getBackgroundImages).toHaveBeenCalledTimes(1);
   });
 
+  it('animates by default and keeps poster elements when motion is disabled', async () => {
+    await createComponent();
+    const host = fixture.nativeElement as HTMLElement;
+    const posters = Array.from(host.querySelectorAll('img'));
+    expect(component.animated()).toBe(true);
+    expect(host.classList.contains('static-background')).toBe(false);
+    expect(posters.length).toBeGreaterThan(0);
+
+    fixture.componentRef.setInput('animated', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(host.classList.contains('static-background')).toBe(true);
+    expect(Array.from(host.querySelectorAll('img'))).toEqual(posters);
+    expect(host.getAttribute('aria-hidden')).toBe('true');
+    expect(api.getBackgroundImages).toHaveBeenCalledTimes(1);
+
+    fixture.componentRef.setInput('animated', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(host.classList.contains('static-background')).toBe(false);
+    expect(Array.from(host.querySelectorAll('img'))).toEqual(posters);
+  });
+
   it('reloads background images when the refresh trigger changes', async () => {
     await createComponent();
 

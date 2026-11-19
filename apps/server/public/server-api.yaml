@@ -306,6 +306,10 @@ components:
           enum: [system, dark, light]
         animatedBackground:
           type: boolean
+          description: Whether background covers are visible.
+        backgroundAnimation:
+          type: boolean
+          description: Whether visible background covers move. Defaults to true when omitted; reduced motion is respected.
         language:
           type: string
           enum: [en]
@@ -397,6 +401,8 @@ components:
           type: string
           enum: [system, dark, light]
         animatedBackground:
+          type: boolean
+        backgroundAnimation:
           type: boolean
         language:
           type: string
@@ -4120,6 +4126,114 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
+  /ai/vision/availability:
+    get:
+      operationId: getPhotoImportAvailability
+      summary: Check independently configured Ollama vision support
+      tags: [AI Proxy]
+      responses:
+        '200':
+          description: Missing or invalid configuration disables only photo import.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [available, reason]
+                    properties:
+                      available:
+                        type: boolean
+                      reason:
+                        type: string
+                        enum: [available, not-configured, invalid-config, unreachable, unsupported-model]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /ai/vision/recognize:
+    post:
+      operationId: recognizePhoto
+      summary: Extract titles from one photo for a single media type
+      description: >-
+        Requires independently configured vision AI. Accepts raw base64 JPEG, PNG, or WebP, at most 10 MiB decoded
+        and 50 megapixels, single frame only. Images are validated, resized and stripped of metadata before inference.
+        Photos are not persisted. One recognition runs per server at a time; busy requests return 429.
+        Inference has a 180-second timeout. Results are suggestions, never automatic collection additions.
+      tags: [AI Proxy]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contentType, imageBase64]
+              properties:
+                contentType:
+                  type: string
+                  enum: [movie, series, book, album]
+                imageBase64:
+                  type: string
+                  maxLength: 13981016
+      responses:
+        '200':
+          description: Recognized title suggestions, empty if none are readable.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [titles]
+                    properties:
+                      titles:
+                        type: array
+                        maxItems: 50
+                        items:
+                          type: object
+                          required: [title, year, contributor]
+                          properties:
+                            title:
+                              type: string
+                              maxLength: 300
+                            year:
+                              type: [string, 'null']
+                              maxLength: 20
+                            contributor:
+                              type: [string, 'null']
+                              maxLength: 300
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          description: Vision configuration or model is unavailable.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '504':
+          description: Vision inference timed out.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
 
   /users/me/export:
     get:

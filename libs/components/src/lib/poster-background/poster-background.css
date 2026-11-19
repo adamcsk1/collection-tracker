@@ -30,6 +30,10 @@ img {
   animation-delay: 0s;
 }
 
+:host(.static-background) img {
+  animation: none;
+}
+
 @keyframes image-animation {
   0% {
     transform: translate3d(0, 0, 0);

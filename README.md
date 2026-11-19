@@ -144,6 +144,11 @@ See [Docker deployment](./docs/docker.md) for GHCR tags, runtime variables, Olla
 
 ## Environment
 
+Photo batch import uses a separate, optional Ollama vision model. Copy
+[`apps/server/scripts/ollama-vision.config.json`](./apps/server/scripts/ollama-vision.config.json) to the active data
+folder and install its model with `ollama pull gemma3:4b`. Without it, manual entry and text AI search remain available.
+See [Photo import](./docs/photo-import.md) for Docker connectivity, limits, privacy, and review behavior.
+
 The server reads runtime configuration from `.data/.env` by default, including `METADATA_SERVICE_URL`. Local `npm start` also starts `apps/metadata-provider` on `http://127.0.0.1:3002` and shares that same `.data/.env` for `OMDB_API_KEY`. Docker Compose keeps provider secrets in `./.metadata/.env`; copy a non-empty `OMDB_API_KEY` there because the app `.data/.env` value is unused in containers. AI search reads Ollama settings from `.data/ollama.config.json`. Animated backgrounds read IMDb IDs, ISBNs, and MusicBrainz release MBIDs from `.data/background.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates those files from [apps/server/scripts](./apps/server/scripts) when they are missing.
 
 `JWT_SECRET` and `COOKIE_SECRET` must be non-empty, and `SALT` must be explicitly configured. Keep `SALT` unchanged after users or data have been created because it participates in persisted hashes. Docker generates and persists all three values when it creates `/data/.env` on first start; it never replaces an existing file.

@@ -54,6 +54,8 @@ describe('SettingsBasics component', () => {
   it('exposes translated labels and configured form options', () => {
     expect(component['translations'].language()).toBe('Language');
     expect(component['translations'].theme()).toBe('Theme');
+    expect(component['translations'].backgroundAnimation()).toBe('BackgroundAnimation');
+    expect(component['translations'].backgroundAnimationHint()).toBe('Message.BackgroundAnimation');
     expect(component['translations'].sensitiveDataStorage()).toBe('SensitiveDataStorage');
     expect(component['translations'].clearLocalStorageAfterLogout()).toBe('ClearLocalStorageAfterLogout');
     expect(component['themeOptions']()).toEqual(['light', 'dark']);
@@ -68,6 +70,7 @@ describe('SettingsBasics component', () => {
       theme: 'dark',
       clearLocalStorageAfterLogout: false,
       animatedBackground: true,
+      backgroundAnimation: true,
       language: 'en',
     });
   });
@@ -105,6 +108,50 @@ describe('SettingsBasics component', () => {
     settingsService.storeFormData.mockClear();
     component['onSensitiveDataStorageChange']('unknown');
     expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
+
+  it('initializes animation from state without saving', () => {
+    mainState.setState('backgroundAnimation', false);
+    component.ngOnInit();
+
+    expect(component['settingsModel']().backgroundAnimation).toBe(false);
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
+
+  it('stores boolean background animation and ignores non-booleans', () => {
+    component['onBackgroundAnimationChange'](false);
+    expect(settingsService.storeFormData).toHaveBeenCalledWith(
+      expect.objectContaining({ animatedBackground: true, backgroundAnimation: false })
+    );
+
+    settingsService.storeFormData.mockClear();
+    component['onBackgroundAnimationChange'](null);
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
+
+  it('disables motion control when hidden and preserves the motion preference', async () => {
+    const motionControl = fixture.nativeElement.querySelector(
+      '[data-test-id="settings-background-animation"] input'
+    ) as HTMLInputElement;
+    expect(motionControl.disabled).toBe(false);
+    expect(motionControl.checked).toBe(true);
+
+    component['onBackgroundAnimationChange'](false);
+    component['onAnimatedBackgroundChange'](false);
+    await fixture.whenStable();
+
+    expect(motionControl.disabled).toBe(true);
+    expect(motionControl.checked).toBe(false);
+    expect(component['settingsModel']().backgroundAnimation).toBe(false);
+
+    component['onAnimatedBackgroundChange'](true);
+    await fixture.whenStable();
+
+    expect(motionControl.disabled).toBe(false);
+    expect(motionControl.checked).toBe(false);
+    expect(settingsService.storeFormData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ animatedBackground: true, backgroundAnimation: false })
+    );
   });
 
   it('stores boolean logout clearing and ignores non-booleans', () => {

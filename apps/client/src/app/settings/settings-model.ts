@@ -6,6 +6,7 @@ export interface SettingsModel {
   sensitiveDataStorage: (typeof SENSITIVE_DATA_STORAGE_MODES)[number];
   clearLocalStorageAfterLogout: boolean;
   animatedBackground: boolean;
+  backgroundAnimation: boolean;
   theme: ThemeModel;
   language: LanguageModel;
 }

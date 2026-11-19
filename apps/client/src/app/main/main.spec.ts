@@ -112,6 +112,26 @@ describe('Main component (client)', () => {
     expect(tokenValidation.startValidation).toHaveBeenCalled();
   });
 
+  it('keeps background visibility independent of animation', () => {
+    const mainState = TestBed.inject(mainStateToken);
+    expect(mainState.state.backgroundAnimation()).toBe(true);
+    expect(fixture.componentInstance['useAnimatedBackground']()).toBe(true);
+
+    mainState.setState('backgroundAnimation', false);
+
+    expect(fixture.componentInstance['backgroundAnimation']()).toBe(false);
+    expect(fixture.componentInstance['useAnimatedBackground']()).toBe(true);
+
+    mainState.setState('animatedBackground', false);
+
+    expect(fixture.componentInstance['useAnimatedBackground']()).toBe(false);
+    expect(mainState.state.backgroundAnimation()).toBe(false);
+
+    mainState.setState('animatedBackground', true);
+    expect(fixture.componentInstance['useAnimatedBackground']()).toBe(true);
+    expect(fixture.componentInstance['backgroundAnimation']()).toBe(false);
+  });
+
   it('requests search expansion and focus from the skip link', () => {
     const focusSearch = vi.spyOn(TestBed.inject(FloatActionsService), 'focusSearch');
     fixture.componentInstance['onSkipToSearch']();

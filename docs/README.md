@@ -4,6 +4,8 @@ This directory contains the maintained project documentation. The root [`README.
 
 ## Features
 
+- [Photo import and independent Ollama vision setup](./photo-import.md)
+
 - [Default collection owners](./default-collection-owners.md)
 - [External metadata provider contract](./external-metadata-provider-contract.md)
 

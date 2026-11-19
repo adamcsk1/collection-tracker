@@ -9,11 +9,8 @@ import {
   CollectionItemChangeApiModel,
   CollectionListTypeModel,
 } from '@shared/models/api-model';
-import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { ExternalMetadataReferenceModel } from '@shared/models/external-metadata-model';
 import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
-import { getImdbIdFromExternalMetadata } from '@shared/utils/external-metadata-identity-util';
-import { getExternalMetadataRating } from '@shared/utils/external-metadata-ratings-util';
 import { parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, Observable, of, skip, take, tap, throwError } from 'rxjs';
@@ -21,6 +18,7 @@ import { CollectionService } from '../../collection-service';
 import { ItemFormModel } from '../item-form/item-form-model';
 import { buildItemFromForm } from '../item-form/item-form-util';
 import { SaveMode, SaveOptions } from './new-item-dialog-model';
+import { buildMetadataItem } from './metadata-item-util';
 
 @Injectable()
 export class NewItemDialogService {
@@ -100,23 +98,9 @@ export class NewItemDialogService {
             listType === 'tracking' && (selectedContentType === 'book' || selectedContentType === 'album');
           return {
             item: {
-              image: selectedContent.poster,
-              title: selectedContent.title,
-              genre: selectedContent.genres,
-              IMDbId: getImdbIdFromExternalMetadata(selectedContent),
-              externalProvider: selectedContent.provider,
-              externalItemId: selectedContent.providerItemId,
-              externalIds: selectedContent.externalIds,
+              ...buildMetadataItem(selectedContent),
               tags: parseTagText(tags),
-              year: this.parseYear(selectedContent.year),
-              rate: getExternalMetadataRating(selectedContent.ratings, 'Internet Movie Database'),
-              rottenTomatoesRate: getExternalMetadataRating(selectedContent.ratings, 'Rotten Tomatoes'),
-              metacriticRate: getExternalMetadataRating(selectedContent.ratings, 'Metacritic'),
               userRate,
-              actors: selectedContent.actors,
-              plot: selectedContent.plot,
-              contentType: selectedContentType,
-              favorite: false,
               ...(includeProgress
                 ? { progressCurrent: progressCurrent ?? null, progressTotal: progressTotal ?? null }
                 : {}),
@@ -309,11 +293,5 @@ export class NewItemDialogService {
         }),
         map(({ collectionItem }) => collectionItem)
       );
-  }
-
-  private parseYear(year: string): CollectionItemYearModel {
-    const normalizedYear = year.trim().replace('–', '-');
-    const normalizedDecimalYear = normalizedYear.replace(/^(\d{4})\.0$/, '$1');
-    return normalizedDecimalYear && normalizedDecimalYear !== 'N/A' ? normalizedDecimalYear : null;
   }
 }

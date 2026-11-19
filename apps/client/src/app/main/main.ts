@@ -55,6 +55,7 @@ export class Main implements OnInit {
   private readonly mainContent = viewChild<ElementRef<HTMLElement>>('mainContent');
   private readonly titleKey = signal('AppTitle');
   protected readonly useAnimatedBackground = this.mainState.state.animatedBackground;
+  protected readonly backgroundAnimation = this.mainState.state.backgroundAnimation;
   protected readonly backgroundImagesRefreshTrigger = this.mainState.state.backgroundImagesRefreshTrigger;
   protected readonly searchAvailable = computed(
     () => !!this.floatActions.searchTemplate() || this.floatActions.searchActionAvailable()

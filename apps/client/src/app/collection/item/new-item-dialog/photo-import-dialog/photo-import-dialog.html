@@ -1,0 +1,193 @@
+<div class="photo-content" data-test-id="photo-import-dialog">
+  <p data-test-id="photo-import-context">{{ translations.media() }} · {{ destinationLabel() }}</p>
+  @if (!state.photos().length) {
+    <p>{{ translations.intro() }}</p>
+    <libc-callout icon="privacy_tip" data-test-id="photo-import-privacy">
+      {{ translations.privacy() }}
+    </libc-callout>
+    <p id="photo-import-limits">{{ translations.limits() }}</p>
+  }
+  @if (!state.availability()?.available) {
+    <div role="status" data-test-id="photo-import-unavailable">
+      <libc-callout icon="info">{{ translations.availability() }}</libc-callout>
+    </div>
+  }
+  @if (!state.availability()?.available || hasFailedPhotos()) {
+    <button
+      type="button"
+      class="dialog-action"
+      data-test-id="photo-import-check"
+      [disabled]="state.busy()"
+      (click)="checkAvailability()"
+    >
+      {{ translations.refresh() }}
+    </button>
+  }
+  <input
+    #photoFiles
+    hidden
+    id="photo-import-files"
+    type="file"
+    data-test-id="photo-import-files"
+    accept="image/jpeg,image/png,image/webp"
+    multiple
+    [attr.aria-label]="translations.choose()"
+    [disabled]="!state.availability()?.available || state.busy()"
+    (change)="onFilesSelected($event)"
+    [attr.aria-invalid]="state.invalidPhotos() ? 'true' : null"
+    [attr.aria-describedby]="state.invalidPhotos() ? 'photo-import-limits photo-import-invalid' : 'photo-import-limits'"
+  />
+  @if (state.invalidPhotos()) {
+    <p role="alert" id="photo-import-invalid" data-test-id="photo-import-invalid">
+      {{ translations.invalidPhotos() }}
+    </p>
+  }
+  @if (state.photos().length) {
+    <ul class="photo-list" data-test-id="photo-import-photos">
+      @for (photo of state.photos(); track photo.id) {
+        <li data-test-id="photo-import-photo">
+          <img [src]="photo.preview" alt="" width="64" height="80" />
+          <span class="file-name">{{ photo.file.name }}</span>
+          <span role="status"
+            ><span class="visually-hidden">{{ photo.file.name }}: </span
+            >{{ translations.statuses()[photo.status] }}</span
+          >
+          @if (photo.status === 'error') {
+            <span class="photo-error">{{ translations.photoError() }}</span>
+          }
+          @if (photo.status === 'recognized' && !hasRecognizedRows(photo.id)) {
+            <span>{{ translations.noTitles() }}</span>
+          }
+        </li>
+      }
+    </ul>
+    <p role="status" data-test-id="photo-import-progress">{{ translations.count() }}</p>
+  }
+  @if (state.rows().length) {
+    <h3>{{ translations.review() }}</h3>
+    <ol class="review-list">
+      @for (row of state.rows(); track row.id; let index = $index) {
+        <li class="review-row" data-test-id="photo-import-row">
+          <div class="row-heading">
+            <strong>{{ row.title }}</strong
+            ><span role="status" data-test-id="photo-import-row-status"
+              ><span class="visually-hidden">{{ row.title }}: </span>{{ translations.statuses()[row.status] }}</span
+            >
+          </div>
+          <small>{{ row.photoName }}</small>
+          @if (row.status === 'error') {
+            <p role="alert" [id]="'photo-import-error-' + row.id">
+              {{ row.selected ? translations.addError() : translations.searchError() }}
+            </p>
+          }
+          @if (row.details) {
+            <p>{{ row.details }}</p>
+          }
+          @if (row.status !== 'added' && row.status !== 'exists' && row.status !== 'skipped') {
+            <div class="search-row">
+              <libc-input
+                data-test-id="photo-import-search"
+                [label]="translations.search()"
+                [hint]="
+                  row.status === 'error' && !row.selected ? translations.searchError() : translations.searchHint()
+                "
+                [formField]="searchForm.queries[index]"
+                (keydown.enter)="onSearchRow(index)"
+              />
+              <button
+                type="button"
+                class="dialog-action"
+                data-test-id="photo-import-search-button"
+                [disabled]="state.busy() || !searchModel().queries[index]?.trim()"
+                (click)="onSearchRow(index)"
+              >
+                {{ translations.search() }}
+              </button>
+            </div>
+            @if (row.searched && row.status === 'ready' && !row.matches.length) {
+              <p>{{ translations.noMatches() }}</p>
+            }
+            @if (row.matches.length) {
+              <ct-metadata-results
+                [options]="matchOptions(row)"
+                [selectedValue]="row.selected ? row.selected.provider + '/' + row.selected.providerItemId : null"
+                [label]="translations.selectedContent()"
+                [disabled]="state.busy()"
+                testIdPrefix="photo-import"
+                (selected)="onMatchSelected(index, $event)"
+              />
+            }
+          }
+          @if (row.status !== 'added' && row.status !== 'exists') {
+            <button
+              type="button"
+              class="dialog-action"
+              data-test-id="photo-import-skip"
+              [disabled]="state.busy()"
+              (click)="onSkip(index)"
+            >
+              {{ row.status === 'skipped' ? translations.restore() : translations.skip() }}
+            </button>
+          }
+        </li>
+      }
+    </ol>
+  }
+</div>
+<ng-template #actions>
+  <div class="dialog-action-group photo-footer" data-test-id="photo-import-footer">
+    @if (state.busy()) {
+      <button
+        type="button"
+        class="dialog-action"
+        data-test-id="photo-import-stop"
+        [disabled]="state.stopRequested()"
+        (click)="requestStop()"
+      >
+        <i class="material-icons" aria-hidden="true">stop</i>
+        <span>{{ translations.stop() }}</span>
+      </button>
+    } @else {
+      @if (state.rows().length) {
+        <span role="status">{{ translations.selectedCount() }}</span>
+      }
+      @if (!state.photos().length) {
+        <button
+          type="button"
+          class="dialog-action dialog-action-primary"
+          data-test-id="photo-import-choose"
+          [disabled]="!state.availability()?.available"
+          aria-describedby="photo-import-limits"
+          (click)="photoFiles.click()"
+        >
+          <i class="material-icons" aria-hidden="true">add_photo_alternate</i>
+          <span>{{ translations.choose() }}</span>
+        </button>
+      }
+      @if (hasPendingPhotos()) {
+        <button
+          type="button"
+          class="dialog-action dialog-action-primary"
+          data-test-id="photo-import-read"
+          [disabled]="!state.availability()?.available"
+          (click)="readPhotos()"
+        >
+          <i class="material-icons" aria-hidden="true">document_scanner</i>
+          <span>{{ hasFailedPhotos() ? translations.retryPhotos() : translations.start() }}</span>
+        </button>
+      }
+      @if (state.rows().length) {
+        <button
+          type="button"
+          class="dialog-action dialog-action-primary"
+          data-test-id="photo-import-add"
+          [disabled]="!selectedCount()"
+          (click)="addSelected()"
+        >
+          <i class="material-icons" aria-hidden="true">add</i>
+          <span>{{ translations.add() }}</span>
+        </button>
+      }
+    }
+  </div>
+</ng-template>

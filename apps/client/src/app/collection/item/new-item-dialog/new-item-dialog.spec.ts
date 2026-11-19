@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
@@ -15,6 +16,8 @@ import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { initialSharesState, sharesStateToken, type SharesState } from '../../../shares/shares-store';
 import { NewItemDialog } from './new-item-dialog';
 import { NewItemDialogService } from './new-item-dialog-service';
+import { PhotoImportDialog } from './photo-import-dialog/photo-import-dialog';
+import { photoImportStateToken } from './photo-import-dialog/photo-import-store';
 
 describe('NewItemDialog component', () => {
   const matrixReference = 'omdb/tt123';
@@ -29,7 +32,12 @@ describe('NewItemDialog component', () => {
     saveManual: ReturnType<typeof vi.fn>;
     getProviderReference: ReturnType<typeof vi.fn>;
   };
-  let api: { collectionItemExists: ReturnType<typeof vi.fn>; getShares: ReturnType<typeof vi.fn> };
+  let api: {
+    collectionItemExists: ReturnType<typeof vi.fn>;
+    getShares: ReturnType<typeof vi.fn>;
+    getPhotoImportAvailability: ReturnType<typeof vi.fn>;
+  };
+  let portal: { openStacked: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
 
@@ -48,12 +56,15 @@ describe('NewItemDialog component', () => {
     api = {
       collectionItemExists: vi.fn(() => of({ exists: false })),
       getShares: vi.fn(() => of({ userShareCode: '', outgoing: [], incoming: [] })),
+      getPhotoImportAvailability: vi.fn(() => of({ available: true, reason: 'available' })),
     };
+    portal = { openStacked: vi.fn(), close: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [NewItemDialog],
       providers: [
         { provide: ConfirmService, useValue: { open: vi.fn(() => of(false)) } },
+        { provide: PortalService, useValue: portal },
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
@@ -82,6 +93,74 @@ describe('NewItemDialog component', () => {
     fixture.detectChanges();
   });
 
+  it('selects the photo tab with the active type and shared destination without clearing the draft', async () => {
+    fixture.componentRef.setInput('wishlist', true);
+    component['selectedAddContentType'].set('book');
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'book-owner',
+        ownerUsername: 'Book Owner',
+        grants: [
+          {
+            listType: 'wishlist',
+            contentType: 'book',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+            readMode: 'all',
+          },
+        ],
+      },
+    ]);
+    component['searchForm'].targetOwnerShareCode().value.set('book-owner');
+    component['searchForm'].searchText().value.set('Existing draft');
+
+    await component['onModeChange']('photos');
+    expect(component['mode']()).toBe('photos');
+    expect(component['photoContentType']()).toBe('book');
+    expect(component['photoDestinationLabel']()).toBe('SharedLibrary (Book Owner)');
+    expect(portal.openStacked).not.toHaveBeenCalled();
+    expect(component['searchForm'].searchText().value()).toBe('Existing draft');
+    expect(portal.close).not.toHaveBeenCalled();
+  });
+
+  it('uses the manual content type and own destination for the photo tab', async () => {
+    component['onModeChange']('manual');
+    component['manualForm'].contentType().value.set('series');
+
+    await component['onModeChange']('photos');
+    expect(component['photoContentType']()).toBe('series');
+    expect(component['photoDestinationLabel']()).toBe('MyLibrary');
+  });
+
+  it('keeps the photo tab enabled and defers its availability check until the workflow mounts', () => {
+    expect(component['modeTabs']().map((option) => option.value)).toEqual(['search', 'manual', 'photos']);
+    expect(component['modeTabs']()[2].disabled).not.toBe(true);
+    expect(api.getPhotoImportAvailability).not.toHaveBeenCalled();
+  });
+
+  it('does not submit normal Add forms while the photo tab is active', async () => {
+    await component['onModeChange']('photos');
+    await component['onSave'](null);
+    expect(service.save).not.toHaveBeenCalled();
+    expect(service.saveManual).not.toHaveBeenCalled();
+  });
+
+  it('keeps photo setup independent from normal drafts and resets incompatible shared destinations', async () => {
+    component['searchForm'].targetOwnerShareCode().value.set('normal-owner');
+    component['manualForm'].title().value.set('Manual draft');
+    await component['onModeChange']('photos');
+    component['onPhotoContentTypeChange']('invalid');
+    expect(component['photoContentType']()).toBe('movie');
+    component['onPhotoContentTypeChange']('series');
+    expect(component['photoContentType']()).toBe('series');
+    expect(component['photoTargetOwnerShareCode']()).toBeNull();
+    expect(component['selectedAddContentType']()).toBe('movie');
+    expect(component['searchForm'].targetOwnerShareCode().value()).toBe('normal-owner');
+    expect(component['manualForm'].title().value()).toBe('Manual draft');
+  });
+
   it('only requests discard confirmation for a dirty draft and keeps it when cancelled', async () => {
     const confirm = TestBed.inject(ConfirmService);
     expect(await component['canDiscard']()).toBe(true);
@@ -94,7 +173,8 @@ describe('NewItemDialog component', () => {
     expect(await component['canDiscard']()).toBe(true);
   });
 
-  it('renders all save outcomes as labelled buttons bound to the active form', () => {
+  it('renders mode-specific footer actions and guards unfinished photo work without losing normal drafts', async () => {
+    vi.useRealTimers();
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [NewItemDialog],
@@ -137,6 +217,53 @@ describe('NewItemDialog component', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="new-item-save"]').getAttribute('form')).toBe(
       'new-item-manual-form'
     );
+    const rendered = fixture.componentInstance;
+    rendered['searchForm'].searchText().value.set('Search draft');
+    rendered['manualForm'].title().value.set('Manual draft');
+    await rendered['onModeChange']('photos');
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    const child = rendered['photoImport']()!;
+    const childStore = fixture.debugElement.query(By.directive(PhotoImportDialog)).injector.get(photoImportStateToken);
+    expect(element.querySelectorAll('libc-dialog-shell')).toHaveLength(1);
+    expect(element.querySelector('[data-test-id="photo-import-done"]')).toBeNull();
+    expect(element.querySelector('[data-test-id="photo-import-choose"]')).not.toBeNull();
+    expect(element.querySelector('[data-test-id="new-item-save"]')).toBeNull();
+    expect(element.querySelector('[data-test-id="new-item-finished"]')).toBeNull();
+    expect(element.querySelector('[data-test-id="new-item-copy-to-tracking-as-completed"]')).toBeNull();
+    expect(child.destinationLabel()).toBe('MyLibrary');
+    childStore.setState('photos', [
+      { id: 'photo', file: new File(['photo'], 'cover.jpg'), preview: '', status: 'ready' },
+    ]);
+    rendered['onPhotoContentTypeChange']('series');
+    expect(rendered['photoContentType']()).toBe('movie');
+    await fixture.whenStable();
+    expect(
+      element.querySelector<HTMLSelectElement>('[data-test-id="photo-import-content-type"] select')?.disabled
+    ).toBe(true);
+    expect(element.querySelector<HTMLSelectElement>('[data-test-id="photo-import-library"] select')?.disabled).toBe(
+      true
+    );
+    expect(element.querySelector('[data-test-id="photo-import-read"]')).not.toBeNull();
+    childStore.setState('busy', true);
+    await fixture.whenStable();
+    expect(await rendered['canDiscard']()).toBe(false);
+    await rendered['onModeChange']('search');
+    expect(rendered['mode']()).toBe('photos');
+    expect(element.querySelector('[data-test-id="photo-import-stop"]')).not.toBeNull();
+    childStore.setState('busy', false);
+    await rendered['onModeChange']('search');
+    await fixture.whenStable();
+    expect(rendered['mode']()).toBe('photos');
+    expect(element.querySelector('[data-test-id="new-item-from-photos"]')?.getAttribute('aria-selected')).toBe('true');
+    expect(await rendered['canDiscard']()).toBe(false);
+    vi.mocked(TestBed.inject(ConfirmService).open).mockReturnValue(of(true));
+    await rendered['onModeChange']('search');
+    await fixture.whenStable();
+    expect(rendered['mode']()).toBe('search');
+    expect(rendered['searchForm'].searchText().value()).toBe('Search draft');
+    expect(rendered['manualForm'].title().value()).toBe('Manual draft');
+    expect(element.querySelector('[data-test-id="new-item-save"]')).not.toBeNull();
   });
 
   it('keeps optional details expanded after an invalid rating is corrected', () => {
@@ -207,7 +334,7 @@ describe('NewItemDialog component', () => {
     expect(component['manualForm']().valid()).toBe(true);
   });
 
-  it('handles empty searches and partial matched-content metadata', () => {
+  it('ignores empty searches when changing content type', () => {
     const preventDefault = vi.fn();
     component['searchForm'].searchText().value.set('   ');
 
@@ -215,18 +342,6 @@ describe('NewItemDialog component', () => {
     component['onAddContentTypeChange']('series');
 
     expect(service.search).not.toHaveBeenCalled();
-    expect(component['getMatchedContentImageUrl']({ text: 'No image', value: 'none' })).toBe('');
-    expect(component['getMatchedContentMeta']({ contentType: 'movie', text: 'Movie', value: 'movie' })).toBe('(movie)');
-    expect(component['getMatchedContentMeta']({ text: 'Year only', value: 'year', year: '2026' })).toBe('2026');
-    expect(
-      component['getMatchedContentMeta']({
-        contentType: 'album',
-        text: 'The Dark Side of the Moon',
-        value: 'musicbrainz/mbid',
-        year: '1973',
-        actors: 'Pink Floyd',
-      })
-    ).toBe('(album) 1973 · Pink Floyd');
   });
 
   it('changes content types and refreshes non-empty searches', () => {
@@ -396,28 +511,6 @@ describe('NewItemDialog component', () => {
 
     expect(control.value()).toBe('omdb/tt-second');
     expect(control.touched()).toBe(true);
-    expect(component['isMatchedContentSelected'](service.matchedContent()[1]!)).toBe(true);
-  });
-
-  it('formats matched content card metadata and image URLs', () => {
-    const apiState = TestBed.inject(apiStateToken);
-    apiState.setState('apiUrl', '/api/v1');
-    const content = {
-      contentType: 'movie',
-      poster: 'https://images.example/poster.jpg',
-      text: 'Test Movie',
-      value: 'omdb/tt-test',
-      year: '2026',
-    } satisfies ExternalMetadataSelectDataModel;
-
-    expect(component['getMatchedContentImageUrl'](content)).toBe(
-      '/api/v1/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.jpg&variant=card'
-    );
-    expect(component['getMatchedContentMeta'](content)).toBe('(movie) 2026');
-  });
-
-  it('omits matched content card metadata for direct IMDb ID matches', () => {
-    expect(component['getMatchedContentMeta']({ text: 'IMDb id: tt123', value: matrixReference })).toBeNull();
   });
 
   it('shows external search links for the completed title search', () => {

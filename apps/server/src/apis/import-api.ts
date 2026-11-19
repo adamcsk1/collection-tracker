@@ -110,6 +110,7 @@ const isUserSettings = (value: unknown): value is UserSettingsApiResponseModel =
       case 'theme':
         return typeof setting === 'string' && isAllowedValue(setting, THEMES);
       case 'animatedBackground':
+      case 'backgroundAnimation':
         return typeof setting === 'boolean';
       case 'language':
         return typeof setting === 'string' && isAllowedValue(setting, LANGUAGES);

@@ -38,6 +38,57 @@ describe('change-user-settings-api', () => {
     });
   });
 
+  it.each([true, false])('persists background animation %s and preserves visibility', async (backgroundAnimation) => {
+    const response = mockResponse();
+    const request = { body: { backgroundAnimation }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, animated_background) VALUES (?, ?)').run('user', 0);
+
+    const { register } = await import('./change-user-settings-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ animatedBackground: false, backgroundAnimation });
+    expect(db.prepare('SELECT animated_background, background_animation FROM user_settings').get()).toEqual({
+      animated_background: 0,
+      background_animation: Number(backgroundAnimation),
+    });
+  });
+
+  it('preserves stored motion when another setting changes', async () => {
+    const response = mockResponse();
+    const request = { body: { animatedBackground: false }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, background_animation) VALUES (?, ?)').run('user', 0);
+
+    const { register } = await import('./change-user-settings-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ animatedBackground: false, backgroundAnimation: false });
+    expect(db.prepare('SELECT background_animation FROM user_settings').get()).toEqual({ background_animation: 0 });
+  });
+
+  it.each([['false'], [0], [null], [[]], [{}]])(
+    'rejects invalid background animation %j',
+    async (backgroundAnimation) => {
+      const response = mockResponse();
+      const request = { body: { backgroundAnimation }, usernameHash: 'user' };
+      const { app, handlerPromise } = buildApp(request, response);
+
+      const { register } = await import('./change-user-settings-api');
+      register(app);
+      await handlerPromise();
+
+      expect(response.code).toHaveBeenCalledWith(400);
+      expect(getDatabase().prepare('SELECT * FROM user_settings').all()).toEqual([]);
+    }
+  );
+
   it('does not overwrite stored language and theme from login defaults', async () => {
     const response = mockResponse();
     const request: any = { body: { theme: 'light', language: 'en', fromLogin: true }, usernameHash: 'user' };

@@ -3365,6 +3365,43 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('042_add_background_animation', () => {
+    it('preserves old visibility settings with nullable motion and applies only once', async () => {
+      const migrationFile = '042_add_background_animation.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('visible', 'token'), ('hidden', 'other-token');
+        INSERT INTO user_settings (username_hash, theme, animated_background) VALUES
+          ('visible', 'dark', 1), ('hidden', 'light', 0);
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db
+          .prepare(
+            'SELECT username_hash, theme, animated_background, background_animation FROM user_settings ORDER BY username_hash'
+          )
+          .all()
+      ).toEqual([
+        { username_hash: 'hidden', theme: 'light', animated_background: 0, background_animation: null },
+        { username_hash: 'visible', theme: 'dark', animated_background: 1, background_animation: null },
+      ]);
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').all(migrationFile)).toEqual([
+        { id: migrationFile },
+      ]);
+      for (const backgroundAnimation of [0, 1]) {
+        expect(() =>
+          db.prepare('UPDATE user_settings SET background_animation = ?').run(backgroundAnimation)
+        ).not.toThrow();
+      }
+      expect(() => db.prepare('UPDATE user_settings SET background_animation = 2').run()).toThrow();
+      db.close();
+    });
+  });
+
   describe('runner-managed migrations', () => {
     it('rolls back SQL and marker when a future migration fails', async () => {
       const migrationFile = '040_future_failure.sql';

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, model, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, input, output, viewChildren } from '@angular/core';
 import type { TabOption } from './tabs-model';
 
 @Component({
@@ -9,13 +9,16 @@ import type { TabOption } from './tabs-model';
 })
 export class Tabs<TValue extends string> {
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('tabButton');
-  public readonly options = input.required<readonly [TabOption<TValue>, TabOption<TValue>]>();
-  public readonly selected = model.required<TValue>();
+  public readonly options = input.required<
+    readonly [TabOption<TValue>, TabOption<TValue>] | readonly [TabOption<TValue>, TabOption<TValue>, TabOption<TValue>]
+  >();
+  public readonly selected = input.required<TValue>();
+  public readonly selectedChange = output<TValue>();
   public readonly ariaLabel = input.required<string>();
   public readonly idPrefix = input.required<string>();
 
   protected isSelected(index: number): boolean {
-    return this.selected() === this.options()[index].value;
+    return this.selected() === this.options()[index]!.value;
   }
 
   protected tabId(index: number): string {
@@ -27,31 +30,41 @@ export class Tabs<TValue extends string> {
   }
 
   protected panelTestId(index: number): string {
-    return `${this.idPrefix()}-${index === 0 ? 'first' : 'second'}-panel`;
+    return `${this.idPrefix()}-${['first', 'second', 'third'][index]}-panel`;
   }
 
   protected onSelect(index: number): void {
-    if (this.options()[index].disabled) return;
-    this.selected.set(this.options()[index].value);
+    if (this.options()[index]!.disabled) return;
+    this.selectedChange.emit(this.options()[index]!.value);
+  }
+
+  public focusSelected(): void {
+    const index = this.options().findIndex((option) => option.value === this.selected());
+    this.tabButtons()[index]?.nativeElement.focus();
   }
 
   protected onKeydown(event: KeyboardEvent, index: number): void {
     let targetIndex: number | null = null;
     switch (event.key) {
       case 'ArrowRight':
-        targetIndex = index === 0 ? 1 : 0;
+        targetIndex = (index + 1) % this.options().length;
         break;
       case 'ArrowLeft':
-        targetIndex = index === 0 ? 1 : 0;
+        targetIndex = (index - 1 + this.options().length) % this.options().length;
         break;
       case 'Home':
         targetIndex = 0;
         break;
       case 'End':
-        targetIndex = 1;
+        targetIndex = this.options().length - 1;
         break;
     }
-    if (targetIndex === null || this.options()[targetIndex].disabled) return;
+    if (targetIndex === null) return;
+    const direction = event.key === 'ArrowLeft' || event.key === 'End' ? -1 : 1;
+    for (let count = 0; this.options()[targetIndex]!.disabled && count < this.options().length; count++) {
+      targetIndex = (targetIndex + direction + this.options().length) % this.options().length;
+    }
+    if (this.options()[targetIndex]!.disabled) return;
 
     event.preventDefault();
     this.onSelect(targetIndex);

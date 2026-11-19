@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { TabOption } from './tabs-model';
 import { Tabs } from './tabs';
 
-type TestTab = 'first' | 'second';
+type TestTab = 'first' | 'second' | 'third';
 
 @Component({
   selector: 'libc-tabs-test-host',
@@ -13,20 +13,24 @@ type TestTab = 'first' | 'second';
     <libc-tabs
       idPrefix="test-tabs"
       ariaLabel="Test sections"
-      [options]="options"
+      [options]="options()"
       [selected]="selected()"
       (selectedChange)="selected.set($event)"
     >
       <ng-container tabs-first-content><p data-test-id="first-content">First content</p></ng-container>
       <ng-container tabs-second-content><p data-test-id="second-content">Second content</p></ng-container>
+      <ng-container tabs-third-content><p data-test-id="third-content">Third content</p></ng-container>
     </libc-tabs>
   `,
 })
 class HostComponent {
-  public readonly options: readonly [TabOption<TestTab>, TabOption<TestTab>] = [
+  public readonly options = signal<
+    | readonly [TabOption<TestTab>, TabOption<TestTab>]
+    | readonly [TabOption<TestTab>, TabOption<TestTab>, TabOption<TestTab>]
+  >([
     { value: 'first', label: 'First', dataTestId: 'first-tab' },
     { value: 'second', label: 'Second', dataTestId: 'second-tab' },
-  ];
+  ]);
   public readonly selected = signal<TestTab>('first');
 }
 
@@ -90,7 +94,7 @@ describe('Tabs component', () => {
   });
 
   it('does not select a disabled tab', () => {
-    (host.options[1] as TabOption<TestTab>).disabled = true;
+    host.options.update((options) => [options[0], { ...options[1], disabled: true }]);
     fixture.detectChanges();
     const tabs = fixture.nativeElement.querySelectorAll('[role="tab"]') as NodeListOf<HTMLButtonElement>;
 
@@ -152,5 +156,48 @@ describe('Tabs component', () => {
 
     expect(tabLists[0].dataset['testId']).not.toBe(tabLists[1].dataset['testId']);
     expect(tabs[0].id).not.toBe(tabs[2].id);
+  });
+
+  it('projects a third panel and navigates all three tabs, skipping disabled options', () => {
+    host.options.set([
+      { value: 'first', label: 'First', dataTestId: 'first-tab' },
+      { value: 'second', label: 'Second', dataTestId: 'second-tab', disabled: true },
+      { value: 'third', label: 'Third', dataTestId: 'third-tab' },
+    ]);
+    fixture.detectChanges();
+    const tabs = fixture.nativeElement.querySelectorAll('[role="tab"]') as NodeListOf<HTMLButtonElement>;
+    const panels = fixture.nativeElement.querySelectorAll('[role="tabpanel"]') as NodeListOf<HTMLElement>;
+    expect(panels).toHaveLength(3);
+    expect(panels[2]!.querySelector('[data-test-id="third-content"]')?.textContent).toBe('Third content');
+    expect(tabs[2]!.getAttribute('aria-controls')).toBe(panels[2]!.id);
+    tabs[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(host.selected()).toBe('third');
+    expect(panels[2]!.hidden).toBe(false);
+    expect(document.activeElement).toBe(tabs[2]);
+    tabs[2]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(host.selected()).toBe('first');
+    tabs[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(host.selected()).toBe('third');
+    tabs[2]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(host.selected()).toBe('first');
+    tabs[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(host.selected()).toBe('third');
+  });
+
+  it('keeps selection controlled by the parent and can refocus the selected tab after cancellation', () => {
+    const tabsFixture = TestBed.createComponent(MultipleTabsHostComponent);
+    tabsFixture.detectChanges();
+    const buttons = tabsFixture.nativeElement.querySelectorAll('[role="tab"]') as NodeListOf<HTMLButtonElement>;
+    buttons[1]!.click();
+    tabsFixture.detectChanges();
+    expect(buttons[0]!.getAttribute('aria-selected')).toBe('true');
+    const tabsComponent = tabsFixture.debugElement.children[0]!.componentInstance as Tabs<TestTab>;
+    tabsComponent.focusSelected();
+    expect(document.activeElement).toBe(buttons[0]);
   });
 });

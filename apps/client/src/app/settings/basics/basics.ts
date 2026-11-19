@@ -35,6 +35,8 @@ export class SettingsBasics implements OnInit {
     language: computed(() => this.ngxSignalTranslate.translate('Language')),
     theme: computed(() => this.ngxSignalTranslate.translate('Theme')),
     animatedBackground: computed(() => this.ngxSignalTranslate.translate('AnimatedBackground')),
+    backgroundAnimation: computed(() => this.ngxSignalTranslate.translate('BackgroundAnimation')),
+    backgroundAnimationHint: computed(() => this.ngxSignalTranslate.translate('Message.BackgroundAnimation')),
     messageAnimatedBackground: computed(() => this.ngxSignalTranslate.translate('Message.AnimatedBackground')),
     refreshBackgroundImages: computed(() => this.ngxSignalTranslate.translate('RefreshBackgroundImages')),
     messageStorageSettings: computed(() => this.ngxSignalTranslate.translate('Message.StorageSettings')),
@@ -48,6 +50,7 @@ export class SettingsBasics implements OnInit {
     sensitiveDataStorage: 'local',
     clearLocalStorageAfterLogout: false,
     animatedBackground: true,
+    backgroundAnimation: true,
     theme: 'system',
     language: 'en',
   });
@@ -66,6 +69,7 @@ export class SettingsBasics implements OnInit {
       theme: this.themeState.state.theme(),
       clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout(),
       animatedBackground: this.mainState.state.animatedBackground(),
+      backgroundAnimation: this.mainState.state.backgroundAnimation(),
       language: this.mainState.state.language(),
     });
   }
@@ -92,6 +96,11 @@ export class SettingsBasics implements OnInit {
 
   protected onRefreshBackgroundImages(): void {
     this.mainState.patchState('backgroundImagesRefreshTrigger', (trigger) => trigger + 1);
+  }
+
+  protected onBackgroundAnimationChange(selectedValue: boolean | null): void {
+    if (typeof selectedValue !== 'boolean') return;
+    this.storeSettings({ backgroundAnimation: selectedValue });
   }
 
   protected onSensitiveDataStorageChange(selectedValue: SelectDataModel['value']): void {

@@ -95,6 +95,7 @@ export class SettingsService {
     if (typeof settings.animatedBackground === 'boolean') {
       this.mainState.setState('animatedBackground', settings.animatedBackground);
     }
+    this.mainState.setState('backgroundAnimation', settings.backgroundAnimation ?? true);
 
     const language = parseAllowedValue(settings.language ?? null, LANGUAGES);
     if (language) {
@@ -149,6 +150,7 @@ export class SettingsService {
     this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout);
     this.mainState.setState('animatedBackground', formData.animatedBackground);
+    this.mainState.setState('backgroundAnimation', formData.backgroundAnimation);
     this.mainState.setState('language', formData.language);
     this.themeState.setState('theme', formData.theme);
 
@@ -167,6 +169,7 @@ export class SettingsService {
     const userSettings: UserSettingsApiRequestModel = {
       theme: formData.theme,
       animatedBackground: formData.animatedBackground,
+      backgroundAnimation: formData.backgroundAnimation,
       language: formData.language,
     };
 

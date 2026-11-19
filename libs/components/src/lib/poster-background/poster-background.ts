@@ -34,6 +34,8 @@ import { PosterBackgroundImagesModel } from './poster-background-model';
   styleUrl: './poster-background.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    'data-test-id': 'poster-background',
+    '[class.static-background]': '!animated()',
     '[style.--window-height]': 'windowHeight() + "px"',
     '[style.--image-width]': 'imageWidth + "px"',
     '[style.--image-height]': 'imageHeight + "px"',
@@ -56,6 +58,7 @@ export class PosterBackground {
     return window.visualViewport?.width ?? window.innerWidth;
   }
   public readonly refreshTrigger = input(0);
+  public readonly animated = input(true);
   protected readonly images = signal<PosterBackgroundImagesModel>([]);
   protected readonly imageWidth = IMAGE_WIDTH;
   protected readonly imageHeight = IMAGE_HEIGHT;

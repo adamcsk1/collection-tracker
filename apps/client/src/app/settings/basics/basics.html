@@ -24,6 +24,14 @@
     (valueChange)="onAnimatedBackgroundChange($event)"
   />
   <div>
+    <libc-checkbox
+      data-test-id="settings-background-animation"
+      [value]="settingsModel().backgroundAnimation"
+      [disabled]="!settingsModel().animatedBackground"
+      [label]="translations.backgroundAnimation()"
+      [hint]="translations.backgroundAnimationHint()"
+      (valueChange)="onBackgroundAnimationChange($event)"
+    />
     <button
       data-test-id="settings-refresh-background-images"
       type="button"

@@ -11,6 +11,7 @@ import { CollectionOwnerDefaultModel } from '@shared/models/api-model';
 export interface MainState {
   clearLocalStorageAfterLogout: boolean;
   animatedBackground: boolean;
+  backgroundAnimation: boolean;
   sensitiveDataStorage: 'local' | 'session';
   language: LanguageModel;
   aiAvailable: boolean;
@@ -23,6 +24,7 @@ export interface MainState {
 export const initialMainState: MainState = {
   clearLocalStorageAfterLogout: false,
   animatedBackground: true,
+  backgroundAnimation: true,
   sensitiveDataStorage: 'local',
   language: 'en',
   aiAvailable: false,

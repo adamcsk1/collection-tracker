@@ -38,6 +38,56 @@ describe('ApiService', () => {
     httpMock.verify();
   });
 
+  it.each([
+    { available: true, reason: 'available' },
+    { available: false, reason: 'not-configured' },
+    { available: false, reason: 'unsupported-model' },
+  ])('loads and unwraps photo import availability %j', async (availability) => {
+    const promise = lastValueFrom(service.getPhotoImportAvailability());
+
+    const request = httpMock.expectOne('https://api.test/ai/vision/availability');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: availability });
+
+    await expect(promise).resolves.toEqual(availability);
+  });
+
+  it('posts the selected media type and photo and unwraps recognized titles', async () => {
+    const body = { contentType: 'book' as const, imageBase64: 'encoded-photo' };
+    const result = { titles: [{ title: 'Dune', year: '1965', contributor: 'Frank Herbert' }] };
+    const promise = lastValueFrom(service.recognizePhoto(body));
+
+    const request = httpMock.expectOne('https://api.test/ai/vision/recognize');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(body);
+    request.flush({ data: result });
+
+    await expect(promise).resolves.toEqual(result);
+  });
+
+  it('propagates photo availability failures without a global alert', async () => {
+    const promise = lastValueFrom(service.getPhotoImportAvailability());
+    const error = { detail: 'Vision unavailable' };
+    const request = httpMock.expectOne('https://api.test/ai/vision/availability');
+    request.flush(error, { status: 503, statusText: 'Service Unavailable' });
+
+    await expect(promise).rejects.toMatchObject({ status: 503, error });
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it.each([400, 413, 429, 502, 503, 504])(
+    'propagates photo recognition status %s for inline errors without a global alert',
+    async (status) => {
+      const promise = lastValueFrom(service.recognizePhoto({ contentType: 'movie', imageBase64: 'photo' }));
+      const error = { detail: 'Recognition failed' };
+      const request = httpMock.expectOne('https://api.test/ai/vision/recognize');
+      request.flush(error, { status, statusText: 'Recognition Error' });
+
+      await expect(promise).rejects.toMatchObject({ status, error });
+      expect(alertSpy).not.toHaveBeenCalled();
+    }
+  );
+
   it('sends logout request', async () => {
     const promise = lastValueFrom(service.logout());
 
@@ -166,6 +216,37 @@ describe('ApiService', () => {
     createRequest.flush({ data: { item } });
 
     await expect(promise).resolves.toEqual({ item });
+  });
+
+  it('forwards create scope and suppresses the global alert for inline errors', async () => {
+    const item = {
+      image: '',
+      title: 'Dune',
+      genre: [],
+      IMDbId: 'tt123',
+      externalProvider: 'omdb' as const,
+      externalItemId: 'tt123',
+      tags: [],
+      year: null,
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'movie' as const,
+      favorite: false,
+    };
+    const promise = lastValueFrom(service.create(item, 'shared-owner', 'library', { suppressErrorAlert: true }));
+    const error = { detail: 'Item already exists' };
+
+    const request = httpMock.expectOne('https://api.test/collection-items');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ ...item, targetOwnerShareCode: 'shared-owner', listType: 'library' });
+    request.flush(error, { status: 409, statusText: 'Conflict' });
+
+    await expect(promise).rejects.toMatchObject({ status: 409, error });
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 
   it('checks collection item existence by external identity', async () => {
@@ -531,6 +612,42 @@ describe('ApiService', () => {
     itemRequest.flush({ data: { provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' } });
 
     await expect(promise).resolves.toEqual({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
+  });
+
+  it.each([false, true])('propagates metadata item errors with suppressErrorAlert %s', async (suppressErrorAlert) => {
+    const promise = lastValueFrom(
+      service.getExternalMetadataItem(
+        { externalIdentitySource: 'omdb', externalIdentityId: 'tt123' },
+        suppressErrorAlert ? { suppressErrorAlert: true } : undefined
+      )
+    );
+    const error = { detail: 'Metadata item unavailable' };
+    const request = httpMock.expectOne(
+      'https://api.test/external-metadata/items?externalIdentitySource=omdb&externalIdentityId=tt123'
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush(error, { status: 502, statusText: 'Bad Gateway' });
+
+    await expect(promise).rejects.toMatchObject({ status: 502, error });
+    if (suppressErrorAlert) expect(alertSpy).not.toHaveBeenCalled();
+    else expect(alertSpy).toHaveBeenCalledExactlyOnceWith(error.detail);
+  });
+
+  it.each([false, true])('propagates metadata search errors with suppressErrorAlert %s', async (suppressErrorAlert) => {
+    const promise = lastValueFrom(
+      service.searchExternalMetadata(
+        { s: 'Dune', provider: 'openlibrary' },
+        suppressErrorAlert ? { suppressErrorAlert: true } : undefined
+      )
+    );
+    const error = { detail: 'Metadata search unavailable' };
+    const request = httpMock.expectOne('https://api.test/external-metadata/search?s=Dune&provider=openlibrary');
+    expect(request.request.method).toBe('GET');
+    request.flush(error, { status: 503, statusText: 'Service Unavailable' });
+
+    await expect(promise).rejects.toMatchObject({ status: 503, error });
+    if (suppressErrorAlert) expect(alertSpy).not.toHaveBeenCalled();
+    else expect(alertSpy).toHaveBeenCalledExactlyOnceWith(error.detail);
   });
 
   it('encodes external metadata search text in query params', async () => {

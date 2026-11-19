@@ -47,6 +47,14 @@ export const createSettingsPage = (page: Page) => ({
   getThemeSelect: () => page.getByTestId('settings-theme').locator('select'),
   getAnimatedBackgroundCheckbox: () =>
     page.getByTestId('settings-animated-background').locator('input[type="checkbox"]'),
+  getBackgroundAnimationCheckbox: () =>
+    page.getByTestId('settings-background-animation').locator('input[type="checkbox"]'),
+  getRefreshBackgroundImagesButton: () => page.getByTestId('settings-refresh-background-images'),
+  getPosterBackground: () => page.getByTestId('poster-background'),
+  getPosterBackgroundImages: () => page.getByTestId('poster-background').getByTestId('poster-background-image'),
+  reloadBasics: async () => {
+    await page.reload();
+  },
   getAppModeSelect: () => page.getByTestId('settings-app-mode').locator('select'),
   getSettingsLockCheckbox: () => page.getByTestId('settings-settings-lock').locator('input[type="checkbox"]'),
   getSensitiveDataStorageSelect: () => page.getByTestId('settings-sensitive-data-storage').locator('select'),

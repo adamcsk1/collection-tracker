@@ -22,6 +22,13 @@ Collection pages use signed cursor pagination with a maximum limit of `100` and 
 
 ## Docker Deployment Environment Variables
 
+Photo batch import uses optional `ollama-vision.config.json` in the active server data folder, separate from text-search
+Ollama configuration. The example is `apps/server/scripts/ollama-vision.config.json`; it is copied manually to opt in.
+Authenticated `/api/v1/ai/vision/availability` reports independent model readiness and
+`POST /api/v1/ai/vision/recognize` recognizes one photo for one fixed media type. Photos are transient, limited to 10 MiB
+and 50 megapixels, decoded and sanitized with Sharp. One inference runs at a time with a 180-second timeout. The client
+reviews existing metadata-provider matches and creates items through the normal collection API. See `docs/photo-import.md`.
+
 | Variable               | Default                         | Description                                                                                                        |
 | ---------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `BASE_PATH`            | _(empty)_                       | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.        |

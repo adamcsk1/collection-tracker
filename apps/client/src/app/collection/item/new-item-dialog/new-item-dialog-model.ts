@@ -1,6 +1,6 @@
 import { CollectionListTypeModel } from '@shared/models/api-model';
 
-export type NewItemMode = 'search' | 'manual';
+export type NewItemMode = 'search' | 'manual' | 'photos';
 
 export interface NewItemSearchModel {
   searchText: string;

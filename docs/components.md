@@ -20,7 +20,7 @@ Source: [`libs/components`](../libs/components)
 - `reveal-label`: touch-hold behavior for icon buttons whose labels expand on fine pointers
 - `select`: typed select component
 - `spinner-loading`: global spinner and store
-- `tabs`: accessible two-option tabs with named content projection
+- `tabs`: accessible two- or three-option tabs with named content projection
 - `textarea`: textarea control with shared styling
 - `tooltip`: reusable presentation component for consumer-controlled tooltip triggers and positioning
 - `toast`: toast component and store
@@ -61,12 +61,14 @@ alternatives. Destructive actions have a separate divider without changing their
 
 ### Tabs
 
-`libc-tabs` renders exactly two tab options supplied through the required `options` input and exposes selection through the
-`selected` model. Consumers provide a translated `ariaLabel`, a stable `idPrefix`, and content through the
-`tabs-first-content` and `tabs-second-content` projection slots.
+`libc-tabs` renders two or three tab options supplied through the required `options` input. Selection is controlled by the
+parent through `selected` and `selectedChange`, allowing consumers to confirm or reject a change before committing it.
+Consumers provide a translated `ariaLabel`, a stable `idPrefix`, and content through `tabs-first-content`,
+`tabs-second-content`, and the optional `tabs-third-content` projection slots. `focusSelected()` restores focus after a
+cancelled change.
 
 The component owns the tab list, tab panels, ARIA relationships, roving tab index, and Left/Right/Home/End keyboard
-navigation. Both projected panels remain instantiated so local form state survives selection changes; the inactive panel
+navigation, skipping disabled options. Projected panels remain instantiated so local form state survives selection changes; the inactive panel
 uses `hidden` to leave the accessibility tree and keyboard order.
 
 ## Important Paths

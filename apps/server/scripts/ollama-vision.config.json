@@ -1,0 +1,10 @@
+{
+  "host": "http://127.0.0.1:11434",
+  "model": "gemma3:4b",
+  "options": {
+    "temperature": 0,
+    "num_ctx": 8192,
+    "num_predict": 4096
+  },
+  "keep_alive": "5m"
+}

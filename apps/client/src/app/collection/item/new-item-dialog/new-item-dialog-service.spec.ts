@@ -259,6 +259,51 @@ describe('NewItemDialogService', () => {
     expect(externalMetadata.getProviderReference).toHaveBeenCalledWith('omdb/tt123');
   });
 
+  it('keeps metadata defaults separate from user tags, rating, and tracking progress', async () => {
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(
+        null,
+        buildSelectedContent({
+          provider: 'openlibrary',
+          providerItemId: '9780441172719',
+          externalIds: [{ source: 'isbn', id: '9780441172719' }],
+          contentType: 'book',
+          year: ' N/A ',
+          ratings: [],
+        })
+      )
+    );
+    api.create.mockReturnValue(createResponse({ title: 'Title', listType: 'tracking' }));
+
+    await firstValueFrom(
+      service.save('openlibrary/9780441172719', 8.5, '#science fiction', null, {
+        listType: 'tracking',
+        targetOwnerShareCode: 'book-owner',
+        progressCurrent: 20,
+        progressTotal: 300,
+      })
+    );
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: 'book',
+        IMDbId: undefined,
+        externalProvider: 'openlibrary',
+        externalItemId: '9780441172719',
+        externalIds: [{ source: 'isbn', id: '9780441172719' }],
+        year: null,
+        rate: '',
+        tags: ['#science', 'fiction'],
+        userRate: 8.5,
+        favorite: false,
+        progressCurrent: 20,
+        progressTotal: 300,
+      }),
+      'book-owner',
+      'tracking'
+    );
+  });
+
   it('save persists selected content and closes when requested', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(

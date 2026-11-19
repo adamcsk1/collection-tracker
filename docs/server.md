@@ -85,6 +85,10 @@ Unsupported `type` values return an RFC 9457 `400 Bad Request` response instead 
 
 ## Data Layout
 
+- Optional `ollama-vision.config.json` configures photo recognition independently from text search and embeddings.
+  Authenticated `GET /ai/vision/availability` reports readiness and `POST /ai/vision/recognize` extracts title suggestions.
+  Missing or invalid vision configuration never prevents startup. See [Photo import](./photo-import.md).
+
 - `database/collection-tracker.sqlite`
 - `ollama.config.json` — Ollama host, model, embedding model, optional root-level `keep_alive`, generate options, optional `batchSize`, optional `parallelRequests`, and optional `semanticCandidateLimit` for AI search. Defaults favor a local GPU desktop (`batchSize: 16`, `parallelRequests: 2`, `semanticCandidateLimit: 120`, `num_ctx: 16384`). Pure status queries such as “unfinished series” on tracking (or favorites on any list) resolve from derived item fields without calling Ollama; unfinished/completed pre-filters apply only on the tracking list so thematic library prompts are not emptied.
 - Provider replacements are configured on the [metadata provider](./metadata-provider.md), not in the server data folder.

@@ -24,6 +24,7 @@ const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel =>
   sensitiveDataStorage: 'local',
   clearLocalStorageAfterLogout: false,
   animatedBackground: true,
+  backgroundAnimation: true,
   language: 'en',
   theme: 'dark',
   ...overrides,
@@ -94,6 +95,7 @@ describe('SettingsService', () => {
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
       theme: 'dark',
       animatedBackground: true,
+      backgroundAnimation: true,
       language: 'en',
     });
     expect(translate.setLanguage).toHaveBeenCalledWith('en');
@@ -112,6 +114,7 @@ describe('SettingsService', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
+      backgroundAnimation: true,
     });
   });
 
@@ -148,7 +151,40 @@ describe('SettingsService', () => {
     expect(translate.setLanguage).not.toHaveBeenCalled();
     expect(mainState.state.language()).toBe('en');
     expect(mainState.state.animatedBackground()).toBe(true);
+    expect(mainState.state.backgroundAnimation()).toBe(true);
     expect(api.getAiAvailable).toHaveBeenCalled();
+  });
+
+  it('defaults missing animation settings to true after another user disabled motion', () => {
+    mainState.setState('backgroundAnimation', false);
+    api.getUserSettings.mockReturnValue(of({ animatedBackground: false }));
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.backgroundAnimation()).toBe(true);
+    expect(mainState.state.animatedBackground()).toBe(false);
+  });
+
+  it.each([true, false])('preloads background animation %s independently of visibility', (backgroundAnimation) => {
+    api.getUserSettings.mockReturnValue(of({ animatedBackground: false, backgroundAnimation }));
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.backgroundAnimation()).toBe(backgroundAnimation);
+    expect(mainState.state.animatedBackground()).toBe(false);
+  });
+
+  it('stores a visible static background in state and the API', () => {
+    service.storeFormData(buildFormData({ backgroundAnimation: false }));
+
+    expect(mainState.state.animatedBackground()).toBe(true);
+    expect(mainState.state.backgroundAnimation()).toBe(false);
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
+      theme: 'dark',
+      animatedBackground: true,
+      backgroundAnimation: false,
+      language: 'en',
+    });
   });
 
   it('does not preload shares while a share mutation is pending', () => {

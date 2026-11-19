@@ -8,7 +8,9 @@ import {
   input,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, max, min, required, validate } from '@angular/forms/signals';
 import { Autocomplete } from '@components/autocomplete/autocomplete';
@@ -44,7 +46,7 @@ import {
 import { mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
-import { ListItemCard } from '../../list/list-item-card/list-item-card';
+import { MetadataResults } from './metadata-results/metadata-results';
 import { getProxyImageUrl } from '@shared/utils/proxy-image-url-util';
 import { ItemFormModel } from '../item-form/item-form-model';
 import {
@@ -60,6 +62,7 @@ import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item
 import { NewItemDialogService } from './new-item-dialog-service';
 import { NewItemMode, NewItemSearchModel, SaveMode, SaveOptions } from './new-item-dialog-model';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
+import { PhotoImportDialog } from './photo-import-dialog/photo-import-dialog';
 
 const metadataProviderFor = (contentType: CollectionItemContentTypeModel) => {
   if (contentType === 'book') return 'openlibrary';
@@ -107,7 +110,9 @@ const defaultManualModel = (): ItemFormModel => ({
     DialogShell,
     Autocomplete,
     Checkbox,
-    ListItemCard,
+    PhotoImportDialog,
+    NgTemplateOutlet,
+    MetadataResults,
     Textarea,
     Tabs,
     GenreSuggestionsProvider,
@@ -126,8 +131,18 @@ export class NewItemDialog {
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
   private readonly confirm = inject(ConfirmService);
+  protected readonly photoImport = viewChild(PhotoImportDialog);
+  private readonly entryTabs = viewChild<Tabs<NewItemMode>>(Tabs);
+  protected readonly photoContentType = signal<CollectionItemContentTypeModel>('movie');
+  protected readonly photoTargetOwnerShareCode = signal<string | null>(null);
+  protected readonly photoDestinationLabel = computed(
+    () =>
+      this.photoLibraryOptions().find((option) => option.value === (this.photoTargetOwnerShareCode() ?? ''))?.text ?? ''
+  );
   public readonly canDiscard = async (): Promise<boolean> => {
-    if (!this.searchForm().dirty() && !this.manualForm().dirty()) return true;
+    if (this.photoImport()?.busy()) return false;
+    if (!this.searchForm().dirty() && !this.manualForm().dirty() && !this.photoImport()?.hasUnfinishedWork())
+      return true;
     return firstValueFrom(this.confirm.open(this.ngxSignalTranslate.translate('Confirm.DiscardChanges')));
   };
   private readonly apiState = inject(apiStateToken);
@@ -142,6 +157,7 @@ export class NewItemDialog {
   private readonly knownSearchIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownSearchIMDbIdExists);
   private readonly knownManualIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownManualIMDbIdExists);
   protected readonly translations = {
+    photoImport: computed(() => this.ngxSignalTranslate.translate('PhotoImport.Open')),
     moreDetails: computed(() => this.ngxSignalTranslate.translate('MoreDetails')),
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
     titleNewUpNextItem: computed(() => this.ngxSignalTranslate.translate('Title.NewUpNextItem')),
@@ -228,13 +244,16 @@ export class NewItemDialog {
     myLibrary: computed(() => this.ngxSignalTranslate.translate('MyLibrary')),
     sharedLibrary: computed(() => this.ngxSignalTranslate.translate('SharedLibrary')),
   };
-  protected readonly modeTabs = computed<readonly [TabOption<NewItemMode>, TabOption<NewItemMode>]>(() => [
+  protected readonly modeTabs = computed<
+    readonly [TabOption<NewItemMode>, TabOption<NewItemMode>, TabOption<NewItemMode>]
+  >(() => [
     { value: 'search', label: this.translations.search(), dataTestId: 'new-item-search-mode' },
     {
       value: 'manual',
       label: this.translations.manual(),
       dataTestId: 'new-item-manual-mode',
     },
+    { value: 'photos', label: this.translations.photoImport(), dataTestId: 'new-item-from-photos' },
   ]);
   protected readonly submitMode = signal<SaveMode | null>(null);
   protected readonly mode = signal<NewItemMode>('search');
@@ -545,17 +564,20 @@ export class NewItemDialog {
     this.mode() === 'manual' ? this.manualForm.contentType().value() : this.selectedAddContentType()
   );
   protected readonly showFinishedCheckbox = computed(() => {
+    if (this.mode() === 'photos') return false;
     if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().tracking) return false;
     if (this.activeAddContentType() !== 'movie') return false;
     return this.mode() === 'manual' || !!this.searchForm.selectedExternalReference().value();
   });
   protected readonly showCopyToTrackingCheckbox = computed(() => {
+    if (this.mode() === 'photos') return false;
     if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().tracking) return false;
     if (this.activeAddContentType() !== 'series') return false;
     return this.mode() === 'manual' || !!this.searchForm.selectedExternalReference().value();
   });
-  protected readonly libraryOptions = computed(() => {
-    const contentType = this.activeAddContentType();
+  protected readonly libraryOptions = computed(() => this.getLibraryOptions(this.activeAddContentType()));
+  protected readonly photoLibraryOptions = computed(() => this.getLibraryOptions(this.photoContentType()));
+  private getLibraryOptions(contentType: CollectionItemContentTypeModel) {
     const listType = this.listType();
     const options = [{ text: this.translations.myLibrary(), value: '' }];
     for (const share of this.sharesState.state.incoming()) {
@@ -570,7 +592,7 @@ export class NewItemDialog {
       }
     }
     return options;
-  });
+  }
   protected readonly showLibrarySelect = computed(() => this.libraryOptions().length > 1);
   protected readonly selectedExternalReference = computed(() => this.searchForm.selectedExternalReference().value());
   private readonly defaultTargetOwnerShareCode = computed(() => {
@@ -889,8 +911,16 @@ export class NewItemDialog {
     }
   }
 
-  protected onModeChange(newMode: NewItemMode): void {
+  protected async onModeChange(newMode: NewItemMode): Promise<void> {
     if (this.mode() === newMode) return;
+    if (this.mode() === 'photos' && !(await this.photoImport()?.canClose())) {
+      this.entryTabs()?.focusSelected();
+      return;
+    }
+    if (newMode === 'photos') {
+      this.photoContentType.set(this.activeAddContentType());
+      this.photoTargetOwnerShareCode.set(this.searchForm.targetOwnerShareCode().value());
+    }
     if (newMode !== 'search') {
       this.service.search('', metadataProviderFor(this.selectedAddContentType()));
     }
@@ -910,23 +940,17 @@ export class NewItemDialog {
     );
   }
 
-  protected getMatchedContentImageUrl(content: ExternalMetadataSelectDataModel): string {
-    return getProxyImageUrl(this.apiState.state.apiUrl(), content.poster ?? '', 'card');
-  }
-
-  protected getMatchedContentMeta(content: ExternalMetadataSelectDataModel): string | null {
-    const details = [content.year, content.actors].filter(Boolean).join(' · ');
-    if (content.contentType && details) return `(${content.contentType}) ${details}`;
-    if (content.contentType) return `(${content.contentType})`;
-    return details || null;
-  }
-
-  protected isMatchedContentSelected(content: ExternalMetadataSelectDataModel): boolean {
-    return `${content.value}` === this.selectedExternalReference();
-  }
-
   protected onMoreDetailsToggle(event: Event): void {
     this.moreDetailsOpen.set((event.target as HTMLDetailsElement).open);
+  }
+
+  protected onPhotoContentTypeChange(value: string | number | boolean | null): void {
+    const option = this.contentTypeOptions().find((option) => option.value === value);
+    if (!option || this.photoImport()?.batchStarted()) return;
+    this.photoContentType.set(option.value);
+    if (!this.photoLibraryOptions().some((owner) => owner.value === (this.photoTargetOwnerShareCode() ?? ''))) {
+      this.photoTargetOwnerShareCode.set(null);
+    }
   }
 
   protected onSelectMatchedContent(content: ExternalMetadataSelectDataModel): void {
@@ -935,6 +959,7 @@ export class NewItemDialog {
   }
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {
+    if (this.mode() === 'photos') return;
     const options: SaveOptions = {};
     const targetOwnerShareCode = this.searchForm.targetOwnerShareCode().value() || undefined;
     if (targetOwnerShareCode) options.targetOwnerShareCode = targetOwnerShareCode;

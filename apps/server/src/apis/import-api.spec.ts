@@ -535,6 +535,7 @@ describe('import-api', () => {
         userSettings: {
           theme: 'dark',
           animatedBackground: false,
+          backgroundAnimation: false,
           language: 'en',
           collectionFeaturePreferences: {
             wishlist: false,
@@ -659,13 +660,14 @@ describe('import-api', () => {
     expect(
       db
         .prepare(
-          'SELECT theme, animated_background, language, collection_feature_preferences FROM user_settings WHERE username_hash = ?'
+          'SELECT theme, animated_background, background_animation, language, collection_feature_preferences FROM user_settings WHERE username_hash = ?'
         )
         .get('user')
     ).toEqual(
       expect.objectContaining({
         theme: 'dark',
         animated_background: 0,
+        background_animation: 0,
         language: 'en',
       })
     );
@@ -1287,6 +1289,9 @@ describe('import-api', () => {
     ['theme type', { theme: 1 }],
     ['theme value', { theme: 'sepia' }],
     ['animated background', { animatedBackground: 'false' }],
+    ['background animation string', { backgroundAnimation: 'false' }],
+    ['background animation number', { backgroundAnimation: 0 }],
+    ['background animation null', { backgroundAnimation: null }],
     ['language type', { language: 1 }],
     ['language value', { language: 'xx' }],
     ['default owners type', { defaultCollectionOwners: null }],

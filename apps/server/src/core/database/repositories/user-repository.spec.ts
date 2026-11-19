@@ -7,7 +7,14 @@ const { hashTextMock } = vi.hoisted(() => ({
 
 vi.mock('../../crypto', () => ({ hashText: hashTextMock }));
 
-import { deleteUser, findUserByShareCode, getUserShareCode, hasAccessToken } from './user-repository';
+import {
+  deleteUser,
+  findUserByShareCode,
+  findUserSettings,
+  getUserShareCode,
+  hasAccessToken,
+  upsertUserSettings,
+} from './user-repository';
 
 describe('user-repository share codes', () => {
   beforeEach(() => {
@@ -57,5 +64,46 @@ describe('user-repository share codes', () => {
     expect(hasAccessToken(db, 'user', 'known-token')).toBe(true);
     expect(hasAccessToken(db, 'user', 'unknown-token')).toBe(false);
     expect(hasAccessToken(db, 'other-user', 'known-token')).toBe(false);
+  });
+});
+
+describe('user-repository background animation settings', () => {
+  it('omits motion for existing users without an explicit preference', () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, animated_background) VALUES (?, ?)').run('user', 0);
+
+    expect(findUserSettings(db, 'user')).toEqual({ animatedBackground: false });
+  });
+
+  it('persists both animation values independently of visibility on insert and update', () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+
+    upsertUserSettings(db, 'user', { animatedBackground: true, backgroundAnimation: false });
+
+    expect(findUserSettings(db, 'user')).toEqual({ animatedBackground: true, backgroundAnimation: false });
+    expect(db.prepare('SELECT animated_background, background_animation FROM user_settings').get()).toEqual({
+      animated_background: 1,
+      background_animation: 0,
+    });
+
+    upsertUserSettings(db, 'user', { animatedBackground: false, backgroundAnimation: true });
+
+    expect(findUserSettings(db, 'user')).toEqual({ animatedBackground: false, backgroundAnimation: true });
+    expect(db.prepare('SELECT animated_background, background_animation FROM user_settings').get()).toEqual({
+      animated_background: 0,
+      background_animation: 1,
+    });
+  });
+
+  it('stores an omitted motion setting as null', () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+
+    upsertUserSettings(db, 'user', { theme: 'dark' });
+
+    expect(findUserSettings(db, 'user')).toEqual({ theme: 'dark' });
+    expect(db.prepare('SELECT background_animation FROM user_settings').get()).toEqual({ background_animation: null });
   });
 });

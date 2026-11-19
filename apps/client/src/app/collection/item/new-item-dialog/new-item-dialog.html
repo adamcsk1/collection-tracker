@@ -252,8 +252,38 @@
           }
         </form>
       </ng-container>
+      <ng-container tabs-third-content>
+        @if (mode() === 'photos') {
+          <div class="photo-setup">
+            @if (showContentTypeSelect()) {
+              <libc-select
+                data-test-id="photo-import-content-type"
+                [label]="translations.type()"
+                [options]="contentTypeOptions()"
+                [value]="photoContentType()"
+                [disabled]="photoImport()?.batchStarted() ?? false"
+                (valueChange)="onPhotoContentTypeChange($event)"
+              />
+            }
+            <libc-select
+              data-test-id="photo-import-library"
+              [label]="translations.library()"
+              [options]="photoLibraryOptions()"
+              [value]="photoTargetOwnerShareCode()"
+              [disabled]="photoImport()?.batchStarted() ?? false"
+              (valueChange)="photoTargetOwnerShareCode.set($event === null ? null : '' + $event)"
+            />
+          </div>
+          <ct-photo-import-dialog
+            [contentType]="photoContentType()"
+            [listType]="listType()"
+            [targetOwnerShareCode]="photoTargetOwnerShareCode() || undefined"
+            [destinationLabel]="photoDestinationLabel()"
+          />
+        }
+      </ng-container>
     </libc-tabs>
-    @if (showLibrarySelect()) {
+    @if (mode() !== 'photos' && showLibrarySelect()) {
       <libc-select
         data-test-id="new-item-library"
         [label]="translations.library()"
@@ -262,41 +292,17 @@
       />
     }
     @if (mode() === 'search' && matchedContent().length) {
-      <section
-        class="content-selector"
-        data-test-id="new-item-content-select"
-        [attr.aria-label]="translations.selectedContent()"
-      >
-        <span class="content-selector-label">
-          {{ translations.selectedContent() }}
-          <span>*</span>
-        </span>
-        <div class="content-options" data-test-id="new-item-content-options">
-          @for (content of matchedContent(); track content.value) {
-            <button
-              type="button"
-              class="content-option card card-interactive"
-              data-test-id="new-item-content-option"
-              [class.selected]="isMatchedContentSelected(content)"
-              [attr.aria-pressed]="isMatchedContentSelected(content)"
-              (click)="onSelectMatchedContent(content)"
-            >
-              <ct-list-item-card
-                [imageUrl]="getMatchedContentImageUrl(content)"
-                [title]="content.text"
-                [meta]="getMatchedContentMeta(content)"
-                [interactive]="false"
-                imageTestId="new-item-content-option-image"
-                titleTestId="new-item-content-option-title"
-                metaTestId="new-item-content-option-meta"
-              />
-            </button>
-          }
-        </div>
-        @if (searchFormErrors.selectedExternalReference.knownIMDbId()) {
-          <small class="error" data-test-id="new-item-known-imdb-id-error">{{ knownIdentityError() }}</small>
-        }
-      </section>
+      <ct-metadata-results
+        [options]="matchedContent()"
+        [selectedValue]="selectedExternalReference()"
+        [label]="translations.selectedContent()"
+        [mandatory]="true"
+        testIdPrefix="new-item-content"
+        (selected)="onSelectMatchedContent($event)"
+      />
+      @if (searchFormErrors.selectedExternalReference.knownIMDbId()) {
+        <small class="error" data-test-id="new-item-known-imdb-id-error">{{ knownIdentityError() }}</small>
+      }
     }
     @if (mode() === 'search' && matchedContent().length && !internalListMode()) {
       <libc-input
@@ -365,45 +371,51 @@
       />
     }
   </div>
-  <div dialog-shell-bottom-content class="dialog-action-group">
-    <button
-      class="dialog-action"
-      data-test-id="new-item-save"
-      type="submit"
-      [attr.aria-label]="translations.save()"
-      [title]="translations.save()"
-      [disabled]="form().invalid()"
-      [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
-      (click)="submitMode.set(null)"
-    >
-      <i class="material-icons" aria-hidden="true"> save </i>
-      <span>{{ translations.save() }}</span>
-    </button>
-    <button
-      class="dialog-action"
-      data-test-id="new-item-save-and-new"
-      type="submit"
-      [attr.aria-label]="translations.saveAndNew()"
-      [title]="translations.saveAndNew()"
-      [disabled]="form().invalid()"
-      [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
-      (click)="submitMode.set('new')"
-    >
-      <i class="material-icons" aria-hidden="true"> add </i>
-      <span>{{ translations.saveAndNew() }}</span>
-    </button>
-    <button
-      class="dialog-action dialog-action-primary"
-      data-test-id="new-item-save-and-close"
-      type="submit"
-      [attr.aria-label]="translations.saveAndClose()"
-      [title]="translations.saveAndClose()"
-      [disabled]="form().invalid()"
-      [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
-      (click)="submitMode.set('close')"
-    >
-      <i class="material-icons" aria-hidden="true"> door_back </i>
-      <span>{{ translations.saveAndClose() }}</span>
-    </button>
-  </div>
+  <ng-container dialog-shell-bottom-content>
+    @if (mode() === 'photos') {
+      <ng-container [ngTemplateOutlet]="photoImport()?.actions() ?? null" />
+    } @else {
+      <div class="dialog-action-group">
+        <button
+          class="dialog-action"
+          data-test-id="new-item-save"
+          type="submit"
+          [attr.aria-label]="translations.save()"
+          [title]="translations.save()"
+          [disabled]="form().invalid()"
+          [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
+          (click)="submitMode.set(null)"
+        >
+          <i class="material-icons" aria-hidden="true"> save </i>
+          <span>{{ translations.save() }}</span>
+        </button>
+        <button
+          class="dialog-action"
+          data-test-id="new-item-save-and-new"
+          type="submit"
+          [attr.aria-label]="translations.saveAndNew()"
+          [title]="translations.saveAndNew()"
+          [disabled]="form().invalid()"
+          [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
+          (click)="submitMode.set('new')"
+        >
+          <i class="material-icons" aria-hidden="true"> add </i>
+          <span>{{ translations.saveAndNew() }}</span>
+        </button>
+        <button
+          class="dialog-action dialog-action-primary"
+          data-test-id="new-item-save-and-close"
+          type="submit"
+          [attr.aria-label]="translations.saveAndClose()"
+          [title]="translations.saveAndClose()"
+          [disabled]="form().invalid()"
+          [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
+          (click)="submitMode.set('close')"
+        >
+          <i class="material-icons" aria-hidden="true"> door_back </i>
+          <span>{{ translations.saveAndClose() }}</span>
+        </button>
+      </div>
+    }
+  </ng-container>
 </libc-dialog-shell>

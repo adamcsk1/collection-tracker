@@ -1,4 +1,6 @@
 import type { FastifyInstance } from 'fastify';
+import { register as registerVisionAvailability } from './photo-import-availability-api';
+import { register as registerPhotoRecognition } from './photo-import-recognize-api';
 import { register as registerAccessTokens } from './access-tokens-api';
 import { register as registerAddTrackingItem } from './add-tracking-item-api';
 import { register as registerModify } from './change-api';
@@ -130,6 +132,8 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerProxyImage(app);
   registerProxyAi(app);
   registerProxyAiAvailable(app);
+  registerVisionAvailability(app);
+  registerPhotoRecognition(app);
   registerExport(app);
   registerImportCollectionItems(app);
   registerImport(app);

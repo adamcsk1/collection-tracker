@@ -7,6 +7,7 @@ import type { CollectionOwnerDefaultModel } from '../collection-owner-default-mo
 export interface UserSettingsApiResponseModel {
   theme?: ThemeModel;
   animatedBackground?: boolean;
+  backgroundAnimation?: boolean;
   language?: LanguageModel;
   defaultCollectionOwners?: CollectionOwnerDefaultModel[];
   collectionListDisplayPreferences?: CollectionListDisplayPreferencesModel;

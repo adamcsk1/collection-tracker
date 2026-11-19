@@ -76,6 +76,7 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
       case 'theme':
         return isAllowedTheme(value);
       case 'animatedBackground':
+      case 'backgroundAnimation':
         return isAllowedBoolean(value);
       case 'language':
         return isAllowedLanguage(value);

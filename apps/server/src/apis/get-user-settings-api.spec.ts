@@ -17,8 +17,8 @@ describe('get-user-settings-api', () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare(
-      'INSERT INTO user_settings (username_hash, theme, animated_background, language) VALUES (?, ?, ?, ?)'
-    ).run('user', 'dark', 0, 'en');
+      'INSERT INTO user_settings (username_hash, theme, animated_background, background_animation, language) VALUES (?, ?, ?, ?, ?)'
+    ).run('user', 'dark', 0, 1, 'en');
 
     const { register } = await import('./get-user-settings-api');
     register(app);
@@ -27,8 +27,26 @@ describe('get-user-settings-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       theme: 'dark',
       animatedBackground: false,
+      backgroundAnimation: true,
       language: 'en',
     });
+  });
+
+  it('returns disabled motion for a visible background', async () => {
+    const response = mockResponse();
+    const request = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare(
+      'INSERT INTO user_settings (username_hash, animated_background, background_animation) VALUES (?, ?, ?)'
+    ).run('user', 1, 0);
+
+    const { register } = await import('./get-user-settings-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ animatedBackground: true, backgroundAnimation: false });
   });
 
   it('returns configured exact-scope default collection owners', async () => {

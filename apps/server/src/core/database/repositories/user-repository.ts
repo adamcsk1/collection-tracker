@@ -146,6 +146,7 @@ export const findUserSettings = (
     | {
         theme: string | null;
         animated_background: number | null;
+        background_animation: number | null;
         language: string | null;
         collection_list_display_preferences: string | null;
         collection_feature_preferences: string | null;
@@ -157,6 +158,7 @@ export const findUserSettings = (
   const settings: UserSettingsApiResponseModel = {};
   if (row.theme) settings.theme = row.theme as UserSettingsApiResponseModel['theme'];
   if (row.animated_background !== null) settings.animatedBackground = row.animated_background === 1;
+  if (row.background_animation !== null) settings.backgroundAnimation = row.background_animation === 1;
   if (row.language) settings.language = row.language as UserSettingsApiResponseModel['language'];
   const defaultCollectionOwners = db
     .prepare(
@@ -236,21 +238,23 @@ export const upsertUserSettings = (
   const run = db.transaction(() => {
     db.prepare(
       `INSERT INTO user_settings
-       (username_hash, theme, animated_background, language, collection_list_display_preferences, collection_feature_preferences)
-       VALUES (?, ?, ?, ?, ?, ?)
+       (username_hash, theme, animated_background, language, collection_list_display_preferences, collection_feature_preferences, background_animation)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(username_hash) DO UPDATE SET
          theme = excluded.theme,
          animated_background = excluded.animated_background,
          language = excluded.language,
          collection_list_display_preferences = excluded.collection_list_display_preferences,
-         collection_feature_preferences = excluded.collection_feature_preferences`
+          collection_feature_preferences = excluded.collection_feature_preferences,
+          background_animation = excluded.background_animation`
     ).run(
       usernameHash,
       settings.theme ?? null,
       settings.animatedBackground === undefined ? null : settings.animatedBackground ? 1 : 0,
       settings.language ?? null,
       settings.collectionListDisplayPreferences ? JSON.stringify(settings.collectionListDisplayPreferences) : null,
-      settings.collectionFeaturePreferences ? JSON.stringify(settings.collectionFeaturePreferences) : null
+      settings.collectionFeaturePreferences ? JSON.stringify(settings.collectionFeaturePreferences) : null,
+      settings.backgroundAnimation === undefined ? null : settings.backgroundAnimation ? 1 : 0
     );
 
     db.prepare('DELETE FROM collection_owner_defaults WHERE username_hash = ?').run(usernameHash);

@@ -43,3 +43,15 @@
 >
   <ng-content select="[tabs-second-content]" />
 </div>
+@if (options().length === 3) {
+  <div
+    role="tabpanel"
+    tabindex="0"
+    [id]="panelId(2)"
+    [attr.data-test-id]="panelTestId(2)"
+    [attr.aria-labelledby]="tabId(2)"
+    [hidden]="!isSelected(2)"
+  >
+    <ng-content select="[tabs-third-content]" />
+  </div>
+}
