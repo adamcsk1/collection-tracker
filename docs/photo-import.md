@@ -36,6 +36,8 @@ They do not prevent the application from starting or affect ordinary Add and AI 
 1. Select the media type and destination in Add, then open **From photos**. These choices stay fixed for the batch.
 2. Select up to ten JPEG, PNG or WebP photos and start recognition. Each photo can contain several items of the same type.
 3. Review extracted titles or identifiers and matching provider results. Correct the search text when necessary and select a match or skip.
+   Changed queries search automatically after a 500 ms pause. Empty queries clear matches; failed searches offer **Retry search**.
+   **Resume search** handles rows left unsearched after stopping a batch. Restoring an unsearched or failed-search row searches it again.
 4. Use **Add selected**. Full metadata is fetched through the existing provider service; IMDb IDs, normalized ISBNs and
    MusicBrainz release identities come from metadata, never from an AI guess.
 5. Retry failures. Completed photos are not recognized again; successfully added or existing items are not submitted again.

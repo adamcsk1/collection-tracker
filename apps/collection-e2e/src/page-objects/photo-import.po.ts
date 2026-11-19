@@ -27,6 +27,7 @@ export const createPhotoImportDialog = (page: Page) => {
     getRow,
     getStatus: (index: number) => getRow(index).getByTestId('photo-import-row-status'),
     getSearchInput,
+    getRetrySearchButton: (index: number) => getRow(index).getByTestId('photo-import-retry-search'),
     getMatchButtons,
     getTagsInput: (index: number) => getRow(index).getByTestId('photo-import-tags').locator('input'),
     getUserRateInput: (index: number) => getRow(index).getByTestId('photo-import-user-rate').locator('input'),
@@ -51,7 +52,6 @@ export const createPhotoImportDialog = (page: Page) => {
     },
     searchRow: async (index: number, query: string) => {
       await getSearchInput(index).fill(query);
-      await getRow(index).getByTestId('photo-import-search-button').click();
     },
     toggleSkip: async (index: number) => {
       await getRow(index).getByTestId('photo-import-skip').click();

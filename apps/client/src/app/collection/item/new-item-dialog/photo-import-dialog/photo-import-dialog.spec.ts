@@ -137,7 +137,231 @@ describe('PhotoImportDialog', () => {
 
   afterEach(() => {
     fixture.destroy();
+    vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it('debounces query edits for 500 ms and searches only the latest trimmed value', async () => {
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    api.searchExternalMetadata.mockClear();
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['New'] });
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(300);
+    component['searchModel'].set({ queries: ['  New title  '] });
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(499);
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(api.searchExternalMetadata).toHaveBeenCalledExactlyOnceWith(
+      { s: 'New title', provider: 'omdb' },
+      { suppressErrorAlert: true }
+    );
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(api.searchExternalMetadata).toHaveBeenCalledOnce();
+  });
+
+  it('preserves selection for whitespace-only edits and clears stale matches for empty queries', async () => {
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    component['onSelect'](0, buildMetadata());
+    api.searchExternalMetadata.mockClear();
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['  The Matrix  '] });
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(component['state'].rows()[0].selected).toEqual(buildMetadata());
+    component['searchModel'].set({ queries: ['   '] });
+    fixture.detectChanges();
+    expect(component['state'].rows()[0]).toMatchObject({ selected: null, matches: [], searched: false });
+    expect(component['selectedCount']()).toBe(0);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+  });
+
+  it('clears selection immediately while a changed query is waiting for debounce', async () => {
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    component['onSelect'](0, buildMetadata());
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['Changed title'] });
+    fixture.detectChanges();
+    expect(component['selectedCount']()).toBe(0);
+    expect(component['state'].rows()[0]).toMatchObject({ selected: null, matches: [], searched: false });
+  });
+
+  it('searches edits in multiple rows without dropping a query while another search is busy', async () => {
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'First' }, { title: 'Second' }] }));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    api.searchExternalMetadata.mockClear();
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['New first', 'New second'] });
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.searchExternalMetadata.mock.calls.map(([query]) => query.s)).toEqual(['New first', 'New second']);
+  });
+
+  it.each(['success', 'error'])('ignores a stale search %s after the query changes', async (result) => {
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    const stale = new Subject<{ results: ExternalMetadataItemModel[] }>();
+    api.searchExternalMetadata.mockReturnValueOnce(stale);
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['Old edit'] });
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(500);
+    component['searchModel'].set({ queries: ['Latest edit'] });
+    fixture.detectChanges();
+    if (result === 'success') stale.next({ results: [buildMetadata({ title: 'Stale result' })] });
+    else stale.error(new Error('Stale failure'));
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+    expect(component['state'].rows()[0]).toMatchObject({ status: 'ready', matches: [], selected: null });
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.searchExternalMetadata).toHaveBeenLastCalledWith(
+      { s: 'Latest edit', provider: 'omdb' },
+      { suppressErrorAlert: true }
+    );
+    expect(component['state'].rows()[0].matches).toEqual([buildMetadata()]);
+  });
+
+  it('cancels a pending debounced search on destruction', async () => {
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    api.searchExternalMetadata.mockClear();
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['New title'] });
+    fixture.detectChanges();
+    fixture.destroy();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+  });
+
+  it('stops queued row searches after the current request finishes', async () => {
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'First' }, { title: 'Second' }] }));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    const response = new Subject<{ results: ExternalMetadataItemModel[] }>();
+    api.searchExternalMetadata.mockClear().mockReturnValueOnce(response);
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['New first', 'New second'] });
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(500);
+    component['requestStop']();
+    response.next({ results: [] });
+    await vi.advanceTimersByTimeAsync(1000);
+    fixture.detectChanges();
+    expect(api.searchExternalMetadata).toHaveBeenCalledOnce();
+  });
+
+  it('shows Retry only for failed searches and retries the same value without another edit', async () => {
+    await renderTemplate();
+    api.searchExternalMetadata.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test-id="photo-import-search-button"]')).toBeNull();
+    const retry = host.querySelector<HTMLButtonElement>('[data-test-id="photo-import-retry-search"]');
+    expect(retry?.textContent).toContain('PhotoImport.RetrySearch');
+    retry!.click();
+    await fixture.whenStable();
+    expect(api.searchExternalMetadata).toHaveBeenCalledTimes(2);
+    expect(host.querySelector('[data-test-id="photo-import-retry-search"]')).toBeNull();
+  });
+
+  it('searches a restored row when it was skipped before its debounce elapsed', async () => {
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    await fixture.whenStable();
+    api.searchExternalMetadata.mockClear();
+    vi.useFakeTimers();
+    component['searchModel'].set({ queries: ['New title'] });
+    fixture.detectChanges();
+    component['onSkip'](0);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+    component['onSkip'](0);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(api.searchExternalMetadata).toHaveBeenCalledExactlyOnceWith(
+      { s: 'New title', provider: 'omdb' },
+      { suppressErrorAlert: true }
+    );
+    expect(component['state'].rows()[0]).toMatchObject({ status: 'ready', matches: [buildMetadata()] });
+  });
+
+  it('retries a failed search when its row is restored without changing the query', async () => {
+    api.searchExternalMetadata.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    await component['readPhotos']();
+    component['onSkip'](0);
+    component['onSkip'](0);
+    await fixture.whenStable();
+    expect(api.searchExternalMetadata).toHaveBeenCalledTimes(2);
+    expect(component['state'].rows()[0]).toMatchObject({ status: 'ready', matches: [buildMetadata()] });
+  });
+
+  it('offers Resume search for recognized rows left unsearched after Stop', async () => {
+    await renderTemplate();
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'First' }, { title: 'Second' }] }));
+    const response = new Subject<{ results: ExternalMetadataItemModel[] }>();
+    api.searchExternalMetadata.mockReturnValueOnce(response);
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    const reading = component['readPhotos']();
+    await vi.waitFor(() => expect(api.searchExternalMetadata).toHaveBeenCalledOnce());
+    component['requestStop']();
+    response.next({ results: [buildMetadata()] });
+    await reading;
+    await fixture.whenStable();
+    const resume = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-test-id="photo-import-retry-search"]'
+    );
+    expect(resume?.textContent).toContain('PhotoImport.ResumeSearch');
+    resume!.click();
+    await fixture.whenStable();
+    expect(api.searchExternalMetadata).toHaveBeenLastCalledWith(
+      { s: 'Second', provider: 'omdb' },
+      { suppressErrorAlert: true }
+    );
+    expect(component['state'].rows()[1]).toMatchObject({ searched: true, matches: [buildMetadata()] });
+  });
+
+  it('resumes title fallback when Stop interrupted an unmatched identifier lookup', async () => {
+    await renderTemplate();
+    api.recognizePhoto.mockReturnValue(of({ titles: [{ title: 'The Matrix', identifier: 'tt0133093' }] }));
+    const lookup = new Subject<ExternalMetadataItemModel>();
+    api.getExternalMetadataItem
+      .mockReturnValueOnce(lookup)
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 404 })));
+    await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
+    const reading = component['readPhotos']();
+    await vi.waitFor(() => expect(api.getExternalMetadataItem).toHaveBeenCalledOnce());
+    component['requestStop']();
+    lookup.error(new HttpErrorResponse({ status: 404 }));
+    await reading;
+    await fixture.whenStable();
+    expect(api.searchExternalMetadata).not.toHaveBeenCalled();
+    const resume = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-test-id="photo-import-retry-search"]'
+    );
+    expect(resume?.textContent).toContain('PhotoImport.ResumeSearch');
+    resume!.click();
+    await fixture.whenStable();
+    expect(api.searchExternalMetadata).toHaveBeenCalledExactlyOnceWith(
+      { s: 'The Matrix', provider: 'omdb' },
+      { suppressErrorAlert: true }
+    );
+    expect(component['state'].rows()[0]).toMatchObject({ searched: true, matches: [buildMetadata()] });
   });
 
   it.each<[CollectionItemContentTypeModel, ExternalMetadataProviderNameModel, string]>([

@@ -3,11 +3,13 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   input,
   OnInit,
   signal,
   TemplateRef,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { applyEach, disabled, form, FormField, max, min, validate } from '@angular/forms/signals';
@@ -54,6 +56,9 @@ export class PhotoImportDialog implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(photoImportStateToken);
   private readonly previewUrls: string[] = [];
+  private readonly searchQueries = new Map<string, string>();
+  protected readonly pendingSearches = signal<readonly string[]>([]);
+  private searchTimer: ReturnType<typeof setTimeout> | undefined;
   private destroyed = false;
   public readonly contentType = input.required<CollectionItemContentTypeModel>();
   public readonly listType = input.required<CollectionListTypeModel>();
@@ -104,6 +109,8 @@ export class PhotoImportDialog implements OnInit {
     invalidPhotos: computed(() => this.ngxSignalTranslate.translate('PhotoImport.InvalidPhotos')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     searchHint: computed(() => this.ngxSignalTranslate.translate('PhotoImport.SearchHint')),
+    retrySearch: computed(() => this.ngxSignalTranslate.translate('PhotoImport.RetrySearch')),
+    resumeSearch: computed(() => this.ngxSignalTranslate.translate('PhotoImport.ResumeSearch')),
     selectedContent: computed(() => this.ngxSignalTranslate.translate('SelectedContent')),
     finished: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
     copyToTrackingAsCompleted: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsCompleted')),
@@ -176,10 +183,48 @@ export class PhotoImportDialog implements OnInit {
   };
 
   constructor() {
+    effect(() => {
+      const queries = this.searchModel().queries;
+      const busy = this.state.busy();
+      untracked(() => {
+        this.state.rows().forEach((row, index) => {
+          const query = queries[index]?.trim() ?? '';
+          const previous = this.searchQueries.get(row.id);
+          this.searchQueries.set(row.id, query);
+          if (previous === undefined || previous === query || ['added', 'exists', 'skipped'].includes(row.status))
+            return;
+          this.updateRow(row.id, { selected: null, matches: [], searched: false, status: 'ready' });
+          this.pendingSearches.update((pending) => [
+            ...pending.filter((id) => id !== row.id),
+            ...(query ? [row.id] : []),
+          ]);
+        });
+        clearTimeout(this.searchTimer);
+        if (!busy && this.pendingSearches().length) {
+          this.searchTimer = setTimeout(() => void this.searchPendingRows(), 500);
+        }
+      });
+    });
     this.destroyRef.onDestroy(() => {
       this.destroyed = true;
+      clearTimeout(this.searchTimer);
+      this.pendingSearches.set([]);
       for (const url of this.previewUrls) URL.revokeObjectURL(url);
     });
+  }
+
+  private async searchPendingRows(): Promise<void> {
+    const searches = this.pendingSearches().map((id) => {
+      const index = this.state.rows().findIndex((row) => row.id === id);
+      return { id, index, query: this.searchModel().queries[index]?.trim() };
+    });
+    for (const { id, index, query } of searches) {
+      if (this.destroyed || this.state.busy()) return;
+      if (!this.pendingSearches().includes(id)) continue;
+      if (this.searchModel().queries[index]?.trim() !== query) continue;
+      this.pendingSearches.update((pending) => pending.filter((pendingId) => pendingId !== id));
+      await this.onSearchRow(index);
+    }
   }
 
   public async ngOnInit(): Promise<void> {
@@ -303,11 +348,15 @@ export class PhotoImportDialog implements OnInit {
   }
 
   protected requestStop(): void {
+    clearTimeout(this.searchTimer);
+    this.pendingSearches.set([]);
     this.store.setState('stopRequested', true);
   }
 
   protected async onSearchRow(index: number): Promise<void> {
     if (this.state.busy()) return;
+    const row = this.state.rows()[index];
+    if (row) this.pendingSearches.update((pending) => pending.filter((id) => id !== row.id));
     this.store.setState('busy', true);
     this.store.setState('stopRequested', false);
     try {
@@ -319,31 +368,35 @@ export class PhotoImportDialog implements OnInit {
 
   private async searchRow(index: number): Promise<void> {
     const row = this.state.rows()[index];
-    const query = this.searchModel().queries[index]?.trim();
-    if (!row || !query || ['added', 'exists'].includes(row.status)) return;
+    let query = this.searchModel().queries[index]?.trim();
+    if (!row || !query || ['added', 'exists', 'skipped'].includes(row.status)) return;
+    this.searchQueries.set(row.id, query);
+    const isCurrent = () => !this.destroyed && this.searchModel().queries[index]?.trim() === query;
     const fallbackTitle = query === row.identifier ? row.title : undefined;
-    this.updateRow(row.id, { status: 'searching', selected: null });
+    this.updateRow(row.id, { status: 'searching', selected: null, matches: [] });
     try {
       let matches = await this.findMatches(query);
-      if (
-        !matches.length &&
-        fallbackTitle &&
-        fallbackTitle !== query &&
-        !this.destroyed &&
-        !this.state.stopRequested()
-      ) {
+      if (!isCurrent()) return;
+      if (!matches.length && fallbackTitle && fallbackTitle !== query) {
+        if (this.state.stopRequested()) {
+          this.updateRow(row.id, { status: 'ready', searched: false });
+          return;
+        }
+        query = fallbackTitle;
+        this.searchQueries.set(row.id, query);
         this.searchModel.update((model) => ({
           queries: model.queries.map((value, queryIndex) => (queryIndex === index ? fallbackTitle : value)),
         }));
         matches = await this.findMatches(fallbackTitle);
       }
+      if (!isCurrent()) return;
       this.updateRow(row.id, {
         matches,
         status: 'ready',
         searched: true,
       });
     } catch {
-      this.updateRow(row.id, { status: 'error', searched: true });
+      if (isCurrent()) this.updateRow(row.id, { status: 'error', searched: true });
     }
   }
 
@@ -386,7 +439,14 @@ export class PhotoImportDialog implements OnInit {
   protected onSkip(index: number): void {
     const row = this.state.rows()[index];
     if (this.state.busy() || !row || ['added', 'exists'].includes(row.status)) return;
-    this.updateRow(row.id, { status: row.status === 'skipped' ? 'ready' : 'skipped', selected: null });
+    const restore = row.status === 'skipped';
+    this.pendingSearches.update((pending) => pending.filter((id) => id !== row.id));
+    this.updateRow(row.id, {
+      status: restore ? 'ready' : 'skipped',
+      selected: null,
+      searched: row.status === 'error' && !row.selected ? false : row.searched,
+    });
+    if (restore && !row.searched && this.searchModel().queries[index]?.trim()) void this.onSearchRow(index);
   }
 
   protected canAddRow(row: PhotoImportRowModel): boolean {

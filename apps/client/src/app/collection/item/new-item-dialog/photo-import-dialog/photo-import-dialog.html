@@ -95,17 +95,21 @@
                   row.status === 'error' && !row.selected ? translations.searchError() : translations.searchHint()
                 "
                 [formField]="searchForm.queries[index]"
-                (keydown.enter)="onSearchRow(index)"
               />
-              <button
-                type="button"
-                class="dialog-action"
-                data-test-id="photo-import-search-button"
-                [disabled]="state.busy() || !searchModel().queries[index]?.trim()"
-                (click)="onSearchRow(index)"
-              >
-                {{ translations.search() }}
-              </button>
+              @if (
+                (row.status === 'error' && !row.selected) ||
+                (!row.searched && !pendingSearches().includes(row.id) && searchModel().queries[index]?.trim())
+              ) {
+                <button
+                  type="button"
+                  class="dialog-action"
+                  data-test-id="photo-import-retry-search"
+                  [disabled]="state.busy() || !searchModel().queries[index]?.trim()"
+                  (click)="onSearchRow(index)"
+                >
+                  {{ row.status === 'error' ? translations.retrySearch() : translations.resumeSearch() }}
+                </button>
+              }
             </div>
             @if (row.searched && row.status === 'ready' && !row.matches.length) {
               <p>{{ translations.noMatches() }}</p>

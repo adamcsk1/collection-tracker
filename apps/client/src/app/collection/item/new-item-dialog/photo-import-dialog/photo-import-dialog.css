@@ -1,5 +1,4 @@
-.row-heading,
-.search-row {
+.row-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -75,10 +74,14 @@ img {
   }
 }
 .search-row {
-  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-sm);
   libc-input {
-    flex: 1 1 12rem;
     min-width: 0;
+  }
+  > button {
+    align-self: flex-start;
   }
 }
 .photo-footer {

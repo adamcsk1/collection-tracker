@@ -187,6 +187,7 @@ test.describe('Photo import', () => {
     const response = await correctedSearch;
     expect(new URL(response.url()).searchParams.get('s')).toBe('Photo Alpha');
     await expect(dialog.getSearchInput(1)).toHaveValue('Photo Alpha');
+    await expect(dialog.getRow(1).getByTestId('photo-import-search-button')).toHaveCount(0);
     await expect(dialog.getMatchButtons(1)).toBeDisabled();
     await dialog.toggleSkip(0);
     await expect(dialog.getMatchButtons(1)).toBeEnabled();
@@ -195,6 +196,44 @@ test.describe('Photo import', () => {
     await dialog.toggleSkip(0);
     await expect(dialog.getMatchButtons(0)).toHaveAttribute('aria-pressed', 'false');
     await expect(dialog.getMatchButtons(0)).toBeDisabled();
+  });
+
+  test('automatically searches edits and offers same-query retry only after a provider failure', async ({ page }) => {
+    await page.route('**/api/v1/ai/vision/recognize', (route) => route.fulfill({ json: recognized('Photo Alpha') }));
+    let attempts = 0;
+    await page.route('**/api/v1/external-metadata/search*', (route) => {
+      attempts++;
+      if (attempts === 2) {
+        return route.fulfill({
+          status: 503,
+          contentType: 'application/problem+json',
+          json: { type: 'about:blank', title: 'Metadata unavailable', status: 503 },
+        });
+      }
+      return route.fulfill({ json: { data: { results: [attempts === 1 ? movies[0] : movies[1]] } } });
+    });
+    const collection = createCollectionPage(page);
+    const dialog = createPhotoImportDialog(page);
+    await collection.openNewItemDialog();
+    await dialog.open();
+    await dialog.uploadPhotos([photo('edit.jpg')]);
+    await dialog.readPhotos();
+    await expect(dialog.getMatchButtons(0)).toHaveCount(1);
+    await dialog.selectMatch(0);
+    await expect(dialog.getRetrySearchButton(0)).toHaveCount(0);
+    const failedSearch = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
+    await dialog.searchRow(0, 'Photo Beta');
+    await expect(dialog.getAddButton()).toBeDisabled();
+    expect((await failedSearch).status()).toBe(503);
+    await expect(dialog.getRetrySearchButton(0)).toBeVisible();
+    await expect(dialog.getMatchButtons(0)).toHaveCount(0);
+    const retry = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
+    await dialog.getRetrySearchButton(0).click();
+    expect((await retry).status()).toBe(200);
+    await expect(dialog.getRetrySearchButton(0)).toHaveCount(0);
+    await expect(dialog.getMatchButtons(0)).toHaveCount(1);
+    await expect(dialog.getMatchButtons(0)).toHaveAttribute('aria-pressed', 'false');
+    expect(attempts).toBe(3);
   });
 
   test('keeps manual creation available when vision is not configured', async ({ page, api }) => {
