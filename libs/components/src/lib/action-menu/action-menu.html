@@ -1,0 +1,72 @@
+<button
+  #moreButton
+  type="button"
+  class="dialog-action quick-action"
+  [attr.data-test-id]="testIdPrefix() + '-more'"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="actionsOpen()"
+  (click)="openActions(actionDialog, moreButton)"
+>
+  <i class="material-icons" aria-hidden="true">more_horiz</i>
+  <span>{{ translations.more() }}</span>
+</button>
+<dialog
+  #actionDialog
+  class="secondary-actions"
+  [attr.data-test-id]="testIdPrefix() + '-more-actions'"
+  [attr.hidden]="actionsOpen() ? null : ''"
+  [attr.aria-label]="title()"
+  (keydown)="onActionsKeydown($event, actionDialog)"
+  (click)="onBackdropClick($event, actionDialog)"
+  (close)="actionDialog.hidden = !actionDialog.open; actionsOpen.set(actionDialog.open)"
+  (cancel)="$event.preventDefault(); closeActions(actionDialog)"
+  (animationend)="onActionsAnimationEnd($event, actionDialog)"
+  (animationcancel)="onActionsAnimationEnd($event, actionDialog)"
+  (pointerdown)="$event.stopPropagation()"
+  (pointerup)="$event.stopPropagation()"
+  (pointercancel)="$event.stopPropagation()"
+>
+  <header class="actions-heading" [attr.data-test-id]="testIdPrefix() + '-more-heading'">
+    <h3>{{ title() }}</h3>
+    <button
+      type="button"
+      class="button-icon"
+      [attr.data-test-id]="testIdPrefix() + '-more-close'"
+      [attr.aria-label]="translations.close()"
+      (click)="closeActions(actionDialog)"
+    >
+      <i class="material-icons" aria-hidden="true">close</i>
+    </button>
+  </header>
+  <div class="action-list">
+    @for (action of regularActions(); track action.id) {
+      <button
+        type="button"
+        class="dialog-action"
+        [attr.data-test-id]="action.id"
+        [attr.aria-label]="action.label"
+        [title]="action.label"
+        (click)="closeActions(actionDialog, action.id)"
+      >
+        <i class="material-icons" aria-hidden="true">{{ action.icon }}</i>
+        <span>{{ action.label }}</span>
+      </button>
+    }
+    @if (destructiveActions().length) {
+      <hr class="destructive-divider" aria-hidden="true" />
+      @for (action of destructiveActions(); track action.id) {
+        <button
+          type="button"
+          class="dialog-action button-danger"
+          [attr.data-test-id]="action.id"
+          [attr.aria-label]="action.label"
+          [title]="action.label"
+          (click)="closeActions(actionDialog, action.id)"
+        >
+          <i class="material-icons" aria-hidden="true">{{ action.icon }}</i>
+          <span>{{ action.label }}</span>
+        </button>
+      }
+    }
+  </div>
+</dialog>

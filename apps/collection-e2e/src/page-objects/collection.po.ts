@@ -310,6 +310,22 @@ export const createCollectionPage = (page: Page) => {
     getSeriesMetadataDialogHost: () => page.getByTestId('series-metadata-dialog'),
     getSeriesMetadataDialog,
     getSeriesMetadataDialogComponentHost: () => getDialogComponentHost('series-metadata-dialog'),
+    getSeriesMetadataCloseButton: () => page.getByTestId('series-metadata-close'),
+    getSeriesMetadataCancelButton: () => page.getByTestId('series-metadata-cancel'),
+    getSeriesMetadataProgressWarning: () => page.getByTestId('series-metadata-progress-warning'),
+    getSeriesMetadataSeasonToggles: () => page.getByTestId('series-metadata-season-toggle'),
+    expandSeriesMetadataSeason: async (index: number) => {
+      const toggle = page.getByTestId('series-metadata-season-toggle').nth(index);
+      if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    },
+    openSeriesMetadataActions: async () => {
+      await page.getByTestId('series-metadata-more').click();
+      await expect(page.getByTestId('series-metadata-more-actions')).toBeVisible();
+    },
+    closeSeriesMetadataActions: async () => {
+      await page.getByTestId('series-metadata-more-close').click();
+    },
     getSeriesMetadataMessage: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-message"]'),
     getSeriesMetadataNoMetadataMessage: () =>
       getSeriesMetadataDialog().locator('[data-test-id="series-metadata-no-metadata-message"]'),
@@ -320,23 +336,35 @@ export const createCollectionPage = (page: Page) => {
     getSeriesMetadataSaveButton: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-save"]'),
     getSeriesMetadataValidation: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-validation"]'),
     getSeriesMetadataSeasonInputs: () =>
-      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-season"] input'),
+      getSeriesMetadataDialog().getByTestId('series-metadata-season').locator('input').filter({ visible: true }),
     getSeriesMetadataEpisodeInputs: () =>
-      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episodes"] input'),
+      getSeriesMetadataDialog().getByTestId('series-metadata-episodes').locator('input').filter({ visible: true }),
     getSeriesMetadataSeasonErrors: () =>
       getSeriesMetadataDialog().getByTestId('series-metadata-season').getByRole('alert'),
     getSeriesMetadataEpisodeErrors: () =>
       getSeriesMetadataDialog().getByTestId('series-metadata-episodes').getByRole('alert'),
-    getSeriesMetadataRemoveButtons: () => getSeriesMetadataDialog().locator('[data-test-id="series-metadata-remove"]'),
+    getSeriesMetadataRemoveButtons: () =>
+      getSeriesMetadataDialog().getByTestId('series-metadata-remove').filter({ visible: true }),
     getSeriesMetadataEpisodeTitleToggles: () =>
-      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episode-titles-toggle"] summary'),
+      getSeriesMetadataDialog()
+        .getByTestId('series-metadata-episode-titles-toggle')
+        .locator('summary')
+        .filter({ visible: true }),
     getSeriesMetadataEpisodeTitleInputs: () =>
-      getSeriesMetadataDialog().locator('[data-test-id="series-metadata-episode-title"] input'),
+      getSeriesMetadataDialog().getByTestId('series-metadata-episode-title').locator('input').filter({ visible: true }),
 
     // Completed episodes dialog
     getCompletedEpisodesDialogHost,
     getCompletedEpisodesDialogComponentHost: () => getDialogComponentHost('completed-episodes-dialog'),
     getCompletedEpisodesDialog: getCompletedEpisodesDialogFrame,
+    getCompletedEpisodesCloseButton: () => page.getByTestId('completed-episodes-close'),
+    getCompletedEpisodesProgress: () => page.getByTestId('completed-episodes-progress'),
+    getCompletedEpisodesSaveStatus: () => page.getByTestId('completed-episodes-save-status'),
+    getCompletedEpisodesFetchMetadataButton: () => page.getByTestId('completed-episodes-fetch-metadata'),
+    openCompletedEpisodesActions: async () => {
+      await page.getByTestId('completed-episodes-more').click();
+      await expect(page.getByTestId('completed-episodes-more-actions')).toBeVisible();
+    },
     getCompletedEpisodesSeasonSummaries: () => getCompletedEpisodesDialogFrame().locator('details > summary'),
     getCompletedEpisodesSeasonToggle: () =>
       getCompletedEpisodesDialogFrame()
@@ -346,6 +374,8 @@ export const createCollectionPage = (page: Page) => {
       getCompletedEpisodesDialogFrame()
         .locator('[data-test-id="completed-episodes-episode-checkbox"]')
         .locator('input[type="checkbox"]'),
+    getCompletedEpisodesEpisodeRows: () => page.getByTestId('completed-episodes-episode-checkbox'),
+    getCompletedEpisodesEpisodeLabels: () => page.getByTestId('completed-episodes-episode-checkbox').locator('label'),
     getCompletedEpisodesMarkAllCompletedButton: () =>
       getCompletedEpisodesDialogFrame().locator('[data-test-id="completed-episodes-mark-all-completed"]'),
     getCompletedEpisodesMarkAllUncompletedButton: () =>

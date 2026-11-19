@@ -157,6 +157,11 @@
     align-items: center;
     padding-bottom: var(--size-2xs);
     touch-action: pan-y;
+
+    > div {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
   .dialog-actions {

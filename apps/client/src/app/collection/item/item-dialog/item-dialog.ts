@@ -1029,6 +1029,7 @@ export class ItemDialog implements OnInit {
         : { externalProvider: collectionItem.externalProvider, externalItemId: collectionItem.externalItemId };
     this.portal.openStacked(SeriesSeasonMetadataDialog, {
       imdbId: collectionItem.IMDbId,
+      itemTitle: collectionItem.title,
       ...providerInputs,
       ...(collectionItem.ownerShareCode ? { ownerShareCode: collectionItem.ownerShareCode } : {}),
       canUpdate: this.permissionUpdate(),
@@ -1053,6 +1054,8 @@ export class ItemDialog implements OnInit {
         : { externalProvider: collectionItem.externalProvider, externalItemId: collectionItem.externalItemId };
     this.portal.openStacked(CompletedEpisodesDialog, {
       imdbId: collectionItem.IMDbId,
+      itemTitle: collectionItem.title,
+      canUpdate: this.permissionUpdate(),
       ...providerInputs,
       ...(collectionItem.ownerShareCode ? { ownerShareCode: collectionItem.ownerShareCode } : {}),
       saved: (completedEpisodes: TrackingCompletedEpisodeModel[], item?: CollectionItemModel) => {

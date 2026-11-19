@@ -1,36 +1,115 @@
-.no-metadata-message {
-  text-align: center;
-  padding: var(--size-md);
+.tracking-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-sm);
+
+  h3 {
+    margin: 0;
+  }
+
+  .item-title {
+    margin-block: var(--size-xs) 0;
+    overflow-wrap: anywhere;
+    color: var(--text-color);
+    font-size: var(--font-size-sm);
+  }
+
+  .close-action {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+  }
 }
 
-.no-metadata-message p {
-  margin-bottom: var(--size-md);
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--size-md);
+  padding-block: var(--size-xl);
+  text-align: center;
+
+  > .material-icons {
+    font-size: var(--font-size-4xl);
+  }
+}
+
+.overall-progress {
+  margin-block: var(--size-sm);
+  font-weight: bold;
+}
+
+.overall-progress-bar,
+.season-progress {
+  width: 100%;
+  height: var(--size-xs);
+  accent-color: var(--main-color);
 }
 
 .seasons-list {
   display: flex;
   flex-direction: column;
-  gap: var(--size-xs);
+  gap: var(--size-sm);
+  margin-top: var(--size-md);
 
-  .season-toggle-row {
-    display: flex;
-    align-items: center;
-    padding: var(--size-2xs) 0;
-    margin-bottom: var(--size-2xs);
+  .season-toggle,
+  .episode-row {
+    --input-height: 48px;
+
+    display: block;
+    padding-inline: var(--size-xs);
+    border-radius: var(--border-radius);
   }
 
-  .card-title {
-    display: block;
+  .season-toggle {
+    margin-block: var(--size-xs);
+    font-weight: bold;
   }
 
   .episodes-list {
     display: flex;
     flex-direction: column;
-    gap: var(--size-2xs);
-    padding-top: var(--size-xs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
 
-    .episode-title {
-      font-size: 0.9em;
+    .episode-row {
+      border-block-start: var(--border-style);
+      border-color: color-mix(in srgb, var(--text-color) 15%, transparent);
+
+      &:hover,
+      &:focus-within {
+        background: color-mix(in srgb, var(--main-color) 10%, transparent);
+      }
+
+      &.episode-watched {
+        color: var(--main-color);
+      }
     }
+  }
+}
+
+.tracking-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--size-xs);
+  width: 100%;
+  min-width: 0;
+
+  .save-status {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--size-xs);
+    min-height: 48px;
+    flex: 1;
+    font-size: var(--font-size-sm);
+  }
+
+  .save-error {
+    color: var(--color-crimson);
   }
 }

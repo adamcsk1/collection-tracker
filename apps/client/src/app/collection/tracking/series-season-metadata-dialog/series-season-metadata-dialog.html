@@ -2,16 +2,37 @@
   data-test-id="series-metadata-dialog"
   ariaLabelledBy="series-metadata-heading"
   [closeWithPortal]="false"
-  (closed)="onClose()"
+  [beforeClose]="canDiscard"
+  (closed)="closed()()"
 >
   <ng-container dialog-shell-top-content>
-    <h3 id="series-metadata-heading" class="dialog-title">
-      <i class="material-icons" aria-hidden="true"> tv </i>
-      {{ translations.title() }}
-    </h3>
+    <div class="metadata-header">
+      <h3 id="series-metadata-heading" class="dialog-title">
+        <i class="material-icons" aria-hidden="true"> tv </i>
+        {{ translations.title() }}
+      </h3>
+      <button
+        class="button-icon close-action"
+        data-test-id="series-metadata-close"
+        type="button"
+        [attr.aria-label]="translations.close()"
+        [disabled]="busy()"
+        (click)="onClose()"
+      >
+        <i class="material-icons" aria-hidden="true">close</i>
+      </button>
+    </div>
+    @if (itemTitle()) {
+      <p data-test-id="series-metadata-item-title">{{ itemTitle() }}</p>
+    }
   </ng-container>
   <ng-container dialog-shell-content>
     <p class="metadata-message" data-test-id="series-metadata-message">{{ translations.message() }}</p>
+    @if (updateFailed()) {
+      <p role="alert" class="validation-message" data-test-id="series-metadata-update-error">
+        {{ translations.updateError() }}
+      </p>
+    }
     @if (seasons().length === 0) {
       <p class="no-metadata-message" data-test-id="series-metadata-no-metadata-message">
         {{ translations.noMetadata() }}
@@ -20,58 +41,87 @@
     <div class="metadata-grid" data-test-id="series-metadata-rows">
       @for (season of form.seasons; track $index; let index = $index) {
         <div class="card">
-          <div class="card-body">
-            <div class="card-body-row">
-              <libc-input
-                data-test-id="series-metadata-season"
-                type="number"
-                [label]="translations.season()"
-                [hint]="translations.seasonHint()"
-                [step]="1"
-                [formField]="season.season"
-              >
-                <ng-container errors>{{ translations.seasonError() }}</ng-container>
-              </libc-input>
-              <libc-input
-                data-test-id="series-metadata-episodes"
-                type="number"
-                [label]="translations.episodes()"
-                [hint]="translations.episodesHint()"
-                [step]="1"
-                [formField]="season.episodes"
-              >
-                <ng-container errors>{{ translations.episodesError() }}</ng-container>
-              </libc-input>
-
-              <div>
+          <button
+            class="season-summary"
+            data-test-id="series-metadata-season-toggle"
+            type="button"
+            [attr.aria-expanded]="expandedSeason() === index"
+            [attr.aria-controls]="'series-metadata-season-panel-' + index"
+            (click)="expandedSeason.set(expandedSeason() === index ? null : index)"
+          >
+            {{ translations.seasonSummaries()[index] }}
+            <i class="material-icons" aria-hidden="true">{{
+              expandedSeason() === index ? 'expand_less' : 'expand_more'
+            }}</i>
+          </button>
+          <!-- Keep controls mounted so switching seasons cannot drop pending form values. -->
+          <div class="card-body" [hidden]="expandedSeason() !== index" [id]="'series-metadata-season-panel-' + index">
+            @if (canUpdate()) {
+              <fieldset [disabled]="busy()">
+                <div class="card-body-row">
+                  <libc-input
+                    data-test-id="series-metadata-season"
+                    type="number"
+                    [label]="translations.season()"
+                    [hint]="translations.seasonHint()"
+                    [step]="1"
+                    [formField]="season.season"
+                  >
+                    <ng-container errors>{{ translations.seasonError() }}</ng-container>
+                  </libc-input>
+                  <libc-input
+                    data-test-id="series-metadata-episodes"
+                    type="number"
+                    [label]="translations.episodes()"
+                    [hint]="translations.episodesHint()"
+                    [step]="1"
+                    [formField]="season.episodes"
+                  >
+                    <ng-container errors>{{ translations.episodesError() }}</ng-container>
+                  </libc-input>
+                </div>
+                <libc-details
+                  class="episode-titles-details"
+                  data-test-id="series-metadata-episode-titles-toggle"
+                  [summary]="translations.episodeTitles()"
+                  [storeOpenedState]="false"
+                >
+                  <div class="episode-titles-grid">
+                    @for (episodeIndex of getEpisodeIndices(season.episodes().value()); track $index) {
+                      <libc-input
+                        data-test-id="series-metadata-episode-title"
+                        type="text"
+                        [label]="translations.episodes() + ' ' + (episodeIndex + 1)"
+                        [value]="getEpisodeTitle(index, episodeIndex)"
+                        (valueChange)="setEpisodeTitle(index, episodeIndex, $event ?? '')"
+                      />
+                    }
+                  </div>
+                </libc-details>
                 <button
                   data-test-id="series-metadata-remove"
                   type="button"
-                  class="dialog-action button-danger"
+                  class="season-remove dialog-action button-danger"
                   (click)="onRemoveSeason(index)"
                 >
                   <i class="material-icons" aria-hidden="true"> delete </i>
                   {{ translations.remove() }}
                 </button>
-              </div>
-            </div>
-            <libc-details
-              class="episode-titles-details"
-              data-test-id="series-metadata-episode-titles-toggle"
-              [summary]="translations.episodeTitles()"
-            >
-              <div class="episode-titles-grid">
+              </fieldset>
+            } @else {
+              <libc-details
+                class="episode-titles-details"
+                data-test-id="series-metadata-episode-titles-toggle"
+                [summary]="translations.episodeTitles()"
+                [storeOpenedState]="false"
+              >
                 @for (episodeIndex of getEpisodeIndices(season.episodes().value()); track $index) {
-                  <libc-input
-                    data-test-id="series-metadata-episode-title"
-                    type="text"
-                    [label]="translations.episodes() + ' ' + (episodeIndex + 1)"
-                    [value]="getEpisodeTitle(index, episodeIndex)"
-                    (valueChange)="setEpisodeTitle(index, episodeIndex, $event ?? '')"
-                  />
+                  <p>
+                    {{ translations.episodes() }} {{ episodeIndex + 1 }}: {{ getEpisodeTitle(index, episodeIndex) }}
+                  </p>
                 }
-              </div>
-            </libc-details>
+              </libc-details>
+            }
           </div>
         </div>
       }
@@ -80,50 +130,54 @@
       @if (!valid()) {
         <p class="validation-message" data-test-id="series-metadata-validation">{{ translations.validation() }}</p>
       }
+      @if (reducesMetadata()) {
+        <p class="progress-warning" data-test-id="series-metadata-progress-warning">
+          {{ translations.progressWarning() }}
+        </p>
+      }
     </div>
-    <button class="dialog-action" data-test-id="series-metadata-add" type="button" (click)="onAddSeason()">
-      <i class="material-icons" aria-hidden="true"> add </i>
-      {{ translations.addSeason() }}
-    </button>
+    @if (canUpdate()) {
+      <button
+        class="dialog-action"
+        data-test-id="series-metadata-add"
+        type="button"
+        [disabled]="busy()"
+        (click)="onAddSeason()"
+      >
+        <i class="material-icons" aria-hidden="true"> add </i>
+        {{ translations.addSeason() }}
+      </button>
+    }
   </ng-container>
   <ng-container dialog-shell-bottom-content>
+    @if (actions().length) {
+      <libc-action-menu
+        [actions]="actions()"
+        testIdPrefix="series-metadata"
+        [title]="translations.actions()"
+        (selected)="onActionSelected($event)"
+      />
+    }
+    <button
+      class="dialog-action"
+      data-test-id="series-metadata-cancel"
+      type="button"
+      [disabled]="busy()"
+      (click)="onClose()"
+    >
+      {{ translations.cancel() }}
+    </button>
     <button
       class="dialog-action dialog-action-primary"
       data-test-id="series-metadata-save"
       type="button"
       [attr.aria-label]="translations.save()"
       [title]="translations.save()"
-      [disabled]="!valid()"
+      [disabled]="!valid() || busy() || !canUpdate()"
       (click)="onSave()"
     >
       <i class="material-icons" aria-hidden="true"> save </i>
       <span>{{ translations.save() }}</span>
     </button>
-  </ng-container>
-  <ng-container dialog-shell-menu-content>
-    @if (canUpdate()) {
-      <button
-        class="dialog-action"
-        data-test-id="series-metadata-refresh"
-        type="button"
-        [attr.aria-label]="translations.refreshSeriesMetadata()"
-        [title]="translations.refreshSeriesMetadata()"
-        (click)="onRefreshSeriesMetadata()"
-      >
-        <i class="material-icons" aria-hidden="true"> sync </i>
-        <span>{{ translations.refreshSeriesMetadata() }}</span>
-      </button>
-      <button
-        class="dialog-action button-danger"
-        data-test-id="series-metadata-remove-all"
-        type="button"
-        [attr.aria-label]="translations.removeSeriesMetadata()"
-        [title]="translations.removeSeriesMetadata()"
-        (click)="onRemoveSeriesMetadata()"
-      >
-        <i class="material-icons" aria-hidden="true"> playlist_remove </i>
-        <span>{{ translations.removeSeriesMetadata() }}</span>
-      </button>
-    }
   </ng-container>
 </libc-dialog-shell>

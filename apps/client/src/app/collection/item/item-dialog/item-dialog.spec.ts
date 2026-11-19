@@ -717,6 +717,8 @@ describe('ItemDialog', () => {
       expect.any(Function),
       expect.objectContaining({
         imdbId: 'tt1234567',
+        itemTitle: 'Test Movie',
+        canUpdate: true,
         saved: expect.any(Function),
       })
     );
@@ -809,6 +811,7 @@ describe('ItemDialog', () => {
 
     expect(portal.openStacked).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
       imdbId: 'tt1234567',
+      itemTitle: 'Test Movie',
       canUpdate: true,
       initialSeasons: [{ season: 1, episodes: 2 }],
       saved: expect.any(Function),

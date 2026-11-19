@@ -6,6 +6,7 @@ Source: [`libs/components`](../libs/components)
 
 ## Modules
 
+- `action-menu`: animated secondary actions, using a mobile bottom sheet and an anchored desktop popup
 - `autocomplete`: suggestion-driven text input
 - `blocker-loading`: full-screen blocking overlay and store
 - `callout`: emphasized contextual message with a decorative icon and projected content
@@ -47,13 +48,16 @@ Client, login, and health bind `MESSAGE_DIALOG_COMPONENT` to `MessageDialog` in 
 register a portal host. Mark background regions with `data-dialog-background`; the portal synchronously makes them inert
 while a dialog is open and restores interactivity before returning focus.
 
-Project actions through `dialog-shell-menu-content` or `dialog-shell-bottom-content`. Action buttons use
-`button-icon button-reveal-label`, apply `[libcRevealLabel]` with the translated label, include a translated `aria-label`
-and `title`, and wrap their translated visual label in `button-reveal-label-text` with an inner `span`.
+Project actions through `dialog-shell-menu-content` or `dialog-shell-bottom-content`. Use `dialog-action` for visible,
+labelled touch targets, `dialog-action-primary` for the main outcome, and `button-danger` for destructive actions.
 
-On fine pointers, labels expand on hover and keyboard focus. On touch input, actions remain icon-only: a normal tap
-executes immediately, while pressing and holding displays the translated label without executing the action. Moving the
-pointer cancels the hold so horizontally scrolling the action row remains available.
+Tracking dialogs use `libc-action-menu` for secondary operations. Supply translated `actions` (`id`, `label`, `icon`, and
+optional `destructive`), a translated `title`, and a stable `testIdPrefix`. The `selected` output emits the action ID only
+after the native dialog finishes closing and restores focus. Place the trigger in the bottom action area so desktop
+menus have room above their anchor. Closed menus remain hidden from the parent shell's focus trap.
+
+The menu uses a full-width sheet at 650 CSS pixels and below, an anchored popup at larger widths, and reduced-motion
+alternatives. Destructive actions have a separate divider without changing their rounded focus outlines.
 
 ### Tabs
 

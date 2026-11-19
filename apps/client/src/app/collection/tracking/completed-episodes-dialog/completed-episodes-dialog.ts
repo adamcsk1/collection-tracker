@@ -10,6 +10,8 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActionMenu } from '@components/action-menu/action-menu';
+import { ActionMenuActionModel } from '@components/action-menu/action-menu-model';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
@@ -26,14 +28,14 @@ import {
   TrackingCompletedEpisodeModel,
 } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 
 import { SeriesSeasonMetadataDialog } from '../series-season-metadata-dialog/series-season-metadata-dialog';
 import { getOpenSeasons } from './utils/get-open-seasons-util';
 
 @Component({
   selector: 'ct-completed-episodes-dialog',
-  imports: [Checkbox, DialogShell, Details],
+  imports: [ActionMenu, Checkbox, DialogShell, Details],
   templateUrl: './completed-episodes-dialog.html',
   styleUrl: './completed-episodes-dialog.css',
   host: {
@@ -53,10 +55,13 @@ export class CompletedEpisodesDialog implements OnInit {
   private saveCompletedEpisodesQueue = Promise.resolve();
   private saveCompletedEpisodesVersion = 0;
   private hasLocalCompletedEpisodeChanges = false;
+  private loadVersion = 0;
   public readonly imdbId = input<string | undefined>();
   public readonly externalProvider = input(DEFAULT_EXTERNAL_METADATA_PROVIDER);
   public readonly externalItemId = input<string | undefined>();
   public readonly ownerShareCode = input<string | undefined>();
+  public readonly itemTitle = input('');
+  public readonly canUpdate = input(true);
   public readonly saved = input<
     (completedEpisodes: TrackingCompletedEpisodeModel[], item?: CollectionItemApiModel) => void
   >(() => undefined);
@@ -69,7 +74,38 @@ export class CompletedEpisodesDialog implements OnInit {
     markAllEpisodesCompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesCompleted')),
     markAllEpisodesUncompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUncompleted')),
     episode: computed(() => this.ngxSignalTranslate.translate('Episode')),
+    close: computed(() => this.ngxSignalTranslate.translate('Close')),
+    retry: computed(() => this.ngxSignalTranslate.translate('Retry')),
+    loading: computed(() => this.ngxSignalTranslate.translate('Loading')),
+    loadError: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.LoadError')),
+    fetch: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.Fetch')),
+    manual: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.Manual')),
+    empty: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.Empty')),
+    actions: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.Actions')),
+    seasonWatched: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.SeasonWatched')),
+    saving: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.Saving')),
+    saved: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.Saved')),
+    saveError: computed(() => this.ngxSignalTranslate.translate('EpisodeTracking.SaveError')),
+    progress: computed(() =>
+      this.ngxSignalTranslate.translate('EpisodeTracking.Progress', {
+        completed: `${this.completedCount()}`,
+        total: `${this.totalCount()}`,
+      })
+    ),
+    seasonSummaries: computed(() =>
+      this.seasonProgress().map((season) =>
+        this.ngxSignalTranslate.translate('EpisodeTracking.SeasonSummary', {
+          season: `${season.season}`,
+          completed: `${season.completed}`,
+          total: `${season.episodes}`,
+        })
+      )
+    ),
   };
+  protected readonly loading = signal(true);
+  protected readonly supportsFetch = signal(false);
+  protected readonly loadError = signal(false);
+  protected readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   protected readonly seasonsMetadata = signal<TrackingSeasonMetadataModel[]>([]);
   protected readonly completedEpisodes = signal<TrackingCompletedEpisodeModel[]>([]);
   protected readonly completedSet = computed(() => {
@@ -80,6 +116,47 @@ export class CompletedEpisodesDialog implements OnInit {
     return set;
   });
   protected readonly hasSeasonMetadata = computed(() => this.seasonsMetadata().length > 0);
+  protected readonly seasonProgress = computed(() =>
+    this.seasonsMetadata().map((season) => ({
+      ...season,
+      completed: Array.from({ length: season.episodes }, (_episode, index) => index + 1).filter((episode) =>
+        this.completedSet().has(`${season.season}-${episode}`)
+      ).length,
+    }))
+  );
+  protected readonly totalCount = computed(() =>
+    this.seasonProgress().reduce((total, season) => total + season.episodes, 0)
+  );
+  protected readonly completedCount = computed(() =>
+    this.seasonProgress().reduce((total, season) => total + season.completed, 0)
+  );
+  protected readonly menuActions = computed<ActionMenuActionModel[]>(() => {
+    if (!this.canUpdate() || this.loading() || this.loadError()) return [];
+    const actions: ActionMenuActionModel[] = [];
+    if (this.hasSeasonMetadata()) {
+      if (!this.allEpisodesCompleted()) {
+        actions.push({
+          id: 'completed-episodes-mark-all-completed',
+          label: this.translations.markAllEpisodesCompleted(),
+          icon: 'done_all',
+        });
+      }
+      actions.push({
+        id: 'completed-episodes-manage-season-metadata',
+        label: this.translations.manageSeasonMetadata(),
+        icon: 'edit_calendar',
+      });
+      if (this.completedCount() > 0) {
+        actions.push({
+          id: 'completed-episodes-mark-all-uncompleted',
+          label: this.translations.markAllEpisodesUncompleted(),
+          icon: 'remove_done',
+          destructive: true,
+        });
+      }
+    }
+    return actions;
+  });
   protected readonly allEpisodesCompleted = computed(() => {
     const seasons = this.seasonsMetadata();
     if (!seasons.length) return false;
@@ -93,26 +170,43 @@ export class CompletedEpisodesDialog implements OnInit {
     return true;
   });
 
-  protected readonly openSeasons = computed<Set<number>>(() =>
-    getOpenSeasons(this.seasonsMetadata(), this.completedSet())
-  );
+  protected readonly openSeasons = signal(new Set<number>());
+  protected readonly canClose = async (): Promise<boolean> => {
+    await this.waitForSaves();
+    return (
+      this.saveStatus() !== 'error' ||
+      firstValueFrom(this.confirm.open(this.ngxSignalTranslate.translate('EpisodeTracking.CloseUnsaved')))
+    );
+  };
 
   public ngOnInit(): void {
     this.loadData();
+    if (this.canUpdate()) {
+      this.api
+        .getExternalMetadataProviders()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ({ providers }) =>
+            this.supportsFetch.set(
+              providers.some((provider) => provider.name === this.externalProvider() && provider.supportsSeasonMetadata)
+            ),
+          error: () => this.supportsFetch.set(false),
+        });
+    }
   }
 
   private providerItemId(): string {
     return this.externalItemId() ?? this.imdbId() ?? '';
   }
 
-  private loadData(): void {
+  protected loadData(item?: CollectionItemApiModel): void {
+    const version = ++this.loadVersion;
+    this.loading.set(true);
+    this.loadError.set(false);
     const ownerShareCode = this.ownerShareCode();
     const seasonsRequest = ownerShareCode
       ? this.api.getTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId(), ownerShareCode)
       : this.api.getTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId());
-    seasonsRequest.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((seasonsResponse) => {
-      this.seasonsMetadata.set(seasonsResponse.seasons);
-    });
     const completedEpisodesRequest = ownerShareCode
       ? this.api.getTrackingCompletedEpisodesByExternalId(
           this.externalProvider(),
@@ -120,9 +214,26 @@ export class CompletedEpisodesDialog implements OnInit {
           ownerShareCode
         )
       : this.api.getTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId());
-    completedEpisodesRequest.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((completedResponse) => {
-      if (!this.hasLocalCompletedEpisodeChanges) this.completedEpisodes.set(completedResponse.completedEpisodes);
-    });
+    forkJoin({ seasons: seasonsRequest, completed: completedEpisodesRequest })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ seasons, completed }) => {
+          if (version !== this.loadVersion) return;
+          this.seasonsMetadata.set(seasons.seasons);
+          if (!this.hasLocalCompletedEpisodeChanges) {
+            this.completedEpisodes.set(completed.completedEpisodes);
+            this.saveStatus.set('idle');
+          }
+          this.openSeasons.set(getOpenSeasons(this.seasonsMetadata(), this.completedSet()));
+          this.loading.set(false);
+          if (item) this.saved()(this.completedEpisodes(), item);
+        },
+        error: () => {
+          if (version !== this.loadVersion) return;
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
+      });
   }
 
   protected isEpisodeCompleted(season: number, episode: number): boolean {
@@ -149,6 +260,7 @@ export class CompletedEpisodesDialog implements OnInit {
   }
 
   protected async onToggleEpisode(season: number, episode: number): Promise<void> {
+    if (!this.canUpdate()) return;
     this.hasLocalCompletedEpisodeChanges = true;
     const key = `${season}-${episode}`;
     const currentCompleted = this.completedEpisodes();
@@ -161,10 +273,11 @@ export class CompletedEpisodesDialog implements OnInit {
     } else {
       this.completedEpisodes.set([...currentCompleted, { season, episode }]);
     }
-    await this.saveCompletedEpisodes();
+    await this.saveCompletedEpisodes().catch(() => undefined);
   }
 
   protected async onToggleSeason(season: number, episodesCount: number): Promise<void> {
+    if (!this.canUpdate()) return;
     this.hasLocalCompletedEpisodeChanges = true;
     const currentCompleted = this.completedEpisodes();
     const seasonEpisodes: TrackingCompletedEpisodeModel[] = [];
@@ -179,7 +292,7 @@ export class CompletedEpisodesDialog implements OnInit {
       const withoutSeason = currentCompleted.filter((completedEpisode) => completedEpisode.season !== season);
       this.completedEpisodes.set([...withoutSeason, ...seasonEpisodes]);
     }
-    await this.saveCompletedEpisodes();
+    await this.saveCompletedEpisodes().catch(() => undefined);
   }
 
   protected isSeasonOpenDefault(season: number): boolean {
@@ -199,41 +312,43 @@ export class CompletedEpisodesDialog implements OnInit {
         }
         return firstEpisode.episode - secondEpisode.episode;
       });
-    const version = ++this.saveCompletedEpisodesVersion;
-    const save = this.saveCompletedEpisodesQueue
-      .catch(() => undefined)
-      .then(async () => {
-        const ownerShareCode = this.ownerShareCode();
-        const updateRequest = ownerShareCode
-          ? this.api.updateTrackingCompletedEpisodesByExternalId(
-              this.externalProvider(),
-              this.providerItemId(),
-              { completedEpisodes: episodes },
-              ownerShareCode
-            )
-          : this.api.updateTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
-              completedEpisodes: episodes,
-            });
-        const result = await firstValueFrom(updateRequest);
-        if (version === this.saveCompletedEpisodesVersion) this.applySavedCompletedEpisodes(result);
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.CompletedEpisodesSaved'));
-      });
-    this.saveCompletedEpisodesQueue = save;
-    await save;
+    await this.queueCompletedEpisodesMutation(async () => {
+      const ownerShareCode = this.ownerShareCode();
+      const updateRequest = this.api.updateTrackingCompletedEpisodesByExternalId(
+        this.externalProvider(),
+        this.providerItemId(),
+        { completedEpisodes: episodes },
+        ownerShareCode,
+        { suppressErrorAlert: true }
+      );
+      return firstValueFrom(updateRequest);
+    });
   }
 
   private async queueCompletedEpisodesMutation(
     action: () => Promise<TrackingCompletedEpisodesApiResponseModel>
   ): Promise<TrackingCompletedEpisodesApiResponseModel> {
     const version = ++this.saveCompletedEpisodesVersion;
+    this.saveStatus.set('saving');
     const save = this.saveCompletedEpisodesQueue
       .catch(() => undefined)
       .then(async () => {
-        const result = await action();
-        if (version === this.saveCompletedEpisodesVersion) this.applySavedCompletedEpisodes(result);
-        return result;
+        try {
+          const result = await action();
+          if (version === this.saveCompletedEpisodesVersion) {
+            this.applySavedCompletedEpisodes(result);
+            this.saveStatus.set('saved');
+          }
+          return result;
+        } catch (error) {
+          if (version === this.saveCompletedEpisodesVersion) this.saveStatus.set('error');
+          throw error;
+        }
       });
-    this.saveCompletedEpisodesQueue = save.then(() => undefined);
+    this.saveCompletedEpisodesQueue = save.then(
+      () => undefined,
+      () => undefined
+    );
     return save;
   }
 
@@ -243,25 +358,77 @@ export class CompletedEpisodesDialog implements OnInit {
   }
 
   protected async onClose(): Promise<void> {
-    await this.saveCompletedEpisodesQueue.catch(() => undefined);
+    await this.waitForSaves();
     this.closed()();
   }
 
-  protected onManageSeasonMetadata(): void {
+  private async waitForSaves(): Promise<void> {
+    let pending: Promise<void>;
+    do {
+      pending = this.saveCompletedEpisodesQueue;
+      await pending;
+    } while (pending !== this.saveCompletedEpisodesQueue);
+  }
+
+  protected async onRetrySave(): Promise<void> {
+    await this.saveCompletedEpisodes().catch(() => undefined);
+  }
+
+  protected async onFetchMetadata(): Promise<void> {
+    if (!this.canUpdate() || !this.supportsFetch() || this.loading()) return;
+    this.loading.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.api.refreshTrackingSeasonsByExternalId(
+          this.externalProvider(),
+          this.providerItemId(),
+          this.ownerShareCode()
+        )
+      );
+      this.hasLocalCompletedEpisodeChanges = false;
+      this.loadData(result.item);
+    } catch {
+      this.loading.set(false);
+      this.loadError.set(true);
+    }
+  }
+
+  protected onMenuAction(action: string): void {
+    if (action === 'completed-episodes-mark-all-completed') void this.onMarkAllEpisodesCompleted();
+    else if (action === 'completed-episodes-mark-all-uncompleted') void this.onMarkAllEpisodesUncompleted();
+    else if (action === 'completed-episodes-manage-season-metadata') void this.onManageSeasonMetadata();
+  }
+
+  protected async onManageSeasonMetadata(): Promise<void> {
+    if (!this.canUpdate()) return;
+    await this.waitForSaves();
+    if (this.saveStatus() === 'error') {
+      const discard = await firstValueFrom(
+        this.confirm.open(this.ngxSignalTranslate.translate('EpisodeTracking.DiscardForMetadata'))
+      );
+      if (!discard) return;
+      this.hasLocalCompletedEpisodeChanges = false;
+      this.saveStatus.set('idle');
+      this.loadData();
+    }
     this.portal.openStacked(SeriesSeasonMetadataDialog, {
       imdbId: this.imdbId(),
       externalProvider: this.externalProvider(),
       externalItemId: this.providerItemId(),
       ...(this.ownerShareCode() ? { ownerShareCode: this.ownerShareCode() } : {}),
       initialSeasons: this.seasonsMetadata(),
+      itemTitle: this.itemTitle(),
+      canUpdate: this.canUpdate(),
       saved: (seasons: TrackingSeasonMetadataModel[], item?: CollectionItemApiModel) => {
         this.seasonsMetadata.set(seasons);
-        if (item) this.saved()(this.completedEpisodes(), item);
+        this.hasLocalCompletedEpisodeChanges = false;
+        this.loadData(item);
       },
     });
   }
 
   protected async onMarkAllEpisodesCompleted(): Promise<void> {
+    if (!this.canUpdate()) return;
     if (!this.hasSeasonMetadata()) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SetSeasonMetadataFirst'));
       return;
@@ -272,6 +439,11 @@ export class CompletedEpisodesDialog implements OnInit {
     if (!confirmed) return;
 
     this.hasLocalCompletedEpisodeChanges = true;
+    this.completedEpisodes.set(
+      this.seasonsMetadata().flatMap((season) =>
+        Array.from({ length: season.episodes }, (_episode, index) => ({ season: season.season, episode: index + 1 }))
+      )
+    );
     this.spinnerLoadingState.setState('show', true);
     try {
       const ownerShareCode = this.ownerShareCode();
@@ -283,26 +455,32 @@ export class CompletedEpisodesDialog implements OnInit {
                 this.providerItemId(),
                 {
                   completedEpisodes: this.seasonsMetadata().flatMap((season) =>
-                    Array.from({ length: season.episodes }, (_, index) => ({
+                    Array.from({ length: season.episodes }, (_episode, index) => ({
                       season: season.season,
                       episode: index + 1,
                     }))
                   ),
                 },
-                ownerShareCode
+                ownerShareCode,
+                { suppressErrorAlert: true }
               )
             )
           : firstValueFrom(
-              this.api.markAllTrackingCompletedByExternalId(this.externalProvider(), this.providerItemId())
+              this.api.markAllTrackingCompletedByExternalId(this.externalProvider(), this.providerItemId(), {
+                suppressErrorAlert: true,
+              })
             )
       );
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedCompleted'));
+    } catch {
+      return;
     } finally {
       this.spinnerLoadingState.setState('show', false);
     }
   }
 
   protected async onMarkAllEpisodesUncompleted(): Promise<void> {
+    if (!this.canUpdate()) return;
     const confirmed = await firstValueFrom(
       this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUncompleted'), {
         destructive: true,
@@ -313,6 +491,7 @@ export class CompletedEpisodesDialog implements OnInit {
     if (!confirmed) return;
 
     this.hasLocalCompletedEpisodeChanges = true;
+    this.completedEpisodes.set([]);
     this.spinnerLoadingState.setState('show', true);
     try {
       const ownerShareCode = this.ownerShareCode();
@@ -323,14 +502,23 @@ export class CompletedEpisodesDialog implements OnInit {
                 this.externalProvider(),
                 this.providerItemId(),
                 { completedEpisodes: [] },
-                ownerShareCode
+                ownerShareCode,
+                { suppressErrorAlert: true }
               )
-            : this.api.updateTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
-                completedEpisodes: [],
-              })
+            : this.api.updateTrackingCompletedEpisodesByExternalId(
+                this.externalProvider(),
+                this.providerItemId(),
+                {
+                  completedEpisodes: [],
+                },
+                undefined,
+                { suppressErrorAlert: true }
+              )
         )
       );
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUncompleted'));
+    } catch {
+      return;
     } finally {
       this.spinnerLoadingState.setState('show', false);
     }

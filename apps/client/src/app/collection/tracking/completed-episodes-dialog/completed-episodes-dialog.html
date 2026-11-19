@@ -1,95 +1,154 @@
 <libc-dialog-shell
+  #episodesDialog
   data-test-id="completed-episodes-dialog"
   ariaLabelledBy="completed-episodes-heading"
   [closeWithPortal]="false"
+  [beforeClose]="canClose"
   (closed)="onClose()"
 >
-  <ng-container dialog-shell-top-content>
-    <h3 id="completed-episodes-heading" class="dialog-title">
-      <i class="material-icons" aria-hidden="true"> check_circle </i>
-      {{ translations.title() }}
-    </h3>
-  </ng-container>
+  <div dialog-shell-top-content class="tracking-heading">
+    <div>
+      <h3 id="completed-episodes-heading" class="dialog-title">{{ translations.title() }}</h3>
+      @if (itemTitle()) {
+        <p class="item-title" data-test-id="completed-episodes-item-title">{{ itemTitle() }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="button-icon close-action"
+      data-test-id="completed-episodes-close"
+      [attr.aria-label]="translations.close()"
+      (click)="episodesDialog.close()"
+    >
+      <i class="material-icons" aria-hidden="true">close</i>
+    </button>
+  </div>
   <ng-container dialog-shell-content>
-    @if (!hasSeasonMetadata()) {
-      <div class="no-metadata-message" data-test-id="completed-episodes-no-metadata-message">
-        <p>{{ translations.setSeasonMetadata() }}</p>
-        <button
-          class="dialog-action"
-          data-test-id="completed-episodes-manage-season-metadata"
-          (click)="onManageSeasonMetadata()"
-        >
-          <i class="material-icons" aria-hidden="true"> list </i>
-          {{ translations.manageSeasonMetadata() }}
+    @if (loading()) {
+      <p role="status" data-test-id="completed-episodes-loading">{{ translations.loading() }}</p>
+    } @else if (loadError()) {
+      <div role="alert" data-test-id="completed-episodes-load-error">
+        <p>{{ translations.loadError() }}</p>
+        <button type="button" class="dialog-action" data-test-id="completed-episodes-retry-load" (click)="loadData()">
+          {{ translations.retry() }}
         </button>
       </div>
+    } @else if (!hasSeasonMetadata()) {
+      <div class="empty-state" data-test-id="completed-episodes-no-metadata-message">
+        <i class="material-icons" aria-hidden="true">playlist_add</i>
+        <p>{{ translations.empty() }}</p>
+        @if (canUpdate()) {
+          @if (supportsFetch()) {
+            <button
+              type="button"
+              class="dialog-action dialog-action-primary"
+              data-test-id="completed-episodes-fetch-metadata"
+              (click)="onFetchMetadata()"
+            >
+              {{ translations.fetch() }}
+            </button>
+          }
+          <button
+            type="button"
+            class="dialog-action"
+            data-test-id="completed-episodes-manage-season-metadata"
+            (click)="onManageSeasonMetadata()"
+          >
+            {{ translations.manual() }}
+          </button>
+        }
+      </div>
     } @else {
+      <p class="overall-progress" data-test-id="completed-episodes-progress">{{ translations.progress() }}</p>
+      <progress
+        class="overall-progress-bar"
+        data-test-id="completed-episodes-progress-bar"
+        [value]="completedCount()"
+        [max]="totalCount()"
+        [attr.aria-label]="translations.progress()"
+      ></progress>
       <div class="seasons-list">
-        @for (season of seasonsMetadata(); track season.season; let seasonIndex = $index) {
+        @for (season of seasonProgress(); track season.season; let seasonIndex = $index) {
           <libc-details
+            data-test-id="completed-episodes-season"
             [open]="isSeasonOpenDefault(season.season)"
             [storeOpenedState]="false"
-            [summary]="translations.season() + ' ' + season.season"
+            [summary]="translations.seasonSummaries()[seasonIndex]"
           >
-            <div class="season-toggle-row">
-              <libc-checkbox
-                data-test-id="completed-episodes-season-toggle"
-                [label]="translations.markAllEpisodesCompleted()"
-                [value]="isSeasonFullyCompleted(season.season, season.episodes)"
-                [indeterminate]="isSeasonPartiallyCompleted(season.season, season.episodes)"
-                (valueChange)="onToggleSeason(season.season, season.episodes)"
-              />
-            </div>
-            <div class="episodes-list">
+            <progress
+              class="season-progress"
+              data-test-id="completed-episodes-season-progress"
+              [value]="season.completed"
+              [max]="season.episodes"
+              [attr.aria-label]="translations.seasonSummaries()[seasonIndex]"
+            ></progress>
+            <libc-checkbox
+              class="season-toggle"
+              data-test-id="completed-episodes-season-toggle"
+              [label]="translations.seasonWatched()"
+              [value]="isSeasonFullyCompleted(season.season, season.episodes)"
+              [indeterminate]="isSeasonPartiallyCompleted(season.season, season.episodes)"
+              [disabled]="!canUpdate()"
+              (valueChange)="onToggleSeason(season.season, season.episodes)"
+            />
+            <ul class="episodes-list">
               @for (episode of [].constructor(season.episodes); track $index; let episodeIndex = $index) {
-                <div class="card">
+                <li>
                   <libc-checkbox
-                    class="card-title"
+                    class="episode-row"
                     data-test-id="completed-episodes-episode-checkbox"
-                    [label]="translations.episode() + ' ' + (episodeIndex + 1)"
+                    [class.episode-watched]="isEpisodeCompleted(season.season, episodeIndex + 1)"
+                    [label]="
+                      translations.episode() +
+                      ' ' +
+                      (episodeIndex + 1) +
+                      (getEpisodeTitle(seasonIndex, episodeIndex)
+                        ? ': ' + getEpisodeTitle(seasonIndex, episodeIndex)
+                        : '')
+                    "
                     [value]="isEpisodeCompleted(season.season, episodeIndex + 1)"
+                    [disabled]="!canUpdate()"
                     (valueChange)="onToggleEpisode(season.season, episodeIndex + 1)"
                   />
-                  <div class="card-body">
-                    <div class="card-body-row">
-                      @if (getEpisodeTitle(seasonIndex, episodeIndex)) {
-                        <span class="episode-title">{{ getEpisodeTitle(seasonIndex, episodeIndex) }}</span>
-                      }
-                    </div>
-                  </div>
-                </div>
+                </li>
               }
-            </div>
+            </ul>
           </libc-details>
         }
       </div>
     }
   </ng-container>
-  <ng-container dialog-shell-menu-content>
-    @if (allEpisodesCompleted()) {
-      <button
-        class="dialog-action"
-        data-test-id="completed-episodes-mark-all-uncompleted"
-        type="button"
-        [attr.aria-label]="translations.markAllEpisodesUncompleted()"
-        [title]="translations.markAllEpisodesUncompleted()"
-        (click)="onMarkAllEpisodesUncompleted()"
-      >
-        <i class="material-icons" aria-hidden="true"> remove_circle_outline </i>
-        <span>{{ translations.markAllEpisodesUncompleted() }}</span>
-      </button>
-    } @else {
-      <button
-        class="dialog-action"
-        data-test-id="completed-episodes-mark-all-completed"
-        type="button"
-        [attr.aria-label]="translations.markAllEpisodesCompleted()"
-        [title]="translations.markAllEpisodesCompleted()"
-        (click)="onMarkAllEpisodesCompleted()"
-      >
-        <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
-        <span>{{ translations.markAllEpisodesCompleted() }}</span>
-      </button>
-    }
+  <ng-container dialog-shell-bottom-content>
+    <div class="tracking-footer" data-test-id="completed-episodes-footer">
+      <div class="save-status" role="status" aria-live="polite" data-test-id="completed-episodes-save-status">
+        @switch (saveStatus()) {
+          @case ('saving') {
+            {{ translations.saving() }}
+          }
+          @case ('saved') {
+            {{ translations.saved() }}
+          }
+          @case ('error') {
+            <span class="save-error">{{ translations.saveError() }}</span>
+            <button
+              type="button"
+              class="dialog-action"
+              data-test-id="completed-episodes-retry-save"
+              (click)="onRetrySave()"
+            >
+              {{ translations.retry() }}
+            </button>
+          }
+        }
+      </div>
+      @if (menuActions().length) {
+        <libc-action-menu
+          [actions]="menuActions()"
+          testIdPrefix="completed-episodes"
+          [title]="translations.actions()"
+          (selected)="onMenuAction($event)"
+        />
+      }
+    </div>
   </ng-container>
 </libc-dialog-shell>

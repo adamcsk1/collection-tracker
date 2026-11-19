@@ -1,5 +1,7 @@
 label {
   display: flex;
+  flex: 1;
+  align-self: stretch;
   align-items: center;
   gap: var(--size-2xs);
 
@@ -20,7 +22,7 @@ small {
 
 input[type='checkbox'] {
   margin-right: var(--size-xs);
-  accent-color: var(--color-primary);
+  accent-color: var(--main-color);
   height: var(--size-lg);
   width: var(--size-lg);
 }

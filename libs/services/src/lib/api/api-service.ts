@@ -444,22 +444,27 @@ export class ApiService extends BaseApiService {
     externalProvider: string,
     externalItemId: string,
     request: TrackingCompletedEpisodesApiRequestModel,
-    ownerShareCode?: string
+    ownerShareCode?: string,
+    options: ApiRequestOptions = {}
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
       `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/completed-episodes${this.buildQuery({ ownerShareCode })}`,
-      request
+      request,
+      options
     );
   }
 
   public markAllTrackingCompletedByExternalId(
     externalProvider: string,
-    externalItemId: string
+    externalItemId: string,
+    options: ApiRequestOptions = {}
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
-      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/actions/mark-completed`
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/actions/mark-completed`,
+      undefined,
+      options
     );
   }
 

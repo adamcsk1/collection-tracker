@@ -53,6 +53,18 @@ required and groups optional artwork, external ratings, and descriptive metadata
 
 Cards show fallback artwork when posters are missing or fail to load, and titles can span two lines.
 
+### Episode tracking
+
+The Episodes dialog groups compact watched-state rows by season, with season counts and overall progress. It opens
+unfinished seasons initially without collapsing the active season when its final episode is checked. Changes save
+immediately through a serialized queue; a quiet status reports saving, success, or failure. Failed changes remain available
+for retry, and closing asks before discarding them. Whole-series operations and season editing live under More.
+
+The Seasons & episodes editor expands one season at a time and keeps optional episode titles collapsed. Cancel and close
+protect unsaved edits. Saving removed seasons or reduced episode counts requires confirmation because watched records
+outside the remaining metadata are deleted. Provider refresh and removal remain explicit, confirmed operations; fetching
+is offered only when the configured provider advertises season-metadata support.
+
 ### Sharing
 
 Owned items in every list expose a Share action in item details. The item-sharing dialog lists existing outgoing

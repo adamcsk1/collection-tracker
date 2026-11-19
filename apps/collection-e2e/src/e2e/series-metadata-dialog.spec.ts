@@ -44,21 +44,26 @@ test.describe('Series metadata dialog', () => {
     await collectionPage.expectItemDialogActionsVisible();
     await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
-    await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openSeriesMetadataActions();
     await expect(collectionPage.getSeriesMetadataRefreshButton()).toBeVisible();
+    await collectionPage.closeSeriesMetadataActions();
 
     await expect(collectionPage.getSeriesMetadataMessage()).toContainText(
-      'Season and episode counts can come from the configured external metadata provider'
+      'Expand a season to edit optional episode titles.'
     );
     await collectionPage.getSeriesMetadataAddButton().click();
     await collectionPage.getSeriesMetadataAddButton().click();
+    await expect(collectionPage.getSeriesMetadataSeasonToggles().nth(1)).toHaveAttribute('aria-expanded', 'true');
 
-    await collectionPage.getSeriesMetadataEpisodeInputs().nth(0).fill('0');
+    await collectionPage.expandSeriesMetadataSeason(0);
+    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('0');
     await expect(collectionPage.getSeriesMetadataValidation()).toBeVisible();
     await expect(collectionPage.getSeriesMetadataSaveButton()).toBeDisabled();
 
-    await collectionPage.getSeriesMetadataEpisodeInputs().nth(0).fill('3');
-    await collectionPage.getSeriesMetadataEpisodeInputs().nth(1).fill('2');
+    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('3');
+    await expect(collectionPage.getSeriesMetadataSeasonToggles().nth(0)).toContainText('3 episodes');
+    await collectionPage.expandSeriesMetadataSeason(1);
+    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('2');
     await expect(collectionPage.getSeriesMetadataValidation()).toHaveCount(0);
     const responsePromise = page.waitForResponse(
       (response) => response.request().method() === 'PUT' && response.url().includes('/tracking/seasons')
@@ -92,7 +97,7 @@ test.describe('Series metadata dialog', () => {
     await collectionPage.expectItemDialogActionsVisible();
     await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
-    await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openSeriesMetadataActions();
     const responsePromise = page.waitForResponse(
       (response) => response.request().method() === 'DELETE' && response.url().includes('/tracking/seasons')
     );
@@ -131,6 +136,7 @@ test.describe('Series metadata dialog', () => {
     await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
 
+    await collectionPage.expandSeriesMetadataSeason(0);
     await collectionPage.getSeriesMetadataEpisodeTitleToggles().first().click();
     await expect(collectionPage.getSeriesMetadataEpisodeTitleInputs().nth(0)).toHaveValue('Alpha');
     await expect(collectionPage.getSeriesMetadataEpisodeTitleInputs().nth(1)).toHaveValue('Beta');
@@ -143,5 +149,53 @@ test.describe('Series metadata dialog', () => {
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     await expect(collectionPage.getSeriesMetadataNoMetadataMessage()).toBeVisible();
+  });
+
+  test('preserves a dirty draft on cancelled close and discards only after confirmation', async ({ page }) => {
+    await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
+    await collectionPage.openItemActions();
+    await collectionPage.getItemDialogManageSeriesMetadataButton().click();
+    await collectionPage.getSeriesMetadataAddButton().click();
+    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('4');
+    await collectionPage.getSeriesMetadataCloseButton().click();
+    await createMessageDialog(page).cancel();
+    await expect(collectionPage.getSeriesMetadataEpisodeInputs().first()).toHaveValue('4');
+    await expect(collectionPage.getSeriesMetadataCloseButton()).toBeFocused();
+    await collectionPage.getSeriesMetadataCancelButton().click();
+    await createMessageDialog(page).confirm();
+    await expect(collectionPage.getSeriesMetadataDialogHost()).toHaveCount(0);
+    await expect(collectionPage.getItemDialogHost()).toBeVisible();
+    await collectionPage.openItemActions();
+    await collectionPage.getItemDialogManageSeriesMetadataButton().click();
+    await expect(collectionPage.getSeriesMetadataNoMetadataMessage()).toBeVisible();
+  });
+
+  test('confirms a metadata reduction before pruning saved progress', async ({ page, api }) => {
+    await api.request('PUT', `/api/v1/collection-items/omdb/${imdbId}/tracking/seasons`, {
+      seasons: [{ season: 1, episodes: 3 }],
+    });
+    await api.request('PUT', `/api/v1/collection-items/omdb/${imdbId}/tracking/completed-episodes`, {
+      completedEpisodes: [{ season: 1, episode: 3 }],
+    });
+    await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
+    await collectionPage.openItemActions();
+    await collectionPage.getItemDialogManageSeriesMetadataButton().click();
+    await collectionPage.expandSeriesMetadataSeason(0);
+    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('1');
+    await expect(collectionPage.getSeriesMetadataProgressWarning()).toBeVisible();
+    await collectionPage.getSeriesMetadataSaveButton().click();
+    await createMessageDialog(page).cancel();
+    await expect(collectionPage.getSeriesMetadataEpisodeInputs().first()).toHaveValue('1');
+    const unchanged = await api.request('GET', `/api/v1/collection-items/omdb/${imdbId}/tracking/completed-episodes`);
+    expect((await unchanged.json()).data.completedEpisodes).toEqual([{ season: 1, episode: 3 }]);
+    const saved = page.waitForResponse(
+      (response) => response.request().method() === 'PUT' && response.url().includes('/tracking/seasons')
+    );
+    await collectionPage.getSeriesMetadataSaveButton().click();
+    await createMessageDialog(page).confirm('Series metadata');
+    expect((await saved).status()).toBe(200);
+    await expect(collectionPage.getSeriesMetadataDialogHost()).toHaveCount(0);
+    const reduced = await api.request('GET', `/api/v1/collection-items/omdb/${imdbId}/tracking/completed-episodes`);
+    expect((await reduced.json()).data.completedEpisodes).toEqual([]);
   });
 });

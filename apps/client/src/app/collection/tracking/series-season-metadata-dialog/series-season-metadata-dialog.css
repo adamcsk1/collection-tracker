@@ -1,63 +1,73 @@
+.metadata-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-sm);
+
+  .close-action {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+}
+
 .metadata-message {
   margin-block-start: 0;
 }
 
 .metadata-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-md);
-  align-items: end;
+  display: grid;
+  gap: var(--size-sm);
   margin: var(--size-sm) 0;
 
-  .card {
-    width: 100%;
+  .card-body[hidden] {
+    display: none;
   }
+}
+
+.season-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  text-align: start;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
 
 .card-body-row {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--size-sm);
-  align-items: flex-end;
 
   libc-input {
     flex: 1 1 12rem;
-    flex-basis: 30%;
-  }
-
-  button {
-    flex-basis: 40%;
-    margin-bottom: var(--size-3xs);
   }
 }
 
-.episode-titles-details {
+.episode-titles-details,
+.season-remove {
   margin-top: var(--size-sm);
-
-  summary {
-    cursor: pointer;
-    font-weight: 500;
-  }
 }
 
 .episode-titles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr));
   gap: var(--size-sm);
   margin-top: var(--size-sm);
 }
 
-.no-metadata-message {
-  color: var(--color-warning);
-  font-style: italic;
-  margin: var(--size-sm) 0;
+.no-metadata-message,
+.progress-warning {
+  color: var(--color-darkgoldenrod);
 }
 
 .validation-message {
-  color: var(--color-danger);
-}
-
-@media (max-width: 640px) {
-  .metadata-grid > * {
-    flex-basis: 100%;
-  }
+  color: var(--color-crimson);
 }

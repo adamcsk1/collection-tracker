@@ -1060,6 +1060,65 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ completedEpisodes: [] });
   });
 
+  it('alerts and rethrows completed episode update errors by default', async () => {
+    const promise = lastValueFrom(
+      service.updateTrackingCompletedEpisodesByExternalId('omdb', 'tt1', { completedEpisodes: [] })
+    );
+    const error = { detail: 'Episode update failed' };
+
+    const request = httpMock.expectOne('https://api.test/collection-items/omdb/tt1/tracking/completed-episodes');
+    request.flush(error, { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500, error });
+    expect(alertSpy).toHaveBeenCalledExactlyOnceWith('Episode update failed');
+  });
+
+  it.each([403, 500])('suppresses completed episode update alerts and rethrows status %s', async (status) => {
+    const payload = { completedEpisodes: [{ season: 1, episode: 2 }] };
+    const promise = lastValueFrom(
+      service.updateTrackingCompletedEpisodesByExternalId('omdb', 'tt1', payload, 'owner/code', {
+        suppressErrorAlert: true,
+      })
+    );
+    const error = { detail: 'Episode update failed' };
+
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/omdb/tt1/tracking/completed-episodes?ownerShareCode=owner%2Fcode'
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(payload);
+    request.flush(error, { status, statusText: status === 403 ? 'Forbidden' : 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status, error });
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('alerts and rethrows mark-all completed episode errors by default', async () => {
+    const promise = lastValueFrom(service.markAllTrackingCompletedByExternalId('omdb', 'tt1'));
+    const error = { detail: 'Mark-all failed' };
+
+    const request = httpMock.expectOne('https://api.test/collection-items/omdb/tt1/tracking/actions/mark-completed');
+    request.flush(error, { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500, error });
+    expect(alertSpy).toHaveBeenCalledExactlyOnceWith('Mark-all failed');
+  });
+
+  it.each([403, 500])('suppresses mark-all completed episode alerts and rethrows status %s', async (status) => {
+    const promise = lastValueFrom(
+      service.markAllTrackingCompletedByExternalId('omdb', 'tt1', { suppressErrorAlert: true })
+    );
+    const error = { detail: 'Mark-all failed' };
+
+    const request = httpMock.expectOne('https://api.test/collection-items/omdb/tt1/tracking/actions/mark-completed');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toBeNull();
+    request.flush(error, { status, statusText: status === 403 ? 'Forbidden' : 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status, error });
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
   it('refreshes images and returns summary', async () => {
     const promise = lastValueFrom(service.refreshImages());
 
