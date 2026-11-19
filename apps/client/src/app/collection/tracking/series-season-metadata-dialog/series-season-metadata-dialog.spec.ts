@@ -80,7 +80,10 @@ describe('SeriesSeasonMetadataDialog', () => {
     expect(saveButton.disabled).toBe(false);
     expect(saveButton.getAttribute('aria-label')).toBe('Save');
     expect(saveButton.title).toBe('Save');
-    expect(refreshButton.classList.contains('button-icon')).toBe(true);
+    expect(refreshButton.classList.contains('dialog-action')).toBe(true);
+    expect(refreshButton.querySelector('span')?.textContent?.trim()).toBe('RefreshSeriesMetadata');
+    expect(saveButton.classList.contains('dialog-action-primary')).toBe(true);
+    expect(saveButton.querySelector('span')?.textContent?.trim()).toBe('Save');
     expect(refreshButton.getAttribute('aria-label')).toBe('RefreshSeriesMetadata');
     expect(removeButton.classList.contains('button-danger')).toBe(true);
     expect(removeButton.getAttribute('aria-label')).toBe('RemoveSeriesMetadata');

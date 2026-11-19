@@ -6,6 +6,13 @@ export const createCollectionPage = (page: Page) => {
   const getDialogFrame = (subject: Locator) => subject.locator('[data-test-id="dialog-frame"]');
   const getActiveDialogFrame = () => page.getByTestId('dialog-frame').last();
   const getItemDialog = () => getDialogFrame(page.getByTestId('item-dialog').last());
+  const waitForItemActionsAnimation = async () => {
+    await getItemDialog()
+      .getByTestId('item-dialog-more-actions')
+      .evaluate(async (dialog) => {
+        await Promise.allSettled(dialog.getAnimations({ subtree: true }).map((animation) => animation.finished));
+      });
+  };
   const getSeriesMetadataDialog = () => getDialogFrame(page.getByTestId('series-metadata-dialog').last());
   const getCompletedEpisodesDialogHost = () => page.getByTestId('completed-episodes-dialog');
   const getCompletedEpisodesDialogFrame = () => getDialogFrame(getCompletedEpisodesDialogHost().last());
@@ -227,6 +234,18 @@ export const createCollectionPage = (page: Page) => {
       await swipeActiveDialog(viewport.width - 2, viewport.width - 90);
     },
     getItemDialogEditButton: () => getItemDialog().locator('[data-test-id="item-dialog-edit"]'),
+    getItemDialogMoreButton: () => getItemDialog().getByTestId('item-dialog-more'),
+    getItemDialogMoreDialog: () => getItemDialog().getByTestId('item-dialog-more-actions'),
+    getItemDialogMoreCloseButton: () => getItemDialog().getByTestId('item-dialog-more-close'),
+    waitForItemActionsAnimation,
+    getItemDialogDragHandle: () => getItemDialog().getByTestId('dialog-drag-handle'),
+    openItemActions: async () => {
+      if (!(await getItemDialog().getByTestId('item-dialog-more-actions').isVisible())) {
+        await getItemDialog().getByTestId('item-dialog-more').click();
+      }
+      await expect(getItemDialog().getByTestId('item-dialog-more-actions')).toBeVisible();
+      await waitForItemActionsAnimation();
+    },
     getItemDialogReadOnlyButton: () => getItemDialog().locator('[data-test-id="item-dialog-read-only"]'),
     getItemDialogSaveButton: () => getItemDialog().locator('[data-test-id="item-dialog-save"]'),
     getItemDialogSaveLabel: () => getItemDialog().locator('[data-test-id="item-dialog-save-label"]'),
@@ -245,37 +264,8 @@ export const createCollectionPage = (page: Page) => {
     expectItemDialogActionsVisible: async () => {
       await expect(getActiveDialog().locator('[data-test-id="dialog-actions-menu"]')).toBeVisible();
     },
-    getDialogActionTooltip: () => getActiveDialog().locator('[data-test-id="reveal-label-tooltip"]'),
-    getItemDialogActionButtons: () => getItemDialog().locator('.button-reveal-label'),
-    holdItemDialogAction: async (testId: string) => {
-      await getItemDialog().locator(`[data-test-id="${testId}"]`).dispatchEvent('pointerdown', {
-        pointerId: 1,
-        pointerType: 'touch',
-        isPrimary: true,
-        clientX: 100,
-        clientY: 100,
-      });
-      await expect(getActiveDialog().locator('[data-test-id="reveal-label-tooltip"]')).toBeVisible();
-    },
-    releaseHeldItemDialogAction: async (testId: string) => {
-      await getItemDialog()
-        .locator(`[data-test-id="${testId}"]`)
-        .evaluate((element) => {
-          const elementWindow = element.ownerDocument.defaultView;
-          if (!elementWindow) throw new Error('Dialog action window is unavailable');
-          element.dispatchEvent(
-            new elementWindow.PointerEvent('pointerup', {
-              bubbles: true,
-              pointerId: 1,
-              pointerType: 'touch',
-              isPrimary: true,
-              clientX: 100,
-              clientY: 100,
-            })
-          );
-          (element as HTMLElement).click();
-        });
-    },
+    getItemDialogActionsMenu: () => getItemDialog().getByTestId('dialog-actions-menu'),
+    getItemDialogActionButtons: () => getItemDialog().getByTestId('dialog-actions-menu').getByRole('button'),
     getItemDialogMarkFavoriteButton: () => getItemDialog().locator('[data-test-id="item-dialog-mark-favorite"]'),
     getItemDialogRemoveFavoriteButton: () => getItemDialog().locator('[data-test-id="item-dialog-remove-favorite"]'),
     getItemDialogMarkFinishedButton: () => getItemDialog().locator('[data-test-id="item-dialog-mark-finished"]'),

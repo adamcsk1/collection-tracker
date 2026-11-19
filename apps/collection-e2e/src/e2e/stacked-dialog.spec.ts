@@ -78,6 +78,7 @@ test.describe('Stacked dialogs', () => {
     await expectActiveDialogFocused();
 
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
     await expect(collectionPage.getSeriesMetadataDialog()).toBeVisible();
     await expectDialogHostStacked(collectionPage.getItemDialogComponentHost());

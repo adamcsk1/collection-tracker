@@ -97,6 +97,7 @@ test.describe('Music', () => {
     await expect(musicPage.getItemDialogMbid()).toContainText(mbid);
 
     const deleteAlbumResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
+    await musicPage.openItemActions();
     await musicPage.getItemDialogDeleteButton().click();
     await createMessageDialog(page).confirm(title);
     expect((await deleteAlbumResponsePromise).status()).toBe(204);

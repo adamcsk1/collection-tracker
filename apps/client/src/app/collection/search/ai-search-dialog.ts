@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
-import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { Textarea } from '@components/textarea/textarea';
 import { AlertService } from '@services/alert-service';
 import { PortalService } from '@services/portal-service';
@@ -18,9 +17,8 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-ai-search-dialog',
-  imports: [DialogShell, RevealLabel, Textarea, FormField],
+  imports: [DialogShell, Textarea, FormField],
   templateUrl: './ai-search-dialog.html',
-  styleUrl: './ai-search-dialog.css',
   host: {
     class: 'dialog',
   },
@@ -34,7 +32,7 @@ export class AiSearchDialog {
   private readonly portal = inject(PortalService);
   protected readonly translations = {
     aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
-    sendPrompt: computed(() => this.ngxSignalTranslate.translate('SendPrompt')),
+    search: computed(() => this.ngxSignalTranslate.translate('Search')),
     messageAiSearch: computed(() => this.ngxSignalTranslate.translate('Message.AiSearch')),
     aiSearchInfo: computed(() => this.ngxSignalTranslate.translate('AiSearchInfo')),
   };

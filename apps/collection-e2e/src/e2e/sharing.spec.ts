@@ -49,6 +49,7 @@ const visitSharedList = async (
 
 const assertDialogPermissions = async (permissions: { update: boolean; delete: boolean }): Promise<void> => {
   await collectionPage.expectItemDialogActionsVisible();
+  if (permissions.update || permissions.delete) await collectionPage.openItemActions();
 
   if (permissions.update) {
     await expect(collectionPage.getItemDialogEditButton()).toBeVisible();
@@ -61,6 +62,7 @@ const assertDialogPermissions = async (permissions: { update: boolean; delete: b
   } else {
     await expect(page.getByTestId('item-dialog-delete')).toHaveCount(0);
   }
+  if (permissions.update || permissions.delete) await collectionPage.getItemDialogMoreCloseButton().click();
 };
 
 const openFloatFilters = async (): Promise<void> => {
@@ -341,6 +343,7 @@ test.describe('Collection sharing - library movie permissions', () => {
     const updateItemResponse = waitForResponse('PUT', '/api/v1/collection-items/');
     await collectionPage.getListItemImages().first().click();
     await assertDialogPermissions({ update: true, delete: false });
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Updated Movie');
     await collectionPage.getItemDialogSaveButton().click();
@@ -360,6 +363,7 @@ test.describe('Collection sharing - library movie permissions', () => {
     const deleteItemResponse = waitForResponse('DELETE', '/api/v1/collection-items/');
     await collectionPage.getListItemImages().first().click();
     await assertDialogPermissions({ update: false, delete: true });
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogDeleteButton().click();
     await createMessageDialog(page).confirm('Shared Delete Movie');
     const response = await deleteItemResponse;
@@ -438,6 +442,7 @@ test.describe('Collection sharing - non-library lists', () => {
     const updateWishlistItemResponse = waitForResponse('PUT', '/api/v1/collection-items/');
     await collectionPage.getListItemImages().first().click();
     await assertDialogPermissions({ update: true, delete: true });
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Wishlist Updated');
     await collectionPage.getItemDialogSaveButton().click();
@@ -545,6 +550,7 @@ test.describe('Collection sharing - non-library lists', () => {
     const updateTrackingResponse = waitForResponse('PUT', '/api/v1/collection-items/');
     await collectionPage.getListItemImages().first().click();
     await assertDialogPermissions({ update: true, delete: false });
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Shared Tracking Renamed');
     await collectionPage.getItemDialogSaveButton().click();

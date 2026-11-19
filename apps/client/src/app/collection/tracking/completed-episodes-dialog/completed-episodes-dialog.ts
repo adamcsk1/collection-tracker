@@ -13,7 +13,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
-import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -34,7 +33,7 @@ import { getOpenSeasons } from './utils/get-open-seasons-util';
 
 @Component({
   selector: 'ct-completed-episodes-dialog',
-  imports: [Checkbox, DialogShell, Details, RevealLabel],
+  imports: [Checkbox, DialogShell, Details],
   templateUrl: './completed-episodes-dialog.html',
   styleUrl: './completed-episodes-dialog.css',
   host: {

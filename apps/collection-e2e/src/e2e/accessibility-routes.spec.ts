@@ -127,6 +127,7 @@ test.describe('Route accessibility', () => {
     await collectionPage.visit();
     await collectionPage.getListItemImages().first().press('Enter');
     const deleteButton = collectionPage.getItemDialogDeleteButton();
+    await collectionPage.openItemActions();
     await deleteButton.press('Enter');
     await expect(messageDialog.getDialog()).toHaveAttribute('role', 'alertdialog');
     await expect(messageDialog.getDialog()).toHaveAttribute('aria-modal', 'true');
@@ -158,14 +159,16 @@ test.describe('Route accessibility', () => {
     await expect(messageDialog.getDialogHost()).toHaveCount(0);
     await expect(collectionPage.getItemDialogHost()).toBeVisible();
     await expect(collectionPage.getItemDialogComponentHost()).not.toHaveAttribute('inert', '');
-    await expect(deleteButton).toBeFocused();
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
 
+    await collectionPage.openItemActions();
     await deleteButton.press('Enter');
     await messageDialog.getCancelButton().press('Enter');
     await expect(messageDialog.getDialogHost()).toHaveCount(0);
-    await expect(deleteButton).toBeFocused();
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
     await expect(collectionPage.getItemDialogHost()).toContainText(title);
 
+    await collectionPage.openItemActions();
     await deleteButton.press('Enter');
     await messageDialog.getInput().fill(title);
     const responsePromise = page.waitForResponse(
@@ -188,6 +191,7 @@ test.describe('Route accessibility', () => {
     const messageDialog = createMessageDialog(page);
     await collectionPage.visit();
     await collectionPage.getListItemImages().first().press('Enter');
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogDeleteButton().press('Enter');
     await messageDialog.getInput().fill(title);
     await expect(messageDialog.getConfirmButton()).toBeEnabled();
@@ -206,6 +210,7 @@ test.describe('Route accessibility', () => {
     const messageDialog = createMessageDialog(page);
     await collectionPage.visit();
     await collectionPage.getListItemImages().first().press('Enter');
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().press('Enter');
     await collectionPage.getItemDialogTitleInput().fill('Preserved Draft');
     await collectionPage.getItemDialogReadOnlyButton().press('Enter');

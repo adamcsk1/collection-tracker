@@ -11,7 +11,12 @@ import { DialogShell } from './dialog-shell';
   selector: 'libc-test-dialog-shell-host',
   imports: [DialogShell],
   template: `
-    <libc-dialog-shell [beforeClose]="beforeClose()" [compact]="compact()" [contentSized]="contentSized()">
+    <libc-dialog-shell
+      [beforeClose]="beforeClose()"
+      [compact]="compact()"
+      [contentSized]="contentSized()"
+      [ariaLabel]="ariaLabel()"
+    >
       <div dialog-shell-content>Content</div>
     </libc-dialog-shell>
     <button id="other">Other focusable</button>
@@ -21,6 +26,7 @@ class HostComponent {
   public readonly beforeClose = signal<(() => Promise<boolean>) | null>(null);
   public readonly compact = signal(false);
   public readonly contentSized = signal(false);
+  public readonly ariaLabel = signal('');
 }
 
 @Component({
@@ -233,6 +239,76 @@ describe('DialogShell component', () => {
     const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
     expect(document.activeElement).toBe(dialogRoot);
   });
+
+  it('supports an accessible name without a visible heading', () => {
+    fixture.componentInstance.ariaLabel.set('AI search');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]').getAttribute('aria-label')).toBe('AI search');
+  });
+
+  for (const reducedMotion of [false, true]) {
+    it(`animates content size changes only when reduced motion is ${reducedMotion}`, () => {
+      fixture.destroy();
+      let notifyResize = (): void => undefined;
+      const observe = vi.fn();
+      const disconnect = vi.fn();
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(callback: ResizeObserverCallback) {
+            notifyResize = () => callback([], this);
+          }
+          public readonly observe = observe;
+          public readonly disconnect = disconnect;
+          public readonly unobserve = vi.fn();
+        }
+      );
+      vi.mocked(window.matchMedia).mockImplementation((query) => ({
+        matches: query === '(prefers-reduced-motion: reduce)' && reducedMotion,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+      fixture = TestBed.createComponent(HostComponent);
+      fixture.componentInstance.contentSized.set(true);
+      fixture.detectChanges();
+      const frame = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+      let height = 200;
+      Object.defineProperty(frame, 'offsetHeight', { get: () => height });
+      const cancel = vi.fn();
+      const animation = { onfinish: null as (() => void) | null, cancel };
+      const animate = vi.fn().mockReturnValue(animation);
+      Object.defineProperty(frame, 'animate', { value: animate });
+      notifyResize();
+      expect(animate).not.toHaveBeenCalled();
+      height = 400;
+      notifyResize();
+      if (reducedMotion) {
+        expect(animate).not.toHaveBeenCalled();
+      } else {
+        expect(animate).toHaveBeenCalledWith([{ height: '200px' }, { height: '400px' }], {
+          duration: 180,
+          easing: 'ease-out',
+        });
+        animation.onfinish?.();
+        expect(observe).toHaveBeenCalledWith(frame);
+        height = 250;
+        notifyResize();
+        expect(animate).toHaveBeenLastCalledWith([{ height: '400px' }, { height: '250px' }], {
+          duration: 180,
+          easing: 'ease-out',
+        });
+      }
+      fixture.destroy();
+      expect(disconnect).toHaveBeenCalled();
+      if (!reducedMotion) expect(cancel).toHaveBeenCalled();
+      vi.unstubAllGlobals();
+    });
+  }
 
   it('opts into content sizing without changing full-size dialogs or sheet controls', () => {
     const frame = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;

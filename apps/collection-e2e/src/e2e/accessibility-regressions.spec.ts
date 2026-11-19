@@ -228,6 +228,7 @@ test.describe('WCAG regressions', () => {
     const collectionPage = createCollectionPage(page);
     await collectionPage.visitTracking();
     await collectionPage.getListItemImages().first().click();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
     await collectionPage.getSeriesMetadataAddButton().click();
     const season = collectionPage.getSeriesMetadataSeasonInputs().first();

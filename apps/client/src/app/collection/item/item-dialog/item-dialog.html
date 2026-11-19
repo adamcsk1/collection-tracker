@@ -184,8 +184,7 @@
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
       <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.backToDetails()"
+        class="dialog-action"
         data-test-id="item-dialog-read-only"
         type="button"
         [attr.aria-label]="translations.backToDetails()"
@@ -193,13 +192,10 @@
         (click)="onDiscardEdits()"
       >
         <i class="material-icons" aria-hidden="true"> arrow_back </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.backToDetails() }}</span></span
-        >
+        <span>{{ translations.backToDetails() }}</span>
       </button>
       <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.save()"
+        class="dialog-action dialog-action-primary"
         data-test-id="item-dialog-save"
         type="submit"
         form="item-edit-form"
@@ -208,9 +204,7 @@
         [disabled]="form().invalid()"
       >
         <i class="material-icons" aria-hidden="true"> save </i>
-        <span class="button-reveal-label-text" data-test-id="item-dialog-save-label"
-          ><span>{{ translations.save() }}</span></span
-        >
+        <span data-test-id="item-dialog-save-label">{{ translations.save() }}</span>
       </button>
     }
   </ng-container>

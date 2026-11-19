@@ -143,8 +143,12 @@ describe('FloatActionButtons', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="add-new"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test-id="random-pick"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test-id="collection-actions-popup"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test-id="add-new"]')?.textContent).toContain('AddNew');
-    expect(fixture.nativeElement.querySelector('[data-test-id="add-new"]')?.getAttribute('aria-label')).toBe('AddNew');
+    const addButton = fixture.nativeElement.querySelector('[data-test-id="add-new"]') as HTMLButtonElement;
+    expect(addButton.textContent?.trim()).toBe('add');
+    expect(addButton.classList.contains('button-icon')).toBe(true);
+    expect(addButton.getAttribute('aria-label')).toBe('AddNew');
+    expect(addButton.title).toBe('AddNew');
+    expect(addButton.querySelector('.material-icons')?.getAttribute('aria-hidden')).toBe('true');
     expect(fixture.nativeElement.querySelector('[data-test-id="random-pick"]')?.textContent).toContain('RandomPick');
     expect(fixture.nativeElement.textContent).toContain('Actions');
     expect(fixture.nativeElement.textContent).not.toContain('Filtering');

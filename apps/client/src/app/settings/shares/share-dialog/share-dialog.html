@@ -115,7 +115,7 @@
               @if (!readOnly() && readIndeterminate(listType, scope.contentType)) {
                 <div class="scope-actions">
                   <button
-                    class="clear-selected"
+                    class="clear-selected dialog-action"
                     type="button"
                     [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-clear-selected'"
                     (click)="onClearSelected(listType, scope.contentType)"
@@ -143,8 +143,7 @@
   @if (!readOnly()) {
     <ng-container dialog-shell-bottom-content>
       <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.save()"
+        class="dialog-action dialog-action-primary"
         data-test-id="share-dialog-save"
         type="button"
         [attr.aria-label]="translations.save()"
@@ -153,9 +152,7 @@
         (click)="onSave()"
       >
         <i class="material-icons" aria-hidden="true"> save </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.save() }}</span></span
-        >
+        <span>{{ translations.save() }}</span>
       </button>
     </ng-container>
   }

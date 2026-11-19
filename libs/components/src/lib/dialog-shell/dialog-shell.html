@@ -20,6 +20,7 @@
     aria-modal="true"
     tabindex="-1"
     [attr.aria-labelledby]="ariaLabelledBy() || null"
+    [attr.aria-label]="ariaLabel() || null"
     [attr.aria-describedby]="ariaDescribedBy() || null"
     [animate.enter]="compact() ? 'compact-enter' : 'animation-slide-in-bottom'"
     [animate.leave]="compact() ? 'compact-leave' : 'animation-slide-out-bottom'"

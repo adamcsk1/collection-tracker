@@ -2,13 +2,13 @@
   <button
     type="button"
     data-test-id="add-new"
-    class="add-item-button"
+    class="add-item-button button-icon"
     [attr.aria-label]="translations.addNew()"
+    [title]="translations.addNew()"
     [disabled]="apiLoadNetworkStatus() === 'pending'"
     (click)="onAddNew()"
   >
     <i class="material-icons" aria-hidden="true">add</i>
-    <span>{{ translations.addNew() }}</span>
   </button>
 }
 @if (actionButtonsVisible()) {

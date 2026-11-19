@@ -54,6 +54,7 @@ export class DialogShell implements AfterViewInit {
   public readonly beforeClose = input<(() => Promise<boolean>) | null>(null);
   private closePending = false;
   public readonly ariaLabelledBy = input('');
+  public readonly ariaLabel = input('');
   public readonly ariaDescribedBy = input('');
   public readonly dialogRole = input<'dialog' | 'alertdialog'>('dialog');
   public readonly compact = input(false);
@@ -75,6 +76,7 @@ export class DialogShell implements AfterViewInit {
 
   public ngAfterViewInit(): void {
     this.dialogRoot()?.nativeElement.focus();
+    this.observeContentSize();
 
     const menuContentElement = this.menuContent()?.nativeElement;
     if (menuContentElement) {
@@ -91,6 +93,45 @@ export class DialogShell implements AfterViewInit {
 
   public close(): void {
     void this.onClose();
+  }
+
+  private observeContentSize(): void {
+    const frame = this.dialogRoot()?.nativeElement;
+    if (!frame || typeof ResizeObserver === 'undefined') return;
+
+    let previousHeight: number | null = null;
+    let animation: Animation | null = null;
+    const observer = new ResizeObserver(() => {
+      const height = frame.offsetHeight;
+      const startHeight = previousHeight;
+      previousHeight = height;
+      if (
+        startHeight === null ||
+        startHeight === height ||
+        !this.contentSized() ||
+        this.compact() ||
+        this.closing() ||
+        this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
+        return;
+      }
+
+      // Do not observe the intermediate heights produced by our own animation.
+      observer.disconnect();
+      animation = frame.animate([{ height: `${startHeight}px` }, { height: `${height}px` }], {
+        duration: 180,
+        easing: 'ease-out',
+      });
+      animation.onfinish = () => {
+        animation = null;
+        if (!this.destroyRef.destroyed) observer.observe(frame);
+      };
+    });
+    observer.observe(frame);
+    this.destroyRef.onDestroy(() => {
+      observer.disconnect();
+      animation?.cancel();
+    });
   }
 
   protected async onClose(): Promise<void> {

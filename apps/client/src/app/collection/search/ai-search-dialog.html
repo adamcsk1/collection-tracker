@@ -1,7 +1,4 @@
-<libc-dialog-shell ariaLabelledBy="ai-search-dialog-title">
-  <ng-container dialog-shell-top-content>
-    <h2 id="ai-search-dialog-title" class="dialog-title">{{ translations.aiSearch() }}</h2>
-  </ng-container>
+<libc-dialog-shell [ariaLabel]="translations.aiSearch()" [contentSized]="true">
   <ng-container dialog-shell-content>
     <libc-textarea
       data-test-id="ai-search-textarea"
@@ -12,36 +9,27 @@
     />
   </ng-container>
   <ng-container dialog-shell-bottom-content>
-    <div class="panel-actions">
-      <button
-        type="button"
-        data-test-id="ai-search-send"
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.sendPrompt()"
-        [attr.aria-label]="translations.sendPrompt()"
-        [title]="translations.sendPrompt()"
-        (click)="onSend()"
-        (keydown.enter)="onSend()"
-      >
-        <i class="material-icons" aria-hidden="true">send</i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.sendPrompt() }}</span></span
-        >
-      </button>
+    <div class="dialog-action-group">
       <button
         type="button"
         data-test-id="ai-search-info"
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.aiSearchInfo()"
+        class="dialog-action"
         [attr.aria-label]="translations.aiSearchInfo()"
         [title]="translations.messageAiSearch()"
         [attr.aria-description]="translations.messageAiSearch()"
         (click)="onShowMessage()"
       >
-        <i class="material-icons" aria-hidden="true">hub</i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.aiSearchInfo() }}</span></span
-        >
+        <i class="material-icons" aria-hidden="true">help_outline</i>
+        <span>{{ translations.aiSearchInfo() }}</span>
+      </button>
+      <button
+        type="button"
+        data-test-id="ai-search-send"
+        class="dialog-action dialog-action-primary"
+        (click)="onSend()"
+      >
+        <i class="material-icons" aria-hidden="true">search</i>
+        <span>{{ translations.search() }}</span>
       </button>
     </div>
   </ng-container>

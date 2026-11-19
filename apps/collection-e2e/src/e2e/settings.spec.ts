@@ -428,8 +428,9 @@ test.describe('Settings - appMode: full (all permissions)', () => {
   test('the item dialog shows edit, delete, and mark-watched buttons', async () => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await expect(collectionPage.getItemDialogMarkFinishedButton()).toBeVisible();
+    await collectionPage.openItemActions();
     await expect(collectionPage.getItemDialogEditButton()).toBeVisible();
     await expect(collectionPage.getItemDialogDeleteButton()).toBeVisible();
-    await expect(collectionPage.getItemDialogMarkFinishedButton()).toBeVisible();
   });
 });

@@ -46,9 +46,11 @@ describe('AiSearchDialog component', () => {
   it('renders the AI search textarea', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="ai-search-textarea"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('textarea').getAttribute('aria-label')).toBe('AiSearch');
-    expect(fixture.nativeElement.querySelector('[role="dialog"]').getAttribute('aria-labelledby')).toBe(
-      'ai-search-dialog-title'
-    );
+    const dialog = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog.getAttribute('aria-label')).toBe('AiSearch');
+    expect(dialog.hasAttribute('aria-labelledby')).toBe(false);
+    expect(dialog.classList.contains('content-sized')).toBe(true);
+    expect(dialog.querySelector('h2')).toBeNull();
   });
 
   it('uses the standard dialog host class', () => {
@@ -60,10 +62,8 @@ describe('AiSearchDialog component', () => {
   it('calls send and closes the portal when the send button is clicked', () => {
     const sendButton: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="ai-search-send"]');
 
-    expect(sendButton.classList.contains('button-reveal-label')).toBe(true);
-    expect(sendButton.getAttribute('aria-label')).toBe('SendPrompt');
-    expect(sendButton.getAttribute('title')).toBe('SendPrompt');
-    expect(sendButton.querySelector('.button-reveal-label-text')?.textContent?.trim()).toBe('SendPrompt');
+    expect(sendButton.classList.contains('button-reveal-label')).toBe(false);
+    expect(sendButton.querySelector('span')?.textContent?.trim()).toBe('Search');
 
     sendButton.click();
     fixture.detectChanges();
@@ -75,11 +75,11 @@ describe('AiSearchDialog component', () => {
   it('shows an information dialog when the info button is clicked', () => {
     const infoButton: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="ai-search-info"]');
 
-    expect(infoButton.classList.contains('button-reveal-label')).toBe(true);
+    expect(infoButton.classList.contains('dialog-action')).toBe(true);
     expect(infoButton.getAttribute('aria-label')).toBe('AiSearchInfo');
     expect(infoButton.getAttribute('title')).toBe('Message.AiSearch');
     expect(infoButton.getAttribute('aria-description')).toBe('Message.AiSearch');
-    expect(infoButton.querySelector('.button-reveal-label-text')?.textContent?.trim()).toBe('AiSearchInfo');
+    expect(infoButton.querySelector('span')?.textContent?.trim()).toBe('AiSearchInfo');
 
     infoButton.click();
     fixture.detectChanges();

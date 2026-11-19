@@ -23,6 +23,9 @@ export const createBooksPage = (page: Page) => {
     getListItemTitles: () => page.getByTestId('list-item-title'),
     getListItemImages: () => page.getByTestId('list-item-image'),
     getItemDialog,
+    openItemActions: async () => {
+      await getItemDialog().getByTestId('item-dialog-more').click();
+    },
     getItemDialogIsbn: () => getItemDialog().locator('[data-test-id="item-dialog-isbn"]'),
     getItemDialogDeleteButton: () => getItemDialog().locator('[data-test-id="item-dialog-delete"]'),
   };

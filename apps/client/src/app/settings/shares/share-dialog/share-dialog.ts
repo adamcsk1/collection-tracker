@@ -17,7 +17,6 @@ import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
-import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { PortalService } from '@services/portal-service';
 import { ConfirmService } from '@services/confirm-service';
 import {
@@ -39,7 +38,7 @@ import type { GrantPermissionKey } from './share-dialog-model';
 
 @Component({
   selector: 'ct-share-dialog',
-  imports: [Callout, Checkbox, Details, DialogShell, FormField, Input, RevealLabel],
+  imports: [Callout, Checkbox, Details, DialogShell, FormField, Input],
   templateUrl: './share-dialog.html',
   styleUrl: './share-dialog.css',
   host: { class: 'dialog' },

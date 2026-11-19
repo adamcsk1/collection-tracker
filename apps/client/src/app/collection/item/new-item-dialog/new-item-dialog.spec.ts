@@ -2,9 +2,11 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
+import { PortalService } from '@services/portal-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../../main/main-collection-store';
@@ -90,6 +92,51 @@ describe('NewItemDialog component', () => {
     expect(component['manualForm'].title().value()).toBe('Unsaved draft');
     vi.mocked(confirm.open).mockReturnValue(of(true));
     expect(await component['canDiscard']()).toBe(true);
+  });
+
+  it('renders all save outcomes as labelled buttons bound to the active form', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [NewItemDialog],
+      providers: [
+        { provide: ConfirmService, useValue: { open: vi.fn(() => of(false)) } },
+        { provide: PortalService, useValue: { close: vi.fn() } },
+        provideSignalTranslateConfig({ path: '' }),
+        provideStore(initialMainCollectionState, mainCollectionStateToken),
+        provideStore(initialMainState, mainStateToken),
+        provideStore(initialApiState, apiStateToken),
+        provideStore(initialSharesState, sharesStateToken),
+      ],
+    });
+    TestBed.overrideComponent(NewItemDialog, {
+      set: {
+        providers: [
+          { provide: NewItemDialogService, useValue: service },
+          { provide: ApiService, useValue: api },
+          SharesLoaderService,
+        ],
+      },
+    });
+    fixture = TestBed.createComponent(NewItemDialog);
+    fixture.detectChanges();
+    for (const [testId, label] of [
+      ['new-item-save', 'Save'],
+      ['new-item-save-and-new', 'SaveAndNew'],
+      ['new-item-save-and-close', 'SaveAndClose'],
+    ]) {
+      const button = fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) as HTMLButtonElement;
+      expect(button.querySelector('span')?.textContent).toBe(label);
+      expect(button.classList.contains('button-reveal-label')).toBe(false);
+      expect(button.classList.contains('dialog-action')).toBe(true);
+      expect(button.classList.contains('dialog-action-primary')).toBe(testId === 'new-item-save-and-close');
+      expect(button.getAttribute('form')).toBe('new-item-search-form');
+      expect(button.disabled).toBe(true);
+    }
+    fixture.componentInstance['mode'].set('manual');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test-id="new-item-save"]').getAttribute('form')).toBe(
+      'new-item-manual-form'
+    );
   });
 
   it('keeps optional details expanded after an invalid rating is corrected', () => {

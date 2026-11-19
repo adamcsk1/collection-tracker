@@ -42,6 +42,7 @@ test.describe('Series metadata dialog', () => {
   test('saves manual season metadata', async ({ page }) => {
     await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
     await collectionPage.expectItemDialogActionsVisible();
     await expect(collectionPage.getSeriesMetadataRefreshButton()).toBeVisible();
@@ -66,6 +67,7 @@ test.describe('Series metadata dialog', () => {
 
     expect((await responsePromise).status()).toBe(200);
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await expect(collectionPage.getItemDialogManageSeriesMetadataButton()).toBeVisible();
   });
 
@@ -88,6 +90,7 @@ test.describe('Series metadata dialog', () => {
     await expect(page.getByTestId('completed-episodes-dialog')).toHaveCount(0);
     await expect(collectionPage.getItemDialogHost()).toBeVisible();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
     await collectionPage.expectItemDialogActionsVisible();
     const responsePromise = page.waitForResponse(
@@ -108,6 +111,7 @@ test.describe('Series metadata dialog', () => {
   test('saves and restores episode titles in the metadata dialog', async ({ page }) => {
     await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     await collectionPage.getSeriesMetadataAddButton().click();
@@ -124,6 +128,7 @@ test.describe('Series metadata dialog', () => {
     expect((await responsePromise).status()).toBe(200);
 
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     await collectionPage.getSeriesMetadataEpisodeTitleToggles().first().click();
@@ -134,6 +139,7 @@ test.describe('Series metadata dialog', () => {
   test('shows no-metadata message when no metadata is set', async () => {
     await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     await expect(collectionPage.getSeriesMetadataNoMetadataMessage()).toBeVisible();

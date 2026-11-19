@@ -42,7 +42,11 @@ describe('TokenDialog component', () => {
   });
 
   it('calls copyToClipboard with the current token', () => {
-    component['onCopyToClipboard']();
+    const copy = fixture.nativeElement.querySelector('[data-test-id="token-dialog-copy"]') as HTMLButtonElement;
+    expect(copy.classList.contains('dialog-action-primary')).toBe(true);
+    expect(copy.closest('.dialog-footer')).not.toBeNull();
+    expect(copy.querySelector('span')?.textContent?.trim()).toBe('CopyToClipboard');
+    copy.click();
 
     expect(copyToClipboardUtil.copyToClipboard).toHaveBeenCalledWith('secret-token');
   });

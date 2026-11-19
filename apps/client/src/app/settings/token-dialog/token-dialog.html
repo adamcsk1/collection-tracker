@@ -7,15 +7,18 @@
   </ng-container>
   <ng-container dialog-shell-content>
     <code data-test-id="token-dialog-value" id="secret">{{ token() }}</code>
+    <small> {{ message() }} </small>
+  </ng-container>
+  <ng-container dialog-shell-bottom-content>
     <button
       data-test-id="token-dialog-copy"
-      class="text-button"
+      class="dialog-action dialog-action-primary"
       type="button"
       [attr.aria-label]="translations.copyToClipboard()"
       (click)="onCopyToClipboard()"
     >
-      {{ translations.copyToClipboard() }}
+      <i class="material-icons" aria-hidden="true">content_copy</i>
+      <span>{{ translations.copyToClipboard() }}</span>
     </button>
-    <small> {{ message() }} </small>
   </ng-container>
 </libc-dialog-shell>

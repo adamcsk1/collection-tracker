@@ -8,6 +8,33 @@ test.describe('Collection workflow regressions', () => {
     await autoLogin();
   });
 
+  test('keeps title hover and keyboard rings inside long card titles', async ({ page, api }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await api.request('POST', '/api/v1/collection-items', buildCollectionItem('Batman: The Animated Series'));
+    const collection = createCollectionPage(page);
+    await collection.visit();
+    const title = collection.getListItemTitleButtons().first();
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme });
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+        .toBe(colorScheme === 'dark');
+      await title.hover();
+      await expect(title).toHaveCSS('outline-style', 'solid');
+      await expect(title).toHaveCSS('outline-width', '2px');
+      await expect(title).toHaveCSS('outline-offset', '-2px');
+      await expect(title).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      expect((await title.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await page.screenshot({ path: testInfo.outputPath(`title-hover-${colorScheme}.png`) });
+      await page.mouse.move(0, 0);
+      await title.focus();
+      await expect(title).toBeFocused();
+      await expect(title).toHaveCSS('outline-offset', '-2px');
+    }
+    await title.press('Enter');
+    await expect(collection.getItemDialogHost()).toBeVisible();
+  });
+
   test('reaches search before cards and processes input without keyboard events', async ({ page, api }) => {
     await api.request('POST', '/api/v1/collection-items', buildCollectionItem('Searchable Movie'));
     const collection = createCollectionPage(page);
@@ -162,6 +189,40 @@ test.describe('Collection workflow regressions', () => {
     await expect(collection.getListItemTitleButtons().first()).toBeFocused();
   });
 
+  for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+    test(`resizes content-sized sheets with motion preference ${reducedMotion}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page.emulateMedia({ reducedMotion });
+      const collection = createCollectionPage(page);
+      await collection.visit();
+      await collection.openNewItemDialog();
+      const frame = page.getByTestId('dialog-frame').last();
+      await expect(frame).toHaveCSS('transform', 'none');
+      const initialHeight = (await frame.boundingBox())!.height;
+      const sampleResize = frame.evaluate(async (element) => {
+        const started = performance.now();
+        let animatedHeight = false;
+        while (performance.now() - started < 1500) {
+          animatedHeight ||= element
+            .getAnimations()
+            .some(
+              (animation) =>
+                animation.effect instanceof KeyframeEffect &&
+                animation.effect.getKeyframes().some((keyframe) => 'height' in keyframe)
+            );
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        }
+        return animatedHeight;
+      });
+      await collection.getNewItemManualModeButton().click();
+      expect(await sampleResize).toBe(reducedMotion === 'no-preference');
+      const finalBounds = (await frame.boundingBox())!;
+      expect(finalBounds.height).toBeGreaterThan(initialHeight);
+      expect(finalBounds.y + finalBounds.height).toBeCloseTo(900, 0);
+      expect(finalBounds.height).toBeLessThanOrEqual(855);
+    });
+  }
+
   for (const width of [320, 390, 1280]) {
     test(`fits Add content and keeps toolbar actions aligned at ${width}px`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
@@ -202,12 +263,26 @@ test.describe('Collection workflow regressions', () => {
       await collection.getNewItemManualModeButton().click();
       await expect(collection.getNewItemManualHint()).toBeVisible();
       await expect(collection.getNewItemManualTitleInput()).toBeVisible();
+      await frame.evaluate(async (element) => {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+        await Promise.all(element.getAnimations().map((animation) => animation.finished));
+      });
       const hint = await collection.getNewItemManualHint().boundingBox();
       const title = await collection.getNewItemManualTitleInput().boundingBox();
       expect(title!.y).toBeGreaterThanOrEqual(hint!.y + hint!.height + 12);
       const save = await collection.getNewItemSaveButton().boundingBox();
       const saveAndClose = await collection.getNewItemSaveAndCloseButton().boundingBox();
-      expect(save!.y + save!.height / 2).toBeCloseTo(saveAndClose!.y + saveAndClose!.height / 2, 0);
+      expect(save!.height).toBe(saveAndClose!.height);
+      for (const button of [
+        collection.getNewItemSaveButton(),
+        collection.getNewItemSaveAndNewButton(),
+        collection.getNewItemSaveAndCloseButton(),
+      ]) {
+        await expect(button.locator('span')).toBeVisible();
+        const bounds = await button.boundingBox();
+        expect(bounds!.x).toBeGreaterThanOrEqual(0);
+        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+      }
       expect(await frame.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
       await page.screenshot({ path: testInfo.outputPath('add-manual.png') });
       await page.emulateMedia({ colorScheme: 'dark' });
@@ -225,6 +300,7 @@ test.describe('Collection workflow regressions', () => {
       const parent = collection.getItemDialogHost();
       await expect(parent).toHaveCSS('transform', 'none');
       const before = await parent.boundingBox();
+      await collection.openItemActions();
       await collection.getItemDialogDeleteButton().click();
       await expect(message.getDialog()).toBeVisible();
       await expect(message.getDialog()).toHaveCSS('transform', 'none');
@@ -250,7 +326,7 @@ test.describe('Collection workflow regressions', () => {
       await message.getCancelButton().click();
       await expect(message.getDialog()).toHaveClass(/compact-leave/);
       await expect(message.getDialogHost()).toHaveCount(0);
-      await expect(collection.getItemDialogDeleteButton()).toBeFocused();
+      await expect(collection.getItemDialogMoreButton()).toBeFocused();
       expect(await parent.boundingBox()).toEqual(resizedParent);
     });
   }

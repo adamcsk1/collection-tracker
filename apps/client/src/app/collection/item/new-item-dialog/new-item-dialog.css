@@ -119,25 +119,3 @@
 .error {
   color: var(--color-crimson);
 }
-
-.primary-save-action {
-  display: inline-flex;
-  width: auto;
-  align-items: center;
-  gap: var(--size-2xs);
-  font-weight: bold;
-}
-
-.save-actions {
-  display: flex;
-  align-items: center;
-  justify-content: safe center;
-  gap: var(--size-xs);
-  width: 100%;
-  overflow-x: auto;
-  padding: var(--size-2xs);
-
-  button {
-    flex-shrink: 0;
-  }
-}

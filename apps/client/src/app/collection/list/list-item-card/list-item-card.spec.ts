@@ -3,6 +3,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { ListItemCard } from './list-item-card';
 
 describe('ListItemCard', () => {
+  it('keeps long titles readable by assistive technology and opens from the title button', async () => {
+    const fixture = TestBed.createComponent(ListItemCard);
+    const title = 'Batman: The Animated Series with a long title';
+    fixture.componentRef.setInput('title', title);
+    const open = vi.fn();
+    fixture.componentInstance.open.subscribe(open);
+    await fixture.whenStable();
+    const button = fixture.nativeElement.querySelector('[data-test-id="list-item-title-button"]') as HTMLButtonElement;
+    expect(button.textContent?.trim()).toBe(title);
+    expect(button.closest('h2')?.title).toBe(title);
+    button.focus();
+    expect(document.activeElement).toBe(button);
+    button.click();
+    expect(open).toHaveBeenCalledOnce();
+  });
   it('keeps badge and image actions separate and keyboard accessible', async () => {
     const fixture = TestBed.createComponent(ListItemCard);
     fixture.componentRef.setInput('title', 'Example');

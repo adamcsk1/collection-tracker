@@ -21,12 +21,9 @@ const stubAiMatches = async (page: Page, matchedIds: string[]) => {
   });
 };
 
-const waitForAiAvailability = async (page: Page, autoLogin: () => Promise<void>) => {
-  const responsePromise = page.waitForResponse(
-    (response) => response.request().method() === 'GET' && response.url().includes('/api/v1/ai/availability')
-  );
+const waitForAiAvailability = async (autoLogin: () => Promise<void>) => {
   await autoLogin();
-  await responsePromise;
+  await expect(collectionPage.getAiSearchButton()).toBeVisible();
 };
 
 /** Seeds items and reloads the collection page so the store is populated. */
@@ -40,7 +37,7 @@ const seedAndVisit = async (api: ApiClient, items: ReturnType<typeof buildCollec
 test.describe('AI search - input interaction', () => {
   test.beforeEach(async ({ page, autoLogin }) => {
     await stubAiAvailability(page);
-    await waitForAiAvailability(page, autoLogin);
+    await waitForAiAvailability(autoLogin);
   });
 
   test('closes the dialog when send is clicked', async ({ page }) => {
@@ -54,6 +51,25 @@ test.describe('AI search - input interaction', () => {
     await responsePromise;
     await expect(collectionPage.getAiSearchSendButton()).toHaveCount(0);
   });
+
+  for (const width of [320, 1280]) {
+    test(`fits content with one visible AI label at ${width}px`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 600 });
+      await collectionPage.openAiSearchDialog();
+      const frame = page.getByTestId('dialog-frame').last();
+      await expect(frame).toHaveClass(/content-sized/);
+      await expect(frame).toHaveAccessibleName('AI search');
+      await expect(collectionPage.getAiSearchTextarea()).toHaveAccessibleName('AI search');
+      await expect(collectionPage.getAiSearchTextarea()).toBeFocused();
+      await expect(collectionPage.getAiSearchSendButton()).toHaveAccessibleName('Search');
+      await expect(collectionPage.getAiSearchSendButton().locator('span')).toBeVisible();
+      await expect(frame).toHaveCSS('transform', 'none');
+      expect(await frame.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
+      const bounds = await frame.boundingBox();
+      expect(bounds!.height).toBeLessThan(500);
+      await page.screenshot({ path: testInfo.outputPath('ai-search.png') });
+    });
+  }
 });
 
 test.describe('AI search - filtering', () => {
@@ -63,7 +79,7 @@ test.describe('AI search - filtering', () => {
 
   test.beforeEach(async ({ page, autoLogin, api }) => {
     await stubAiAvailability(page);
-    await waitForAiAvailability(page, autoLogin);
+    await waitForAiAvailability(autoLogin);
     await seedAndVisit(api, [movieA, movieB, movieC]);
   });
 
@@ -127,7 +143,7 @@ test.describe('AI search - watchlist list', () => {
 
   test.beforeEach(async ({ page, autoLogin, api }) => {
     await stubAiAvailability(page);
-    await waitForAiAvailability(page, autoLogin);
+    await waitForAiAvailability(autoLogin);
     await api.request('POST', '/api/v1/collection-items', { ...movieA, listType: 'up-next' });
     await collectionPage.visitUpNext();
   });

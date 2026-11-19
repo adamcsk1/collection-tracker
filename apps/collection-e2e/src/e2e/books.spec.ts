@@ -97,6 +97,7 @@ test.describe('Books', () => {
     await expect(booksPage.getItemDialogIsbn()).toContainText(isbn);
 
     const deleteBookResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
+    await booksPage.openItemActions();
     await booksPage.getItemDialogDeleteButton().click();
     await createMessageDialog(page).confirm(title);
     expect((await deleteBookResponsePromise).status()).toBe(204);

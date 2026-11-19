@@ -16,6 +16,7 @@ test('browser Back preserves a cancelled edit draft and closes after confirmed d
   await collection.getListItemTitleButtons().first().click();
   await expect(page).toHaveURL(/item=/);
   const itemUrl = page.url();
+  await collection.openItemActions();
   await collection.getItemDialogEditButton().click();
   await collection.getItemDialogTitleInput().fill('Keep this edited title');
 

@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { Callout } from '@components/callout/callout';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
-import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
@@ -23,7 +22,7 @@ import type { ItemShareDraft, PermissionKey } from './item-share-dialog-model';
 
 @Component({
   selector: 'ct-item-share-dialog',
-  imports: [Callout, Checkbox, DialogShell, RevealLabel],
+  imports: [Callout, Checkbox, DialogShell],
   providers: [SharesLoaderService],
   templateUrl: './item-share-dialog.html',
   styleUrl: './item-share-dialog.css',

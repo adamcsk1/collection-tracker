@@ -50,6 +50,11 @@ describe('ShareDialog', () => {
 
   it('requires a share code before saving a new share', () => {
     fixture.detectChanges();
+    const save = fixture.nativeElement.querySelector('[data-test-id="share-dialog-save"]') as HTMLButtonElement;
+    expect(save.classList.contains('dialog-action-primary')).toBe(true);
+    expect(save.querySelector('span')?.textContent?.trim()).toBe('Save');
+    expect(save.classList.contains('button-reveal-label')).toBe(false);
+    expect(save.disabled).toBe(true);
     component['onSave']();
 
     expect(saved).not.toHaveBeenCalled();

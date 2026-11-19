@@ -33,6 +33,7 @@ const visitList = async (user: TestUser, listType: 'library' | 'books' = 'librar
 
 const openItemShare = async (title: string): Promise<void> => {
   await collectionPage.getListItemByTitle(title).click();
+  await collectionPage.openItemActions();
   await collectionPage.getItemDialogShareButton().click();
   await expect(itemSharingDialog.getDialog()).toBeVisible();
 };
@@ -91,6 +92,7 @@ test.describe('Individual item sharing - selection lifecycle', () => {
     await expect(collectionPage.getListItemByTitle(secondTitle)).toHaveCount(0);
     await collectionPage.getListItemByTitle(firstTitle).click();
     await expect(collectionPage.getItemDialogShareButton()).toHaveCount(0);
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill(updatedFirstTitle);
     const updateResponse = waitForResponse('PUT', `/api/v1/collection-items/omdb/${firstId}?`);

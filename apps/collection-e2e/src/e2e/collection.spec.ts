@@ -130,7 +130,7 @@ test.describe('Collection — add a new element', () => {
         button.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " dialog-footer ")]')
       ).toHaveCount(1);
     }
-    await expect(collectionPage.getNewItemSaveAndCloseButton()).toHaveClass(/primary-save-action/);
+    await expect(collectionPage.getNewItemSaveAndCloseButton()).toHaveClass(/dialog-action-primary/);
     await expect(collectionPage.getNewItemSaveAndCloseButton()).toContainText('Save and close');
   });
 
@@ -339,6 +339,7 @@ test.describe('Collection — delete an element', () => {
   test('deletes the item and the empty state becomes visible', async () => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogDeleteButton().click();
     await messageDialog.confirm('Movie To Delete');
     await expect(collectionPage.getEmptyState()).toBeVisible();
@@ -412,6 +413,7 @@ test.describe('Collection — random pick', () => {
     await expect(collectionPage.getRandomPickButton()).toBeEnabled();
     await collectionPage.getRandomPickButton().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await expect(collectionPage.getItemDialogEditButton()).toBeVisible();
   });
 });
@@ -920,6 +922,7 @@ test.describe('Collection — tracking movies', () => {
     const responsePromise = page.waitForResponse(
       (response) => response.request().method() === 'DELETE' && response.url().includes('/api/v1/collection-items/')
     );
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogDeleteButton().click();
     await messageDialog.confirm('Delete Tracker Movie');
     expect((await responsePromise).status()).toBe(204);
@@ -990,6 +993,7 @@ test.describe('Collection — unified tracking gaps', () => {
     const responsePromise = page.waitForResponse(
       (response) => response.request().method() === 'POST' && response.url().includes('/tracking')
     );
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogMoveTrackingButton().click();
     expect((await responsePromise).status()).toBe(200);
     await expect(collectionPage.getEmptyState()).toBeVisible();
@@ -1009,10 +1013,13 @@ test.describe('Collection — unified tracking gaps', () => {
     const responsePromise = page.waitForResponse(
       (response) => response.request().method() === 'POST' && response.url().includes('/tracking')
     );
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogCopyTrackingButton().click();
     expect((await responsePromise).status()).toBe(200);
+    await collectionPage.openItemActions();
     await expect(collectionPage.getItemDialogOpenInTrackingButton()).toBeVisible();
     await expect(collectionPage.getItemDialogRemoveTrackingButton()).toBeVisible();
+    await collectionPage.getItemDialogMoreCloseButton().click();
     await collectionPage.closeActiveDialogByOverlay();
     await collectionPage.visitTracking();
     await expectVisibleTitles(['Library Copy Series']);
@@ -1031,6 +1038,7 @@ test.describe('Collection — unified tracking gaps', () => {
     await collectionPage.getListItemImages().first().click();
     await expect(collectionPage.getItemDialogProgressChip()).toContainText('10 / 100');
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogProgressCurrentInput().fill('55');
     await collectionPage.getItemDialogProgressTotalInput().fill('200');
@@ -1056,6 +1064,7 @@ test.describe('Collection — unified tracking gaps', () => {
     await expect(collectionPage.getTrackingCompletedBadges()).toHaveCount(0);
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogProgressCurrentInput().fill('100');
     await collectionPage.getItemDialogProgressTotalInput().fill('100');
@@ -1088,6 +1097,7 @@ test.describe('Collection — unified tracking gaps', () => {
     await expect(collectionPage.getTrackingCompletedBadges()).toHaveCount(1);
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogProgressCurrentInput().fill('100');
     await collectionPage.getItemDialogProgressTotalInput().fill('200');
@@ -1117,6 +1127,7 @@ test.describe('Collection — unified tracking gaps', () => {
     await collectionPage.visitTracking();
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogProgressCurrentInput().fill('120');
     await collectionPage.getItemDialogProgressTotalInput().fill('100');
@@ -1136,6 +1147,7 @@ test.describe('Collection — unified tracking gaps', () => {
     await collectionPage.visitTracking();
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogProgressCurrentInput().fill('150');
     await expect(collectionPage.getItemDialogSaveButton()).toBeDisabled();

@@ -47,7 +47,7 @@
                 <button
                   data-test-id="series-metadata-remove"
                   type="button"
-                  class="button-danger"
+                  class="dialog-action button-danger"
                   (click)="onRemoveSeason(index)"
                 >
                   <i class="material-icons" aria-hidden="true"> delete </i>
@@ -81,15 +81,14 @@
         <p class="validation-message" data-test-id="series-metadata-validation">{{ translations.validation() }}</p>
       }
     </div>
-    <button data-test-id="series-metadata-add" type="button" (click)="onAddSeason()">
+    <button class="dialog-action" data-test-id="series-metadata-add" type="button" (click)="onAddSeason()">
       <i class="material-icons" aria-hidden="true"> add </i>
       {{ translations.addSeason() }}
     </button>
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     <button
-      class="button-icon button-reveal-label"
-      [libcRevealLabel]="translations.save()"
+      class="dialog-action dialog-action-primary"
       data-test-id="series-metadata-save"
       type="button"
       [attr.aria-label]="translations.save()"
@@ -98,16 +97,13 @@
       (click)="onSave()"
     >
       <i class="material-icons" aria-hidden="true"> save </i>
-      <span class="button-reveal-label-text"
-        ><span>{{ translations.save() }}</span></span
-      >
+      <span>{{ translations.save() }}</span>
     </button>
   </ng-container>
   <ng-container dialog-shell-menu-content>
     @if (canUpdate()) {
       <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.refreshSeriesMetadata()"
+        class="dialog-action"
         data-test-id="series-metadata-refresh"
         type="button"
         [attr.aria-label]="translations.refreshSeriesMetadata()"
@@ -115,13 +111,10 @@
         (click)="onRefreshSeriesMetadata()"
       >
         <i class="material-icons" aria-hidden="true"> sync </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.refreshSeriesMetadata() }}</span></span
-        >
+        <span>{{ translations.refreshSeriesMetadata() }}</span>
       </button>
       <button
-        class="button-icon button-reveal-label button-danger"
-        [libcRevealLabel]="translations.removeSeriesMetadata()"
+        class="dialog-action button-danger"
         data-test-id="series-metadata-remove-all"
         type="button"
         [attr.aria-label]="translations.removeSeriesMetadata()"
@@ -129,9 +122,7 @@
         (click)="onRemoveSeriesMetadata()"
       >
         <i class="material-icons" aria-hidden="true"> playlist_remove </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.removeSeriesMetadata() }}</span></span
-        >
+        <span>{{ translations.removeSeriesMetadata() }}</span>
       </button>
     }
   </ng-container>

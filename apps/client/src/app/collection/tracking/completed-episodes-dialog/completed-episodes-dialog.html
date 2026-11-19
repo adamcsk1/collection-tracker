@@ -15,7 +15,7 @@
       <div class="no-metadata-message" data-test-id="completed-episodes-no-metadata-message">
         <p>{{ translations.setSeasonMetadata() }}</p>
         <button
-          class="button-borderless"
+          class="dialog-action"
           data-test-id="completed-episodes-manage-season-metadata"
           (click)="onManageSeasonMetadata()"
         >
@@ -68,8 +68,7 @@
   <ng-container dialog-shell-menu-content>
     @if (allEpisodesCompleted()) {
       <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.markAllEpisodesUncompleted()"
+        class="dialog-action"
         data-test-id="completed-episodes-mark-all-uncompleted"
         type="button"
         [attr.aria-label]="translations.markAllEpisodesUncompleted()"
@@ -77,14 +76,11 @@
         (click)="onMarkAllEpisodesUncompleted()"
       >
         <i class="material-icons" aria-hidden="true"> remove_circle_outline </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.markAllEpisodesUncompleted() }}</span></span
-        >
+        <span>{{ translations.markAllEpisodesUncompleted() }}</span>
       </button>
     } @else {
       <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.markAllEpisodesCompleted()"
+        class="dialog-action"
         data-test-id="completed-episodes-mark-all-completed"
         type="button"
         [attr.aria-label]="translations.markAllEpisodesCompleted()"
@@ -92,9 +88,7 @@
         (click)="onMarkAllEpisodesCompleted()"
       >
         <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.markAllEpisodesCompleted() }}</span></span
-        >
+        <span>{{ translations.markAllEpisodesCompleted() }}</span>
       </button>
     }
   </ng-container>

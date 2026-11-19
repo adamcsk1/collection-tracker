@@ -86,6 +86,7 @@ test.describe('Dialog gesture close', () => {
     await collectionPage.getListItems().filter({ hasText: title }).click();
     await expect(collectionPage.getItemDialogHost()).toBeVisible();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogManageSeriesMetadataButton().click();
     await expect(collectionPage.getSeriesMetadataDialog()).toBeVisible();
 

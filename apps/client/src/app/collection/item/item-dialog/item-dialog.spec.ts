@@ -293,6 +293,10 @@ describe('ItemDialog', () => {
     expect(saveButton.getAttribute('aria-label')).toBe('Save');
     expect(saveButton.title).toBe('Save');
     expect(saveLabel.textContent?.trim()).toBe('Save');
+    expect(backButton.classList.contains('dialog-action')).toBe(true);
+    expect(backButton.querySelector('span')?.textContent?.trim()).toBe('BackToDetails');
+    expect(saveButton.classList.contains('dialog-action-primary')).toBe(true);
+    expect(saveButton.classList.contains('button-reveal-label')).toBe(false);
     expect(saveButton.disabled).toBe(false);
 
     component['form'].title().value.set('');

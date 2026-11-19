@@ -3,25 +3,9 @@
 }
 
 .add-item-button {
-  display: inline-flex;
-  flex: 0 0 auto;
-  width: auto;
-  align-items: center;
-  gap: var(--size-2xs);
-  white-space: nowrap;
-  min-height: var(--float-button-container-size);
-}
-
-@media (width <= 350px) {
-  .add-item-button {
-    width: var(--float-button-container-size);
-    justify-content: center;
-    padding: 0;
-
-    span {
-      display: none;
-    }
-  }
+  flex: 0 0 var(--float-button-container-size);
+  width: var(--float-button-container-size);
+  height: var(--float-button-container-size);
 }
 
 .float-scale-in {

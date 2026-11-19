@@ -97,6 +97,10 @@ describe('ItemShareDialog', () => {
     expect(dialog.getAttribute('aria-labelledby')).toBe('item-share-dialog-title');
     expect((fixture.nativeElement as HTMLElement).querySelector('.recipient-list')?.tagName).toBe('UL');
     expect(api.getCollectionItemShares).toHaveBeenCalledWith('omdb', 'tt1234567', 'library');
+    const save = query('item-share-save')!;
+    expect(save.classList.contains('dialog-action-primary')).toBe(true);
+    expect(save.querySelector('span')?.textContent?.trim()).toBe('Save');
+    expect(save.classList.contains('button-reveal-label')).toBe(false);
     expect(getCheckbox('item-share-recipient-broad-code').checked).toBe(true);
     expect(getCheckbox('item-share-recipient-broad-code').disabled).toBe(true);
     expect(query('item-share-broad-broad-code')).toBeTruthy();

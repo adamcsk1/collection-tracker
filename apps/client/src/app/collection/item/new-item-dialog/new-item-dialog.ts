@@ -15,7 +15,6 @@ import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
-import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { Select } from '@components/select/select';
 import type { TabOption } from '@components/tabs/tabs-model';
 import { Tabs } from '@components/tabs/tabs';
@@ -110,7 +109,6 @@ const defaultManualModel = (): ItemFormModel => ({
     Checkbox,
     ListItemCard,
     Textarea,
-    RevealLabel,
     Tabs,
     GenreSuggestionsProvider,
     TagSuggestionsProvider,

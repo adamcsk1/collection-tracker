@@ -111,14 +111,22 @@ h2 {
     font: inherit;
     background: none;
     border: 0;
-    padding: 0;
+    padding: var(--size-2xs);
     text-align: inherit;
     cursor: pointer;
     width: 100%;
     display: -webkit-box;
+    min-height: 44px;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
+
+    &:hover,
+    &:focus-visible {
+      outline: 2px solid var(--focus-border-color);
+      outline-offset: -2px;
+      background-color: color-mix(in srgb, var(--main-color) 15%, transparent);
+    }
   }
 }
 

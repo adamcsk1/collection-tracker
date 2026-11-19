@@ -97,6 +97,12 @@
     box-shadow: 0 12px 40px rgb(0 0 0 / 45%);
   }
 
+  &:not(.compact) {
+    .dialog-footer {
+      justify-content: flex-end;
+    }
+  }
+
   .dialog-top-bar {
     position: relative;
     min-height: calc(2 * var(--size-md));
@@ -162,20 +168,22 @@
   .dialog-actions-menu {
     display: flex;
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    max-height: min(35dvh, 20rem);
+    overflow-x: hidden;
+    overflow-y: auto;
     padding: var(--size-xs);
     scrollbar-width: thin;
-    touch-action: pan-x;
+    touch-action: pan-y;
   }
 
   .dialog-actions-menu-content {
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: var(--size-2xs);
+    flex-wrap: wrap;
+    gap: var(--size-xs);
     margin-inline: auto;
-    min-width: max-content;
+    min-width: 0;
+    width: 100%;
   }
 
   .dialog-body {

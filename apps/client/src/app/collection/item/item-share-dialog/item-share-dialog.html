@@ -14,7 +14,12 @@
       </libc-callout>
     } @else if (!recipients().length) {
       <libc-callout data-test-id="item-share-empty" icon="group_off">{{ translations.empty() }}</libc-callout>
-      <button data-test-id="item-share-open-settings" type="button" (click)="onOpenSharingSettings()">
+      <button
+        class="dialog-action"
+        data-test-id="item-share-open-settings"
+        type="button"
+        (click)="onOpenSharingSettings()"
+      >
         {{ translations.settings() }}
       </button>
     } @else {
@@ -98,8 +103,7 @@
   @if (!loading() && !loadError() && recipients().length) {
     <ng-container dialog-shell-bottom-content>
       <button
-        class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.save()"
+        class="dialog-action dialog-action-primary"
         data-test-id="item-share-save"
         type="button"
         [attr.aria-label]="translations.save()"
@@ -108,9 +112,7 @@
         (click)="onSave()"
       >
         <i class="material-icons" aria-hidden="true">save</i>
-        <span class="button-reveal-label-text"
-          ><span>{{ translations.save() }}</span></span
-        >
+        <span>{{ translations.save() }}</span>
       </button>
     </ng-container>
   }

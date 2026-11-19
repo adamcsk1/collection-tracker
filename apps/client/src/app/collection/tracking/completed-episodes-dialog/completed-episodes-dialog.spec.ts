@@ -89,6 +89,12 @@ describe('CompletedEpisodesDialog', () => {
     expect(api.getTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['seasonsMetadata']()).toEqual([{ season: 1, episodes: 3, titles: [] }]);
     expect(component['completedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
+    const action = fixture.nativeElement.querySelector(
+      '[data-test-id="completed-episodes-mark-all-completed"]'
+    ) as HTMLButtonElement;
+    expect(action.classList.contains('dialog-action')).toBe(true);
+    expect(action.querySelector('span')?.textContent?.trim()).toBe('MarkAllEpisodesCompleted');
+    expect(action.classList.contains('button-reveal-label')).toBe(false);
   });
 
   it('renders shared season and episode checkboxes and handles mixed-state changes', async () => {
@@ -165,7 +171,8 @@ describe('CompletedEpisodesDialog', () => {
     ) as HTMLButtonElement;
 
     expect(markCompletedButton.type).toBe('button');
-    expect(markCompletedButton.classList.contains('button-icon')).toBe(true);
+    expect(markCompletedButton.classList.contains('dialog-action')).toBe(true);
+    expect(markCompletedButton.querySelector('span')?.textContent?.trim()).toBe('MarkAllEpisodesCompleted');
     expect(markCompletedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesCompleted');
     expect(markCompletedButton.title).toBe('MarkAllEpisodesCompleted');
 
@@ -179,7 +186,8 @@ describe('CompletedEpisodesDialog', () => {
     const markUncompletedButton = fixture.nativeElement.querySelector(
       '[data-test-id="completed-episodes-mark-all-uncompleted"]'
     ) as HTMLButtonElement;
-    expect(markUncompletedButton.classList.contains('button-icon')).toBe(true);
+    expect(markUncompletedButton.classList.contains('dialog-action')).toBe(true);
+    expect(markUncompletedButton.querySelector('span')?.textContent?.trim()).toBe('MarkAllEpisodesUncompleted');
     expect(markUncompletedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesUncompleted');
     expect(markUncompletedButton.title).toBe('MarkAllEpisodesUncompleted');
   });

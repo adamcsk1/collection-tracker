@@ -365,10 +365,9 @@
       />
     }
   </div>
-  <div dialog-shell-bottom-content class="save-actions">
+  <div dialog-shell-bottom-content class="dialog-action-group">
     <button
-      class="button-icon button-reveal-label"
-      [libcRevealLabel]="translations.save()"
+      class="dialog-action"
       data-test-id="new-item-save"
       type="submit"
       [attr.aria-label]="translations.save()"
@@ -378,13 +377,10 @@
       (click)="submitMode.set(null)"
     >
       <i class="material-icons" aria-hidden="true"> save </i>
-      <span class="button-reveal-label-text"
-        ><span>{{ translations.save() }}</span></span
-      >
+      <span>{{ translations.save() }}</span>
     </button>
     <button
-      class="button-icon button-reveal-label"
-      [libcRevealLabel]="translations.saveAndNew()"
+      class="dialog-action"
       data-test-id="new-item-save-and-new"
       type="submit"
       [attr.aria-label]="translations.saveAndNew()"
@@ -394,12 +390,10 @@
       (click)="submitMode.set('new')"
     >
       <i class="material-icons" aria-hidden="true"> add </i>
-      <span class="button-reveal-label-text"
-        ><span>{{ translations.saveAndNew() }}</span></span
-      >
+      <span>{{ translations.saveAndNew() }}</span>
     </button>
     <button
-      class="primary-save-action"
+      class="dialog-action dialog-action-primary"
       data-test-id="new-item-save-and-close"
       type="submit"
       [attr.aria-label]="translations.saveAndClose()"

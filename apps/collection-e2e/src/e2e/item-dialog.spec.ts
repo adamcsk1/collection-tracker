@@ -17,53 +17,238 @@ test.describe('Item dialog — edit flow', () => {
     await collectionPage.visit();
   });
 
-  test('shows an action label on touch hold without executing the action', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await collectionPage.getListItemImages().first().click();
-    await collectionPage.expectItemDialogActionsVisible();
-    await expect(collectionPage.getItemDialogEditButton().locator('.button-reveal-label-text')).toBeHidden();
-    await expect
-      .poll(async () => {
-        const iconCenters = await collectionPage.getItemDialogActionButtons().evaluateAll((buttons) =>
-          buttons.map((button) => {
-            const icon = button.querySelector('.material-icons');
-            if (!icon) throw new Error('Dialog action icon is unavailable');
-            const bounds = icon.getBoundingClientRect();
-            return bounds.top + bounds.height / 2;
-          })
-        );
-        return iconCenters.slice(1).every((center) => Math.abs(center - iconCenters[0]!) <= 1);
-      })
-      .toBe(true);
-    const editLabel = await collectionPage.getItemDialogEditButton().getAttribute('aria-label');
-    await collectionPage.holdItemDialogAction('item-dialog-edit');
-    await expect(collectionPage.getDialogActionTooltip()).toHaveText(editLabel!);
-    await expect
-      .poll(async () => {
-        const button = await collectionPage.getItemDialogEditButton().boundingBox();
-        const dialog = await collectionPage.getItemDialogHost().boundingBox();
-        const tooltipLeft = await collectionPage
-          .getDialogActionTooltip()
-          .evaluate((element) => Number.parseFloat((element as HTMLElement).style.left));
-        return Math.abs(tooltipLeft - (button!.x + button!.width / 2 - dialog!.x));
-      })
-      .toBeLessThanOrEqual(1);
-    await collectionPage.releaseHeldItemDialogAction('item-dialog-edit');
-    await expect(collectionPage.getDialogActionTooltip()).toHaveCount(0);
-    await expect(collectionPage.getItemDialogSaveButton()).toHaveCount(0);
+  test('dismisses More with Escape and close without closing its parent or losing focus', async ({ page }) => {
+    await collectionPage.getListItemTitleButtons().first().click();
+    await expect(collectionPage.getItemDialogEditButton()).toBeHidden();
+    await expect(collectionPage.getItemDialogMarkFinishedButton()).toBeVisible();
+    await expect(collectionPage.getItemDialogMarkFavoriteButton()).toBeVisible();
 
-    await collectionPage.getItemDialogEditButton().click();
-    await expect(collectionPage.getItemDialogSaveButton()).toBeVisible();
-    await expect(collectionPage.getItemDialogSaveButton().locator('.button-reveal-label-text')).toBeHidden();
-    const saveLabel = await collectionPage.getItemDialogSaveButton().getAttribute('aria-label');
-    await collectionPage.holdItemDialogAction('item-dialog-save');
-    await expect(collectionPage.getDialogActionTooltip()).toHaveText(saveLabel!);
-    await collectionPage.releaseHeldItemDialogAction('item-dialog-save');
-    await expect(collectionPage.getItemDialogSaveButton()).toBeVisible();
+    await collectionPage.getItemDialogMoreButton().focus();
+    await collectionPage.getItemDialogMoreButton().press('Enter');
+    await expect(collectionPage.getItemDialogMoreCloseButton()).toBeFocused();
+    await expect(collectionPage.getItemDialogEditButton()).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    await expect(collectionPage.getItemDialogMoreDialog()).toBeHidden();
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+    await expect(collectionPage.getItemDialogMoreButton()).toHaveAttribute('aria-expanded', 'false');
+    await expect(collectionPage.getItemDialogHost()).toBeVisible();
+    await expect(page).toHaveURL(/item=/);
+
+    await collectionPage.openItemActions();
+    await collectionPage.getItemDialogMoreCloseButton().click();
+    await expect(collectionPage.getItemDialogMoreDialog()).toBeHidden();
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+    await expect(collectionPage.getItemDialogHost()).toBeVisible();
   });
 
-  test('reveals a footer action label on keyboard focus', async ({ page }) => {
+  test('wraps parent keyboard focus without entering closed More actions', async ({ page }) => {
+    await collectionPage.getListItemTitleButtons().first().click();
+    await collectionPage.getItemDialogDragHandle().focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(collectionPage.getItemDialogDragHandle()).toBeFocused();
+
+    await collectionPage.openItemActions();
+    await page.keyboard.press('Escape');
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(collectionPage.getItemDialogDragHandle()).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+    await expect(collectionPage.getItemDialogHost()).toBeVisible();
+  });
+
+  test('closes More before entering edit mode', async () => {
+    await collectionPage.getListItemTitleButtons().first().click();
+    await collectionPage.openItemActions();
+    await collectionPage.getItemDialogEditButton().click();
+
+    await expect(collectionPage.getItemDialogMoreDialog()).toBeHidden();
+    await expect(collectionPage.getItemDialogTitleInput()).toBeVisible();
+    await expect(collectionPage.getItemDialogSaveButton()).toBeVisible();
+    await expect(collectionPage.getItemDialogHost()).toBeVisible();
+  });
+
+  for (const viewport of [
+    { width: 390, height: 844, duration: '0.2s' },
+    { width: 1280, height: 900, duration: '0.16s' },
+  ]) {
+    test(`animates More before closing at ${viewport.width}px`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await collectionPage.getListItemTitleButtons().first().click();
+      await collectionPage.openItemActions();
+      const dialog = collectionPage.getItemDialogMoreDialog();
+      await expect(dialog).toHaveCSS('animation-duration', viewport.duration);
+      await expect(dialog).toHaveCSS('opacity', '1');
+
+      const openDuringExit = await collectionPage.getItemDialogMoreCloseButton().evaluate((button) => {
+        (button as HTMLButtonElement).click();
+        return button.closest('dialog')?.open;
+      });
+
+      expect(openDuringExit).toBe(true);
+      await expect(dialog).toBeHidden();
+      await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+      await expect(collectionPage.getItemDialogHost()).toBeVisible();
+    });
+  }
+
+  test('skips More animations and closes immediately with reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await collectionPage.getListItemTitleButtons().first().click();
+    await collectionPage.openItemActions();
+    const dialog = collectionPage.getItemDialogMoreDialog();
+    expect(await dialog.evaluate((element) => element.getAnimations({ subtree: true }).length)).toBe(0);
+
+    const openAfterClose = await collectionPage.getItemDialogMoreCloseButton().evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      return button.closest('dialog')?.open;
+    });
+
+    expect(openAfterClose).toBe(false);
+    await expect(dialog).toBeHidden();
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+    await expect(collectionPage.getItemDialogHost()).toBeVisible();
+  });
+
+  test('returns focus to More after cancelling delete confirmation', async ({ page }) => {
+    await collectionPage.getListItemTitleButtons().first().click();
+    await collectionPage.openItemActions();
+    await collectionPage.getItemDialogDeleteButton().click();
+    await expect(collectionPage.getItemDialogMoreDialog()).toBeHidden();
+    const messageDialog = createMessageDialog(page);
+    await expect(messageDialog.getDialog()).toBeVisible();
+    await messageDialog.cancel();
+
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+    await expect(collectionPage.getItemDialogMoreDialog()).toBeHidden();
+    await expect(collectionPage.getItemDialogHost()).toContainText('Edit Test Movie');
+    await expect(page).toHaveURL(/item=/);
+  });
+
+  for (const viewport of [
+    { width: 320, height: 600 },
+    { width: 390, height: 844 },
+    { width: 650, height: 844 },
+    { width: 651, height: 844 },
+    { width: 740, height: 360 },
+    { width: 1280, height: 900 },
+  ]) {
+    test(`keeps labelled actions usable at ${viewport.width}x${viewport.height}`, async ({ page }, testInfo) => {
+      await page.setViewportSize(viewport);
+      await collectionPage.getListItemTitleButtons().first().click();
+      await collectionPage.expectItemDialogActionsVisible();
+      const frame = collectionPage.getItemDialogHost();
+      await expect(frame).toHaveCSS('transform', 'none');
+      const menu = collectionPage.getItemDialogActionsMenu();
+      expect(await menu.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await expect(collectionPage.getItemDialogActionButtons()).toHaveCount(3);
+      for (const button of await collectionPage.getItemDialogActionButtons().all()) {
+        await button.scrollIntoViewIfNeeded();
+        await expect(button.locator('span')).toBeVisible();
+        const bounds = (await button.boundingBox())!;
+        expect(bounds.height).toBeGreaterThanOrEqual(44);
+        expect(bounds.x).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+      }
+      await page.screenshot({ path: testInfo.outputPath('item-actions.png') });
+      await collectionPage.openItemActions();
+      await expect(collectionPage.getItemDialogMoreDialog()).toHaveAttribute('open', '');
+      await collectionPage.waitForItemActionsAnimation();
+      const moreBounds = (await collectionPage.getItemDialogMoreDialog().boundingBox())!;
+      expect(moreBounds.x).toBeGreaterThanOrEqual(0);
+      expect(moreBounds.y).toBeGreaterThanOrEqual(0);
+      expect(moreBounds.x + moreBounds.width).toBeLessThanOrEqual(viewport.width);
+      expect(moreBounds.y + moreBounds.height).toBeLessThanOrEqual(viewport.height);
+      if (viewport.width <= 650) {
+        expect(moreBounds.x).toBe(0);
+        expect(moreBounds.width).toBe(viewport.width);
+        expect(moreBounds.y + moreBounds.height).toBeCloseTo(viewport.height, 0);
+      }
+      await page.screenshot({ path: testInfo.outputPath('item-more-actions.png') });
+      await collectionPage.getItemDialogEditButton().click();
+      await expect(collectionPage.getItemDialogSaveLabel()).toBeVisible();
+      await expect(collectionPage.getItemDialogSaveButton()).toHaveClass(/dialog-action-primary/);
+      await expect(collectionPage.getItemDialogReadOnlyButton().locator('span')).toBeVisible();
+      const save = (await collectionPage.getItemDialogSaveButton().boundingBox())!;
+      expect(save.y + save.height).toBeLessThanOrEqual(viewport.height);
+      await page.screenshot({ path: testInfo.outputPath('edit-actions.png') });
+    });
+  }
+
+  test('resizes open More between mobile sheet and desktop popup', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await collectionPage.getListItemTitleButtons().first().click();
+    await collectionPage.openItemActions();
+    const dialog = collectionPage.getItemDialogMoreDialog();
+
+    for (const viewport of [
+      { width: 390, height: 844 },
+      { width: 844, height: 390 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await collectionPage.waitForItemActionsAnimation();
+      const bounds = (await dialog.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.y).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+      if (viewport.width <= 650) {
+        expect(bounds.x).toBe(0);
+        expect(bounds.width).toBe(viewport.width);
+        expect(bounds.y + bounds.height).toBeCloseTo(viewport.height, 0);
+      }
+    }
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(collectionPage.getItemDialogMoreButton()).toBeFocused();
+  });
+
+  test('keeps More surfaces and Delete corners consistent in both themes', async ({ page }, testInfo) => {
+    await collectionPage.getListItemTitleButtons().first().click();
+    await collectionPage.openItemActions();
+    const dialog = collectionPage.getItemDialogMoreDialog();
+    const deleteButton = collectionPage.getItemDialogDeleteButton();
+
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme });
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+        .toBe(colorScheme === 'dark');
+      for (const width of [390, 1280]) {
+        await page.setViewportSize({ width, height: 844 });
+        await collectionPage.waitForItemActionsAnimation();
+        await expect(dialog).toHaveCSS('padding-top', '16px');
+        await expect(dialog).toHaveCSS('border-top-width', width <= 650 ? '0px' : '1px');
+        await expect(dialog).toHaveCSS('border-bottom-left-radius', width <= 650 ? '0px' : '5px');
+        expect(await dialog.evaluate((element) => getComputedStyle(element, '::backdrop').backdropFilter)).toBe(
+          width <= 650 ? 'blur(16px)' : 'none'
+        );
+        const editRadius = await collectionPage
+          .getItemDialogEditButton()
+          .evaluate((element) => getComputedStyle(element).borderRadius);
+        expect(editRadius).not.toBe('0px');
+        await expect(deleteButton).toHaveCSS('border-radius', editRadius);
+        await expect(dialog.getByTestId('item-dialog-destructive-divider')).toBeVisible();
+        await deleteButton.focus();
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('Tab');
+        await expect(deleteButton).toBeFocused();
+        await expect(deleteButton).toHaveCSS('outline-style', 'solid');
+        await expect(deleteButton).toHaveCSS('outline-width', '2px');
+        await page.mouse.move(0, 0);
+        await page.screenshot({ path: testInfo.outputPath(`more-delete-focus-${colorScheme}-${width}.png`) });
+      }
+    }
+  });
+
+  test('keeps footer labels visible during keyboard navigation', async ({ page }) => {
     await collectionPage.getListItemImages().first().click();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogReadOnlyButton().focus();
     await page.keyboard.press('Tab');
@@ -74,6 +259,7 @@ test.describe('Item dialog — edit flow', () => {
   test('edits the title of an existing item and persists the change', async ({ page }) => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Updated Title');
     const responsePromise = page.waitForResponse(
@@ -90,6 +276,7 @@ test.describe('Item dialog — edit flow', () => {
   test('edits multiple fields and persists the changes', async ({ page }) => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogYearInput().fill('2025');
     await fillAutocomplete(collectionPage.getItemDialogGenreInput(), 'Drama, Comedy');
@@ -123,6 +310,7 @@ test.describe('Item dialog — edit flow', () => {
   test('edits the user rate and persists the change', async ({ page, api }) => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogUserRateInput().fill('9.4');
     const responsePromise = page.waitForResponse(
@@ -140,6 +328,7 @@ test.describe('Item dialog — edit flow', () => {
   test('clears an existing user rate', async ({ page }) => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogUserRateInput().fill('9.4');
     const firstResponsePromise = page.waitForResponse(
@@ -148,6 +337,7 @@ test.describe('Item dialog — edit flow', () => {
     await collectionPage.getItemDialogSaveButton().click();
     await firstResponsePromise;
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogUserRateInput().fill('');
     const responsePromise = page.waitForResponse(
@@ -163,6 +353,7 @@ test.describe('Item dialog — edit flow', () => {
   test('keeps save disabled for an invalid edited user rate', async () => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogUserRateInput().fill('8.75');
     await expect(collectionPage.getItemDialogSaveButton()).toBeDisabled();
@@ -171,6 +362,7 @@ test.describe('Item dialog — edit flow', () => {
   test('keeps save disabled for invalid edited external rating formats', async () => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogIMDbRateInput().fill('10.1');
     await expect(collectionPage.getItemDialogSaveButton()).toBeDisabled();
@@ -185,6 +377,7 @@ test.describe('Item dialog — edit flow', () => {
   test('discards draft changes when read-only is clicked', async ({ page }) => {
     await collectionPage.getListItemImages().first().click();
     await collectionPage.expectItemDialogActionsVisible();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await collectionPage.getItemDialogTitleInput().fill('Discarded Title');
     await page.getByTestId('item-dialog-read-only').click();
@@ -206,6 +399,7 @@ test.describe('Item dialog — tag autocomplete', () => {
   });
   test('shows three later suggestions when earlier matches are already selected', async () => {
     await collectionPage.getListItemImages().first().click();
+    await collectionPage.openItemActions();
     await collectionPage.getItemDialogEditButton().click();
     await fillAutocomplete(collectionPage.getItemDialogTagsInput(), '#bluary #english-cover #season01 #season02 #');
     await expect(collectionPage.getItemDialogTagSuggestions()).toHaveCount(3);

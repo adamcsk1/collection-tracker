@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ItemDialogTranslations } from '../item-form/item-form-model';
 import { ItemDialogActions } from './item-dialog-actions';
 
@@ -48,6 +49,7 @@ const translations: ItemDialogTranslations = {
 
 describe('ItemDialogActions', () => {
   let fixture: ComponentFixture<ItemDialogActions>;
+  let reducedMotion: boolean;
 
   const createComponent = (overrides: Partial<Record<string, unknown>> = {}) => {
     fixture = TestBed.createComponent(ItemDialogActions);
@@ -72,10 +74,32 @@ describe('ItemDialogActions', () => {
     fixture.componentRef.setInput('trackingEnabled', overrides['trackingEnabled'] ?? true);
     fixture.componentRef.setInput('ownItem', overrides['ownItem'] ?? true);
     fixture.detectChanges();
+    const dialog = getActionsDialog();
+    if (dialog) {
+      dialog.showModal = vi.fn(() => {
+        dialog.open = true;
+      });
+      dialog.close = vi.fn(() => {
+        dialog.open = false;
+        dialog.dispatchEvent(new Event('close'));
+      });
+    }
   };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [ItemDialogActions] });
+    reducedMotion = true;
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({ matches: reducedMotion, media: query }))
+    );
+    TestBed.configureTestingModule({
+      imports: [ItemDialogActions],
+      providers: [{ provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } }],
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('emits edit and delete actions when buttons are clicked', () => {
@@ -108,6 +132,209 @@ describe('ItemDialogActions', () => {
     expect(document.activeElement).toBe(favorite);
   });
 
+  it('keeps completion and favorite outside the closed secondary dialog with pressed state', async () => {
+    createComponent();
+
+    expect(getActionsDialog()?.open).toBe(false);
+    expect(getActionsDialog()?.hidden).toBe(true);
+    expect(getButton('item-dialog-edit').closest('dialog')).toBe(getActionsDialog());
+    expect(getButton('item-dialog-share').closest('dialog')).toBe(getActionsDialog());
+    expect(getButton('item-dialog-delete').closest('dialog')).toBe(getActionsDialog());
+    expect(getButton('item-dialog-mark-finished').closest('dialog')).toBeNull();
+    expect(getButton('item-dialog-mark-favorite').closest('dialog')).toBeNull();
+    expect(getButton('item-dialog-mark-finished').getAttribute('aria-pressed')).toBe('false');
+    expect(getButton('item-dialog-mark-favorite').getAttribute('aria-pressed')).toBe('false');
+    fixture.componentRef.setInput('finished', true);
+    fixture.componentRef.setInput('favorite', true);
+    await fixture.whenStable();
+
+    expect(getButton('item-dialog-mark-unfinished').getAttribute('aria-pressed')).toBe('true');
+    expect(getButton('item-dialog-remove-favorite').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('opens More and closes it before emitting a secondary action', async () => {
+    createComponent();
+    const edit = vi.fn(() => expect(getActionsDialog()?.open).toBe(false));
+    fixture.componentInstance.edit.subscribe(edit);
+
+    getButton('item-dialog-more').click();
+    await fixture.whenStable();
+    expect(getActionsDialog()?.open).toBe(true);
+    expect(getActionsDialog()?.hidden).toBe(false);
+    expect(getButton('item-dialog-more').getAttribute('aria-expanded')).toBe('true');
+    expect(getActionsDialog()?.getAttribute('aria-label')).toBe('ItemAction.Title');
+
+    getButton('item-dialog-edit').click();
+    await fixture.whenStable();
+
+    expect(edit).toHaveBeenCalledOnce();
+    expect(getActionsDialog()?.hidden).toBe(true);
+    expect(getButton('item-dialog-more').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('closes More with Escape without propagating to its parent', async () => {
+    createComponent();
+    getButton('item-dialog-more').click();
+    const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    const parentKeydown = vi.fn();
+    fixture.nativeElement.addEventListener('keydown', parentKeydown);
+
+    getButton('item-dialog-more-close').dispatchEvent(escape);
+    await fixture.whenStable();
+
+    expect(getActionsDialog()?.open).toBe(false);
+    expect(escape.defaultPrevented).toBe(true);
+    expect(getActionsDialog()?.hidden).toBe(true);
+    expect(parentKeydown).not.toHaveBeenCalled();
+    expect(getButton('item-dialog-more').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('waits for the exit animation before closing and emitting the selected action', async () => {
+    reducedMotion = false;
+    createComponent();
+    const dialog = getActionsDialog()!;
+    const edit = vi.fn(() => {
+      expect(dialog.open).toBe(false);
+      expect(dialog.hidden).toBe(true);
+    });
+    fixture.componentInstance.edit.subscribe(edit);
+    getButton('item-dialog-more').click();
+    await fixture.whenStable();
+
+    getButton('item-dialog-edit').click();
+
+    expect(dialog.open).toBe(true);
+    expect(dialog.hidden).toBe(false);
+    expect(dialog.classList.contains('actions-closing')).toBe(true);
+    expect(getButton('item-dialog-more').getAttribute('aria-expanded')).toBe('true');
+    expect(edit).not.toHaveBeenCalled();
+
+    dispatchAnimation(dialog, 'animationend', 'actions-popup-leave');
+    await fixture.whenStable();
+
+    expect(edit).toHaveBeenCalledOnce();
+    expect(dialog.classList.contains('actions-closing')).toBe(false);
+    expect(getButton('item-dialog-more').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('ignores duplicate close requests and actions while closing and allows reopening afterwards', () => {
+    reducedMotion = false;
+    createComponent();
+    const dialog = getActionsDialog()!;
+    const edit = vi.fn();
+    const share = vi.fn();
+    fixture.componentInstance.edit.subscribe(edit);
+    fixture.componentInstance.share.subscribe(share);
+    getButton('item-dialog-more').click();
+    getButton('item-dialog-edit').click();
+    getButton('item-dialog-edit').click();
+    getButton('item-dialog-share').click();
+    getButton('item-dialog-more-close').click();
+    getButton('item-dialog-more').click();
+
+    expect(dialog.showModal).toHaveBeenCalledOnce();
+    expect(dialog.close).not.toHaveBeenCalled();
+    expect(edit).not.toHaveBeenCalled();
+    expect(share).not.toHaveBeenCalled();
+
+    dispatchAnimation(dialog, 'animationend', 'actions-popup-leave');
+    dispatchAnimation(dialog, 'animationend', 'actions-popup-leave');
+
+    expect(dialog.close).toHaveBeenCalledOnce();
+    expect(edit).toHaveBeenCalledOnce();
+    expect(share).not.toHaveBeenCalled();
+
+    getButton('item-dialog-more').click();
+    getButton('item-dialog-share').click();
+    dispatchAnimation(dialog, 'animationend', 'actions-popup-leave');
+
+    expect(dialog.showModal).toHaveBeenCalledTimes(2);
+    expect(share).toHaveBeenCalledOnce();
+    expect(edit).toHaveBeenCalledOnce();
+  });
+
+  it('ignores child, backdrop, entry and unrelated animation events while closing', () => {
+    reducedMotion = false;
+    createComponent();
+    const dialog = getActionsDialog()!;
+    const edit = vi.fn();
+    fixture.componentInstance.edit.subscribe(edit);
+    getButton('item-dialog-more').click();
+    getButton('item-dialog-edit').click();
+
+    dispatchAnimation(getButton('item-dialog-edit'), 'animationend', 'actions-popup-leave');
+    dispatchAnimation(dialog, 'animationend', 'actions-popup-leave', '::backdrop');
+    dispatchAnimation(dialog, 'animationcancel', 'actions-sheet-leave', '::backdrop');
+    dispatchAnimation(dialog, 'animationend', 'actions-popup-enter');
+    dispatchAnimation(dialog, 'animationcancel', 'actions-sheet-enter');
+    dispatchAnimation(dialog, 'animationend', 'unrelated-leave');
+
+    expect(dialog.open).toBe(true);
+    expect(dialog.close).not.toHaveBeenCalled();
+    expect(edit).not.toHaveBeenCalled();
+
+    dispatchAnimation(dialog, 'animationend', 'actions-popup-leave');
+    expect(edit).toHaveBeenCalledOnce();
+  });
+
+  for (const animationName of [
+    'actions-popup-leave',
+    'actions-sheet-leave',
+    '_ngcontent-test_actions-popup-leave',
+    '_ngcontent-test_actions-sheet-leave',
+  ]) {
+    for (const eventType of ['animationend', 'animationcancel']) {
+      it(`finishes closing on ${eventType} for ${animationName}`, () => {
+        reducedMotion = false;
+        createComponent();
+        const dialog = getActionsDialog()!;
+        const share = vi.fn();
+        fixture.componentInstance.share.subscribe(share);
+        getButton('item-dialog-more').click();
+        dispatchAnimation(dialog, eventType, animationName);
+        expect(dialog.open).toBe(true);
+        getButton('item-dialog-share').click();
+        expect(share).not.toHaveBeenCalled();
+
+        dispatchAnimation(dialog, eventType, animationName);
+
+        expect(dialog.open).toBe(false);
+        expect(dialog.hidden).toBe(true);
+        expect(share).toHaveBeenCalledOnce();
+      });
+    }
+  }
+
+  it('closes and emits immediately with reduced motion without waiting for an animation', () => {
+    createComponent();
+    const dialog = getActionsDialog()!;
+    const edit = vi.fn();
+    fixture.componentInstance.edit.subscribe(edit);
+    getButton('item-dialog-more').click();
+    getButton('item-dialog-edit').click();
+
+    expect(window.matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
+    expect(dialog.open).toBe(false);
+    expect(dialog.hidden).toBe(true);
+    expect(dialog.classList.contains('actions-closing')).toBe(false);
+    expect(edit).toHaveBeenCalledOnce();
+  });
+
+  it('dismisses More with its close button and backdrop but not a click inside', () => {
+    createComponent();
+    const dialog = getActionsDialog()!;
+    getButton('item-dialog-more').click();
+    getButton('item-dialog-more-close').click();
+    expect(dialog.open).toBe(false);
+
+    getButton('item-dialog-more').click();
+    vi.spyOn(dialog, 'getBoundingClientRect').mockReturnValue(new DOMRect(20, 20, 200, 200));
+    dialog.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 30, clientY: 30 }));
+    expect(dialog.open).toBe(true);
+    dialog.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    expect(dialog.open).toBe(false);
+  });
+
   it('shows sharing for owned items and emits its action', () => {
     createComponent();
     const share = vi.fn();
@@ -135,15 +362,24 @@ describe('ItemDialogActions', () => {
     const deleteButton = getButton('item-dialog-delete');
 
     expect(editButton.textContent).toContain('Edit');
-    expect(editButton.classList.contains('button-icon')).toBe(true);
+    expect(editButton.classList.contains('dialog-action')).toBe(true);
     expect(editButton.getAttribute('aria-label')).toBe('Edit');
     expect(editButton.getAttribute('title')).toBe('Edit');
-    expect(editButton.querySelector('.button-reveal-label-text')?.textContent).toContain('Edit');
+    expect(editButton.querySelector('span')?.textContent).toContain('Edit');
     expect(deleteButton.textContent).toContain('Delete');
-    expect(deleteButton.classList.contains('button-icon')).toBe(true);
+    expect(deleteButton.classList.contains('dialog-action')).toBe(true);
+    expect(deleteButton.classList.contains('button-danger')).toBe(true);
     expect(deleteButton.getAttribute('aria-label')).toBe('Delete');
     expect(deleteButton.getAttribute('title')).toBe('Delete');
-    expect(deleteButton.querySelector('.button-reveal-label-text')?.textContent).toContain('Delete');
+    expect(deleteButton.querySelector('span')?.textContent).toContain('Delete');
+    expect(deleteButton.previousElementSibling?.getAttribute('data-test-id')).toBe('item-dialog-destructive-divider');
+    expect(fixture.nativeElement.querySelector('.button-reveal-label')).toBeNull();
+  });
+
+  it('omits the destructive divider without delete permission', () => {
+    createComponent({ permissionDelete: false });
+    expect(queryButton('item-dialog-delete')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="item-dialog-destructive-divider"]')).toBeNull();
   });
 
   it('renders tracking actions when update permission is available', () => {
@@ -247,6 +483,16 @@ describe('ItemDialogActions', () => {
     createComponent({ editMode: true });
 
     expect(queryButton('item-dialog-delete')).toBeNull();
+    expect(queryButton('item-dialog-more')).toBeNull();
+    expect(getActionsDialog()).toBeNull();
+  });
+
+  it('omits More when no secondary actions are available', () => {
+    createComponent({ permissionUpdate: false, permissionDelete: false, ownItem: false });
+
+    expect(queryButton('item-dialog-more')).toBeNull();
+    expect(getActionsDialog()).toBeNull();
+    expect(getButton('item-dialog-mark-finished')).toBeTruthy();
   });
 
   const getButton = (testId: string): HTMLButtonElement => {
@@ -257,5 +503,17 @@ describe('ItemDialogActions', () => {
 
   const queryButton = (testId: string): HTMLButtonElement | null => {
     return (fixture.nativeElement as HTMLElement).querySelector(`[data-test-id="${testId}"]`);
+  };
+
+  const getActionsDialog = (): HTMLDialogElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="item-dialog-more-actions"]');
+
+  const dispatchAnimation = (target: HTMLElement, eventType: string, animationName: string, pseudoElement = '') => {
+    const event = new Event(eventType, { bubbles: true });
+    Object.defineProperties(event, {
+      animationName: { value: animationName },
+      pseudoElement: { value: pseudoElement },
+    });
+    target.dispatchEvent(event);
   };
 });

@@ -23,6 +23,9 @@ export const createMusicPage = (page: Page) => {
     getListItemTitles: () => page.getByTestId('list-item-title'),
     getListItemImages: () => page.getByTestId('list-item-image'),
     getItemDialog,
+    openItemActions: async () => {
+      await getItemDialog().getByTestId('item-dialog-more').click();
+    },
     getItemDialogMbid: () => getItemDialog().locator('[data-test-id="item-dialog-mbid"]'),
     getItemDialogDeleteButton: () => getItemDialog().locator('[data-test-id="item-dialog-delete"]'),
   };
