@@ -7,6 +7,7 @@ import {
 } from '@shared/models/external-metadata-model';
 import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { getIMDbId } from '@shared/utils/imdb-id-util';
+import { mergeExternalIds } from '@shared/utils/external-metadata-identity-util';
 import { catchError, EMPTY, finalize, Observable, of, Subscription } from 'rxjs';
 import { AlertService } from '../alert-service';
 import { ApiService } from '../api/api-service';
@@ -72,6 +73,7 @@ export class ExternalMetadataService {
       externalIdentitySource: selectedReference?.identitySource ?? null,
       externalIdentityId: selectedReference?.identityId ?? null,
     });
+    const searchResult = this._matchedContent().find((item) => item.value === selectedExternalMetadataValue);
 
     itemRequest
       .pipe(
@@ -81,7 +83,15 @@ export class ExternalMetadataService {
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((response) => this._selectedContent.set(response));
+      .subscribe((response) =>
+        this._selectedContent.set({
+          ...response,
+          year: response.year || searchResult?.year || '',
+          actors: response.actors || searchResult?.actors || '',
+          poster: response.poster || searchResult?.poster || '',
+          externalIds: mergeExternalIds(response.externalIds, selectedReference.externalIds),
+        })
+      );
 
     return this.selectedContent$;
   }

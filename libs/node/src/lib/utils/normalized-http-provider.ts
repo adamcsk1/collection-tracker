@@ -6,7 +6,7 @@ import { ExternalMetadataItemModel } from '@shared/models/external-metadata-mode
 import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import { resolveImdbId } from '@shared/utils/imdb-id-util';
 import { normalizeIsbn13 } from '@shared/utils/isbn-util';
-import { normalizeMbid } from '@shared/utils/mbid-util';
+import { normalizeBookId, normalizeMusicId } from '@shared/utils/discovery-identity-util';
 import { ExternalMetadataProviderReplacementConfig } from '../models/external-metadata-config-model';
 import { ExternalMetadataProvider, ExternalMetadataSeasonProvider } from '../models/external-metadata-runtime-model';
 import {
@@ -45,8 +45,8 @@ const getString = (value: unknown, field: string, maxLength: number, allowEmpty 
 
 const normalizeSlotId = (providerName: ExternalMetadataProviderNameModel, value: string): string | null => {
   if (providerName === 'omdb') return resolveImdbId(value) || null;
-  if (providerName === 'openlibrary') return normalizeIsbn13(value);
-  return normalizeMbid(value);
+  if (providerName === 'openlibrary') return normalizeBookId(value);
+  return normalizeMusicId(value);
 };
 
 const toRequestId = (providerName: ExternalMetadataProviderNameModel, value: string): string | null => {
@@ -68,8 +68,9 @@ const toResponseSlotId = (providerName: ExternalMetadataProviderNameModel, value
 
 const normalizeIdentityId = (source: string, value: string): string | null => {
   if (source === 'imdb' || source === 'omdb') return resolveImdbId(value) || null;
-  if (source === 'isbn' || source === 'openlibrary') return normalizeIsbn13(value);
-  return normalizeMbid(value);
+  if (source === 'isbn') return normalizeIsbn13(value);
+  if (source === 'openlibrary') return normalizeBookId(value);
+  return normalizeMusicId(value);
 };
 
 const getPoster = (value: unknown): string => {

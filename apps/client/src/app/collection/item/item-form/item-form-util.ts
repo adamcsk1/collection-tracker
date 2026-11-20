@@ -4,8 +4,7 @@ import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text
 import { mergeImdbExternalId } from '@shared/utils/external-metadata-identity-util';
 import { normalizeIMDbRating } from '@shared/utils/external-metadata-ratings-util';
 import { resolveImdbId } from '@shared/utils/imdb-id-util';
-import { extractIsbn13 } from '@shared/utils/isbn-util';
-import { extractMbid } from '@shared/utils/mbid-util';
+import { extractBookId, extractMusicId, normalizeWorkId } from '@shared/utils/discovery-identity-util';
 import { ItemFormModel } from './item-form-model';
 export type { ItemFormModel } from './item-form-model';
 
@@ -36,13 +35,13 @@ export const buildItemFromForm = (
   } = {}
 ): CollectionItemChangeApiModel => {
   if (formValues.contentType === 'album') {
-    const mbid = extractMbid(options.externalItemId ?? formValues.IMDbId) ?? '';
+    const mbid = extractMusicId(options.externalItemId ?? formValues.IMDbId) ?? '';
     return {
       title: formValues.title.trim(),
       IMDbId: undefined,
       externalProvider: 'musicbrainz',
       externalItemId: mbid,
-      externalIds: mbid ? [{ source: 'musicbrainz', id: mbid }] : undefined,
+      externalIds: options.externalIds ?? (mbid ? [{ source: 'musicbrainz', id: mbid }] : undefined),
       year: formValues.year,
       rate: '',
       rottenTomatoesRate: '',
@@ -61,13 +60,15 @@ export const buildItemFromForm = (
   }
 
   if (formValues.contentType === 'book') {
-    const isbn = extractIsbn13(options.externalItemId ?? formValues.IMDbId) ?? '';
+    const isbn = extractBookId(options.externalItemId ?? formValues.IMDbId) ?? '';
     return {
       title: formValues.title.trim(),
       IMDbId: undefined,
       externalProvider: 'openlibrary',
       externalItemId: isbn,
-      externalIds: isbn ? [{ source: 'isbn', id: isbn }] : undefined,
+      externalIds:
+        options.externalIds ??
+        (isbn ? [{ source: normalizeWorkId(isbn) ? 'openlibrary' : 'isbn', id: isbn }] : undefined),
       year: formValues.year,
       rate: '',
       rottenTomatoesRate: '',
@@ -133,6 +134,6 @@ export const buildItemFormFromChange = (item: CollectionItemChangeApiModel): Ite
 
 export const isImdbIdValid = (imdbId: string): boolean => resolveImdbId(imdbId) !== '';
 
-export const isIsbnValid = (isbn: string): boolean => extractIsbn13(isbn) !== null;
+export const isIsbnValid = (isbn: string): boolean => extractBookId(isbn) !== null;
 
-export const isMbidValid = (mbid: string): boolean => extractMbid(mbid) !== null;
+export const isMbidValid = (mbid: string): boolean => extractMusicId(mbid) !== null;

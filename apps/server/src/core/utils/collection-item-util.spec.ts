@@ -23,6 +23,38 @@ const validItem: CollectionItemChangeApiModel = {
 
 describe('collection-item-util', () => {
   describe('normalizeItem', () => {
+    it('accepts work and release-group identities while retaining valid aliases', () => {
+      expect(
+        normalizeItem({
+          ...validItem,
+          contentType: 'book',
+          externalProvider: 'openlibrary',
+          externalItemId: 'ol123w',
+          externalIds: [
+            { source: 'openlibrary', id: '/works/OL123W' },
+            { source: 'isbn', id: '0-306-40615-2' },
+          ],
+        })
+      ).toMatchObject({
+        externalItemId: 'OL123W',
+        externalIds: [
+          { source: 'openlibrary', id: 'OL123W' },
+          { source: 'isbn', id: '9780306406157' },
+        ],
+      });
+      const group = 'release-group:f509c5ff-ad54-4dde-b61e-24f750965835';
+      expect(
+        normalizeItem({
+          ...validItem,
+          contentType: 'album',
+          externalProvider: 'musicbrainz',
+          externalItemId: group.toUpperCase(),
+        })
+      ).toMatchObject({ externalItemId: group, externalIds: [{ source: 'musicbrainz', id: group }] });
+      expect(
+        normalizeItem({ ...validItem, contentType: 'book', externalProvider: 'openlibrary', externalItemId: 'OL1M' })
+      ).toBeUndefined();
+    });
     it('returns normalized item for valid input', () => {
       const result = normalizeItem(validItem);
 

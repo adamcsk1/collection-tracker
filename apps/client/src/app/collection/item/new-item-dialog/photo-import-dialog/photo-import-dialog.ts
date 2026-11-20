@@ -26,6 +26,7 @@ import { ExternalMetadataItemModel } from '@shared/models/external-metadata-mode
 import { parseTagText } from '@shared/utils/collection-item-text-util';
 import { normalizePhotoImportIdentifier } from '@shared/utils/photo-import-identifier-util';
 import { normalizeMbid } from '@shared/utils/mbid-util';
+import { mergeExternalIds } from '@shared/utils/external-metadata-identity-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom } from 'rxjs';
@@ -530,6 +531,10 @@ export class PhotoImportDialog implements OnInit {
             )
           );
           if (metadata.contentType !== this.contentType() || !metadata.providerItemId) throw new Error();
+          metadata.externalIds = mergeExternalIds(metadata.externalIds, row.selected.externalIds);
+          metadata.year ||= row.selected.year;
+          metadata.actors ||= row.selected.actors;
+          metadata.poster ||= row.selected.poster;
           const existing = await firstValueFrom(
             this.api.collectionItemExists(
               metadata.provider,

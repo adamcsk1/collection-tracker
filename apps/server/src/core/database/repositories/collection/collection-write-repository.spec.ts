@@ -1,6 +1,7 @@
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDatabase } from '../../database';
+import { resolveCanonicalItemId } from '../external-item-identity-repository';
 import { searchCollectionItems } from './collection-read-repository';
 import { findCollectionItemSuggestions } from './collection-suggestions-repository';
 import { insertCollectionItem, updateCollectionItemByExternalId } from './collection-write-repository';
@@ -29,6 +30,47 @@ describe('collection-write-repository', () => {
   beforeEach(() => {
     getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   });
+
+  it.each([
+    ['book', 'openlibrary', 'OL1W', 'isbn', '9780306406157', 'books'],
+    [
+      'album',
+      'musicbrainz',
+      'release-group:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      'musicbrainz',
+      'f509c5ff-ad54-4dde-b61e-24f750965835',
+      'music',
+    ],
+  ] as const)(
+    'round-trips %s discovery metadata and preserves legacy aliases on update',
+    (contentType, externalProvider, externalItemId, source, alias, listType) => {
+      const db = getDatabase();
+      const discoveryItem: CollectionItemChangeApiModel = {
+        ...item,
+        IMDbId: undefined,
+        contentType,
+        externalProvider,
+        externalItemId,
+        externalIds: [{ source, id: alias }],
+        image: '',
+      };
+      const created = insertCollectionItem(db, 'user', 'discovery-hash', discoveryItem, listType);
+      expect(created.externalItemId).toBe(externalItemId);
+      expect(created.externalIds).toContainEqual({ source, id: alias });
+      expect(resolveCanonicalItemId(db, 'user', source, alias)).toBe(`${externalProvider}:${externalItemId}`);
+      const updated = updateCollectionItemByExternalId(
+        db,
+        'user',
+        externalProvider,
+        externalItemId,
+        'new-hash',
+        { ...discoveryItem, plot: 'Refreshed' },
+        listType
+      );
+      expect(updated).toMatchObject({ externalItemId, plot: 'Refreshed' });
+      expect(updated?.externalIds).toContainEqual({ source, id: alias });
+    }
+  );
 
   it('persists normalized item data and hydrates the flat API model', () => {
     const db = getDatabase();

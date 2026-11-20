@@ -55,54 +55,58 @@ test.describe('Books', () => {
     await expect(collectionPage.getMediaChip('book')).toBeVisible();
   });
 
-  test('searches Open Library, creates a book, shows its details, and deletes it', async ({ page }) => {
-    const title = 'The E2E Book';
-    const isbn = '9780306406157';
-    await page.route('**/api/v1/external-metadata/search*provider=openlibrary*', async (route) => {
-      await route.fulfill({ status: 200, json: { data: buildOpenLibrarySearchResult(title, isbn) } });
+  for (const identity of ['9780306406157', 'OL123W']) {
+    test(`searches Open Library, creates book ${identity}, shows details, and deletes it`, async ({ page }) => {
+      const title = 'The E2E Book';
+      const isbn = identity;
+      const externalIds = [{ source: identity.startsWith('OL') ? 'openlibrary' : 'isbn', id: identity }];
+      const metadata = { ...buildOpenLibraryItem(title, identity), externalIds };
+      await page.route('**/api/v1/external-metadata/search*provider=openlibrary*', async (route) => {
+        await route.fulfill({ status: 200, json: { data: { results: [metadata] } } });
+      });
+      await page.route('**/api/v1/external-metadata/items*externalIdentitySource=openlibrary*', async (route) => {
+        await route.fulfill({ status: 200, json: { data: metadata } });
+      });
+
+      await booksPage.visit();
+      await booksPage.getAddFirstItemLink().press('Space');
+      const openLibrarySearchResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
+      await booksPage.getNewItemSearchInput().fill(title);
+      await openLibrarySearchResponsePromise;
+      await expect(booksPage.getNewItemContentOptions()).toHaveCount(1);
+      await expect(booksPage.getNewItemContentOptions()).toContainText([title]);
+
+      const openLibraryItemResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/items');
+      const createBookResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items');
+      await booksPage.getNewItemSaveAndCloseButton().click();
+      await openLibraryItemResponsePromise;
+      const createBookResponse = await createBookResponsePromise;
+      expect(createBookResponse.request().postDataJSON()).toMatchObject({
+        title,
+        contentType: 'book',
+        externalProvider: 'openlibrary',
+        externalItemId: isbn,
+        listType: 'books',
+        actors: 'Author One, Author Two',
+      });
+      expect(createBookResponse.request().postDataJSON().externalIds).toEqual(externalIds);
+      expect(createBookResponse.status()).toBe(200);
+
+      await expect(booksPage.getListItemTitles()).toHaveCount(1);
+      await expect(booksPage.getListItemTitles()).toContainText([title]);
+      await booksPage.getListItemImages().first().click();
+      await expect(booksPage.getItemDialog()).toContainText(title);
+      await expect(booksPage.getItemDialog()).toContainText('Author One, Author Two');
+      await expect(booksPage.getItemDialogIsbn()).toContainText(isbn);
+
+      const deleteBookResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
+      await booksPage.openItemActions();
+      await booksPage.getItemDialogDeleteButton().click();
+      await createMessageDialog(page).confirm(title);
+      expect((await deleteBookResponsePromise).status()).toBe(204);
+      await expect(booksPage.getEmptyState()).toBeVisible();
     });
-    await page.route('**/api/v1/external-metadata/items*externalIdentitySource=openlibrary*', async (route) => {
-      await route.fulfill({ status: 200, json: { data: buildOpenLibraryItem(title, isbn) } });
-    });
-
-    await booksPage.visit();
-    await booksPage.getAddFirstItemLink().press('Space');
-    const openLibrarySearchResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
-    await booksPage.getNewItemSearchInput().fill(title);
-    await openLibrarySearchResponsePromise;
-    await expect(booksPage.getNewItemContentOptions()).toHaveCount(1);
-    await expect(booksPage.getNewItemContentOptions()).toContainText([title]);
-
-    const openLibraryItemResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/items');
-    const createBookResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items');
-    await booksPage.getNewItemSaveAndCloseButton().click();
-    await openLibraryItemResponsePromise;
-    const createBookResponse = await createBookResponsePromise;
-    expect(createBookResponse.request().postDataJSON()).toMatchObject({
-      title,
-      contentType: 'book',
-      externalProvider: 'openlibrary',
-      externalItemId: isbn,
-      listType: 'books',
-      actors: 'Author One, Author Two',
-    });
-    expect(createBookResponse.request().postDataJSON().externalIds).toEqual([{ source: 'isbn', id: isbn }]);
-    expect(createBookResponse.status()).toBe(200);
-
-    await expect(booksPage.getListItemTitles()).toHaveCount(1);
-    await expect(booksPage.getListItemTitles()).toContainText([title]);
-    await booksPage.getListItemImages().first().click();
-    await expect(booksPage.getItemDialog()).toContainText(title);
-    await expect(booksPage.getItemDialog()).toContainText('Author One, Author Two');
-    await expect(booksPage.getItemDialogIsbn()).toContainText(isbn);
-
-    const deleteBookResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
-    await booksPage.openItemActions();
-    await booksPage.getItemDialogDeleteButton().click();
-    await createMessageDialog(page).confirm(title);
-    expect((await deleteBookResponsePromise).status()).toBe(204);
-    await expect(booksPage.getEmptyState()).toBeVisible();
-  });
+  }
 
   test('adds a books list item manually by ISBN and persists it after reload', async ({ page }) => {
     const title = 'Manual E2E Book';

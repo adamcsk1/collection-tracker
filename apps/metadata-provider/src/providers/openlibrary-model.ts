@@ -1,6 +1,7 @@
 export interface OpenLibraryAuthorRefModel {
   key?: string;
   name?: string;
+  author?: { key?: string };
 }
 
 export interface OpenLibraryDescriptionModel {
@@ -10,21 +11,9 @@ export interface OpenLibraryDescriptionModel {
 export interface OpenLibrarySearchDocumentModel {
   author_name?: string[];
   cover_i?: number;
-  cover_edition_key?: string;
-  editions?: { docs?: OpenLibraryEditionModel[] };
   first_publish_year?: number | string;
-  isbn?: string[];
   key?: string;
   subject?: string[];
-  title?: string;
-}
-
-export interface OpenLibraryEditionModel {
-  cover_i?: number;
-  isbn?: string[];
-  isbn_10?: string[];
-  isbn_13?: string[];
-  key?: string;
   title?: string;
 }
 
@@ -40,8 +29,7 @@ export interface OpenLibraryBookModel {
   publish_date?: string;
   subjects?: string[];
   title?: string;
-}
-
-export interface OpenLibraryAuthorModel {
-  name?: string;
+  key?: string;
+  first_publish_date?: string;
+  works?: { key?: string }[];
 }

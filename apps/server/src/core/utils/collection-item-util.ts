@@ -5,7 +5,7 @@ import {
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { hashText } from '../crypto';
 import { normalizeIsbn13 } from './isbn-util';
-import { normalizeMbid } from '@shared/utils/mbid-util';
+import { normalizeBookId, normalizeMusicId } from '@shared/utils/discovery-identity-util';
 
 const normalizeYear = (year: number | string | null): string | null => {
   if (typeof year === 'number') return Number.isInteger(year) ? `${year}` : `${year}`.replace(/^(\d{4})\.0$/, '$1');
@@ -69,7 +69,8 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
       const source = externalId.source.trim().toLowerCase();
       let id = externalId.id.trim();
       if (source === 'isbn') id = normalizeIsbn13(externalId.id) ?? '';
-      else if (source === 'musicbrainz') id = normalizeMbid(externalId.id) ?? '';
+      else if (source === 'musicbrainz') id = normalizeMusicId(externalId.id) ?? '';
+      else if (source === 'openlibrary') id = normalizeBookId(externalId.id) ?? '';
       return source && id && isExternalItemIdentitySourceName(source) ? [{ source, id }] : [];
     }),
   ];
@@ -79,9 +80,9 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
   }
 
   let externalItemId = item.externalItemId.trim();
-  if (externalProvider === 'openlibrary') externalItemId = normalizeIsbn13(item.externalItemId) ?? '';
-  else if (externalProvider === 'musicbrainz') externalItemId = normalizeMbid(item.externalItemId) ?? '';
-  if (externalProvider === 'openlibrary' && externalItemId) {
+  if (externalProvider === 'openlibrary') externalItemId = normalizeBookId(item.externalItemId) ?? '';
+  else if (externalProvider === 'musicbrainz') externalItemId = normalizeMusicId(item.externalItemId) ?? '';
+  if (externalProvider === 'openlibrary' && normalizeIsbn13(externalItemId)) {
     const isbnIdentity = { source: 'isbn' as const, id: externalItemId };
     if (!externalIds.some((externalId) => externalId.source === 'isbn' && externalId.id === externalItemId)) {
       externalIds.push(isbnIdentity);

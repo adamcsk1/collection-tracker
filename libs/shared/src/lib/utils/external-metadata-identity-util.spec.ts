@@ -4,6 +4,7 @@ import {
   getImdbIdFromExternalMetadata,
   isImdbShapedExternalItemId,
   mergeImdbExternalId,
+  mergeExternalIds,
 } from './external-metadata-identity-util';
 
 const buildItem = (overrides: Partial<ExternalMetadataItemModel> = {}): ExternalMetadataItemModel => ({
@@ -21,6 +22,13 @@ const buildItem = (overrides: Partial<ExternalMetadataItemModel> = {}): External
 });
 
 describe('external-metadata-identity-util', () => {
+  it('retains lookup identities and deduplicates discovery aliases', () => {
+    const work = { source: 'openlibrary' as const, id: 'OL1W' };
+    const isbn = { source: 'isbn' as const, id: '9780306406157' };
+    expect(mergeExternalIds([work], [work, isbn])).toEqual([work, isbn]);
+    expect(mergeExternalIds(undefined, [isbn])).toEqual([isbn]);
+    expect(mergeExternalIds(undefined, undefined)).toBeUndefined();
+  });
   it('reads imdb id from externalIds', () => {
     expect(
       getImdbIdFromExternalMetadata(

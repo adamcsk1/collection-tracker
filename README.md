@@ -1,6 +1,6 @@
 # Collection Tracker
 
-Collection Tracker is a TypeScript workspace for a self-hosted movie, series, and book catalog. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Playwright, Vitest, ESLint, and server builds run through their direct CLIs.
+Collection Tracker is a TypeScript workspace for a self-hosted movie, series, book, and music catalog. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Playwright, Vitest, ESLint, and server builds run through their direct CLIs.
 
 ## Project Goal
 
@@ -32,6 +32,8 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - `libs/node`: Node-only shared runtime used by the server and metadata-provider
 - `libs/public`: shared static assets and PWA metadata
 - `android`: native Android WebView wrapper for deployed Collection Tracker instances
+
+Book and music discovery tracks works and albums rather than exact editions or pressings. Existing ISBN and release IDs remain supported. See [metadata discovery and the planned provider coverage benchmark](./docs/metadata-provider.md#search-and-diagnostics).
 
 ## Requirements
 

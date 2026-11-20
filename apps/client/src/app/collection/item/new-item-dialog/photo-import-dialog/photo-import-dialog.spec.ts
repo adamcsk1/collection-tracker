@@ -141,6 +141,30 @@ describe('PhotoImportDialog', () => {
     vi.restoreAllMocks();
   });
 
+  it('retains ISBN discovery aliases through work lookup, duplicate check, and creation', async () => {
+    fixture.componentRef.setInput('contentType', 'book');
+    fixture.componentRef.setInput('listType', 'books');
+    const work = buildMetadata({
+      provider: 'openlibrary',
+      providerItemId: 'OL1W',
+      contentType: 'book',
+      externalIds: [{ source: 'openlibrary', id: 'OL1W' }],
+    });
+    const aliases = [...work.externalIds!, { source: 'isbn' as const, id: '9780306406157' }];
+    component['store'].setState('rows', [buildRow('book', { ...work, externalIds: aliases })]);
+    api.getExternalMetadataItem.mockReturnValue(of(work));
+    await component['addSelected']();
+    expect(api.collectionItemExists).toHaveBeenCalledWith('openlibrary', 'OL1W', undefined, 'books', aliases, {
+      suppressErrorAlert: true,
+    });
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({ externalItemId: 'OL1W', externalIds: aliases }),
+      undefined,
+      'books',
+      { suppressErrorAlert: true }
+    );
+  });
+
   it('debounces query edits for 500 ms and searches only the latest trimmed value', async () => {
     await selectFiles([new File(['photo'], 'cover.jpg', { type: 'image/jpeg' })]);
     await component['readPhotos']();

@@ -19,6 +19,95 @@ const release = {
 };
 
 describe('MusicBrainzExternalMetadataProvider', () => {
+  it.each([429, 503])('retries transient %s responses after Retry-After', async (status) => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status, headers: { 'Retry-After': '2' } }))
+      .mockResolvedValueOnce(jsonResponse({ 'release-groups': [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const result = new MusicBrainzExternalMetadataProvider('https://music.example/').search('test');
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await result).toEqual({ results: [] });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('bounds retries and reports upstream unavailability instead of an internal error', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => new Response(null, { status: 503 }))
+    );
+    const result = expect(
+      new MusicBrainzExternalMetadataProvider('https://music.example/').getItem(mbid)
+    ).rejects.toMatchObject({ statusCode: 503, message: 'musicbrainz responded with 503' });
+    await vi.advanceTimersByTimeAsync(2000);
+    await result;
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it.each(['120', 'Fri, 20 Nov 2026 12:02:00 GMT'])(
+    'does not retry before a long Retry-After: %s',
+    async (retryAfter) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-11-20T12:00:00Z'));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(null, {
+            status: 503,
+            headers: { 'Retry-After': retryAfter },
+          })
+        )
+      );
+      await expect(
+        new MusicBrainzExternalMetadataProvider('https://music.example/').search('test')
+      ).rejects.toMatchObject({ statusCode: 503 });
+      expect(fetch).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('searches creator and title terms together and ignores punctuation-only input', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => jsonResponse({ 'release-groups': [] }))
+    );
+    const provider = new MusicBrainzExternalMetadataProvider('https://music.example/');
+    expect(await provider.search(' - ')).toEqual({ results: [] });
+    expect(fetch).not.toHaveBeenCalled();
+    await provider.search('Pink Floyd - Wish');
+    expect(new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams.get('query')).toBe(
+      '(releasegroup:"Pink" OR artist:"Pink") AND (releasegroup:"Floyd" OR artist:"Floyd") AND (releasegroup:"Wish" OR artist:"Wish") AND (primarytype:album OR primarytype:ep OR primarytype:single)'
+    );
+  });
+  it('loads group links with the group endpoint and original release year', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ...release, 'first-release-date': '1973' })));
+    const result = await new MusicBrainzExternalMetadataProvider('https://music.example/').search(
+      `https://musicbrainz.org/release-group/${mbid}`
+    );
+    expect(new URL(vi.mocked(fetch).mock.calls[0][0] as string).pathname).toBe(`/release-group/${mbid}`);
+    expect(result.results[0]).toMatchObject({ providerItemId: `release-group:${mbid}`, year: '1973' });
+  });
+
+  it('preserves legacy release lookup IDs while exposing a verified group alias', async () => {
+    const group = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => jsonResponse({ ...release, 'release-group': { id: group } }))
+    );
+    const provider = new MusicBrainzExternalMetadataProvider('https://music.example/');
+    expect(await provider.getItem(mbid)).toMatchObject({
+      providerItemId: mbid,
+      externalIds: [
+        { source: 'musicbrainz', id: mbid },
+        { source: 'musicbrainz', id: `release-group:${group}` },
+      ],
+    });
+    expect((await provider.search(mbid)).results[0].providerItemId).toBe(`release-group:${group}`);
+  });
+
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -44,14 +133,21 @@ describe('MusicBrainzExternalMetadataProvider', () => {
     await Promise.all([firstRequest, secondRequest]);
   });
 
-  it('maps search results using release MBIDs', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ releases: [release] })));
+  it('searches release groups so editions do not crowd out albums, EPs, and singles', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(jsonResponse({ 'release-groups': [{ ...release, 'first-release-date': '1973-03-01' }] }))
+    );
 
     const result = await new MusicBrainzExternalMetadataProvider('https://music.example/').search('dark side');
 
     const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
-    expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('https://music.example/release');
-    expect(requestUrl.searchParams.get('query')).toBe('dark side AND status:official AND primarytype:album');
+    expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('https://music.example/release-group');
+    expect(requestUrl.searchParams.get('query')).toBe(
+      '(releasegroup:"dark" OR artist:"dark") AND (releasegroup:"side" OR artist:"side") AND (primarytype:album OR primarytype:ep OR primarytype:single)'
+    );
     expect(requestUrl.searchParams.get('fmt')).toBe('json');
     expect(requestUrl.searchParams.get('limit')).toBe('20');
     expect(vi.mocked(fetch).mock.calls[0][1]).toEqual(
@@ -62,12 +158,12 @@ describe('MusicBrainzExternalMetadataProvider', () => {
     expect(result.results).toEqual([
       {
         provider: 'musicbrainz',
-        providerItemId: mbid,
-        externalIds: [{ source: 'musicbrainz', id: mbid }],
+        providerItemId: `release-group:${mbid}`,
+        externalIds: [{ source: 'musicbrainz', id: `release-group:${mbid}` }],
         title: 'The Dark Side of the Moon',
         year: '1973',
         contentType: 'album',
-        poster: `https://coverartarchive.org/release/${mbid}/front-250`,
+        poster: `https://coverartarchive.org/release-group/${mbid}/front-250`,
         plot: '',
         actors: 'Pink Floyd',
         genres: ['progressive rock'],
@@ -81,7 +177,7 @@ describe('MusicBrainzExternalMetadataProvider', () => {
       'fetch',
       vi.fn().mockResolvedValue(
         jsonResponse({
-          releases: [null, { ...release, 'artist-credit': [null], tags: {}, 'release-group': { tags: {} } }],
+          'release-groups': [null, { ...release, 'artist-credit': [null], tags: {}, 'release-group': { tags: {} } }],
         })
       )
     );
@@ -137,7 +233,7 @@ describe('MusicBrainzExternalMetadataProvider', () => {
     expect(new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams.get('query')).toBe('barcode:724383848429');
   });
 
-  it('deduplicates search results by release-group', async () => {
+  it('resolves barcode editions to their shared release-group', async () => {
     const otherRelease = {
       ...release,
       id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
@@ -150,10 +246,14 @@ describe('MusicBrainzExternalMetadataProvider', () => {
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ releases: [otherRelease, remaster] })));
 
-    const result = await new MusicBrainzExternalMetadataProvider('https://music.example/').search('dark side');
+    const result = await new MusicBrainzExternalMetadataProvider('https://music.example/').search('724383848429');
 
     expect(result.results).toHaveLength(1);
-    expect(result.results[0]?.providerItemId).toBe('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+    expect(result.results[0]?.providerItemId).toBe('release-group:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+    expect(result.results[0]?.externalIds).toContainEqual({
+      source: 'musicbrainz',
+      id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    });
   });
 
   it('escapes quotes in album search queries', async () => {
@@ -162,7 +262,7 @@ describe('MusicBrainzExternalMetadataProvider', () => {
     await new MusicBrainzExternalMetadataProvider('https://music.example/').search('dark "side"');
 
     expect(new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams.get('query')).toBe(
-      'dark \\"side\\" AND status:official AND primarytype:album'
+      '(releasegroup:"dark" OR artist:"dark") AND (releasegroup:"\\"side\\"" OR artist:"\\"side\\"") AND (primarytype:album OR primarytype:ep OR primarytype:single)'
     );
   });
 
@@ -171,6 +271,6 @@ describe('MusicBrainzExternalMetadataProvider', () => {
 
     await new MusicBrainzExternalMetadataProvider('https://music.example/api').search('album');
 
-    expect(new URL(vi.mocked(fetch).mock.calls[0][0] as string).pathname).toBe('/api/release');
+    expect(new URL(vi.mocked(fetch).mock.calls[0][0] as string).pathname).toBe('/api/release-group');
   });
 });

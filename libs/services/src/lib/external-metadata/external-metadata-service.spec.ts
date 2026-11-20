@@ -44,6 +44,44 @@ describe('ExternalMetadataService', () => {
     httpMock.verify();
   });
 
+  it('preserves discovery aliases and fills missing work detail fields from search', () => {
+    const work: ExternalMetadataItemModel = {
+      provider: 'openlibrary',
+      providerItemId: 'OL1W',
+      title: 'Book',
+      year: '',
+      contentType: 'book',
+      poster: '',
+      plot: '',
+      actors: 'Author',
+      genres: [],
+      ratings: [],
+      externalIds: [{ source: 'openlibrary', id: 'OL1W' }],
+    };
+    service.getMatchedContents('9780306406157', 'openlibrary');
+    httpMock.expectOne(`${API_URL}/external-metadata/search?s=9780306406157&provider=openlibrary`).flush({
+      data: {
+        results: [
+          {
+            ...work,
+            year: '1901',
+            poster: 'cover.jpg',
+            externalIds: [...work.externalIds!, { source: 'isbn', id: '9780306406157' }],
+          },
+        ],
+      },
+    });
+    service.getSelectedContent('openlibrary/OL1W');
+    httpMock
+      .expectOne(`${API_URL}/external-metadata/items?externalIdentitySource=openlibrary&externalIdentityId=OL1W`)
+      .flush({ data: { ...work, actors: '' } });
+    expect(service.selectedContent()).toMatchObject({ year: '1901', actors: 'Author', poster: 'cover.jpg' });
+    expect(service.selectedContent()?.externalIds).toEqual([
+      ...work.externalIds!,
+      { source: 'isbn', id: '9780306406157' },
+    ]);
+  });
+
   it('fetches metadata for an IMDb id in the search text', () => {
     service.getMatchedContents('see tt0133093 now');
 

@@ -28,8 +28,7 @@ import { ExternalMetadataService } from '@services/external-metadata/external-me
 import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { resolveImdbId } from '@shared/utils/imdb-id-util';
-import { extractIsbn13 } from '@shared/utils/isbn-util';
-import { extractMbid } from '@shared/utils/mbid-util';
+import { extractBookId, extractMusicId, normalizeWorkId } from '@shared/utils/discovery-identity-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import {
   catchError,
@@ -829,7 +828,7 @@ export class NewItemDialog {
         switchMap(([mode, identity, targetOwnerShareCode, listType, isBookAdd, isAlbumAdd]) => {
           if (mode !== 'manual') return of({ exists: false });
           if (isBookAdd) {
-            const isbn = extractIsbn13(identity);
+            const isbn = extractBookId(identity);
             if (!isbn) return of({ exists: false });
             return timer(150).pipe(
               switchMap(() =>
@@ -839,7 +838,7 @@ export class NewItemDialog {
                     isbn,
                     targetOwnerShareCode || undefined,
                     listType,
-                    [{ source: 'isbn', id: isbn }],
+                    [{ source: normalizeWorkId(isbn) ? 'openlibrary' : 'isbn', id: isbn }],
                     { suppressErrorAlert: true }
                   )
                   .pipe(catchError(() => of({ exists: false })))
@@ -847,7 +846,7 @@ export class NewItemDialog {
             );
           }
           if (isAlbumAdd) {
-            const mbid = extractMbid(identity);
+            const mbid = extractMusicId(identity);
             if (!mbid) return of({ exists: false });
             return timer(150).pipe(
               switchMap(() =>

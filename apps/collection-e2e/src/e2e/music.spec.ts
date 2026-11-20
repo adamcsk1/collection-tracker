@@ -55,54 +55,58 @@ test.describe('Music', () => {
     await expect(collectionPage.getMediaChip('album')).toBeVisible();
   });
 
-  test('searches MusicBrainz, creates an album, shows its details, and deletes it', async ({ page }) => {
-    const title = 'The E2E Album';
-    const mbid = 'f509c5ff-ad54-4dde-b61e-24f750965835';
-    await page.route('**/api/v1/external-metadata/search*provider=musicbrainz*', async (route) => {
-      await route.fulfill({ status: 200, json: { data: buildMusicBrainzSearchResult(title, mbid) } });
+  for (const identityPrefix of ['', 'release-group:']) {
+    test(`searches MusicBrainz, creates an album with ${identityPrefix || 'release'} identity, shows details, and deletes it`, async ({
+      page,
+    }) => {
+      const title = 'The E2E Album';
+      const mbid = `${identityPrefix}f509c5ff-ad54-4dde-b61e-24f750965835`;
+      await page.route('**/api/v1/external-metadata/search*provider=musicbrainz*', async (route) => {
+        await route.fulfill({ status: 200, json: { data: buildMusicBrainzSearchResult(title, mbid) } });
+      });
+      await page.route('**/api/v1/external-metadata/items*externalIdentitySource=musicbrainz*', async (route) => {
+        await route.fulfill({ status: 200, json: { data: buildMusicBrainzItem(title, mbid) } });
+      });
+
+      await musicPage.visit();
+      await musicPage.getAddFirstItemLink().press('Enter');
+      const musicBrainzSearchResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
+      await musicPage.getNewItemSearchInput().fill(title);
+      await musicBrainzSearchResponsePromise;
+      await expect(musicPage.getNewItemContentOptions()).toHaveCount(1);
+      await expect(musicPage.getNewItemContentOptions()).toContainText([title]);
+
+      const musicBrainzItemResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/items');
+      const createAlbumResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items');
+      await musicPage.getNewItemSaveAndCloseButton().click();
+      await musicBrainzItemResponsePromise;
+      const createAlbumResponse = await createAlbumResponsePromise;
+      expect(createAlbumResponse.request().postDataJSON()).toMatchObject({
+        title,
+        contentType: 'album',
+        externalProvider: 'musicbrainz',
+        externalItemId: mbid,
+        listType: 'music',
+        actors: 'Artist One, Artist Two',
+      });
+      expect(createAlbumResponse.request().postDataJSON().externalIds).toEqual([{ source: 'musicbrainz', id: mbid }]);
+      expect(createAlbumResponse.status()).toBe(200);
+
+      await expect(musicPage.getListItemTitles()).toHaveCount(1);
+      await expect(musicPage.getListItemTitles()).toContainText([title]);
+      await musicPage.getListItemImages().first().click();
+      await expect(musicPage.getItemDialog()).toContainText(title);
+      await expect(musicPage.getItemDialog()).toContainText('Artist One, Artist Two');
+      await expect(musicPage.getItemDialogMbid()).toContainText(mbid);
+
+      const deleteAlbumResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
+      await musicPage.openItemActions();
+      await musicPage.getItemDialogDeleteButton().click();
+      await createMessageDialog(page).confirm(title);
+      expect((await deleteAlbumResponsePromise).status()).toBe(204);
+      await expect(musicPage.getEmptyState()).toBeVisible();
     });
-    await page.route('**/api/v1/external-metadata/items*externalIdentitySource=musicbrainz*', async (route) => {
-      await route.fulfill({ status: 200, json: { data: buildMusicBrainzItem(title, mbid) } });
-    });
-
-    await musicPage.visit();
-    await musicPage.getAddFirstItemLink().press('Enter');
-    const musicBrainzSearchResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/search');
-    await musicPage.getNewItemSearchInput().fill(title);
-    await musicBrainzSearchResponsePromise;
-    await expect(musicPage.getNewItemContentOptions()).toHaveCount(1);
-    await expect(musicPage.getNewItemContentOptions()).toContainText([title]);
-
-    const musicBrainzItemResponsePromise = waitForApiResponse(page, 'GET', '/api/v1/external-metadata/items');
-    const createAlbumResponsePromise = waitForApiResponse(page, 'POST', '/api/v1/collection-items');
-    await musicPage.getNewItemSaveAndCloseButton().click();
-    await musicBrainzItemResponsePromise;
-    const createAlbumResponse = await createAlbumResponsePromise;
-    expect(createAlbumResponse.request().postDataJSON()).toMatchObject({
-      title,
-      contentType: 'album',
-      externalProvider: 'musicbrainz',
-      externalItemId: mbid,
-      listType: 'music',
-      actors: 'Artist One, Artist Two',
-    });
-    expect(createAlbumResponse.request().postDataJSON().externalIds).toEqual([{ source: 'musicbrainz', id: mbid }]);
-    expect(createAlbumResponse.status()).toBe(200);
-
-    await expect(musicPage.getListItemTitles()).toHaveCount(1);
-    await expect(musicPage.getListItemTitles()).toContainText([title]);
-    await musicPage.getListItemImages().first().click();
-    await expect(musicPage.getItemDialog()).toContainText(title);
-    await expect(musicPage.getItemDialog()).toContainText('Artist One, Artist Two');
-    await expect(musicPage.getItemDialogMbid()).toContainText(mbid);
-
-    const deleteAlbumResponsePromise = waitForApiResponse(page, 'DELETE', '/api/v1/collection-items/');
-    await musicPage.openItemActions();
-    await musicPage.getItemDialogDeleteButton().click();
-    await createMessageDialog(page).confirm(title);
-    expect((await deleteAlbumResponsePromise).status()).toBe(204);
-    await expect(musicPage.getEmptyState()).toBeVisible();
-  });
+  }
 
   test('adds a music list item manually by MBID and persists it after reload', async ({ page }) => {
     const title = 'Manual E2E Album';

@@ -6,7 +6,7 @@ Collection Tracker can replace its built-in OMDb, Open Library, or MusicBrainz a
 
 A replacement is a separate HTTP service. Collection Tracker does not load plugins or run your code. You implement the endpoints below, then point the metadata provider at that service.
 
-You can replace only the `omdb`, `openlibrary`, and `musicbrainz` slots. There is no way to register a fourth provider name. A TMDB or other catalog must occupy one of those slots and keep that slot's identity scheme: IMDb IDs for `omdb`, ISBN-13 for `openlibrary`, and MusicBrainz release MBIDs for `musicbrainz`. Existing collection items, paste lookup, refresh, and duplicate merge all assume those identifiers.
+You can replace only the `omdb`, `openlibrary`, and `musicbrainz` slots. There is no way to register a fourth provider name. A replacement must keep its slot's identity scheme: IMDb IDs for `omdb`; Open Library work IDs (`OL…W`) or legacy ISBN-13 for `openlibrary`; and `release-group:<MBID>` or legacy bare release MBIDs for `musicbrainz`. Do not substitute Discogs IDs or Google Books volume IDs into these namespaces. Existing collection items must remain readable and refreshable.
 
 1. Serve `GET /search?s=` and `GET /items/{id}` under your `baseUrl`. An `omdb` replacement must also serve `GET /items/by-imdb/{id}` and `GET /items/{id}/seasons`.
 2. Return JSON with a `{ "data": ... }` envelope, an `application/json` or `+json` content type, at most 2 MiB, and at most 20 search results.
@@ -124,7 +124,9 @@ Allowed content types depend on the replaced slot:
 | `openlibrary` | `book`                |
 | `musicbrainz` | `album`               |
 
-`providerItemId` and `title` must be non-empty. Replacements must keep the built-in identity scheme for the replaced slot: IMDb IDs for `omdb`, ISBN-13 for `openlibrary`, and MusicBrainz release MBIDs for `musicbrainz`. Existing collection rows, paste lookup, refresh, and duplicate merge all assume those identifiers. `year`, `poster`, `plot`, and `actors` must be strings and may be empty. A non-empty `poster` must be an absolute public HTTP(S) URL the Collection Tracker image proxy already allows; private or link-local poster hosts are not fetched. `genres` and `ratings` are required arrays. `externalIds` is optional and should use the same alias sources as the replaced slot (`imdb`, `isbn`, or `musicbrainz`).
+`providerItemId` and `title` must be non-empty and use the slot's identity scheme described above. Book and music discovery should use work/group identities rather than arbitrarily selected editions. Legacy lookup must retain its requested identity; include verified work/group relationships in `externalIds`. Work aliases use source `openlibrary`; ISBN aliases use `isbn`; both release and prefixed release-group aliases use `musicbrainz`. Never infer equivalence from title alone.
+
+`year`, `poster`, `plot`, and `actors` must be strings and may be empty. A non-empty `poster` must be an absolute public HTTP(S) URL the Collection Tracker image proxy already allows; private or link-local poster hosts are not fetched. `genres` and `ratings` are required arrays. `externalIds` is optional.
 
 Field and collection limits:
 

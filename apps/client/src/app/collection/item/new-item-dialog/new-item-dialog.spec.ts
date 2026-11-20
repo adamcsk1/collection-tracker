@@ -1538,6 +1538,29 @@ describe('NewItemDialog component', () => {
     });
 
     it.each([
+      ['book', 'OL1W', 'openlibrary', 'books'],
+      ['album', 'release-group:f509c5ff-ad54-4dde-b61e-24f750965835', 'musicbrainz', 'music'],
+    ] as const)(
+      'checks manual %s discovery identities without stripping their namespace',
+      async (contentType, identity, provider, listType) => {
+        fixture.componentRef.setInput('allowedContentTypes', [contentType]);
+        fixture.detectChanges();
+        component['onModeChange']('manual');
+        component['manualForm'].title().value.set('Manual title');
+        component['manualForm'].IMDbId().value.set(identity);
+        await vi.advanceTimersByTimeAsync(150);
+        expect(api.collectionItemExists).toHaveBeenCalledWith(
+          provider,
+          identity,
+          undefined,
+          listType,
+          [{ source: provider, id: identity }],
+          { suppressErrorAlert: true }
+        );
+      }
+    );
+
+    it.each([
       ['movie', 'tt1234567', 'omdb', 'library', 'imdb'],
       ['book', '9780306406157', 'openlibrary', 'books', 'isbn'],
       ['album', 'f509c5ff-ad54-4dde-b61e-24f750965835', 'musicbrainz', 'music', 'musicbrainz'],

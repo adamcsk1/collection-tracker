@@ -1405,6 +1405,7 @@ components:
           enum: [omdb, openlibrary, musicbrainz]
         providerItemId:
           type: string
+          description: IMDb ID for OMDb; Open Library work ID (OL followed by digits and W) or legacy ISBN-13 for books; release-group:<MBID> or legacy bare release MBID for music. Work/group discovery does not require choosing an edition.
         externalIds:
           type: array
           description: Cross-provider identifiers known for this metadata item.
@@ -4135,7 +4136,7 @@ paths:
     get:
       operationId: proxyExternalMetadataItem
       summary: Get an external metadata item by external identity
-      description: Proxies to OMDb or Open Library; `imdb` resolves through a provider supporting direct IMDb lookup, and `isbn` resolves through Open Library. Provider credentials are never exposed to the client.
+      description: Proxies to OMDb, Open Library, or MusicBrainz; `imdb` resolves through a provider supporting direct IMDb lookup, and `isbn` resolves through Open Library. Legacy ISBN/release lookup retains the requested identity and may include verified work/group aliases. Provider credentials are never exposed to the client.
       tags: [External Metadata Proxy]
       parameters:
         - name: externalIdentitySource
@@ -4148,7 +4149,7 @@ paths:
         - name: externalIdentityId
           in: query
           required: true
-          description: External identity ID. OMDb and IMDb use an IMDb ID; Open Library and ISBN use ISBN-10 or ISBN-13.
+          description: External identity ID. OMDb and IMDb use an IMDb ID; Open Library accepts work IDs (OL followed by digits and W) or ISBN-10/ISBN-13; ISBN accepts ISBN-10/ISBN-13; MusicBrainz accepts release-group:<MBID> or a bare release MBID.
           schema:
             type: string
       responses:

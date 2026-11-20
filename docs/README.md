@@ -9,6 +9,7 @@ This directory contains the maintained project documentation. The root [`README.
 
 - [Default collection owners](./default-collection-owners.md)
 - [External metadata provider contract](./external-metadata-provider-contract.md)
+- [Album/book discovery and planned provider coverage benchmark](./metadata-provider.md#search-and-diagnostics)
 
 ## Development
 

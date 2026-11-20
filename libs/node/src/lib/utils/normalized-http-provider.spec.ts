@@ -25,6 +25,22 @@ const jsonResponse = (data: unknown, init?: ResponseInit): Response =>
 describe('normalized HTTP external metadata provider', () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it.each([
+    ['openlibrary', 'book', 'OL1W'],
+    ['musicbrainz', 'album', 'release-group:f509c5ff-ad54-4dde-b61e-24f750965835'],
+  ] as const)(
+    'transports %s discovery identities and aliases without changing namespaces',
+    async (name, contentType, providerItemId) => {
+      const metadata = { ...item, providerItemId, contentType, externalIds: [{ source: name, id: providerItemId }] };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(metadata)));
+      const provider = createNormalizedHttpExternalMetadataProvider(name, { baseUrl: 'https://metadata.test/v1/' });
+      expect(await provider.getItem(providerItemId)).toMatchObject(metadata);
+      expect(vi.mocked(fetch).mock.calls[0][0].toString()).toBe(
+        `https://metadata.test/v1/items/${encodeURIComponent(providerItemId)}`
+      );
+    }
+  );
+
   it('searches the normalized endpoint, authenticates, and stamps the configured provider', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ results: [{ ...item, provider: 'ignored' }] }));
     vi.stubGlobal('fetch', fetchMock);

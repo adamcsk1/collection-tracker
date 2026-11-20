@@ -1,5 +1,5 @@
 import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
-import { normalizeMbid } from '@shared/utils/mbid-util';
+import { normalizeBookId, normalizeMusicId, normalizeWorkId } from '@shared/utils/discovery-identity-util';
 import {
   ExternalItemIdentityModel,
   ExternalItemIdentitySourceNameModel,
@@ -18,8 +18,9 @@ const normalizeIdentitySource = (source: string): ExternalItemIdentitySourceName
 const normalizeIdentityId = (source: ExternalItemIdentitySourceNameModel, id: string): string => {
   const trimmedId = id.trim();
   if (source === 'imdb' || IMDB_SHAPED_ID.test(trimmedId)) return trimmedId.toLowerCase();
-  if (source === 'isbn' || source === 'openlibrary') return normalizeIsbn13(id) ?? '';
-  if (source === 'musicbrainz') return normalizeMbid(trimmedId) ?? trimmedId.toLowerCase();
+  if (source === 'isbn') return normalizeIsbn13(id) ?? '';
+  if (source === 'openlibrary') return normalizeBookId(id) ?? '';
+  if (source === 'musicbrainz') return normalizeMusicId(trimmedId) ?? trimmedId.toLowerCase();
   return trimmedId;
 };
 
@@ -53,15 +54,23 @@ export const normalizeExternalIdentities = (
 export const inferCanonicalItemId = (identities: ExternalItemIdentityModel[]): string => {
   const imdbIdentity = identities.find((identity) => identity.source === 'imdb' && IMDB_SHAPED_ID.test(identity.id));
   if (imdbIdentity) return `imdb:${imdbIdentity.id.toLowerCase()}`;
+  const discoveryIdentity = identities.find(
+    (identity) =>
+      (identity.source === 'openlibrary' && normalizeWorkId(identity.id)) ||
+      (identity.source === 'musicbrainz' && identity.id.startsWith('release-group:'))
+  );
+  if (discoveryIdentity) return `${discoveryIdentity.source}:${discoveryIdentity.id}`;
   const isbnIdentity = identities.find((identity) => identity.source === 'isbn');
   if (isbnIdentity) return `isbn:${isbnIdentity.id}`;
   const primaryIdentity = identities[0];
   return `${primaryIdentity.source}:${primaryIdentity.id}`;
 };
 
-/** Higher = stronger. imdb:tt… > isbn:… > provider-scoped. */
+/** Work/group identities and ISBNs have equal strength so existing mappings stay stable. */
 export const getCanonicalItemIdStrength = (canonicalItemId: string): number => {
   if (/^imdb:tt\d+$/i.test(canonicalItemId)) return 3;
+  if (/^openlibrary:OL\d+W$/.test(canonicalItemId) || canonicalItemId.startsWith('musicbrainz:release-group:'))
+    return 2;
   if (canonicalItemId.startsWith('isbn:') && canonicalItemId.length > 5) return 2;
   if (canonicalItemId.includes(':') && !canonicalItemId.startsWith(':') && !canonicalItemId.endsWith(':')) return 1;
   return 0;
@@ -147,6 +156,12 @@ export const resolveCanonicalItemId = (
   }
   const inferredCanonicalItemId = inferCanonicalItemId(identities);
   if (resolvedCanonicalItemId) {
+    if (
+      inferredCanonicalItemId.startsWith('openlibrary:OL') ||
+      inferredCanonicalItemId.startsWith('musicbrainz:release-group:')
+    ) {
+      return resolvedCanonicalItemId;
+    }
     return pickStrongerCanonicalItemId(resolvedCanonicalItemId, inferredCanonicalItemId);
   }
   return inferredCanonicalItemId;
@@ -247,6 +262,32 @@ export const upsertExternalItemIdentities = (
 ): void => {
   const identities = normalizeExternalIdentities(externalProvider, externalItemId, externalIds);
   if (identities.length === 0) return;
+
+  // A work/group can link multiple saved editions. Never merge those existing records or steal their aliases.
+  if (
+    identities.some(
+      (identity) =>
+        (identity.source === 'openlibrary' && normalizeWorkId(identity.id)) ||
+        (identity.source === 'musicbrainz' && identity.id.startsWith('release-group:'))
+    )
+  ) {
+    const insert = db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(username_hash, external_provider, external_item_id) DO NOTHING`
+    );
+    for (const identity of identities) {
+      insert.run(
+        usernameHash,
+        canonicalItemId,
+        identity.source,
+        identity.id,
+        identity.source === externalProvider ? 'primary' : 'alias'
+      );
+    }
+    return;
+  }
 
   let targetCanonicalItemId = canonicalItemId;
   const existingCanonicalItemIds = new Set<string>();

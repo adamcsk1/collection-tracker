@@ -9,6 +9,9 @@ export interface MusicBrainzArtistCreditModel {
 
 export interface MusicBrainzReleaseGroupModel {
   id?: string;
+  title?: string;
+  'first-release-date'?: string;
+  'artist-credit'?: MusicBrainzArtistCreditModel[];
   tags?: MusicBrainzNamedModel[];
 }
 
@@ -23,4 +26,5 @@ export interface MusicBrainzReleaseModel {
 
 export interface MusicBrainzSearchResponseModel {
   releases?: MusicBrainzReleaseModel[];
+  'release-groups'?: MusicBrainzReleaseGroupModel[];
 }

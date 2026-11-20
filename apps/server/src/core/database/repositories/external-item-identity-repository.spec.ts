@@ -25,6 +25,57 @@ const insertItem = (usernameHash: string, canonicalItemId: string): void => {
 };
 
 describe('external-item-identity-repository', () => {
+  it('resolves a legacy ISBN to a saved work without promoting it back to an ISBN canonical ID', () => {
+    const db = getDatabase();
+    insertUser('user');
+    insertItem('user', 'openlibrary:OL1W');
+    upsertExternalItemIdentities(db, 'user', 'openlibrary:OL1W', 'openlibrary', 'OL1W', [
+      { source: 'isbn', id: '9780306406157' },
+    ]);
+    expect(resolveCanonicalItemId(db, 'user', 'isbn', '9780306406157')).toBe('openlibrary:OL1W');
+    expect(resolveCanonicalItemId(db, 'user', 'openlibrary', '9780306406157')).toBe('openlibrary:OL1W');
+  });
+
+  it('keeps a saved release canonical ID when learning its group alias', () => {
+    const db = getDatabase();
+    insertUser('user');
+    const release = 'f509c5ff-ad54-4dde-b61e-24f750965835';
+    const group = 'release-group:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+    upsertExternalItemIdentities(db, 'user', `musicbrainz:${release}`, 'musicbrainz', release);
+    expect(resolveCanonicalItemId(db, 'user', 'musicbrainz', release, [{ source: 'musicbrainz', id: group }])).toBe(
+      `musicbrainz:${release}`
+    );
+  });
+  it('normalizes work and group IDs without treating works as ISBNs', () => {
+    expect(normalizeExternalIdentities('openlibrary', 'ol1w')).toEqual([{ source: 'openlibrary', id: 'OL1W' }]);
+    expect(
+      resolveCanonicalItemId(getDatabase(), 'user', 'openlibrary', 'OL1W', [{ source: 'isbn', id: '9780306406157' }])
+    ).toBe('openlibrary:OL1W');
+    const group = 'release-group:f509c5ff-ad54-4dde-b61e-24f750965835';
+    expect(resolveCanonicalItemId(getDatabase(), 'user', 'musicbrainz', group.toUpperCase())).toBe(
+      `musicbrainz:${group}`
+    );
+  });
+
+  it('resolves known ISBN aliases without merging saved editions or stealing an existing work mapping', () => {
+    const db = getDatabase();
+    insertUser('user');
+    insertItem('user', 'isbn:9780306406157');
+    insertItem('user', 'isbn:9780140328721');
+    upsertExternalItemIdentities(db, 'user', 'isbn:9780306406157', 'openlibrary', '9780306406157', [
+      { source: 'openlibrary', id: 'OL1W' },
+    ]);
+    upsertExternalItemIdentities(db, 'user', 'isbn:9780140328721', 'openlibrary', '9780140328721', [
+      { source: 'openlibrary', id: 'OL1W' },
+    ]);
+    expect(resolveCanonicalItemId(db, 'user', 'openlibrary', 'OL1W')).toBe('isbn:9780306406157');
+    expect(resolveCanonicalItemId(db, 'user', 'isbn', '9780140328721')).toBe('isbn:9780140328721');
+    expect(db.prepare('SELECT canonical_item_id FROM collection_items ORDER BY canonical_item_id').all()).toEqual([
+      { canonical_item_id: 'isbn:9780140328721' },
+      { canonical_item_id: 'isbn:9780306406157' },
+    ]);
+    expect(resolveCanonicalItemId(db, 'other-user', 'openlibrary', 'OL1W')).toBe('openlibrary:OL1W');
+  });
   it('normalizes providers, IMDb ids, and tt-shaped ids for every source without forcing non-tt provider ids onto imdb', () => {
     expect(
       normalizeExternalIdentities(' OMDB ', ' TT0133093 ', [

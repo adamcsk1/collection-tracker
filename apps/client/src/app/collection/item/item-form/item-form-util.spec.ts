@@ -4,6 +4,7 @@ import {
   buildItemFormFromChange,
   buildItemFromForm,
   isImdbIdValid,
+  isIsbnValid,
   isMbidValid,
   validateOptionalIMDbRateFormat,
   validateOptionalMetacriticRateFormat,
@@ -11,6 +12,37 @@ import {
 } from './item-form-util';
 
 describe('item form util', () => {
+  it.each([
+    ['book', 'openlibrary', 'OL1W'],
+    ['album', 'musicbrainz', 'release-group:f509c5ff-ad54-4dde-b61e-24f750965835'],
+  ] as const)(
+    'preserves %s discovery identity and aliases through editing',
+    (contentType, externalProvider, externalItemId) => {
+      const externalIds = [{ source: externalProvider, id: externalItemId }];
+      const item = buildItemFromForm(
+        {
+          title: 'Title',
+          IMDbId: externalItemId,
+          year: '',
+          rate: '',
+          rottenTomatoesRate: '',
+          metacriticRate: '',
+          userRate: null,
+          image: '',
+          genreText: '',
+          tagsText: '',
+          actors: '',
+          plot: '',
+          contentType,
+          progressCurrent: null,
+          progressTotal: null,
+        },
+        { externalProvider, externalItemId, externalIds }
+      );
+      expect(item).toMatchObject({ externalProvider, externalItemId, externalIds });
+      expect(contentType === 'book' ? isIsbnValid(externalItemId) : isMbidValid(externalItemId)).toBe(true);
+    }
+  );
   it('validates IMDb rate formats', () => {
     expect(validateOptionalIMDbRateFormat('')).toBeUndefined();
     expect(validateOptionalIMDbRateFormat('N/A')).toBeUndefined();

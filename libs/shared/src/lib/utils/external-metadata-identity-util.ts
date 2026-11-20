@@ -1,6 +1,16 @@
 import { ExternalMetadataItemModel } from '../models/external-metadata-model';
 import { ExternalItemIdentityModel } from '../models/external-metadata-provider-model';
 
+export const mergeExternalIds = (
+  identities: ExternalItemIdentityModel[] | undefined,
+  aliases: ExternalItemIdentityModel[] | undefined
+): ExternalItemIdentityModel[] | undefined => {
+  if (!aliases?.length) return identities;
+  const combined = new Map((identities ?? []).map((identity) => [`${identity.source}:${identity.id}`, identity]));
+  for (const alias of aliases) combined.set(`${alias.source}:${alias.id}`, alias);
+  return [...combined.values()];
+};
+
 export const isImdbShapedExternalItemId = (externalItemId: string | undefined | null): boolean =>
   typeof externalItemId === 'string' && /^tt\d+$/i.test(externalItemId.trim());
 
