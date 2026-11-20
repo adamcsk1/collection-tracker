@@ -1,4 +1,9 @@
 import type { FastifyInstance } from 'fastify';
+import { register as registerGetUserProfile } from './get-user-profile-api';
+import { register as registerChangeUserProfile } from './change-user-profile-api';
+import { register as registerPutUserAvatar } from './put-user-avatar-api';
+import { register as registerDeleteUserAvatar } from './delete-user-avatar-api';
+import { register as registerGetUserAvatar } from './get-user-avatar-api';
 import { register as registerVisionAvailability } from './photo-import-availability-api';
 import { register as registerPhotoRecognition } from './photo-import-recognize-api';
 import { register as registerAccessTokens } from './access-tokens-api';
@@ -69,6 +74,11 @@ import { register as registerImport } from './import-api';
 import { register as registerReplaceCollectionItemShares } from './replace-collection-item-shares-api';
 
 export const registerAllApis = (app: FastifyInstance): void => {
+  registerGetUserProfile(app);
+  registerChangeUserProfile(app);
+  registerPutUserAvatar(app);
+  registerDeleteUserAvatar(app);
+  registerGetUserAvatar(app);
   registerHealth(app);
   registerUserHealth(app);
   registerSignUp(app);

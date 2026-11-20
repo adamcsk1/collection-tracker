@@ -11,6 +11,7 @@ import {
   upsertShare,
 } from './share-repository';
 import type { CollectionItemRow } from './collection/collection-model';
+import { findUserProfile, updateUserAvatar, updateUserDisplayName } from './user-profile-repository';
 
 const insertUser = (usernameHash: string): void => {
   getDatabase()
@@ -19,6 +20,39 @@ const insertUser = (usernameHash: string): void => {
 };
 
 describe('share-repository', () => {
+  it('includes counterpart metadata without bytes for empty relationships in both directions', () => {
+    const db = getDatabase();
+    insertUser('viewer');
+    insertUser('owner');
+    insertUser('recipient');
+    upsertShare(db, 'owner', 'viewer', []);
+    upsertShare(db, 'viewer', 'recipient', []);
+    for (const usernameHash of ['owner', 'recipient']) {
+      updateUserDisplayName(db, usernameHash, `${usernameHash} display`);
+      updateUserAvatar(db, usernameHash, Buffer.from('private-avatar'));
+    }
+    expect(findSharesForUser(db, 'viewer')).toEqual([
+      {
+        direction: 'incoming',
+        ownerUsernameHash: 'owner',
+        sharedWithUsernameHash: 'viewer',
+        counterpartUsername: 'owner',
+        counterpartDisplayName: 'owner display',
+        counterpartAvatarRevision: findUserProfile(db, 'owner')!.avatarRevision,
+        grants: [],
+      },
+      {
+        direction: 'outgoing',
+        ownerUsernameHash: 'viewer',
+        sharedWithUsernameHash: 'recipient',
+        counterpartUsername: 'recipient',
+        counterpartDisplayName: 'recipient display',
+        counterpartAvatarRevision: findUserProfile(db, 'recipient')!.avatarRevision,
+        grants: [],
+      },
+    ]);
+  });
+
   it('loads and groups hundreds of incoming and outgoing shares', () => {
     const db = getDatabase();
     insertUser('viewer');

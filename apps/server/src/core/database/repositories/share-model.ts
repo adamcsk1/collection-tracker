@@ -23,6 +23,8 @@ export interface UserShareDetailsRow {
   owner_username_hash: string;
   shared_with_username_hash: string;
   counterpart_username: string | null;
+  counterpart_display_name: string | null;
+  counterpart_avatar_revision: string | null;
   grant_id: number | null;
   list_type: CollectionListTypeModel | null;
   content_type: CollectionItemContentTypeModel | null;
@@ -38,12 +40,16 @@ export interface UserShareDetailsModel {
   ownerUsernameHash: string;
   sharedWithUsernameHash: string;
   counterpartUsername: string | null;
+  counterpartDisplayName: string | null;
+  counterpartAvatarRevision: string | null;
   grants: UserShareGrantApiModel[];
 }
 
 export interface CollectionItemShareDetails {
   sharedWithUsernameHash: string;
   sharedWithUsername: string | null;
+  sharedWithDisplayName: string | null;
+  sharedWithAvatarRevision: string | null;
   readMode: 'none' | 'selected' | 'all';
   permissions: Omit<UserShareGrantApiModel, 'listType' | 'contentType' | 'readMode'> | null;
 }

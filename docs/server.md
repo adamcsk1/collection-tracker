@@ -106,6 +106,9 @@ Albums use `content_type = 'album'`. Owned catalog uses `list_type = 'music'` (f
 
 ## Sharing
 
+User profiles and sanitized avatar images are stored in SQLite. Authenticated profile editing and relationship-scoped
+avatar reads are documented in [User profiles](./user-profiles.md) and the OpenAPI reference.
+
 Outgoing relationships live in `user_shares`. Each list/content grant has a read mode: `all` exposes every owned item in
 the physical scope, while `selected` exposes only rows recorded in `user_share_item_selections`. Item selections reference
 physical collection item IDs, so copies in different lists remain independent. Books use the `books/book` scope and albums

@@ -14,6 +14,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - Fastify for the API
 - Vitest for unit tests and Playwright for end-to-end coverage
 - SQLite persistence in a configurable data directory
+- [User profiles and uploaded avatars](./docs/user-profiles.md) identifying shared collection owners
 - Android WebView wrapper with native settings, manual Release/Snapshot update checks, and optional launch checks
 
 ## Workspace

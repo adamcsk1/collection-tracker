@@ -53,6 +53,27 @@ const preparePre034ShareState = async (
 describe('runMigrations', () => {
   const tempDirs: string[] = [];
 
+  it('adds profiles to existing databases once, preserves users, and cascades deletion', async () => {
+    const migration = '043_add_user_profiles.sql';
+    const { db, migrationsDir } = await preparePreMigrationState(migration, tempDirs);
+    try {
+      db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('existing', 'token');
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migration), join(migrationsDir, migration));
+      await runMigrations(db, migrationsDir);
+      db.prepare(
+        'INSERT INTO user_profiles (username_hash, display_name, avatar, avatar_revision) VALUES (?, ?, ?, ?)'
+      ).run('existing', 'Name', Buffer.from('avatar'), 'revision');
+      await runMigrations(db, migrationsDir);
+      expect(db.prepare('SELECT display_name FROM user_profiles').all()).toEqual([{ display_name: 'Name' }]);
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').all(migration)).toHaveLength(1);
+      expect(db.pragma('foreign_key_check')).toEqual([]);
+      db.prepare('DELETE FROM users WHERE username_hash = ?').run('existing');
+      expect(db.prepare('SELECT * FROM user_profiles').all()).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     for (const tempDir of tempDirs.splice(0)) {

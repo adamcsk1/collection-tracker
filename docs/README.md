@@ -4,6 +4,7 @@ This directory contains the maintained project documentation. The root [`README.
 
 ## Features
 
+- [User profiles and uploaded avatars](./user-profiles.md)
 - [Photo import and independent Ollama vision setup](./photo-import.md)
 
 - [Default collection owners](./default-collection-owners.md)

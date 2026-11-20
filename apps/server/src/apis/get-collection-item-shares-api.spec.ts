@@ -3,6 +3,11 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { insertLibraryShare, insertShareTestCollectionItem, insertShareTestUser } from '../../test/mocks/share-mock';
 import { getDatabase } from '../core/database/database';
+import {
+  findUserProfile,
+  updateUserAvatar,
+  updateUserDisplayName,
+} from '../core/database/repositories/user-profile-repository';
 
 const invokeGet = async (request: Record<string, unknown>) => {
   const response = mockResponse();
@@ -25,6 +30,8 @@ describe('get-collection-item-shares-api', () => {
     insertShareTestUser(getDatabase(), 'empty');
     insertShareTestCollectionItem(getDatabase(), 'owner', 'tt-one');
     insertLibraryShare(getDatabase(), 'owner', 'broad');
+    updateUserDisplayName(getDatabase(), 'broad', 'Broad Display');
+    updateUserAvatar(getDatabase(), 'broad', Buffer.from('avatar'));
     getDatabase()
       .prepare('INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)')
       .run('owner', 'empty');
@@ -37,8 +44,19 @@ describe('get-collection-item-shares-api', () => {
 
     expect(response.send).toHaveBeenCalledWith(
       expect.arrayContaining([
-        expect.objectContaining({ sharedWithUsername: 'broad', readMode: 'all' }),
-        expect.objectContaining({ sharedWithUsername: 'empty', readMode: 'none', permissions: null }),
+        expect.objectContaining({
+          sharedWithUsername: 'broad',
+          sharedWithDisplayName: 'Broad Display',
+          sharedWithAvatarRevision: findUserProfile(getDatabase(), 'broad')!.avatarRevision,
+          readMode: 'all',
+        }),
+        expect.objectContaining({
+          sharedWithUsername: 'empty',
+          sharedWithDisplayName: null,
+          sharedWithAvatarRevision: null,
+          readMode: 'none',
+          permissions: null,
+        }),
       ])
     );
   });

@@ -21,6 +21,8 @@ export const register = (app: FastifyInstance): void => {
           .map((share) => ({
             sharedWithUserShareCode: getUserShareCode(share.sharedWithUsernameHash),
             sharedWithUsername: share.counterpartUsername,
+            sharedWithDisplayName: share.counterpartDisplayName,
+            sharedWithAvatarRevision: share.counterpartAvatarRevision,
             grants: share.grants,
           })),
         incoming: shares
@@ -28,6 +30,8 @@ export const register = (app: FastifyInstance): void => {
           .map((share) => ({
             ownerUserShareCode: getUserShareCode(share.ownerUsernameHash),
             ownerUsername: share.counterpartUsername,
+            ownerDisplayName: share.counterpartDisplayName,
+            ownerAvatarRevision: share.counterpartAvatarRevision,
             grants: share.grants,
           })),
       });

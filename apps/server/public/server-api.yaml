@@ -493,13 +493,66 @@ components:
         canDelete:
           type: boolean
 
+    UserProfile:
+      type: object
+      required: [userShareCode, username, displayName, avatarRevision]
+      properties:
+        userShareCode:
+          type: string
+        username:
+          type: ['string', 'null']
+        displayName:
+          type: ['string', 'null']
+          maxLength: 80
+        avatarRevision:
+          type: ['string', 'null']
+          description: Opaque UUID changed on every successful upload; null when no avatar exists.
+
+    UserProfileRequest:
+      type: object
+      additionalProperties: false
+      required: [displayName]
+      properties:
+        displayName:
+          type: ['string', 'null']
+          description: Trimmed before validation; empty becomes null. At most 80 Unicode code points after trimming; control characters are rejected.
+
+    UserAvatarRequest:
+      type: object
+      additionalProperties: false
+      required: [imageBase64]
+      properties:
+        imageBase64:
+          type: string
+          maxLength: 6990508
+          description: Canonical raw base64 (no data URL prefix). Decoded JPEG, PNG, or WebP, at most 5 MiB and 25 megapixels. Animated and multipage images are rejected.
+
+    UserProfileEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/UserProfile'
+
     CollectionItemShare:
       type: object
-      required: [sharedWithUserShareCode, sharedWithUsername, readMode, permissions]
+      required:
+        [
+          sharedWithUserShareCode,
+          sharedWithUsername,
+          sharedWithDisplayName,
+          sharedWithAvatarRevision,
+          readMode,
+          permissions,
+        ]
       properties:
         sharedWithUserShareCode:
           type: string
         sharedWithUsername:
+          type: ['string', 'null']
+        sharedWithDisplayName:
+          type: ['string', 'null']
+        sharedWithAvatarRevision:
           type: ['string', 'null']
         readMode:
           type: string
@@ -532,11 +585,15 @@ components:
 
     UserShareOutgoing:
       type: object
-      required: [sharedWithUserShareCode, sharedWithUsername, grants]
+      required: [sharedWithUserShareCode, sharedWithUsername, sharedWithDisplayName, sharedWithAvatarRevision, grants]
       properties:
         sharedWithUserShareCode:
           type: string
         sharedWithUsername:
+          type: ['string', 'null']
+        sharedWithDisplayName:
+          type: ['string', 'null']
+        sharedWithAvatarRevision:
           type: ['string', 'null']
         grants:
           type: array
@@ -545,11 +602,15 @@ components:
 
     UserShareIncoming:
       type: object
-      required: [ownerUserShareCode, ownerUsername, grants]
+      required: [ownerUserShareCode, ownerUsername, ownerDisplayName, ownerAvatarRevision, grants]
       properties:
         ownerUserShareCode:
           type: string
         ownerUsername:
+          type: ['string', 'null']
+        ownerDisplayName:
+          type: ['string', 'null']
+        ownerAvatarRevision:
           type: ['string', 'null']
         grants:
           type: array
@@ -2224,6 +2285,156 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/me/profile:
+    get:
+      operationId: getUserProfile
+      summary: Get the current user profile
+      tags: [User]
+      responses:
+        '200':
+          description: Profile metadata only; avatar bytes are never included.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      operationId: updateUserProfile
+      summary: Update the current user display name
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+      responses:
+        '200':
+          description: Updated profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/me/avatar:
+    put:
+      operationId: putUserAvatar
+      summary: Replace the current user avatar
+      description: Fully decodes and sanitizes the image before replacing stored bytes atomically. Applies EXIF orientation, center crops to 256px square WebP, and strips metadata. Failed uploads preserve the previous avatar and revision.
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAvatarRequest'
+      responses:
+        '200':
+          description: Updated profile with a new avatar revision.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: deleteUserAvatar
+      summary: Remove the current user avatar
+      description: Idempotent. Returns 200 with avatarRevision null, including when no avatar existed.
+      tags: [User]
+      responses:
+        '200':
+          description: Updated profile without an avatar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{shareCode}/avatar:
+    get:
+      operationId: getUserAvatar
+      summary: Get an authorized user avatar
+      description: Requires authentication and self-access or an existing user_shares relationship in either direction, even without grants. Missing users, absent avatars, and denied access all return 404. Authorization is checked on every request, including requests with revision query parameters; responses are never cacheable.
+      tags: [User]
+      parameters:
+        - name: shareCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sanitized 256px WebP avatar.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: 'private, no-store'
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':

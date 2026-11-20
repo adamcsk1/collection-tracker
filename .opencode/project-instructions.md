@@ -195,6 +195,9 @@ Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, 
 
 ## Architecture Constraints
 
+- User profiles and sanitized 256px WebP avatars are persisted in SQLite. Profile operations use `/users/me/profile`
+  and `/users/me/avatar`; `/users/{shareCode}/avatar` requires authentication and self-access or an existing sharing
+  relationship. Avatar uploads accept JPEG/PNG/WebP up to 5 MiB and 25 megapixels. See `docs/user-profiles.md`.
 - Database changes stay server-side. Use the existing SQLite database layer, repository modules, and migrations for schema changes.
 - Shared code belongs in `libs/`.
 - Android wrapper code belongs in `android/`; do not couple it to web app internals or server internals.

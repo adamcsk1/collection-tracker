@@ -5,6 +5,11 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { insertLibraryShare, insertShare, libraryGrants } from '../../test/mocks/share-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
+import {
+  findUserProfile,
+  updateUserAvatar,
+  updateUserDisplayName,
+} from '../core/database/repositories/user-profile-repository';
 
 const buildRegisteredApp = async () => {
   const handlers = new Map<string, (request: any, response: any) => Promise<void>>();
@@ -36,6 +41,8 @@ describe('user-shares-api', () => {
     insertUser('current-hash', 'Current');
     insertShare(getDatabase(), 'current-hash', 'friend-hash', libraryGrants({ canRead: true, canUpdate: true }));
     insertLibraryShare(getDatabase(), 'owner-hash', 'current-hash', { canRead: true, canCreate: true });
+    updateUserDisplayName(getDatabase(), 'owner-hash', 'Owner Display');
+    updateUserAvatar(getDatabase(), 'owner-hash', Buffer.from('private-avatar'));
 
     const handlers = await buildRegisteredApp();
     const response = mockResponse();
@@ -47,6 +54,8 @@ describe('user-shares-api', () => {
         {
           sharedWithUserShareCode: getUserShareCode('friend-hash'),
           sharedWithUsername: 'Friend',
+          sharedWithDisplayName: null,
+          sharedWithAvatarRevision: null,
           grants: libraryGrants({ canRead: true, canUpdate: true }),
         },
       ],
@@ -54,6 +63,8 @@ describe('user-shares-api', () => {
         {
           ownerUserShareCode: getUserShareCode('owner-hash'),
           ownerUsername: 'Owner',
+          ownerDisplayName: 'Owner Display',
+          ownerAvatarRevision: findUserProfile(getDatabase(), 'owner-hash')!.avatarRevision,
           grants: libraryGrants({ canRead: true, canCreate: true }),
         },
       ],

@@ -32,6 +32,8 @@ export const register = (app: FastifyInstance): void => {
       const data = findCollectionItemShares(getDatabase(), request.usernameHash, item).map((share) => ({
         sharedWithUserShareCode: getUserShareCode(share.sharedWithUsernameHash),
         sharedWithUsername: share.sharedWithUsername,
+        sharedWithDisplayName: share.sharedWithDisplayName,
+        sharedWithAvatarRevision: share.sharedWithAvatarRevision,
         readMode: share.readMode,
         permissions: share.permissions,
       }));

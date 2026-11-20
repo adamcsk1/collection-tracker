@@ -41,7 +41,9 @@ export const findSharesForUser = (db: Database.Database, usernameHash: string): 
          WHERE user_shares.shared_with_username_hash = ?
        )
        SELECT
-         related_shares.*,
+          related_shares.*,
+          profiles.display_name AS counterpart_display_name,
+          profiles.avatar_revision AS counterpart_avatar_revision,
          grants.id AS grant_id,
          grants.list_type,
          grants.content_type,
@@ -51,6 +53,8 @@ export const findSharesForUser = (db: Database.Database, usernameHash: string): 
           grants.can_delete,
           grants.scope_mode
        FROM related_shares
+        LEFT JOIN user_profiles profiles ON profiles.username_hash = CASE related_shares.direction
+          WHEN 'outgoing' THEN related_shares.shared_with_username_hash ELSE related_shares.owner_username_hash END
        LEFT JOIN user_share_grants grants
          ON grants.owner_username_hash = related_shares.owner_username_hash
         AND grants.shared_with_username_hash = related_shares.shared_with_username_hash
@@ -66,6 +70,8 @@ export const findSharesForUser = (db: Database.Database, usernameHash: string): 
       ownerUsernameHash: row.owner_username_hash,
       sharedWithUsernameHash: row.shared_with_username_hash,
       counterpartUsername: row.counterpart_username,
+      counterpartDisplayName: row.counterpart_display_name,
+      counterpartAvatarRevision: row.counterpart_avatar_revision,
       grants: [],
     };
     if (row.grant_id !== null) {
@@ -380,10 +386,12 @@ export const findCollectionItemShares = (
     db
       .prepare(
         `SELECT shares.shared_with_username_hash, recipient.username,
+                 profiles.display_name, profiles.avatar_revision,
                 grants.can_read, grants.can_create, grants.can_update, grants.can_delete, grants.scope_mode,
                 selections.collection_item_id AS selected_item_id
          FROM user_shares shares
          LEFT JOIN users recipient ON recipient.username_hash = shares.shared_with_username_hash
+          LEFT JOIN user_profiles profiles ON profiles.username_hash = shares.shared_with_username_hash
          LEFT JOIN user_share_grants grants
            ON grants.owner_username_hash = shares.owner_username_hash
           AND grants.shared_with_username_hash = shares.shared_with_username_hash
@@ -398,6 +406,8 @@ export const findCollectionItemShares = (
       .all(item.list_type, item.content_type, item.id, ownerHash) as Array<{
       shared_with_username_hash: string;
       username: string | null;
+      display_name: string | null;
+      avatar_revision: string | null;
       can_read: number | null;
       can_create: number | null;
       can_update: number | null;
@@ -408,6 +418,8 @@ export const findCollectionItemShares = (
   ).map((row) => ({
     sharedWithUsernameHash: row.shared_with_username_hash,
     sharedWithUsername: row.username,
+    sharedWithDisplayName: row.display_name,
+    sharedWithAvatarRevision: row.avatar_revision,
     readMode: row.scope_mode === 'all' ? 'all' : row.selected_item_id === item.id ? 'selected' : 'none',
     permissions:
       row.scope_mode === null
