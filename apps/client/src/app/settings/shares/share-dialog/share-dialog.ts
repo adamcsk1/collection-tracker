@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Callout } from '@components/callout/callout';
+import { Avatar } from '@components/avatar/avatar';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
@@ -38,7 +39,7 @@ import type { GrantPermissionKey } from './share-dialog-model';
 
 @Component({
   selector: 'ct-share-dialog',
-  imports: [Callout, Checkbox, Details, DialogShell, FormField, Input],
+  imports: [Callout, Checkbox, Details, DialogShell, FormField, Input, Avatar],
   templateUrl: './share-dialog.html',
   styleUrl: './share-dialog.css',
   host: { class: 'dialog' },
@@ -69,11 +70,23 @@ export class ShareDialog implements OnInit {
   protected readonly readOnly = computed(() => this.share() !== undefined && 'ownerUserShareCode' in this.share()!);
   protected readonly incomingShareName = computed(() => {
     const share = this.share();
-    return share && 'ownerUserShareCode' in share ? share.ownerUsername || share.ownerUserShareCode : '';
+    return share && 'ownerUserShareCode' in share
+      ? share.ownerDisplayName || share.ownerUsername || share.ownerUserShareCode
+      : '';
   });
   protected readonly outgoingShareName = computed(() => {
     const share = this.share();
-    return share && 'sharedWithUserShareCode' in share ? share.sharedWithUsername || share.sharedWithUserShareCode : '';
+    return share && 'sharedWithUserShareCode' in share
+      ? share.sharedWithDisplayName || share.sharedWithUsername || share.sharedWithUserShareCode
+      : '';
+  });
+  protected readonly avatarCode = computed(() => {
+    const share = this.share();
+    return share ? ('ownerUserShareCode' in share ? share.ownerUserShareCode : share.sharedWithUserShareCode) : '';
+  });
+  protected readonly avatarRevision = computed(() => {
+    const share = this.share();
+    return share ? ('ownerUserShareCode' in share ? share.ownerAvatarRevision : share.sharedWithAvatarRevision) : null;
   });
   protected readonly dialogTitle = computed(() => {
     if (this.readOnly()) {

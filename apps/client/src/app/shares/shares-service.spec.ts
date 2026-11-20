@@ -131,11 +131,15 @@ describe('SharesService', () => {
     sharesState.setState('outgoing', [
       {
         sharedWithUserShareCode: 'other-code',
+        sharedWithDisplayName: null,
+        sharedWithAvatarRevision: null,
         sharedWithUsername: 'Other',
         grants: [],
       },
       {
         sharedWithUserShareCode: 'friend-code',
+        sharedWithDisplayName: null,
+        sharedWithAvatarRevision: null,
         sharedWithUsername: 'Friend',
         grants: [{ ...grants[0], canUpdate: false }],
       },
@@ -159,7 +163,15 @@ describe('SharesService', () => {
 
     reloadResponse.next({
       userShareCode: 'short-code',
-      outgoing: [{ sharedWithUserShareCode: 'friend-code', sharedWithUsername: 'Friend', grants }],
+      outgoing: [
+        {
+          sharedWithUserShareCode: 'friend-code',
+          sharedWithDisplayName: null,
+          sharedWithAvatarRevision: null,
+          sharedWithUsername: 'Friend',
+          grants,
+        },
+      ],
       incoming: [],
     });
     reloadResponse.complete();
@@ -221,7 +233,15 @@ describe('SharesService', () => {
     service.saveShare('friend-code', []);
     savedReload.next({
       userShareCode: 'short-code',
-      outgoing: [{ sharedWithUserShareCode: 'friend-code', sharedWithUsername: 'Friend', grants: [] }],
+      outgoing: [
+        {
+          sharedWithUserShareCode: 'friend-code',
+          sharedWithDisplayName: null,
+          sharedWithAvatarRevision: null,
+          sharedWithUsername: 'Friend',
+          grants: [],
+        },
+      ],
       incoming: [],
     });
     savedReload.complete();
@@ -243,7 +263,15 @@ describe('SharesService', () => {
     service.saveShare('friend-code', []);
     savedReload.next({
       userShareCode: 'short-code',
-      outgoing: [{ sharedWithUserShareCode: 'friend-code', sharedWithUsername: 'Friend', grants: [] }],
+      outgoing: [
+        {
+          sharedWithUserShareCode: 'friend-code',
+          sharedWithDisplayName: null,
+          sharedWithAvatarRevision: null,
+          sharedWithUsername: 'Friend',
+          grants: [],
+        },
+      ],
       incoming: [],
     });
     savedReload.complete();
@@ -274,6 +302,8 @@ describe('SharesService', () => {
     expect(sharesState.state.outgoing()).toEqual([
       {
         sharedWithUserShareCode: 'friend-code',
+        sharedWithDisplayName: null,
+        sharedWithAvatarRevision: null,
         sharedWithUsername: null,
         grants: [],
       },
@@ -284,7 +314,13 @@ describe('SharesService', () => {
 
   it('keeps a removed share absent when its canonical reload fails', () => {
     sharesState.setState('outgoing', [
-      { sharedWithUserShareCode: 'friend-code', sharedWithUsername: 'Friend', grants: [] },
+      {
+        sharedWithUserShareCode: 'friend-code',
+        sharedWithDisplayName: null,
+        sharedWithAvatarRevision: null,
+        sharedWithUsername: 'Friend',
+        grants: [],
+      },
     ]);
     api.getShares.mockReturnValueOnce(throwError(() => new Error('fail')));
 
@@ -295,7 +331,15 @@ describe('SharesService', () => {
   });
 
   it('keeps a revoked incoming share absent when its canonical reload fails', () => {
-    sharesState.setState('incoming', [{ ownerUserShareCode: 'owner-code', ownerUsername: 'Owner', grants: [] }]);
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
+        ownerUsername: 'Owner',
+        grants: [],
+      },
+    ]);
     api.getShares.mockReturnValueOnce(throwError(() => new Error('fail')));
 
     service.revokeIncomingShare('owner-code');

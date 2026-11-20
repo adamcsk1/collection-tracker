@@ -17,6 +17,7 @@
     [favoriteLabel]="translations.favorite()"
     [shared]="listDisplayPreferences().showSharedIcon && shared()"
     [sharedLabel]="translations.shared()"
+    [owner]="owner() ?? null"
     (open)="onOpenDetail()"
     (imageBadgeClick)="onSetSearchText(imageBadgeTag())"
   />

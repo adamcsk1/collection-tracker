@@ -6,6 +6,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { isTransientHttpError } from '@services/api/http-error-util';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { ProfileStore } from '@services/profile/profile-store';
 import {
   STORAGE_API_URL,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
@@ -20,6 +21,7 @@ import { catchError, EMPTY } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MainService {
+  private readonly profile = inject(ProfileStore);
   private readonly api = inject(PublicApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly mainState = inject(mainStateToken);
@@ -75,6 +77,9 @@ export class MainService {
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(() => this._tokenValid.set(true));
+      .subscribe(() => {
+        this._tokenValid.set(true);
+        this.profile.load();
+      });
   }
 }

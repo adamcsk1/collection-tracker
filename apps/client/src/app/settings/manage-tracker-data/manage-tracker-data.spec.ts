@@ -167,6 +167,8 @@ describe('SettingsManageTrackerData component', () => {
     TestBed.inject(sharesStateToken).setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -221,6 +223,8 @@ describe('SettingsManageTrackerData component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -270,6 +274,8 @@ describe('SettingsManageTrackerData component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -303,6 +309,8 @@ describe('SettingsManageTrackerData component', () => {
     TestBed.inject(sharesStateToken).setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {

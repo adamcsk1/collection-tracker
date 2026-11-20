@@ -38,12 +38,22 @@
         @for (share of outgoing(); track share.sharedWithUserShareCode) {
           <li>
             <article class="card card-interactive share-card">
-              <h4 class="card-title">{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</h4>
+              <h4 class="card-title">
+                <libc-avatar
+                  aria-hidden="true"
+                  [shareCode]="share.sharedWithUserShareCode"
+                  [revision]="share.sharedWithAvatarRevision"
+                  [name]="share.sharedWithDisplayName || share.sharedWithUsername || share.sharedWithUserShareCode"
+                />
+                {{ share.sharedWithDisplayName || share.sharedWithUsername || share.sharedWithUserShareCode }}
+              </h4>
               <div class="card-body">
                 <div class="share-card-header">
                   <div>
                     <div class="share-card-label">{{ translations.sharedWith() }}</div>
-                    <div>{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</div>
+                    <div>
+                      {{ share.sharedWithDisplayName || share.sharedWithUsername || share.sharedWithUserShareCode }}
+                    </div>
                     <div class="share-code">{{ share.sharedWithUserShareCode }}</div>
                   </div>
                   <button
@@ -84,12 +94,20 @@
         @for (share of incoming(); track share.ownerUserShareCode) {
           <li>
             <article class="card card-interactive share-card">
-              <h4 class="card-title">{{ share.ownerUsername || share.ownerUserShareCode }}</h4>
+              <h4 class="card-title">
+                <libc-avatar
+                  aria-hidden="true"
+                  [shareCode]="share.ownerUserShareCode"
+                  [revision]="share.ownerAvatarRevision"
+                  [name]="share.ownerDisplayName || share.ownerUsername || share.ownerUserShareCode"
+                />
+                {{ share.ownerDisplayName || share.ownerUsername || share.ownerUserShareCode }}
+              </h4>
               <div class="card-body">
                 <div class="share-card-header">
                   <div>
                     <div class="share-card-label">{{ translations.owner() }}</div>
-                    <div>{{ share.ownerUsername || share.ownerUserShareCode }}</div>
+                    <div>{{ share.ownerDisplayName || share.ownerUsername || share.ownerUserShareCode }}</div>
                     <div class="share-code">{{ share.ownerUserShareCode }}</div>
                   </div>
                   <button

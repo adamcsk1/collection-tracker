@@ -8,6 +8,7 @@ export const createAboutPage = (page: Page) => {
     visit: async () => {
       await page.goto('/client/#/collection/library');
       await commonPage.openMenu();
+      await commonPage.openAccountMenu();
       await commonPage.getNavAboutLink().click();
     },
     getTitle: () => page.getByTestId('about-title'),

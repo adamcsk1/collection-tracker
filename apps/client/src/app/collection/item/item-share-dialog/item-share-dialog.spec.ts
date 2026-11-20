@@ -15,24 +15,32 @@ import { ItemShareDialog } from './item-share-dialog';
 const shares: CollectionItemShareApiModel[] = [
   {
     sharedWithUserShareCode: 'broad-code',
+    sharedWithDisplayName: 'Broad display name',
+    sharedWithAvatarRevision: null,
     sharedWithUsername: 'Broad',
     readMode: 'all',
     permissions: { canRead: true, canCreate: true, canUpdate: false, canDelete: false },
   },
   {
     sharedWithUserShareCode: 'selected-code',
+    sharedWithDisplayName: null,
+    sharedWithAvatarRevision: null,
     sharedWithUsername: 'Selected',
     readMode: 'selected',
     permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: false },
   },
   {
     sharedWithUserShareCode: 'none-code',
+    sharedWithDisplayName: null,
+    sharedWithAvatarRevision: null,
     sharedWithUsername: 'None',
     readMode: 'none',
     permissions: null,
   },
   {
     sharedWithUserShareCode: 'later-code',
+    sharedWithDisplayName: null,
+    sharedWithAvatarRevision: null,
     sharedWithUsername: 'Later item',
     readMode: 'none',
     permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: true },
@@ -97,6 +105,10 @@ describe('ItemShareDialog', () => {
     expect(dialog.getAttribute('aria-labelledby')).toBe('item-share-dialog-title');
     expect((fixture.nativeElement as HTMLElement).querySelector('.recipient-list')?.tagName).toBe('UL');
     expect(api.getCollectionItemShares).toHaveBeenCalledWith('omdb', 'tt1234567', 'library');
+    expect(query('item-share-recipient-broad-code')?.textContent).toContain('Broad display name');
+    expect(dialog.querySelector('[data-test-id="avatar-fallback"]')?.getAttribute('aria-label')).toBe(
+      'Broad display name'
+    );
     const save = query('item-share-save')!;
     expect(save.classList.contains('dialog-action-primary')).toBe(true);
     expect(save.querySelector('span')?.textContent?.trim()).toBe('Save');

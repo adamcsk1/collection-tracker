@@ -111,6 +111,8 @@ describe('SettingsMediaRefresh component', () => {
     TestBed.inject(sharesStateToken).setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: null,
         grants: [
           {
@@ -126,6 +128,8 @@ describe('SettingsMediaRefresh component', () => {
       },
       {
         ownerUserShareCode: 'readonly-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Read Only',
         grants: [
           {
@@ -141,6 +145,8 @@ describe('SettingsMediaRefresh component', () => {
       },
       {
         ownerUserShareCode: 'books-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Books',
         grants: [
           {

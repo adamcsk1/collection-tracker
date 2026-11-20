@@ -1150,6 +1150,8 @@ describe('List', () => {
     TestBed.inject(sharesStateToken).setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: null,
         grants: [
           {

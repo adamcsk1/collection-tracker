@@ -156,4 +156,12 @@ h2 {
       font-size: var(--font-size-sm);
     }
   }
+
+  .shared {
+    libc-avatar {
+      width: var(--font-size-sm);
+      height: var(--font-size-sm);
+      font-size: calc(var(--font-size-sm) * 0.7);
+    }
+  }
 }

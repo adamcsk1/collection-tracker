@@ -94,6 +94,9 @@ export class ListItem {
     const item = this.collectionItem();
     return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
   });
+  protected readonly owner = computed(() =>
+    this.sharesState.state.incoming().find((share) => share.ownerUserShareCode === this.collectionItem().ownerShareCode)
+  );
   protected readonly translations = {
     completed: computed(() => this.ngxSignalTranslate.translate('Completed')),
     favorite: computed(() => this.ngxSignalTranslate.translate('Favorite')),

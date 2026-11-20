@@ -45,6 +45,8 @@ export class SharesService {
         const savedShare = {
           sharedWithUserShareCode,
           sharedWithUsername: existing?.sharedWithUsername ?? null,
+          sharedWithDisplayName: existing?.sharedWithDisplayName ?? null,
+          sharedWithAvatarRevision: existing?.sharedWithAvatarRevision ?? null,
           grants,
         };
         this.sharesState.setState(

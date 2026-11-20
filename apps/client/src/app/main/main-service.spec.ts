@@ -14,6 +14,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MainService } from './main-service';
+import { ProfileStore } from '@services/profile/profile-store';
 
 describe('MainService', () => {
   let service: MainService;
@@ -29,6 +30,7 @@ describe('MainService', () => {
     TestBed.configureTestingModule({
       providers: [
         MainService,
+        { provide: ProfileStore, useValue: { load: vi.fn() } },
         { provide: PublicApiService, useValue: api },
         { provide: WebstorageService, useValue: webstorage },
         provideStore(initialMainState, mainStateToken),
@@ -138,6 +140,7 @@ describe('MainService', () => {
     service.validateSession();
     expect(service.tokenValid()).toBe(true);
     expect(api.validateSession).toHaveBeenCalled();
+    expect(TestBed.inject(ProfileStore).load).toHaveBeenCalledOnce();
   });
 
   it.each([401, 403])('clears the session when validation rejects credentials with %s', (status) => {
@@ -147,6 +150,7 @@ describe('MainService', () => {
     expect(service.tokenValid()).toBe(false);
     expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
     expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES);
+    expect(TestBed.inject(ProfileStore).load).not.toHaveBeenCalled();
   });
 
   it.each([0, 429, 500, 502, 503, 504])('preserves the session on temporary validation failure %s', (status) => {

@@ -587,7 +587,7 @@ export class NewItemDialog {
       );
       if (canCreate) {
         options.push({
-          text: `${this.translations.sharedLibrary()} (${share.ownerUsername ?? share.ownerUserShareCode})`,
+          text: `${this.translations.sharedLibrary()} (${share.ownerDisplayName || share.ownerUsername || share.ownerUserShareCode})`,
           value: share.ownerUserShareCode,
         });
       }

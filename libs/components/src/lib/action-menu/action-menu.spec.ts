@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActionMenu } from './action-menu';
@@ -9,6 +10,17 @@ const actions: ActionMenuActionModel[] = [
   { id: 'tracking-share', label: 'Share progress', icon: 'share' },
   { id: 'tracking-delete', label: 'Delete progress', icon: 'delete', destructive: true },
 ];
+
+@Component({
+  selector: 'ct-action-menu-test',
+  imports: [ActionMenu],
+  template: `<libc-action-menu [actions]="actions" testIdPrefix="account" triggerTestId="nav-profile" title="Account">
+    <span action-menu-trigger>Display name <small>username</small></span>
+  </libc-action-menu>`,
+})
+class ActionMenuTest {
+  protected readonly actions = actions;
+}
 
 describe('ActionMenu', () => {
   let fixture: ComponentFixture<ActionMenu>;
@@ -85,6 +97,31 @@ describe('ActionMenu', () => {
     fixture.componentRef.setInput('actions', [actions[0]]);
     await fixture.whenStable();
     expect(getDialog().querySelector('hr')).toBeNull();
+  });
+
+  it('projects custom trigger content without the default More content and retains button semantics', async () => {
+    const custom = TestBed.createComponent(ActionMenuTest);
+    await custom.whenStable();
+    const trigger: HTMLButtonElement = custom.nativeElement.querySelector('[data-test-id="nav-profile"]');
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger.textContent).toContain('Display name');
+    expect(trigger.textContent).toContain('username');
+    expect(trigger.textContent).not.toContain('More');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(custom.nativeElement.querySelector('[data-test-id="account-more"]')).toBeNull();
+  });
+
+  it('clamps a left sidebar popup inside the viewport', () => {
+    const trigger = getButton('tracking-more');
+    const dialog = getDialog();
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(1440);
+    vi.spyOn(dialog, 'offsetWidth', 'get').mockReturnValue(352);
+    vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue(new DOMRect(16, 800, 220, 48));
+    trigger.click();
+    expect(dialog.style.getPropertyValue('--actions-right')).toBe('1072px');
+    expect(1440 - 1072 - 352).toBe(16);
+    vi.restoreAllMocks();
   });
 
   it('anchors to the trigger and opens only once while already open', async () => {
@@ -259,6 +296,60 @@ describe('ActionMenu', () => {
     await fixture.whenStable();
     expect(getDialog().hidden).toBe(true);
     expect(getButton('tracking-more').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('wraps Tab and Shift+Tab between the last action and close button', () => {
+    getButton('tracking-more').click();
+    const closeButton = getButton('tracking-more-close');
+    const lastButton = getButton('tracking-delete');
+    lastButton.focus();
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    lastButton.dispatchEvent(tab);
+    expect(tab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(closeButton);
+
+    const shiftTab = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    closeButton.dispatchEvent(shiftTab);
+    expect(shiftTab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(lastButton);
+  });
+
+  it('leaves intermediate Tab navigation to the browser', () => {
+    getButton('tracking-more').click();
+    const button = getButton('tracking-edit');
+    button.focus();
+    for (const shiftKey of [false, true]) {
+      const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+      button.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+      expect(document.activeElement).toBe(button);
+    }
+  });
+
+  it('keeps focus on Close when no actions are available', async () => {
+    fixture.componentRef.setInput('actions', []);
+    await fixture.whenStable();
+    getButton('tracking-more').click();
+    const closeButton = getButton('tracking-more-close');
+    closeButton.focus();
+    for (const shiftKey of [false, true]) {
+      const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+      closeButton.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(closeButton);
+    }
+  });
+
+  it('consumes Escape without closing the parent dialog', () => {
+    const parentHandler = vi.fn();
+    fixture.nativeElement.addEventListener('keydown', parentHandler);
+    getButton('tracking-more').click();
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    getButton('tracking-edit').dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(parentHandler).not.toHaveBeenCalled();
+    dispatchAnimation(getDialog(), 'animationend', 'actions-popup-leave');
+    expect(getDialog().open).toBe(false);
   });
 
   for (const eventType of ['keydown', 'pointerdown', 'pointerup', 'pointercancel']) {

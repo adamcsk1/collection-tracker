@@ -26,10 +26,19 @@
       <ul class="recipient-list">
         @for (recipient of recipients(); track recipient.sharedWithUserShareCode) {
           <li class="recipient-card">
+            <libc-avatar
+              [shareCode]="recipient.sharedWithUserShareCode"
+              [revision]="recipient.sharedWithAvatarRevision"
+              [name]="
+                recipient.sharedWithDisplayName || recipient.sharedWithUsername || recipient.sharedWithUserShareCode
+              "
+            />
             <libc-checkbox
               [attr.data-test-id]="'item-share-recipient-' + recipient.sharedWithUserShareCode"
               [checkboxId]="'item-share-recipient-input-' + recipient.sharedWithUserShareCode"
-              [label]="recipient.sharedWithUsername || recipient.sharedWithUserShareCode"
+              [label]="
+                recipient.sharedWithDisplayName || recipient.sharedWithUsername || recipient.sharedWithUserShareCode
+              "
               [value]="recipient.selected"
               [disabled]="recipient.readMode === 'all' || saving()"
               [ariaDescribedBy]="

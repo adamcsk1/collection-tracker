@@ -57,39 +57,41 @@
     </a>
   }
   <a
-    data-test-id="nav-settings"
-    [routerLink]="['/', 'settings']"
+    data-test-id="nav-statistics"
+    [routerLink]="['/', 'statistics']"
     routerLinkActive="active"
     ariaCurrentWhenActive="page"
     class="highlight"
     (click)="onClose()"
   >
-    <i class="material-icons" aria-hidden="true">settings</i>
-    {{ translations.settings() }}
-  </a>
-  <a
-    data-test-id="nav-statistics"
-    [routerLink]="['/', 'statistics']"
-    routerLinkActive="active"
-    ariaCurrentWhenActive="page"
-    class="highlight space"
-    (click)="onClose()"
-  >
     <i class="material-icons" aria-hidden="true">bar_chart</i>
     {{ translations.statistics() }}
   </a>
-  <a
-    data-test-id="nav-about"
-    [routerLink]="['/', 'about']"
-    routerLinkActive="active"
-    ariaCurrentWhenActive="page"
-    (click)="onClose()"
-  >
-    <i class="material-icons" aria-hidden="true">info</i>
-    {{ translations.about() }}
-  </a>
-  <a data-test-id="nav-logout" href="#" (click)="onLogout()">
-    <i class="material-icons" aria-hidden="true">logout</i>
-    {{ translations.logout() }}
-  </a>
 </nav>
+
+<libc-action-menu
+  class="account-menu"
+  testIdPrefix="nav-account"
+  triggerTestId="nav-profile"
+  [title]="translations.account()"
+  [actions]="accountActions()"
+  (selected)="onAccountAction($event)"
+>
+  <span action-menu-trigger class="account-trigger">
+    <libc-avatar
+      aria-hidden="true"
+      [shareCode]="profile()?.userShareCode ?? ''"
+      [revision]="profile()?.avatarRevision ?? null"
+      [name]="profileName()"
+    />
+    <span class="account-identity">
+      <span>{{ profileName() }}</span>
+      @if (profile()?.username; as username) {
+        @if (username !== profileName()) {
+          <small>{{ username }}</small>
+        }
+      }
+    </span>
+    <i class="material-icons" aria-hidden="true">expand_less</i>
+  </span>
+</libc-action-menu>

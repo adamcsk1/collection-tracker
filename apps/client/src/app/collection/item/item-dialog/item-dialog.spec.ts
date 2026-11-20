@@ -481,6 +481,8 @@ describe('ItemDialog', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -728,6 +730,8 @@ describe('ItemDialog', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -1998,6 +2002,8 @@ describe('ItemDialog', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: null,
         grants: [],
       },

@@ -29,6 +29,8 @@ export interface ItemShareSelection {
 export interface ItemShareState {
   sharedWithUserShareCode: string;
   sharedWithUsername: string | null;
+  sharedWithDisplayName: string | null;
+  sharedWithAvatarRevision: string | null;
   readMode: ShareReadMode;
   permissions: SharePermissions | null;
 }

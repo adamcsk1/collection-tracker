@@ -2,13 +2,15 @@
   #moreButton
   type="button"
   class="dialog-action quick-action"
-  [attr.data-test-id]="testIdPrefix() + '-more'"
+  [attr.data-test-id]="triggerTestId() ?? testIdPrefix() + '-more'"
   aria-haspopup="dialog"
   [attr.aria-expanded]="actionsOpen()"
   (click)="openActions(actionDialog, moreButton)"
 >
-  <i class="material-icons" aria-hidden="true">more_horiz</i>
-  <span>{{ translations.more() }}</span>
+  <ng-content select="[action-menu-trigger]">
+    <i class="material-icons" aria-hidden="true">more_horiz</i>
+    <span>{{ translations.more() }}</span>
+  </ng-content>
 </button>
 <dialog
   #actionDialog

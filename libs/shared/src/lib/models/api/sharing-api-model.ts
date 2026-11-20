@@ -27,6 +27,8 @@ export interface CollectionItemShareSelectionPermissionsApiModel {
 export interface CollectionItemShareApiModel {
   sharedWithUserShareCode: string;
   sharedWithUsername: string | null;
+  sharedWithDisplayName: string | null;
+  sharedWithAvatarRevision: string | null;
   readMode: 'none' | 'selected' | 'all';
   permissions: CollectionItemSharePermissionsApiModel | null;
 }
@@ -39,12 +41,16 @@ export interface CollectionItemShareSelectionApiModel {
 export interface UserShareOutgoingApiModel {
   sharedWithUserShareCode: string;
   sharedWithUsername: string | null;
+  sharedWithDisplayName: string | null;
+  sharedWithAvatarRevision: string | null;
   grants: UserShareGrantApiModel[];
 }
 
 export interface UserShareIncomingApiModel {
   ownerUserShareCode: string;
   ownerUsername: string | null;
+  ownerDisplayName: string | null;
+  ownerAvatarRevision: string | null;
   grants: UserShareGrantApiModel[];
 }
 

@@ -99,6 +99,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'book-owner',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Book Owner',
         grants: [
           {
@@ -737,6 +739,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -775,6 +779,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -810,6 +816,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'readonly-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Read Only Owner',
         grants: [
           {
@@ -846,6 +854,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -885,6 +895,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'movie-owner',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Movie Owner',
         grants: [
           {
@@ -909,6 +921,8 @@ describe('NewItemDialog component', () => {
       },
       {
         ownerUserShareCode: 'series-owner',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Series Owner',
         grants: [
           {
@@ -936,6 +950,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -968,6 +984,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -1007,6 +1025,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'book-owner',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Book Owner',
         grants: [
           {
@@ -1049,6 +1069,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'movie-owner',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Movie Owner',
         grants: [
           {
@@ -1097,6 +1119,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'creatable-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Creatable Owner',
         grants: [
           {
@@ -1121,6 +1145,8 @@ describe('NewItemDialog component', () => {
       },
       {
         ownerUserShareCode: 'readonly-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Read Only Owner',
         grants: [
           {
@@ -1156,6 +1182,8 @@ describe('NewItemDialog component', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: null,
         grants: [
           {

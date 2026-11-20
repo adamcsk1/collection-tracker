@@ -23,7 +23,15 @@
         <div class="chip-list">
           @if (isShared()) {
             <span class="chip shared" data-test-id="item-dialog-shared-library">
-              <i class="material-icons shared-icon" aria-hidden="true"> share </i>
+              @if (showSharedIcon()) {
+                @if (owner(); as owner) {
+                  <libc-avatar
+                    [shareCode]="owner.ownerUserShareCode"
+                    [revision]="owner.ownerAvatarRevision"
+                    [name]="library()"
+                  />
+                }
+              }
               {{ library() }}
             </span>
           }

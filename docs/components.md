@@ -6,8 +6,10 @@ Source: [`libs/components`](../libs/components)
 
 ## Modules
 
-- `action-menu`: animated secondary actions, using a mobile bottom sheet and an anchored desktop popup
+- `action-menu`: animated secondary actions, using a mobile bottom sheet and an anchored desktop popup; optional
+  `[action-menu-trigger]` content replaces the default More label inside the trigger button
 - `autocomplete`: suggestion-driven text input
+- `avatar`: authenticated user thumbnails with an initials fallback; see [User profiles](./user-profiles.md)
 - `blocker-loading`: full-screen blocking overlay and store
 - `callout`: emphasized contextual message with a decorative icon and projected content
 - `checkbox`: reusable boolean form control with native indeterminate-state support

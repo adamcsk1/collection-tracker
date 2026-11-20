@@ -2,6 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
+import { Avatar } from '@components/avatar/avatar';
+import { ActionMenu } from '@components/action-menu/action-menu';
+import { ActionMenuActionModel } from '@components/action-menu/action-menu-model';
+import { ProfileStore } from '@services/profile/profile-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -11,12 +15,17 @@ import { mainStateToken } from '../main-store';
 
 @Component({
   selector: 'ct-menu-nav',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, Avatar, ActionMenu],
   templateUrl: './menu-nav.html',
   styleUrl: './menu-nav.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MenuNav {
+  protected readonly profile = inject(ProfileStore).profile;
+  protected readonly profileName = computed(() => {
+    const profile = this.profile();
+    return profile?.displayName || profile?.username || profile?.userShareCode || this.translations.account();
+  });
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
@@ -54,7 +63,13 @@ export class MenuNav {
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
     about: computed(() => this.ngxSignalTranslate.translate('About')),
     logout: computed(() => this.ngxSignalTranslate.translate('Logout')),
+    account: computed(() => this.ngxSignalTranslate.translate('Account')),
   };
+  protected readonly accountActions = computed<ActionMenuActionModel[]>(() => [
+    { id: 'nav-settings', label: this.translations.settings(), icon: 'settings' },
+    { id: 'nav-about', label: this.translations.about(), icon: 'info' },
+    { id: 'nav-logout', label: this.translations.logout(), icon: 'logout', destructive: true },
+  ]);
   protected readonly themeLogo = this.theme.themeLogo;
   protected readonly featurePreferences = this.mainState.state.collectionFeaturePreferences;
 
@@ -69,6 +84,15 @@ export class MenuNav {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.logout.performLogout());
+  }
+
+  protected onAccountAction(action: string): void {
+    if (action === 'nav-logout') {
+      this.onLogout();
+    } else {
+      void this.router.navigate(['/', action === 'nav-settings' ? 'settings' : 'about']);
+      this.onClose();
+    }
   }
 
   protected onClose(): void {

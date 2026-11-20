@@ -40,6 +40,9 @@ import {
   UserSettingsApiResponseModel,
   UserShareGrantApiModel,
   UserSharesApiResponseModel,
+  UserProfileApiResponseModel,
+  UserProfileApiRequestModel,
+  UserAvatarApiRequestModel,
 } from '@shared/models/api-model';
 import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-model';
 import {
@@ -61,6 +64,28 @@ import { ApiRequestOptions } from './api-request-model';
   providedIn: 'root',
 })
 export class ApiService extends BaseApiService {
+  public getUserProfile(): Observable<UserProfileApiResponseModel> {
+    return this.request('GET', '/users/me/profile', undefined, { suppressErrorAlert: true });
+  }
+
+  public saveUserProfile(profile: UserProfileApiRequestModel): Observable<UserProfileApiResponseModel> {
+    return this.request('PATCH', '/users/me/profile', profile, { suppressErrorAlert: true });
+  }
+
+  public saveUserAvatar(avatar: UserAvatarApiRequestModel): Observable<UserProfileApiResponseModel> {
+    return this.request('PUT', '/users/me/avatar', avatar, { suppressErrorAlert: true });
+  }
+
+  public deleteUserAvatar(): Observable<UserProfileApiResponseModel> {
+    return this.request('DELETE', '/users/me/avatar', undefined, { suppressErrorAlert: true });
+  }
+
+  public getUserAvatar(shareCode: string): Observable<Blob> {
+    return this.httpClient.get(`${this.apiUrl}/users/${encodeURIComponent(shareCode)}/avatar`, {
+      responseType: 'blob',
+    });
+  }
+
   public getPhotoImportAvailability(): Observable<PhotoImportAvailabilityResponseModel> {
     return this.request('GET', '/ai/vision/availability', undefined, { suppressErrorAlert: true });
   }

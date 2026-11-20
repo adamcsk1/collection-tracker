@@ -113,6 +113,7 @@ test.describe('Auth - Logout', () => {
     );
 
     await commonPage.openMenu();
+    await commonPage.openAccountMenu();
     await commonPage.getNavLogoutLink().click();
 
     const logoutResponse = await logoutResponsePromise;

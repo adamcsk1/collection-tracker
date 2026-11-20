@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { LinkButton } from '@components/link-button/link-button';
+import { Avatar } from '@components/avatar/avatar';
+import { UserShareIncomingApiModel } from '@shared/models/api-model';
 import { CollectionItemModel } from '../../collection-model';
 import { ItemDialogTranslations } from '../item-form/item-form-model';
 
 @Component({
   selector: 'ct-item-dialog-detail',
-  imports: [LinkButton],
+  imports: [LinkButton, Avatar],
   templateUrl: './item-dialog-detail.html',
   styleUrl: './item-dialog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +22,8 @@ export class ItemDialogDetail {
   public readonly webSearchUrl = input.required<string>();
   public readonly isShared = input.required<boolean>();
   public readonly library = input.required<string>();
+  public readonly owner = input<UserShareIncomingApiModel | null>(null);
+  public readonly showSharedIcon = input(true);
   public readonly detailTags = input.required<string[]>();
   public readonly tracking = input.required<boolean>();
   public readonly book = input.required<boolean>();

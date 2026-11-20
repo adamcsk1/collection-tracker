@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Callout } from '@components/callout/callout';
+import { Avatar } from '@components/avatar/avatar';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { toastStateToken } from '@components/toast/toast-store';
@@ -22,7 +23,7 @@ import type { ItemShareDraft, PermissionKey } from './item-share-dialog-model';
 
 @Component({
   selector: 'ct-item-share-dialog',
-  imports: [Callout, Checkbox, DialogShell],
+  imports: [Callout, Checkbox, DialogShell, Avatar],
   providers: [SharesLoaderService],
   templateUrl: './item-share-dialog.html',
   styleUrl: './item-share-dialog.css',

@@ -6,6 +6,13 @@
     </h2>
   </ng-container>
   <ng-container dialog-shell-content>
+    @if (editing()) {
+      <libc-avatar
+        [shareCode]="avatarCode()"
+        [revision]="avatarRevision()"
+        [name]="incomingShareName() || outgoingShareName()"
+      />
+    }
     @if (!editing()) {
       <libc-input
         data-test-id="share-dialog-user-hash"

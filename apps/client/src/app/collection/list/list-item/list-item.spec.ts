@@ -130,6 +130,8 @@ describe('ListItem', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {
@@ -407,6 +409,8 @@ describe('ListItem', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [
           {

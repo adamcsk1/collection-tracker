@@ -3,6 +3,27 @@ import { describe, expect, it, vi } from 'vitest';
 import { ListItemCard } from './list-item-card';
 
 describe('ListItemCard', () => {
+  it('names the shared owner and renders an avatar instead of a generic share icon', async () => {
+    const fixture = TestBed.createComponent(ListItemCard);
+    fixture.componentRef.setInput('title', 'Example');
+    fixture.componentRef.setInput('shared', true);
+    fixture.componentRef.setInput('sharedLabel', 'Shared');
+    fixture.componentRef.setInput('owner', {
+      ownerUserShareCode: 'owner',
+      ownerUsername: 'username',
+      ownerDisplayName: 'Owner name',
+      ownerAvatarRevision: null,
+      grants: [],
+    });
+    await fixture.whenStable();
+    const shared: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="list-item-shared"]');
+    expect(shared.getAttribute('aria-label')).toBe('Shared: Owner name');
+    expect(shared.querySelector('[data-test-id="avatar-fallback"]')).not.toBeNull();
+    expect(shared.querySelector('.material-icons')).toBeNull();
+    fixture.componentRef.setInput('shared', false);
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('[data-test-id="list-item-shared"]')).toBeNull();
+  });
   it('keeps long titles readable by assistive technology and opens from the title button', async () => {
     const fixture = TestBed.createComponent(ListItemCard);
     const title = 'Batman: The Animated Series with a long title';

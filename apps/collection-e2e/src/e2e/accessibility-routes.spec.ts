@@ -289,6 +289,25 @@ test.describe('Route accessibility', () => {
     await scan(page, testInfo);
   });
 
+  for (const width of [390, 1440]) {
+    test(`account popup has no automated accessibility violations at ${width}px`, async ({
+      page,
+      autoLogin,
+    }, testInfo) => {
+      await page.setViewportSize({ width, height: 900 });
+      await autoLogin();
+      const commonPage = createCommonPage(page);
+      if (width < 1251) await commonPage.openMenu();
+      await commonPage.openAccountMenu();
+      await commonPage
+        .getAccountMenu()
+        .evaluate((dialog) =>
+          Promise.all(dialog.getAnimations({ subtree: true }).map((animation) => animation.finished))
+        );
+      await scan(page, testInfo);
+    });
+  }
+
   test('settings basics has no automated accessibility violations', async ({ page, autoLogin }, testInfo) => {
     await autoLogin();
     const settingsPage = createSettingsPage(page);

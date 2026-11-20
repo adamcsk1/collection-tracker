@@ -14,6 +14,7 @@ export class ActionMenu {
   private pendingAction: string | null = null;
   public readonly actions = input.required<ActionMenuActionModel[]>();
   public readonly testIdPrefix = input.required<string>();
+  public readonly triggerTestId = input<string>();
   public readonly title = input.required<string>();
   public readonly selected = output<string>();
   protected readonly actionsOpen = signal(false);
@@ -28,11 +29,14 @@ export class ActionMenu {
     if (this.closingActions || dialog.open) return;
     const bounds = trigger.getBoundingClientRect();
     const viewport = trigger.ownerDocument.documentElement;
-    dialog.style.setProperty('--actions-right', `${Math.max(16, viewport.clientWidth - bounds.right)}px`);
     dialog.style.setProperty('--actions-bottom', `${Math.max(16, viewport.clientHeight - bounds.top + 8)}px`);
     trigger.focus();
     dialog.hidden = false;
     dialog.showModal();
+    dialog.style.setProperty(
+      '--actions-right',
+      `${Math.max(16, Math.min(viewport.clientWidth - bounds.right, viewport.clientWidth - dialog.offsetWidth - 16))}px`
+    );
     this.actionsOpen.set(true);
   }
 
@@ -74,6 +78,18 @@ export class ActionMenu {
     if (event.key === 'Escape') {
       event.preventDefault();
       this.closeActions(dialog);
+    } else if (event.key === 'Tab') {
+      const buttons = dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
+      const firstButton = buttons[0];
+      const lastButton = buttons[buttons.length - 1];
+      const activeElement = dialog.ownerDocument.activeElement;
+      if (event.shiftKey && activeElement === firstButton && lastButton) {
+        event.preventDefault();
+        lastButton.focus();
+      } else if (!event.shiftKey && activeElement === lastButton && firstButton) {
+        event.preventDefault();
+        firstButton.focus();
+      }
     }
   }
 

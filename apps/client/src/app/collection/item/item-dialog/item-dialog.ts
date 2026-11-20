@@ -383,6 +383,15 @@ export class ItemDialog implements OnInit {
     const item = this.collectionItem();
     return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
   });
+  protected readonly owner = computed(
+    () =>
+      this.sharesState.state
+        .incoming()
+        .find((share) => share.ownerUserShareCode === this.collectionItem().ownerShareCode) ?? null
+  );
+  protected readonly showSharedIcon = computed(
+    () => this.mainState.state.collectionListDisplayPreferences().showSharedIcon
+  );
   protected readonly isOwnItem = computed(() => {
     const ownerShareCode = this.collectionItem().ownerShareCode;
     return !ownerShareCode || ownerShareCode === this.sharesState.state.userShareCode();
@@ -391,7 +400,7 @@ export class ItemDialog implements OnInit {
     const item = this.collectionItem();
     for (const share of this.sharesState.state.incoming()) {
       if (share.ownerUserShareCode === item.ownerShareCode) {
-        return `${share.ownerUsername ?? share.ownerUserShareCode}`;
+        return share.ownerDisplayName || share.ownerUsername || share.ownerUserShareCode;
       }
     }
     return '';

@@ -15,6 +15,13 @@ button.quick-action {
   border-color: transparent;
 }
 
+:host:has([action-menu-trigger]) button.quick-action {
+  color: inherit;
+  text-align: start;
+  flex-direction: row;
+  font-size: inherit;
+}
+
 .secondary-actions {
   position: fixed;
   inset: auto var(--actions-right, 1rem) var(--actions-bottom, 1rem) auto;
@@ -80,6 +87,9 @@ button.quick-action {
     }
 
     button {
+      display: flex;
+      align-items: center;
+      gap: var(--size-xs);
       width: 100%;
       min-height: 48px;
       justify-content: flex-start;

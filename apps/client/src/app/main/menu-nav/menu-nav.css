@@ -1,5 +1,17 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: min-content;
+
+  &:not(.sidebar) {
+    flex: 1;
+    height: 100%;
+  }
+}
+
 .header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   margin-bottom: var(--size-md);
 
@@ -14,6 +26,7 @@
 
 .menu-nav {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   gap: var(--size-xs);
 
@@ -49,8 +62,33 @@
       font-size: var(--font-size-2xl);
     }
   }
+}
 
-  a.space {
-    margin-bottom: var(--size-md);
+.account-menu {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: var(--size-md);
+}
+
+.account-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--size-xs);
+  width: 100%;
+  min-width: 0;
+
+  .account-identity {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    text-align: start;
+
+    > span,
+    > small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 }

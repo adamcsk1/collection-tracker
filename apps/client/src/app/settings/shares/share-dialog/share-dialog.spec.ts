@@ -73,6 +73,8 @@ describe('ShareDialog', () => {
   it('clones existing grants into an edit draft', () => {
     fixture.componentRef.setInput('share', {
       sharedWithUserShareCode: 'share-code',
+      sharedWithDisplayName: null,
+      sharedWithAvatarRevision: null,
       sharedWithUsername: 'Shared User',
       grants: [
         {
@@ -128,6 +130,8 @@ describe('ShareDialog', () => {
   it('renders all mode as checked and selected mode as indeterminate', () => {
     fixture.componentRef.setInput('share', {
       sharedWithUserShareCode: 'share-code',
+      sharedWithDisplayName: null,
+      sharedWithAvatarRevision: null,
       sharedWithUsername: 'Shared User',
       grants: [
         {
@@ -256,6 +260,8 @@ describe('ShareDialog', () => {
   it('renders an incoming share as read-only', () => {
     fixture.componentRef.setInput('share', {
       ownerUserShareCode: 'owner-code',
+      ownerDisplayName: null,
+      ownerAvatarRevision: null,
       ownerUsername: 'Owner',
       grants: [
         {
@@ -281,6 +287,8 @@ describe('ShareDialog', () => {
     const defaultsChanged = vi.fn();
     fixture.componentRef.setInput('share', {
       ownerUserShareCode: 'owner-code',
+      ownerDisplayName: null,
+      ownerAvatarRevision: null,
       ownerUsername: 'Owner',
       grants: [
         {
@@ -327,6 +335,8 @@ describe('ShareDialog', () => {
 
 const selectedShare = () => ({
   sharedWithUserShareCode: 'share-code',
+  sharedWithDisplayName: null,
+  sharedWithAvatarRevision: null,
   sharedWithUsername: 'Shared User',
   grants: [
     {

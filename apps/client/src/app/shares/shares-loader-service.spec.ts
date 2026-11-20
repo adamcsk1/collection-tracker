@@ -22,6 +22,8 @@ describe('SharesLoaderService', () => {
           incoming: [
             {
               ownerUserShareCode: 'owner-code',
+              ownerDisplayName: null,
+              ownerAvatarRevision: null,
               ownerUsername: 'Owner',
               grants: [
                 {

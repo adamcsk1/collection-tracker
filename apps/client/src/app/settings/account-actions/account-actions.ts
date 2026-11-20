@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, computed } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Callout } from '@components/callout/callout';
 import { TokenDialog } from '../token-dialog/token-dialog';
+import { Profile } from '../profile/profile';
 
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -14,7 +15,7 @@ import { delay, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-account-actions',
-  imports: [Callout],
+  imports: [Callout, Profile],
   templateUrl: './account-actions.html',
   styleUrl: './account-actions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

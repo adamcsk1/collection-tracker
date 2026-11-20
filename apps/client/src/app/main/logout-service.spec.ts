@@ -5,6 +5,8 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { LogoutService } from './logout-service';
+import { ProfileStore } from '@services/profile/profile-store';
+import { AvatarCacheStore } from '@services/profile/avatar-cache-store';
 import { initialMainState, mainStateToken, type MainState } from './main-store';
 
 describe('LogoutService', () => {
@@ -34,9 +36,18 @@ describe('LogoutService', () => {
   });
 
   it('always redirects to login', () => {
+    const resetAvatars = vi.spyOn(TestBed.inject(AvatarCacheStore), 'reset');
+    TestBed.inject(ProfileStore).setProfile({
+      userShareCode: 'viewer',
+      username: null,
+      displayName: 'Name',
+      avatarRevision: null,
+    });
     service.performLogout();
 
     expect(redirectSpy).toHaveBeenCalled();
+    expect(TestBed.inject(ProfileStore).profile()).toBeNull();
+    expect(resetAvatars).toHaveBeenCalledOnce();
   });
 
   it('clears local storage when clearLocalStorageAfterLogout is enabled', () => {

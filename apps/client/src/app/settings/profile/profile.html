@@ -1,0 +1,48 @@
+<section data-test-id="profile-editor" [attr.aria-busy]="busy()" aria-labelledby="profile-title">
+  <h3 id="profile-title">{{ translations.title() }}</h3>
+  @if (profile(); as profile) {
+    <div class="identity">
+      <libc-avatar [shareCode]="profile.userShareCode" [revision]="profile.avatarRevision" [name]="name()" />
+      <span data-test-id="profile-name">{{ name() }}</span>
+    </div>
+    @if (profile.username) {
+      <p data-test-id="profile-username">{{ translations.username() }}: {{ profile.username }}</p>
+    }
+    <libc-input data-test-id="profile-display-name" [label]="translations.displayName()" [formField]="form.displayName">
+      <span errors>{{ translations.invalidName() }}</span>
+    </libc-input>
+    <button type="button" data-test-id="profile-save" [disabled]="busy() || form().invalid()" (click)="onSave()">
+      {{ translations.save() }}
+    </button>
+    <p id="avatar-help">{{ translations.help() }}</p>
+    <label for="profile-avatar">{{ translations.avatar() }}</label>
+    <input
+      id="profile-avatar"
+      data-test-id="profile-avatar-file"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      aria-describedby="avatar-help"
+      [disabled]="busy()"
+      (change)="onSelect($event)"
+    />
+    @if (preview(); as preview) {
+      <img class="preview" data-test-id="profile-avatar-preview" [src]="preview" [alt]="translations.avatar()" />
+      <button type="button" data-test-id="profile-avatar-upload" [disabled]="busy()" (click)="onUpload()">
+        {{ translations.upload() }}
+      </button>
+    }
+    @if (profile.avatarRevision) {
+      <button type="button" data-test-id="profile-avatar-remove" [disabled]="busy()" (click)="onRemove()">
+        {{ translations.remove() }}
+      </button>
+    }
+  } @else if (loadError()) {
+    <p role="alert">{{ translations.loadError() }}</p>
+    <button type="button" data-test-id="profile-retry" (click)="onRetry()">{{ translations.retry() }}</button>
+  } @else {
+    <p role="status">{{ translations.loading() }}</p>
+  }
+  @if (error()) {
+    <p role="alert" data-test-id="profile-error">{{ error() }}</p>
+  }
+</section>

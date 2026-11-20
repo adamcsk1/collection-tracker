@@ -3,13 +3,19 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_COLLECTION_FEATURE_PREFERENCES, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
 import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
 import { mainStateToken } from './main-store';
+import { ProfileStore } from '@services/profile/profile-store';
+import { AvatarCacheStore } from '@services/profile/avatar-cache-store';
 
 @Injectable({ providedIn: 'root' })
 export class LogoutService {
+  private readonly profile = inject(ProfileStore);
+  private readonly avatars = inject(AvatarCacheStore);
   private readonly mainState = inject(mainStateToken);
   private readonly webstorage = inject(WebstorageService);
 
   public performLogout(): void {
+    this.profile.reset();
+    this.avatars.reset();
     if (this.mainState.state.clearLocalStorageAfterLogout()) this.webstorage.clear();
     else {
       this.webstorage.removeItem(STORAGE_LOGGED_IN);

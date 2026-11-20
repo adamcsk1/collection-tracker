@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Callout } from '@components/callout/callout';
+import { Avatar } from '@components/avatar/avatar';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
@@ -21,7 +22,7 @@ import { ShareDialog } from './share-dialog/share-dialog';
 
 @Component({
   selector: 'ct-settings-shares',
-  imports: [Callout],
+  imports: [Callout, Avatar],
   templateUrl: './shares.html',
   styleUrl: './shares.css',
   providers: [SharesService],

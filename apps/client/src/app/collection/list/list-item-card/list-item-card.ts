@@ -1,8 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { ListItemCardRatingModel } from './list-item-card-model';
+import { Avatar } from '@components/avatar/avatar';
+import { UserShareIncomingApiModel } from '@shared/models/api-model';
 
 @Component({
   selector: 'ct-list-item-card',
+  imports: [Avatar],
   templateUrl: './list-item-card.html',
   styleUrl: './list-item-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +31,13 @@ export class ListItemCard {
   public readonly favoriteLabel = input('');
   public readonly shared = input(false);
   public readonly sharedLabel = input('');
+  public readonly owner = input<UserShareIncomingApiModel | null>(null);
+  protected readonly ownerLabel = computed(() => {
+    const owner = this.owner();
+    return owner
+      ? `${this.sharedLabel()}: ${owner.ownerDisplayName || owner.ownerUsername || owner.ownerUserShareCode}`
+      : this.sharedLabel();
+  });
   public readonly open = output<void>();
   public readonly imageBadgeClick = output<void>();
   protected readonly failedImageUrl = signal<string | null>(null);

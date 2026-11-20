@@ -1,0 +1,5 @@
+@if (url(); as url) {
+  <img data-test-id="avatar-image" [src]="url" [alt]="name()" (error)="this.url.set(null)" />
+} @else {
+  <span data-test-id="avatar-fallback" role="img" [attr.aria-label]="name()">{{ initial() }}</span>
+}

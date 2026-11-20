@@ -69,6 +69,40 @@ describe('SettingsShares', () => {
     expect(sharesService.loadShares).toHaveBeenCalled();
   });
 
+  it('shows display names and avatars for incoming and outgoing shares without changing share codes', async () => {
+    const state = TestBed.inject(sharesStateToken);
+    state.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'username',
+        ownerDisplayName: 'Owner display name',
+        ownerAvatarRevision: null,
+        grants: [],
+      },
+    ]);
+    state.setState('outgoing', [
+      {
+        sharedWithUserShareCode: 'recipient-code',
+        sharedWithUsername: 'recipient',
+        sharedWithDisplayName: 'Recipient display name',
+        sharedWithAvatarRevision: null,
+        grants: [],
+      },
+    ]);
+    await fixture.whenStable();
+    const avatars = fixture.nativeElement.querySelectorAll('[data-test-id="avatar-fallback"]');
+    expect(Array.from(avatars, (avatar) => (avatar as HTMLElement).getAttribute('aria-label'))).toEqual([
+      'Recipient display name',
+      'Owner display name',
+    ]);
+    const headings: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('h4');
+    expect(
+      Array.from(headings, (heading) => heading.querySelector('libc-avatar')?.getAttribute('aria-hidden'))
+    ).toEqual(['true', 'true']);
+    expect(fixture.nativeElement.textContent).toContain('owner-code');
+    expect(fixture.nativeElement.textContent).toContain('recipient-code');
+  });
+
   it('derives translated share labels', () => {
     expect(component['translations'].titleShareManagement()).toBe('Title.ShareManagement');
     expect(component['translations'].messageShareSettings()).toBe('Message.ShareSettings');
@@ -89,6 +123,8 @@ describe('SettingsShares', () => {
     sharesState.setState('outgoing', [
       {
         sharedWithUserShareCode: 'friend-code',
+        sharedWithDisplayName: null,
+        sharedWithAvatarRevision: null,
         sharedWithUsername: 'Friend',
         grants: [],
       },
@@ -96,6 +132,8 @@ describe('SettingsShares', () => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
+        ownerDisplayName: null,
+        ownerAvatarRevision: null,
         ownerUsername: 'Owner',
         grants: [],
       },
@@ -155,6 +193,8 @@ describe('SettingsShares', () => {
   it('opens the share dialog for an outgoing share and saves its grants', () => {
     const share = {
       sharedWithUserShareCode: 'share-code',
+      sharedWithDisplayName: null,
+      sharedWithAvatarRevision: null,
       sharedWithUsername: 'Shared User',
       grants: [
         {
@@ -182,6 +222,8 @@ describe('SettingsShares', () => {
   it('opens the share dialog for an incoming share', () => {
     const share = {
       ownerUserShareCode: 'owner-code',
+      ownerDisplayName: null,
+      ownerAvatarRevision: null,
       ownerUsername: 'Owner',
       grants: [],
     };

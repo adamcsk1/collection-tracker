@@ -10,6 +10,10 @@ Source: [`apps/client`](../apps/client)
 
 Top navigation is **intent-first**. Media type uses always-visible chips on Collection and other multi-media hubs.
 
+The sidebar keeps collection navigation and Statistics at the top. The account button at the bottom shows your avatar
+and name and opens Settings, About, and Logout. On mobile, the same account button is inside the navigation dialog;
+its actions open in a bottom sheet. Escape dismisses account actions before the parent navigation dialog.
+
 | Nav label  | Route                  | Internal `list_type`                            | Purpose                                                                                                                     |
 | ---------- | ---------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Collection | `/collection/library`  | `library` (+ readable `books`/`music` when All) | Library items plus readable books and albums, including shared items. Chips: **All \| Movies \| Series \| Books \| Music**. |
@@ -76,6 +80,9 @@ outside the remaining metadata are deleted. Provider refresh and removal remain 
 is offered only when the configured provider advertises season-metadata support.
 
 ### Sharing
+
+Display names and uploaded avatars are managed under **Settings → User**. Navigation identifies the logged-in user;
+sharing cards and received collection items identify the source account. See [User profiles](./user-profiles.md).
 
 Owned items in every list expose a Share action in item details. The item-sharing dialog lists existing outgoing
 relationships. A recipient's first item in a list/content scope prompts for Read, Create, Update, and Delete permissions.

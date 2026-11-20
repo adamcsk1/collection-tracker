@@ -105,10 +105,18 @@
           class="shared"
           role="img"
           data-test-id="list-item-shared"
-          [attr.aria-label]="sharedLabel()"
-          [title]="sharedLabel()"
+          [attr.aria-label]="ownerLabel()"
+          [title]="ownerLabel()"
         >
-          <i class="material-icons" aria-hidden="true">share</i>
+          @if (owner(); as owner) {
+            <libc-avatar
+              [shareCode]="owner.ownerUserShareCode"
+              [revision]="owner.ownerAvatarRevision"
+              [name]="owner.ownerDisplayName || owner.ownerUsername || owner.ownerUserShareCode"
+            />
+          } @else {
+            <i class="material-icons" aria-hidden="true">person</i>
+          }
         </span>
       }
     </span>

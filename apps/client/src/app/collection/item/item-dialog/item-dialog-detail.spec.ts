@@ -108,6 +108,24 @@ describe('ItemDialogDetail', () => {
     );
   });
 
+  it('renders the matching owner avatar and honors the shared-icon preference', async () => {
+    fixture.componentRef.setInput('owner', {
+      ownerUserShareCode: 'owner',
+      ownerUsername: 'username',
+      ownerDisplayName: 'Owner name',
+      ownerAvatarRevision: null,
+      grants: [],
+    });
+    fixture.componentRef.setInput('library', 'Owner name');
+    await fixture.whenStable();
+    const shared: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="item-dialog-shared-library"]');
+    expect(shared.querySelector('[data-test-id="avatar-fallback"]')?.getAttribute('aria-label')).toBe('Owner name');
+    fixture.componentRef.setInput('showSharedIcon', false);
+    await fixture.whenStable();
+    expect(shared.querySelector('libc-avatar')).toBeNull();
+    expect(shared.textContent).toContain('Owner name');
+  });
+
   it('emits poster image errors from the poster image', () => {
     const posterImageError = vi.fn();
     fixture.componentInstance.posterImageError.subscribe(posterImageError);

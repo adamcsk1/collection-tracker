@@ -1,5 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ActionMenu } from '@components/action-menu/action-menu';
 import { provideRouter, Router } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
@@ -12,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LogoutService } from '../logout-service';
 import { initialMainState, mainStateToken } from '../main-store';
 import { MenuNav } from './menu-nav';
+import { ProfileStore } from '@services/profile/profile-store';
 
 describe('MenuNav', () => {
   let fixture: ComponentFixture<MenuNav>;
@@ -40,6 +43,7 @@ describe('MenuNav', () => {
         provideRouter([
           { path: 'collection/:list', children: [] },
           { path: 'settings', children: [] },
+          { path: 'about', children: [] },
         ]),
       ],
     });
@@ -60,6 +64,73 @@ describe('MenuNav', () => {
   it('closes dialog on close', () => {
     component['onClose']();
     expect(portal.closeAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the logged-in display name and avatar as the account trigger, retaining the username', async () => {
+    TestBed.inject(ProfileStore).setProfile({
+      userShareCode: 'viewer',
+      username: 'username',
+      displayName: 'Display name',
+      avatarRevision: null,
+    });
+    await fixture.whenStable();
+    const link: HTMLButtonElement = fixture.nativeElement.querySelector('[data-test-id="nav-profile"]');
+    expect(link.tagName).toBe('BUTTON');
+    expect(link.hasAttribute('href')).toBe(false);
+    expect(link.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(link.textContent).toContain('Display name');
+    expect(link.textContent).toContain('username');
+    expect(link.querySelector('libc-avatar')?.getAttribute('aria-hidden')).toBe('true');
+    expect(link.querySelector('[data-test-id="avatar-fallback"]')?.getAttribute('aria-label')).toBe('Display name');
+    TestBed.inject(ProfileStore).setProfile({
+      userShareCode: 'viewer',
+      username: null,
+      displayName: null,
+      avatarRevision: null,
+    });
+    await fixture.whenStable();
+    expect(link.textContent).toContain('viewer');
+  });
+
+  it('keeps translated account actions available when profile loading fails', () => {
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('[data-test-id="nav-profile"]');
+    expect(trigger.textContent).toContain('Account');
+    expect(trigger.querySelector('libc-avatar')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('nav [data-test-id="nav-profile"]')).toBeNull();
+    const menu = fixture.debugElement.query(By.directive(ActionMenu)).componentInstance as ActionMenu;
+    expect(menu.actions()).toEqual([
+      { id: 'nav-settings', label: 'Settings', icon: 'settings' },
+      { id: 'nav-about', label: 'About', icon: 'info' },
+      { id: 'nav-logout', label: 'Logout', icon: 'logout', destructive: true },
+    ]);
+    expect(
+      fixture.nativeElement.querySelectorAll(
+        'a[data-test-id="nav-settings"], a[data-test-id="nav-about"], a[data-test-id="nav-logout"]'
+      )
+    ).toHaveLength(0);
+  });
+
+  it.each(['settings', 'about'])(
+    'navigates to %s and closes the navigation on account selection',
+    async (destination) => {
+      const router = TestBed.inject(Router);
+      const navigate = vi.spyOn(router, 'navigate');
+      const menu = fixture.debugElement.query(By.directive(ActionMenu)).componentInstance as ActionMenu;
+      menu.selected.emit(`nav-${destination}`);
+      await fixture.whenStable();
+      expect(navigate).toHaveBeenCalledWith(['/', destination]);
+      expect(router.url).toBe(`/${destination}`);
+      expect(portal.closeAll).toHaveBeenCalledOnce();
+    }
+  );
+
+  it('logs out through the account action without navigating', () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+    const menu = fixture.debugElement.query(By.directive(ActionMenu)).componentInstance as ActionMenu;
+    menu.selected.emit('nav-logout');
+    expect(api.logout).toHaveBeenCalledOnce();
+    expect(logout.performLogout).toHaveBeenCalledOnce();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('hides decorative navigation icons from assistive technology', () => {
@@ -87,8 +158,7 @@ describe('MenuNav', () => {
       await fixture.whenStable();
       expect(collection.classList.contains('active')).toBe(false);
       expect(collection.hasAttribute('aria-current')).toBe(false);
-      expect(element.querySelector('[data-test-id="nav-settings"]')!.getAttribute('aria-current')).toBe('page');
-      expect(element.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+      expect(element.querySelectorAll('a[aria-current="page"]')).toHaveLength(0);
     }
   );
 

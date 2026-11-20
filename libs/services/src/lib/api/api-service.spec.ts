@@ -98,6 +98,54 @@ describe('ApiService', () => {
     await expect(promise).resolves.toBeNull();
   });
 
+  it('loads, updates and unwraps the current profile', async () => {
+    const profile = { userShareCode: 'viewer', username: 'username', displayName: 'Name', avatarRevision: null };
+    const load = lastValueFrom(service.getUserProfile());
+    httpMock.expectOne('https://api.test/users/me/profile').flush({ data: profile });
+    expect(await load).toEqual(profile);
+    const save = lastValueFrom(service.saveUserProfile({ displayName: 'Name' }));
+    const update = httpMock.expectOne('https://api.test/users/me/profile');
+    expect(update.request.method).toBe('PATCH');
+    expect(update.request.body).toEqual({ displayName: 'Name' });
+    update.flush({ data: profile });
+    expect(await save).toEqual(profile);
+  });
+
+  it('uploads raw base64, removes avatars and requests binary avatars without tokens in URLs', async () => {
+    const profile = { userShareCode: 'viewer', username: null, displayName: null, avatarRevision: 'one' };
+    const upload = lastValueFrom(service.saveUserAvatar({ imageBase64: 'raw-base64' }));
+    const put = httpMock.expectOne('https://api.test/users/me/avatar');
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toEqual({ imageBase64: 'raw-base64' });
+    put.flush({ data: profile });
+    expect(await upload).toEqual(profile);
+    const avatar = lastValueFrom(service.getUserAvatar('owner/code'));
+    const get = httpMock.expectOne('https://api.test/users/owner%2Fcode/avatar');
+    expect(get.request.responseType).toBe('blob');
+    const blob = new Blob(['photo'], { type: 'image/webp' });
+    get.flush(blob);
+    expect(await avatar).toBe(blob);
+    const remove = lastValueFrom(service.deleteUserAvatar());
+    const deletion = httpMock.expectOne('https://api.test/users/me/avatar');
+    expect(deletion.request.method).toBe('DELETE');
+    deletion.flush({ data: { ...profile, avatarRevision: null } });
+    expect((await remove).avatarRevision).toBeNull();
+  });
+
+  it('leaves profile and upload failures to inline controls without a global alert', async () => {
+    const profile = lastValueFrom(service.saveUserProfile({ displayName: 'Name' }));
+    httpMock
+      .expectOne('https://api.test/users/me/profile')
+      .flush({ detail: 'Invalid name' }, { status: 400, statusText: 'Bad Request' });
+    await expect(profile).rejects.toMatchObject({ status: 400 });
+    const avatar = lastValueFrom(service.saveUserAvatar({ imageBase64: 'invalid' }));
+    httpMock
+      .expectOne('https://api.test/users/me/avatar')
+      .flush({ detail: 'Invalid image' }, { status: 400, statusText: 'Bad Request' });
+    await expect(avatar).rejects.toMatchObject({ status: 400 });
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
   it('maps paginated collection wire responses and sends cursor query parameters', async () => {
     const promise = lastValueFrom(service.searchItems({ listType: 'library' }, 'next/cursor', 25));
 
@@ -360,6 +408,8 @@ describe('ApiService', () => {
     const shares = [
       {
         sharedWithUserShareCode: 'share-code',
+        sharedWithDisplayName: null,
+        sharedWithAvatarRevision: null,
         sharedWithUsername: 'viewer',
         readMode: 'selected',
         permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },

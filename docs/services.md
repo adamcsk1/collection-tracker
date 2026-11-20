@@ -8,6 +8,8 @@ Source: [`libs/services`](../libs/services)
 
 - `api/`: HTTP client, auth/session integration, pagination, API store, collection CRUD, scope and individual-item shares, statistics, media refresh, tracking and books cleanup, and AI list search query (`getAiQueryData(prompt, listType)`)
 - `external-metadata/`: external metadata lookup logic (search and item fetch via server proxy)
+- User profile and avatar loading support authenticated navigation and sharing identity displays; see
+  [User profiles](./user-profiles.md).
 - `theme/`: theme state and DOM class management
 - `webstorage/`: local and session storage abstraction
 - root services: `alert-service.ts`, `confirm-service.ts`, `portal-service.ts`, `translate-service.ts`
@@ -24,7 +26,7 @@ Source: [`libs/services`](../libs/services)
   JavaScript. They stack above an existing dialog without discarding its form state.
 - Destructive confirmations pass `{ destructive: true, confirmationText }`, with an optional translated `actionLabel`.
   Use the target's actual name or identifier; bulk operations use the displayed scope. Account actions use the Account
-  scope because plaintext usernames are not retained by the application. Dismissal or destruction resolves as false.
+  scope rather than the editable display name. Dismissal or destruction resolves as false.
   Clearing all episode progress requires the Series scope; bulk uncompleted actions require Movies, Series, Books, or Music.
 - `MESSAGE_DIALOG_COMPONENT` keeps concrete UI imports out of the services library. Dialogs close before result handlers
   run, so handlers may safely open a replacement dialog.
