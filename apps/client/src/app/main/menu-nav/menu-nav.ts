@@ -64,8 +64,10 @@ export class MenuNav {
     about: computed(() => this.ngxSignalTranslate.translate('About')),
     logout: computed(() => this.ngxSignalTranslate.translate('Logout')),
     account: computed(() => this.ngxSignalTranslate.translate('Account')),
+    profile: computed(() => this.ngxSignalTranslate.translate('Profile.Title')),
   };
   protected readonly accountActions = computed<ActionMenuActionModel[]>(() => [
+    { id: 'nav-user-settings', label: this.translations.profile(), icon: 'person' },
     { id: 'nav-settings', label: this.translations.settings(), icon: 'settings' },
     { id: 'nav-about', label: this.translations.about(), icon: 'info' },
     { id: 'nav-logout', label: this.translations.logout(), icon: 'logout', destructive: true },
@@ -90,7 +92,9 @@ export class MenuNav {
     if (action === 'nav-logout') {
       this.onLogout();
     } else {
-      void this.router.navigate(['/', action === 'nav-settings' ? 'settings' : 'about']);
+      const destination =
+        action === 'nav-user-settings' ? ['settings', 'account'] : [action === 'nav-settings' ? 'settings' : 'about'];
+      void this.router.navigate(['/', ...destination]);
       this.onClose();
     }
   }

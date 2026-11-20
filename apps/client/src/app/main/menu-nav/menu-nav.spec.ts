@@ -42,7 +42,7 @@ describe('MenuNav', () => {
         provideStore(initialMainState, mainStateToken),
         provideRouter([
           { path: 'collection/:list', children: [] },
-          { path: 'settings', children: [] },
+          { path: 'settings', children: [{ path: 'account', children: [] }] },
           { path: 'about', children: [] },
         ]),
       ],
@@ -99,6 +99,7 @@ describe('MenuNav', () => {
     expect(fixture.nativeElement.querySelector('nav [data-test-id="nav-profile"]')).toBeNull();
     const menu = fixture.debugElement.query(By.directive(ActionMenu)).componentInstance as ActionMenu;
     expect(menu.actions()).toEqual([
+      { id: 'nav-user-settings', label: 'Profile.Title', icon: 'person' },
       { id: 'nav-settings', label: 'Settings', icon: 'settings' },
       { id: 'nav-about', label: 'About', icon: 'info' },
       { id: 'nav-logout', label: 'Logout', icon: 'logout', destructive: true },
@@ -110,19 +111,20 @@ describe('MenuNav', () => {
     ).toHaveLength(0);
   });
 
-  it.each(['settings', 'about'])(
-    'navigates to %s and closes the navigation on account selection',
-    async (destination) => {
-      const router = TestBed.inject(Router);
-      const navigate = vi.spyOn(router, 'navigate');
-      const menu = fixture.debugElement.query(By.directive(ActionMenu)).componentInstance as ActionMenu;
-      menu.selected.emit(`nav-${destination}`);
-      await fixture.whenStable();
-      expect(navigate).toHaveBeenCalledWith(['/', destination]);
-      expect(router.url).toBe(`/${destination}`);
-      expect(portal.closeAll).toHaveBeenCalledOnce();
-    }
-  );
+  it.each([
+    ['settings', ['settings']],
+    ['about', ['about']],
+    ['user-settings', ['settings', 'account']],
+  ])('navigates to %s and closes the navigation on account selection', async (action, destination) => {
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate');
+    const menu = fixture.debugElement.query(By.directive(ActionMenu)).componentInstance as ActionMenu;
+    menu.selected.emit(`nav-${action}`);
+    await fixture.whenStable();
+    expect(navigate).toHaveBeenCalledWith(['/', ...destination]);
+    expect(router.url).toBe(`/${destination.join('/')}`);
+    expect(portal.closeAll).toHaveBeenCalledOnce();
+  });
 
   it('logs out through the account action without navigating', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
