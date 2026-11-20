@@ -22,7 +22,7 @@
 }
 
 .content-options {
-  align-items: flex-start;
+  align-items: stretch;
   display: flex;
   gap: var(--size-sm);
   overflow-x: auto;
@@ -39,7 +39,7 @@
   flex: 0 0 var(--card-width);
   flex-direction: column;
   font: inherit;
-  height: max-content;
+  height: auto;
   min-width: 0;
   padding: 0;
   scroll-snap-align: start;

@@ -106,6 +106,15 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
 
+  .title-button,
+  .title-text {
+    display: -webkit-box;
+    min-height: 2.6em;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
   .title-button {
     color: inherit;
     font: inherit;
@@ -115,11 +124,7 @@ h2 {
     text-align: inherit;
     cursor: pointer;
     width: 100%;
-    display: -webkit-box;
     min-height: 44px;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
 
     &:hover,
     &:focus-visible {

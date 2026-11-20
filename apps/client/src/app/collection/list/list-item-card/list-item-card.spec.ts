@@ -3,6 +3,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { ListItemCard } from './list-item-card';
 
 describe('ListItemCard', () => {
+  it('uses a clamped text wrapper for non-interactive titles without losing the full title', async () => {
+    const fixture = TestBed.createComponent(ListItemCard);
+    const title = 'Taylor Swift Karaoke: Taylor Swift with a very long album title';
+    fixture.componentRef.setInput('title', title);
+    fixture.componentRef.setInput('interactive', false);
+    await fixture.whenStable();
+    const heading: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="list-item-title"]');
+    expect(heading.querySelector('.title-text')?.textContent).toBe(title);
+    expect(heading.title).toBe(title);
+    expect(heading.querySelector('button')).toBeNull();
+  });
+
   it('names the shared owner and renders an avatar instead of a generic share icon', async () => {
     const fixture = TestBed.createComponent(ListItemCard);
     fixture.componentRef.setInput('title', 'Example');
