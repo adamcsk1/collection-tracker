@@ -6,9 +6,7 @@ const { resolve } = require('path');
 
 const root = resolve(__dirname, '..');
 
-const files = [
-  ...globSync('apps/*/public/i18n/*.json', { cwd: root }),
-];
+const files = [...globSync('apps/*/public/i18n/*.json', { cwd: root })];
 
 if (files.length === 0) {
   console.log('No i18n files found.');

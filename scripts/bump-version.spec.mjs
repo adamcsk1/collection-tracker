@@ -2,7 +2,13 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { assertVersionFilesMatch, bumpVersion, formatHelp, parseArguments, readPackageVersion } = require('./bump-version.js');
+const {
+  assertVersionFilesMatch,
+  bumpVersion,
+  formatHelp,
+  parseArguments,
+  readPackageVersion,
+} = require('./bump-version.js');
 
 describe('bump-version argument helpers', () => {
   it('prints usage, options, and examples in help output', () => {

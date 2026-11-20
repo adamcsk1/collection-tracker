@@ -6,13 +6,13 @@ Source: [`apps/dev-proxy`](../apps/dev-proxy)
 
 ## Route Map
 
-| Path      | Target                         | Notes                                         |
-| --------- | ------------------------------ | --------------------------------------------- |
-| `/login`  | `http://localhost:4201/login`  | Proxies matching traffic as-is.               |
-| `/client` | `http://localhost:4202/client` | Proxies matching traffic as-is.               |
-| `/health` | `http://localhost:4203/health` | Proxies matching traffic as-is.               |
-| `/api`    | `http://localhost:3000/api`    | Proxies API traffic as-is.                    |
-| `/`       | local redirect                 | Redirects to `/login`.                        |
+| Path      | Target                         | Notes                           |
+| --------- | ------------------------------ | ------------------------------- |
+| `/login`  | `http://localhost:4201/login`  | Proxies matching traffic as-is. |
+| `/client` | `http://localhost:4202/client` | Proxies matching traffic as-is. |
+| `/health` | `http://localhost:4203/health` | Proxies matching traffic as-is. |
+| `/api`    | `http://localhost:3000/api`    | Proxies API traffic as-is.      |
+| `/`       | local redirect                 | Redirects to `/login`.          |
 
 ## Proxy Behavior
 
