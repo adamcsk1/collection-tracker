@@ -18,16 +18,16 @@ Optional body explaining why, not what.
 
 ### Types
 
-| Type       | When to use                                      |
-|------------|--------------------------------------------------|
-| `feat`     | New feature or capability                        |
-| `fix`      | Bug fix                                          |
+| Type       | When to use                                             |
+| ---------- | ------------------------------------------------------- |
+| `feat`     | New feature or capability                               |
+| `fix`      | Bug fix                                                 |
 | `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `test`     | Adding or updating tests                         |
-| `chore`    | Build, config, tooling, CI changes               |
-| `docs`     | Documentation only                               |
-| `style`    | Formatting, whitespace (no logic change)         |
-| `perf`     | Performance improvement                          |
+| `test`     | Adding or updating tests                                |
+| `chore`    | Build, config, tooling, CI changes                      |
+| `docs`     | Documentation only                                      |
+| `style`    | Formatting, whitespace (no logic change)                |
+| `perf`     | Performance improvement                                 |
 
 ### Scope
 
@@ -41,7 +41,7 @@ Pick the most specific scope that covers the primary area of change. A commit th
 ### Rules
 
 - Summary line: imperative mood, lowercase after colon, no period, ≤72 chars
-- Body: explain *why*, not *what* — the diff shows the what
+- Body: explain _why_, not _what_ — the diff shows the what
 
 ## Markdown formatting in commit bodies and PR descriptions
 

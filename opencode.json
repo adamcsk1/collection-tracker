@@ -1,8 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": [
-    ".opencode/project-instructions.md",
-    ".opencode/review-instructions.md"
-  ],
+  "instructions": [".opencode/project-instructions.md", ".opencode/review-instructions.md"],
   "default_agent": "coder"
 }
