@@ -44,15 +44,28 @@ test.describe('Completed episodes dialog', () => {
     await waitForTrackingItem(responsePromise, imdbId);
   });
 
-  test('opens dialog and shows no-metadata message when no metadata exists', async () => {
-    await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
-    await collectionPage.expectItemDialogActionsVisible();
-    await collectionPage.getItemDialogManageCompletedEpisodesButton().click();
+  for (const supportsSeasonMetadata of [true, false]) {
+    test(`shows empty-state actions with season metadata support ${supportsSeasonMetadata}`, async ({ page }) => {
+      await page.route('**/api/v1/external-metadata/providers', (route) =>
+        route.fulfill({
+          json: {
+            data: { providers: [{ name: 'omdb', supportsSeasonMetadata, supportsDirectImdbId: true }] },
+          },
+        })
+      );
+      await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
+      await collectionPage.expectItemDialogActionsVisible();
+      await collectionPage.getItemDialogManageCompletedEpisodesButton().click();
 
-    await expect(collectionPage.getCompletedEpisodesNoMetadataMessage()).toBeVisible();
-    await expect(collectionPage.getCompletedEpisodesFetchMetadataButton()).toBeVisible();
-    await expect(collectionPage.getCompletedEpisodesManageSeasonMetadataButton()).toBeVisible();
-  });
+      await expect(collectionPage.getCompletedEpisodesNoMetadataMessage()).toBeVisible();
+      if (supportsSeasonMetadata) {
+        await expect(collectionPage.getCompletedEpisodesFetchMetadataButton()).toBeVisible();
+      } else {
+        await expect(collectionPage.getCompletedEpisodesFetchMetadataButton()).toHaveCount(0);
+      }
+      await expect(collectionPage.getCompletedEpisodesManageSeasonMetadataButton()).toBeVisible();
+    });
+  }
 
   test('opens dialog and shows episodes when metadata exists', async ({ api }) => {
     await api.request('PUT', `/api/v1/collection-items/omdb/${imdbId}/tracking/seasons`, {

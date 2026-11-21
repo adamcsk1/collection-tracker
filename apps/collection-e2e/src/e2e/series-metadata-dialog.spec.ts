@@ -39,42 +39,55 @@ test.describe('Series metadata dialog', () => {
     await waitForTrackingItem(responsePromise, imdbId);
   });
 
-  test('saves manual season metadata', async ({ page }) => {
-    await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
-    await collectionPage.expectItemDialogActionsVisible();
-    await collectionPage.openItemActions();
-    await collectionPage.getItemDialogManageSeriesMetadataButton().click();
-    await collectionPage.openSeriesMetadataActions();
-    await expect(collectionPage.getSeriesMetadataRefreshButton()).toBeVisible();
-    await collectionPage.closeSeriesMetadataActions();
+  for (const supportsSeasonMetadata of [true, false]) {
+    test(`saves manual season metadata with provider support ${supportsSeasonMetadata}`, async ({ page }) => {
+      await page.route('**/api/v1/external-metadata/providers', (route) =>
+        route.fulfill({
+          json: {
+            data: { providers: [{ name: 'omdb', supportsSeasonMetadata, supportsDirectImdbId: true }] },
+          },
+        })
+      );
+      await collectionPage.getListItems().filter({ hasText: seriesTitle }).click();
+      await collectionPage.expectItemDialogActionsVisible();
+      await collectionPage.openItemActions();
+      await collectionPage.getItemDialogManageSeriesMetadataButton().click();
+      if (supportsSeasonMetadata) {
+        await collectionPage.openSeriesMetadataActions();
+        await expect(collectionPage.getSeriesMetadataRefreshButton()).toBeVisible();
+        await collectionPage.closeSeriesMetadataActions();
+      } else {
+        await expect(page.getByTestId('series-metadata-more')).toHaveCount(0);
+      }
 
-    await expect(collectionPage.getSeriesMetadataMessage()).toContainText(
-      'Expand a season to edit optional episode titles.'
-    );
-    await collectionPage.getSeriesMetadataAddButton().click();
-    await collectionPage.getSeriesMetadataAddButton().click();
-    await expect(collectionPage.getSeriesMetadataSeasonToggles().nth(1)).toHaveAttribute('aria-expanded', 'true');
+      await expect(collectionPage.getSeriesMetadataMessage()).toContainText(
+        'Expand a season to edit optional episode titles.'
+      );
+      await collectionPage.getSeriesMetadataAddButton().click();
+      await collectionPage.getSeriesMetadataAddButton().click();
+      await expect(collectionPage.getSeriesMetadataSeasonToggles().nth(1)).toHaveAttribute('aria-expanded', 'true');
 
-    await collectionPage.expandSeriesMetadataSeason(0);
-    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('0');
-    await expect(collectionPage.getSeriesMetadataValidation()).toBeVisible();
-    await expect(collectionPage.getSeriesMetadataSaveButton()).toBeDisabled();
+      await collectionPage.expandSeriesMetadataSeason(0);
+      await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('0');
+      await expect(collectionPage.getSeriesMetadataValidation()).toBeVisible();
+      await expect(collectionPage.getSeriesMetadataSaveButton()).toBeDisabled();
 
-    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('3');
-    await expect(collectionPage.getSeriesMetadataSeasonToggles().nth(0)).toContainText('3 episodes');
-    await collectionPage.expandSeriesMetadataSeason(1);
-    await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('2');
-    await expect(collectionPage.getSeriesMetadataValidation()).toHaveCount(0);
-    const responsePromise = page.waitForResponse(
-      (response) => response.request().method() === 'PUT' && response.url().includes('/tracking/seasons')
-    );
-    await collectionPage.getSeriesMetadataSaveButton().click();
+      await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('3');
+      await expect(collectionPage.getSeriesMetadataSeasonToggles().nth(0)).toContainText('3 episodes');
+      await collectionPage.expandSeriesMetadataSeason(1);
+      await collectionPage.getSeriesMetadataEpisodeInputs().first().fill('2');
+      await expect(collectionPage.getSeriesMetadataValidation()).toHaveCount(0);
+      const responsePromise = page.waitForResponse(
+        (response) => response.request().method() === 'PUT' && response.url().includes('/tracking/seasons')
+      );
+      await collectionPage.getSeriesMetadataSaveButton().click();
 
-    expect((await responsePromise).status()).toBe(200);
-    await collectionPage.expectItemDialogActionsVisible();
-    await collectionPage.openItemActions();
-    await expect(collectionPage.getItemDialogManageSeriesMetadataButton()).toBeVisible();
-  });
+      expect((await responsePromise).status()).toBe(200);
+      await collectionPage.expectItemDialogActionsVisible();
+      await collectionPage.openItemActions();
+      await expect(collectionPage.getItemDialogManageSeriesMetadataButton()).toBeVisible();
+    });
+  }
 
   test('removes stored season metadata', async ({ page, api }) => {
     await api.request('PUT', `/api/v1/collection-items/omdb/${imdbId}/tracking/seasons`, {
