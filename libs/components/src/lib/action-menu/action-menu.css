@@ -24,12 +24,12 @@ button.quick-action {
 
 .secondary-actions {
   position: fixed;
-  inset: auto var(--actions-right, 1rem) var(--actions-bottom, 1rem) auto;
+  inset: auto var(--actions-right, var(--size-md)) var(--actions-bottom, var(--size-md)) auto;
   margin: 0;
   padding: var(--size-md);
-  width: min(22rem, calc(100vw - 2rem));
+  width: min(22rem, calc(100vw - 2 * var(--size-md)));
   max-width: 100vw;
-  max-height: min(70dvh, calc(100dvh - var(--actions-bottom, 1rem) - 1rem));
+  max-height: min(70dvh, calc(100dvh - var(--actions-bottom, var(--size-md)) - var(--size-md)));
   box-sizing: border-box;
   overflow-y: auto;
   border: 1px solid var(--main-color);
@@ -109,7 +109,7 @@ button.quick-action {
   .secondary-actions {
     inset: auto 0 0;
     width: 100%;
-    max-height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - var(--size-md));
     padding-bottom: max(var(--size-md), env(safe-area-inset-bottom));
     border: none;
     border-radius: var(--mobile-top-border-radius, 1rem) var(--mobile-top-border-radius, 1rem) 0 0;

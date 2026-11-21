@@ -1,8 +1,8 @@
 :host {
   display: inline-flex;
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
+  width: var(--size-3xl);
+  height: var(--size-3xl);
   box-sizing: border-box;
   overflow: hidden;
   border: 1px solid var(--text-color);

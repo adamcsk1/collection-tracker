@@ -1,16 +1,16 @@
 :host {
   display: block;
-  margin-bottom: 2rem;
+  margin-bottom: var(--size-3xl);
 
   & section {
     display: grid;
-    gap: 0.75rem;
+    gap: var(--size-sm);
     justify-items: start;
   }
 
   & .identity {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--size-sm);
     align-items: center;
   }
 
