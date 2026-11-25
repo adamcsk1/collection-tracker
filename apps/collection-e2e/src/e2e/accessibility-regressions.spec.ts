@@ -411,6 +411,9 @@ test.describe('WCAG regressions', () => {
     expect((await saved).status()).toBe(200);
     await expect(tagsPage.getColorButton('#accessible')).toHaveAccessibleName(/#accessible.*#245678/i);
     await expect(tagsPage.getColorButton('#accessible')).toContainText('#245678');
+    const settingsPage = createSettingsPage(page);
+    await expect(settingsPage.getSavedToast()).toBeVisible();
+    await settle(settingsPage.getSavedToast().locator('..'));
     await scan(page, testInfo, 'selected-tag-colour');
   });
 

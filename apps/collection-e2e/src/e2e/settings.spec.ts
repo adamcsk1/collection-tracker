@@ -4,6 +4,7 @@ import { buildBooksItem } from '../fixtures/openlibrary';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createCommonPage } from '../page-objects/common.po';
 import { createSettingsPage } from '../page-objects/settings.po';
+import { createStatisticsPage } from '../page-objects/statistics.po';
 import { createMessageDialog } from '../page-objects/message-dialog.po';
 import type { Page } from '@playwright/test';
 
@@ -136,6 +137,7 @@ test.describe('Settings - features page', () => {
     await expect(commonPage.getMenuNavItem('nav-wishlist')).toHaveCount(0);
     await expect(commonPage.getMenuNavItem('nav-up-next')).toHaveCount(0);
     await expect(commonPage.getMenuNavItem('nav-tracking')).toHaveCount(0);
+    await commonPage.closeMenu();
 
     await page.goto('/client/#/collection/tracking');
     await expect(page).toHaveURL(/\/collection\/tracking/);
@@ -144,12 +146,14 @@ test.describe('Settings - features page', () => {
       '/api/v1/collection-items',
       buildCollectionItem('Feature Statistics Movie', 'movie', 'tt8100002')
     );
-    await page.goto('/client/#/statistics');
-    await expect(page.getByTestId('statistics-summary-all')).toBeVisible();
-    await expect(page.getByTestId('statistics-summary-wishlist')).toHaveCount(0);
-    await expect(page.getByTestId('statistics-summary-up-next')).toHaveCount(0);
-    await expect(page.getByTestId('statistics-summary-watched-movies')).toHaveCount(0);
-    await expect(page.getByTestId('statistics-summary-watched-series')).toHaveCount(0);
+    const statisticsPage = createStatisticsPage(page);
+    await statisticsPage.visit();
+    await statisticsPage.collectionView().click();
+    await expect(statisticsPage.getSummaryCard('all')).toBeVisible();
+    await expect(statisticsPage.getSummaryCard('wishlist')).toHaveCount(0);
+    await expect(statisticsPage.getSummaryCard('up-next')).toHaveCount(0);
+    await expect(statisticsPage.getSummaryCard('watched-movies')).toHaveCount(0);
+    await expect(statisticsPage.getSummaryCard('watched-series')).toHaveCount(0);
   });
 
   test('hides the connected tracking option when adding a series', async ({ page }) => {

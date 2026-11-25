@@ -19,7 +19,8 @@ describe('Statistics', () => {
     await fixture.whenStable();
     const host: HTMLElement = fixture.nativeElement;
     const header = host.querySelector('[data-test-id="statistics-header"]')!;
-    expect(header.tagName).toBe('HEADER');
+    expect(header.tagName).toBe('DIV');
+    expect(header.getAttribute('role')).not.toBe('banner');
     expect(header.querySelector('[data-test-id="statistics-view-title"]')).not.toBeNull();
     expect(header.querySelector('[data-test-id="statistics-media-chips"]')).not.toBeNull();
     expect(host.querySelector('[data-test-id="statistics-view-title"]')?.tagName).toBe('H2');

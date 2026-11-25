@@ -1,5 +1,5 @@
 <div data-test-id="statistics-content" class="statistics-content">
-  <header class="statistics-header" data-test-id="statistics-header">
+  <div class="statistics-header" data-test-id="statistics-header">
     <h2 data-test-id="statistics-view-title">
       {{ store.state.view() === 'year' ? translations.year() : translations.collection() }}
     </h2>
@@ -11,7 +11,7 @@
       [navigate]="false"
       (selectionChange)="store.setState('selectedScope', $event)"
     />
-  </header>
+  </div>
   <div
     data-test-id="statistics-scroll"
     class="statistics-scroll"
