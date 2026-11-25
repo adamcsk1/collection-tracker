@@ -11,6 +11,10 @@
   display: flex;
   align-items: center;
   min-width: 0;
+  width: 100%;
+  justify-content: space-between;
+  gap: var(--size-sm);
+  padding-inline-end: var(--size-sm);
 
   .logo-small {
     margin-right: var(--size-xs);
@@ -21,6 +25,7 @@
     flex-direction: row;
     align-items: center;
     margin-left: 2px;
+    min-width: 0;
 
     &:hover,
     &:visited,
@@ -34,11 +39,20 @@
     line-height: 1;
     font-size: var(--font-size-lg);
     color: var(--glassy-background) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
     @media (width <= 260px) {
       display: none;
     }
   }
+}
+
+.menu-button {
+  flex-shrink: 0;
+  width: var(--float-actions-button-height, 45px);
+  height: var(--float-actions-button-height, 45px);
 }
 
 .title-stack {

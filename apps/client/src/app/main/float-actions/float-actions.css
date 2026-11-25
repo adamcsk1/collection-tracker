@@ -75,30 +75,14 @@
   color: var(--main-color);
 }
 
-.menu-button {
-  order: 1;
-  flex: 0 0 var(--float-button-container-size);
-  height: var(--float-button-container-size);
-  width: var(--float-button-container-size);
-  border-radius: var(--border-radius);
-}
-
 @media (width > 1250px) {
   :host {
     left: var(--sidebar-width);
     --float-search-expanded-width: min(42rem, calc(var(--container-max-width) * 0.65));
   }
 
-  .menu-button {
-    display: none;
-  }
-
   .float-search-bar-no-search {
     justify-content: flex-start;
-  }
-
-  .float-search-bar-menu-only {
-    display: none;
   }
 
   .float-button-scroll-to-top-no-search-bar {

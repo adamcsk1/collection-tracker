@@ -1,67 +1,59 @@
-<section
-  class="float-search-bar"
-  data-test-id="float-search-bar"
-  role="region"
-  [attr.aria-label]="translations.pageControls()"
-  [class.float-search-bar-no-search]="!searchAvailable()"
-  [class.float-search-bar-menu-only]="showMenuOnlyBar()"
-  [class.float-search-bar-search-expanded]="searchAvailable() && searchExpanded()"
->
-  <button
-    data-test-id="nav-menu-button"
-    class="menu-button button-icon material-icons"
-    [attr.aria-label]="translations.menu()"
-    [title]="translations.menu()"
-    (click)="onOpenMenu()"
+@if (showControls()) {
+  <section
+    class="float-search-bar"
+    data-test-id="float-search-bar"
+    role="region"
+    [attr.aria-label]="translations.pageControls()"
+    [class.float-search-bar-no-search]="!searchAvailable()"
+    [class.float-search-bar-search-expanded]="searchAvailable() && searchExpanded()"
   >
-    menu
-  </button>
-  @if (searchAvailable()) {
-    @let template = searchTemplate();
-    @if (searchExpanded()) {
-      <div
-        #searchContent
-        class="float-search-content"
-        animate.enter="float-search-content-enter"
-        animate.leave="float-search-content-leave"
-      >
-        @if (template) {
-          <ng-container [ngTemplateOutlet]="template" />
-        }
-      </div>
-    } @else {
+    @if (searchAvailable()) {
+      @let template = searchTemplate();
+      @if (searchExpanded()) {
+        <div
+          #searchContent
+          class="float-search-content"
+          animate.enter="float-search-content-enter"
+          animate.leave="float-search-content-leave"
+        >
+          @if (template) {
+            <ng-container [ngTemplateOutlet]="template" />
+          }
+        </div>
+      } @else {
+        <button
+          data-test-id="float-search-toggle"
+          class="search-toggle-button button-icon material-icons"
+          [attr.aria-label]="translations.search()"
+          [title]="translations.search()"
+          (click)="onShowSearch()"
+        >
+          search
+        </button>
+      }
+    }
+
+    @if (aiSearchAvailable()) {
       <button
-        data-test-id="float-search-toggle"
-        class="search-toggle-button button-icon material-icons"
-        [attr.aria-label]="translations.search()"
-        [title]="translations.search()"
-        (click)="onShowSearch()"
+        data-test-id="float-ai-search-button"
+        class="ai-search-button button-icon material-icons"
+        [class.ai-search-button-active]="aiSearchActive()"
+        [attr.aria-label]="translations.aiSearch()"
+        [attr.aria-pressed]="aiSearchActive() ? 'true' : 'false'"
+        [title]="translations.aiSearch()"
+        (click)="onOpenAiSearch()"
       >
-        search
+        hub
       </button>
     }
-  }
 
-  @if (aiSearchAvailable()) {
-    <button
-      data-test-id="float-ai-search-button"
-      class="ai-search-button button-icon material-icons"
-      [class.ai-search-button-active]="aiSearchActive()"
-      [attr.aria-label]="translations.aiSearch()"
-      [attr.aria-pressed]="aiSearchActive() ? 'true' : 'false'"
-      [title]="translations.aiSearch()"
-      (click)="onOpenAiSearch()"
-    >
-      hub
-    </button>
-  }
-
-  @if (showFloatActions() && actionsComponent(); as component) {
-    <div class="float-actions-slot">
-      <ng-container [ngComponentOutlet]="component" />
-    </div>
-  }
-</section>
+    @if (showFloatActions() && actionsComponent(); as component) {
+      <div class="float-actions-slot">
+        <ng-container [ngComponentOutlet]="component" />
+      </div>
+    }
+  </section>
+}
 
 @if (config().scrollToTopAvailable && !actionButtonsVisible()) {
   <div

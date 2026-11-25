@@ -10,9 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { MenuDialog } from '../menu-dialog/menu-dialog';
 import { FloatActionsService } from './float-actions-service';
 
 @Component({
@@ -27,7 +25,6 @@ import { FloatActionsService } from './float-actions-service';
 })
 export class FloatActions {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly portal = inject(PortalService);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly searchContent = viewChild<ElementRef<HTMLElement>>('searchContent');
   private readonly searchOpened = signal(false);
@@ -36,7 +33,6 @@ export class FloatActions {
 
   protected readonly translations = {
     pageControls: computed(() => this.ngxSignalTranslate.translate('PageControls')),
-    menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
     scrollToTop: computed(() => this.ngxSignalTranslate.translate('ScrollToTop')),
@@ -53,8 +49,8 @@ export class FloatActions {
   );
   protected readonly searchAvailable = computed(() => !!this.searchTemplate() || this.searchActionAvailable());
   protected readonly showFloatActions = computed(() => this.config().actionsAvailable && !!this.actionsComponent());
-  protected readonly showMenuOnlyBar = computed(
-    () => !this.searchAvailable() && !this.aiSearchAvailable() && !this.showFloatActions()
+  protected readonly showControls = computed(
+    () => this.searchAvailable() || this.aiSearchAvailable() || this.showFloatActions()
   );
 
   constructor() {
@@ -86,10 +82,6 @@ export class FloatActions {
         searchContent.nativeElement.querySelector<HTMLElement>('input, textarea, select, button')?.focus();
       });
     });
-  }
-
-  protected onOpenMenu(): void {
-    this.portal.open(MenuDialog);
   }
 
   protected onShowSearch(): void {

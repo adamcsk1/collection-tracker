@@ -1,10 +1,12 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, provideRouter, Router } from '@angular/router';
+import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { Subject } from 'rxjs';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MenuDialog } from '../menu-dialog/menu-dialog';
 import { Header } from './header';
 
 describe('Header component', () => {
@@ -23,6 +25,7 @@ describe('Header component', () => {
         { provide: ThemeService, useValue: { themeLogo: signal('logo-mock.png') } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: Router, useValue: router },
+        { provide: PortalService, useValue: { open: vi.fn() } },
         provideSignalTranslateConfig({ path: '' }),
       ],
     });
@@ -76,5 +79,31 @@ describe('Header component', () => {
     routerEvents.next(new NavigationEnd(1, '/statistics', '/statistics'));
 
     expect(component['currentNavTitle']()).toBe('Statistics');
+  });
+});
+
+describe('Header menu', () => {
+  it('renders a labelled menu trigger in the header and opens the existing dialog', async () => {
+    const open = vi.fn();
+    TestBed.configureTestingModule({
+      imports: [Header],
+      providers: [
+        provideRouter([]),
+        { provide: ThemeService, useValue: { themeLogo: signal('logo-mock.png') } },
+        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+        { provide: PortalService, useValue: { open } },
+      ],
+    });
+    const fixture = TestBed.createComponent(Header);
+    await fixture.whenStable();
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-test-id="nav-menu-button"]'
+    )!;
+    expect(button.type).toBe('button');
+    expect(button.getAttribute('aria-label')).toBe('Menu');
+    expect(button.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(button.querySelector('.material-icons')?.getAttribute('aria-hidden')).toBe('true');
+    button.click();
+    expect(open).toHaveBeenCalledWith(MenuDialog);
   });
 });

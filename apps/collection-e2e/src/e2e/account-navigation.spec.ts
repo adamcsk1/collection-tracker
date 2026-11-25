@@ -57,7 +57,19 @@ for (const width of [390, 1000, 1440]) {
     await page.setViewportSize({ width, height: 844 });
     await autoLogin();
     const common = createCommonPage(page);
-    if (width < 1251) await common.openMenu();
+    if (width < 1251) {
+      const menu = common.getMenuButton();
+      await expect(menu).toBeInViewport({ ratio: 1 });
+      const bounds = await menu.boundingBox();
+      if (!bounds) throw new Error('Missing header menu bounds');
+      expect(bounds.x).toBeGreaterThan(width - 80);
+      expect(bounds.y).toBeLessThan(80);
+      expect(bounds.width).toBeGreaterThanOrEqual(44);
+      expect(bounds.height).toBeGreaterThanOrEqual(44);
+      await menu.focus();
+      await page.keyboard.press('Enter');
+      await expect(common.getMenuDialog()).toBeVisible();
+    }
     const trigger = common.getAccountTrigger();
     await trigger.focus();
     await page.keyboard.press('Enter');

@@ -6,4 +6,15 @@
       <span data-test-id="current-nav-title" class="current-nav-title">{{ currentNavTitle() }}</span>
     </div>
   </a>
+  <button
+    type="button"
+    data-test-id="nav-menu-button"
+    class="menu-button button-icon"
+    [attr.aria-label]="translations.menu()"
+    [title]="translations.menu()"
+    aria-haspopup="dialog"
+    (click)="onOpenMenu()"
+  >
+    <span class="material-icons" aria-hidden="true">menu</span>
+  </button>
 </div>
