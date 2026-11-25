@@ -16,6 +16,7 @@ export interface CollectionItemModel {
   canonicalItemId?: string;
   tags: string[];
   year: CollectionItemYearModel;
+  plannedYear?: number | null;
   rate: string;
   rottenTomatoesRate: string;
   metacriticRate: string;

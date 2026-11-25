@@ -23,6 +23,12 @@ const validItem: CollectionItemChangeApiModel = {
 
 describe('collection-item-util', () => {
   describe('normalizeItem', () => {
+    it.each([999, 10000, 2026.5, NaN, Infinity])('rejects invalid planned year %s', (plannedYear) => {
+      expect(normalizeItem({ ...validItem, plannedYear })).toBeUndefined();
+    });
+    it.each([null, 1000, 2026, 9999])('preserves optional planned year %s', (plannedYear) => {
+      expect(normalizeItem({ ...validItem, plannedYear })?.plannedYear).toBe(plannedYear);
+    });
     it('accepts work and release-group identities while retaining valid aliases', () => {
       expect(
         normalizeItem({

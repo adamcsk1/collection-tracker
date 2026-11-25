@@ -67,6 +67,7 @@ import { register as registerSignIn } from './sign-in-api';
 import { register as registerSignUp } from './sign-up-api';
 import { register as registerSaveUserShare } from './save-user-share-api';
 import { register as registerStatistics } from './statistics-api';
+import { register as registerCollectionActivity } from './collection-activity-api';
 import { register as registerTagSuggestions } from './tag-suggestions-api';
 import { register as registerExport } from './export-api';
 import { register as registerImportCollectionItems } from './import-collection-items-api';
@@ -128,6 +129,7 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerTagSuggestions(app);
   registerGenreSuggestions(app);
   registerStatistics(app);
+  registerCollectionActivity(app);
   registerGetTrackingSeasons(app);
   registerGetTrackingCompletedEpisodes(app);
   registerRefreshTrackingSeasons(app);

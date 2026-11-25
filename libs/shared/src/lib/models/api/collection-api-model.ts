@@ -10,6 +10,15 @@ export type CollectionItemOrderBy = 'createdAt' | 'alphabet';
 export type CollectionItemOrderDirection = 'asc' | 'desc';
 
 export type CollectionItemSharedFilter = 'mine' | 'shared';
+export type CollectionActivityStatus = 'planned' | 'completed' | 'inProgress';
+
+export interface CollectionActivityApiModel {
+  year: number;
+  planned: number;
+  completed: number;
+  inProgress: number;
+  months: Array<{ month: number; count: number }>;
+}
 
 export type MovieCollectionStatisticsStatus = 'watched' | 'unwatched';
 export type SeriesCollectionStatisticsStatus = 'untracked' | 'completed' | 'inProgress';
@@ -34,6 +43,9 @@ export interface CollectionItemFiltersApiModel {
   listType?: CollectionListTypeModel;
   orderBy?: CollectionItemOrderBy;
   orderDirection?: CollectionItemOrderDirection;
+  activityYear?: number;
+  activityStatus?: CollectionActivityStatus;
+  activityMonth?: number;
 }
 
 export interface CollectionItemsPageModel {
@@ -41,7 +53,10 @@ export interface CollectionItemsPageModel {
   page: CursorPageModel;
 }
 
-export type CollectionMatchedItemFiltersApiModel = Omit<CollectionItemFiltersApiModel, 'orderBy' | 'orderDirection'>;
+export type CollectionMatchedItemFiltersApiModel = Omit<
+  CollectionItemFiltersApiModel,
+  'orderBy' | 'orderDirection' | 'activityYear' | 'activityStatus' | 'activityMonth'
+>;
 
 export interface CollectionMatchedItemsApiRequestModel {
   identities: ExternalItemIdentityModel[];
@@ -182,6 +197,7 @@ export type CollectionItemChangeApiModel = Pick<
   | 'externalIds'
   | 'tags'
   | 'year'
+  | 'plannedYear'
   | 'rate'
   | 'rottenTomatoesRate'
   | 'metacriticRate'

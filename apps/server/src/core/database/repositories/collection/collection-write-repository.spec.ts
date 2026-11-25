@@ -120,6 +120,27 @@ describe('collection-write-repository', () => {
     ]);
   });
 
+  it('stores, preserves for older clients, updates and clears planned years', () => {
+    const database = getDatabase();
+    expect(insertCollectionItem(database, 'user', 'hash', { ...item, plannedYear: 2026 }).plannedYear).toBe(2026);
+    expect(
+      updateCollectionItemByExternalId(database, 'user', item.externalProvider, item.externalItemId, 'hash2', item)
+        ?.plannedYear
+    ).toBe(2026);
+    expect(
+      updateCollectionItemByExternalId(database, 'user', item.externalProvider, item.externalItemId, 'hash3', {
+        ...item,
+        plannedYear: 2027,
+      })?.plannedYear
+    ).toBe(2027);
+    expect(
+      updateCollectionItemByExternalId(database, 'user', item.externalProvider, item.externalItemId, 'hash4', {
+        ...item,
+        plannedYear: null,
+      })?.plannedYear
+    ).toBeUndefined();
+  });
+
   it('atomically replaces normalized fields and relations', () => {
     const db = getDatabase();
     insertCollectionItem(db, 'user', 'hash-1', item);

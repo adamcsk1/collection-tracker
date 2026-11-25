@@ -6,6 +6,7 @@ export interface ItemFormModel {
   title: string;
   IMDbId: string;
   year: CollectionItemYearModel;
+  plannedYear?: number | null;
   rate: string;
   rottenTomatoesRate: string;
   metacriticRate: string;

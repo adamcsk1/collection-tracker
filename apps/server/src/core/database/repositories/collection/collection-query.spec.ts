@@ -61,6 +61,29 @@ const selectReadableIds = (shared?: 'mine' | 'shared', type?: 'movie' | 'series'
 };
 
 describe('collection-query readable scope', () => {
+  it('uses personal activity rather than a caller supplied shared or list scope', () => {
+    insertUser('viewer');
+    insertUser('owner');
+    insertItem('viewer', 'personal', 'tracking', 'movie');
+    insertItem('owner', 'not-personal', 'tracking', 'movie');
+    const database = getDatabase();
+    database
+      .prepare(
+        "INSERT INTO collection_item_tracker_state (item_id, completed_at) SELECT id, '2026-02-01' FROM collection_items"
+      )
+      .run();
+    const query = buildItemWhere('viewer', {
+      activityYear: 2026,
+      activityStatus: 'completed',
+      shared: 'shared',
+      listType: 'books',
+    });
+    expect(
+      database
+        .prepare(`SELECT external_item_id FROM collection_items WHERE ${query.where.join(' AND ')}`)
+        .all(...query.params)
+    ).toEqual([{ external_item_id: 'personal' }]);
+  });
   it.each([
     [undefined, 5],
     ['mine' as const, 1],

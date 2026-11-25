@@ -695,6 +695,11 @@ components:
         year:
           type: ['string', 'null']
           description: Release year or year interval such as `2026-2028` or `2027-`.
+        plannedYear:
+          type: ['integer', 'null']
+          minimum: 1000
+          maximum: 9999
+          description: Optional planned consumption year for this list entry. Absent when unplanned.
         rate:
           type: string
         rottenTomatoesRate:
@@ -797,6 +802,11 @@ components:
         year:
           type: ['string', 'null']
           description: Release year or year interval such as `2026-2028` or `2027-`.
+        plannedYear:
+          type: ['integer', 'null']
+          minimum: 1000
+          maximum: 9999
+          description: Optional planned consumption year. Omit to preserve on update; null clears it.
         rate:
           type: string
         rottenTomatoesRate:
@@ -2617,8 +2627,24 @@ paths:
         Returns caller-owned and exactly readable shared items. `listType` defaults to `library`; that view folds the
         `books` list into library results, while `type=book` selects folded books and movie/series filters select the
         physical `library` list. Explicit `listType=books` addresses only the books list.
+        Supplying both `activityYear` and `activityStatus` selects personal activity across lists instead of the
+        normal list/shared scope. Other search, media, tag, genre, favorite and completion filters still apply.
+        Plans are deduplicated by canonical or exact identity after filters. Completed and current-progress results
+        use personal tracking entries. Cursors are bound to all activity filters.
       tags: [Collection]
       parameters:
+        - name: activityYear
+          in: query
+          description: Four-digit year (1000–9999). Required with activityStatus.
+          schema: { type: integer, minimum: 1000, maximum: 9999 }
+        - name: activityStatus
+          in: query
+          description: Planned for the year, completed in the year, or currently in progress across all years. Requires activityYear.
+          schema: { type: string, enum: [planned, completed, inProgress] }
+        - name: activityMonth
+          in: query
+          description: Optional completion month; valid only with activityStatus=completed.
+          schema: { type: integer, minimum: 1, maximum: 12 }
         - name: cursor
           in: query
           required: false
@@ -3304,6 +3330,63 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /collection-items/activity:
+    get:
+      operationId: getCollectionActivity
+      summary: Get personal year activity
+      description: >-
+        Returns personal plans across lists (deduplicated by canonical or exact identity), titles completed in the
+        requested calendar year, twelve monthly completion counts, and live current progress across all years.
+        Other owners' items are excluded. Completion dates, not release years, determine year/month membership.
+        Books and albums require positive progress; unfinished series are considered in progress.
+        This is current saved state, not a historical event log; repeats are not counted separately.
+      tags: [Collection]
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1000, maximum: 9999 }
+        - name: type
+          in: query
+          schema: { type: string, enum: [movie, series, book, album] }
+      responses:
+        '200':
+          description: Personal activity summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [year, planned, completed, inProgress, months]
+                    properties:
+                      year: { type: integer }
+                      planned: { type: integer, minimum: 0 }
+                      completed: { type: integer, minimum: 0 }
+                      inProgress: { type: integer, minimum: 0 }
+                      months:
+                        type: array
+                        minItems: 12
+                        maxItems: 12
+                        items:
+                          type: object
+                          required: [month, count]
+                          properties:
+                            month: { type: integer, minimum: 1, maximum: 12 }
+                            count: { type: integer, minimum: 0 }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /collection-items/statistics:
     get:
       operationId: getStatistics
@@ -3313,7 +3396,8 @@ paths:
         books and music-list albums into library movies and series. Omit `type` for an all-media summary, or provide
         `movie`, `series`, `book`, or `album` for that media scope. Tracking statuses use the current viewer's tracking
         items matched by canonical or exact external identity. Media-type chart counts are available only in all-media
-        scope; status chart counts are available only in a specific media scope.
+        scope; status chart counts are available only in a specific media scope. Genre and tag counts combine
+        case variants and count each matching list entry once, consistent with collection search filters.
       tags: [Collection]
       parameters:
         - name: type

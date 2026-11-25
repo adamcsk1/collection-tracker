@@ -52,20 +52,20 @@ export const getCollectionStatistics = (
 
   const tagCounts = db
     .prepare(
-      `SELECT tag, COUNT(*) as count
+      `SELECT MIN(tag) AS tag, COUNT(DISTINCT item_id) as count
        FROM collection_item_tags
         WHERE item_id IN (${matchingItemsSql})
-        GROUP BY tag
+        GROUP BY LOWER(tag)
         ORDER BY count DESC, tag`
     )
     .all(...queryParts.params) as Array<{ tag: string; count: number }>;
 
   const genreCounts = db
     .prepare(
-      `SELECT genre, COUNT(*) as count
+      `SELECT MIN(genre) AS genre, COUNT(DISTINCT item_id) as count
        FROM collection_item_genres
        WHERE item_id IN (${matchingItemsSql})
-       GROUP BY genre
+       GROUP BY LOWER(genre)
        ORDER BY count DESC, genre`
     )
     .all(...queryParts.params) as Array<{ genre: string; count: number }>;

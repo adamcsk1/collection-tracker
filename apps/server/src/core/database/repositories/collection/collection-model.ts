@@ -22,6 +22,7 @@ export interface CollectionItemRow {
   title: string;
   title_lower: string;
   year: string;
+  planned_year?: number | null;
   rate: string;
   rotten_tomatoes_rate: string;
   metacritic_rate: string;
@@ -65,6 +66,7 @@ export const collectionItemProjection = (alias = 'collection_items'): string => 
   ${alias}.title,
   ${alias}.title_lower,
   ${alias}.year,
+  ${alias}.planned_year,
   COALESCE((SELECT value FROM collection_item_external_ratings WHERE item_id = ${alias}.id AND source = 'imdb'), '') AS rate,
   COALESCE((SELECT value FROM collection_item_external_ratings WHERE item_id = ${alias}.id AND source = 'rotten-tomatoes'), '') AS rotten_tomatoes_rate,
   COALESCE((SELECT value FROM collection_item_external_ratings WHERE item_id = ${alias}.id AND source = 'metacritic'), '') AS metacritic_rate,

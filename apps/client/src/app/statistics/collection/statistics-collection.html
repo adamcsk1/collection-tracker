@@ -1,0 +1,68 @@
+@if (store.state.filters() !== null) {
+  <ct-statistics-items [title]="store.state.title()" [filters]="filters()" (changed)="refresh()" />
+}
+@if (store.state.status() === 'pending') {
+  <p role="status">{{ translations.loading() }}</p>
+}
+@if (store.state.status() === 'error') {
+  <p role="alert">{{ translations.error() }}</p>
+  <button type="button" data-test-id="statistics-retry" (click)="refresh()">{{ translations.retry() }}</button>
+} @else if (store.state.data(); as data) {
+  @if (data.summary.total === 0) {
+    <p data-test-id="statistics-empty">{{ translations.empty() }}</p>
+  } @else {
+    <div data-test-id="statistics-summary" class="summary-grid">
+      <button
+        type="button"
+        class="card stat-card"
+        data-test-id="statistics-summary-all"
+        (click)="choose({}, translations.total())"
+      >
+        <span class="stat-value">{{ data.summary.total }}</span
+        ><span>{{ translations.total() }}</span>
+      </button>
+      <button
+        type="button"
+        class="card stat-card"
+        data-test-id="statistics-summary-favorites"
+        (click)="choose({ favorite: true }, translations.favorites())"
+      >
+        <span class="stat-value">{{ data.summary.favorites }}</span
+        ><span>{{ translations.favorites() }}</span>
+      </button>
+    </div>
+    <div class="charts-grid">
+      <ct-statistics-bars
+        data-test-id="statistics-overview-chart-card"
+        [title]="data.scope === 'all' ? translations.media() : translations.status()"
+        [entries]="overview()"
+        [interactive]="data.scope === 'all'"
+        (selection)="chooseOverview($event)"
+      />
+      <ct-statistics-bars
+        data-test-id="statistics-genre-chart-card"
+        [title]="translations.genres()"
+        [entries]="genres()"
+        [interactive]="true"
+        (selection)="choose({ genres: [$event] }, $event)"
+      />
+      <ct-statistics-bars
+        data-test-id="statistics-tag-chart-card"
+        [title]="translations.tags()"
+        [entries]="tags()"
+        [interactive]="true"
+        (selection)="choose({ tags: [$event] }, $event)"
+      />
+      <ct-statistics-bars
+        data-test-id="statistics-release-year-chart-card"
+        [title]="translations.years()"
+        [entries]="years()"
+      />
+      <ct-statistics-bars
+        data-test-id="statistics-rating-chart-card"
+        [title]="translations.ratings()"
+        [entries]="ratings()"
+      />
+    </div>
+  }
+}

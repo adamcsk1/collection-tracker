@@ -54,6 +54,21 @@
           </libc-input>
         }
         <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
+        @if (form.plannedYear; as plannedYear) {
+          <libc-input
+            data-test-id="item-dialog-planned-year"
+            type="number"
+            [label]="translations.plannedYear()"
+            [hint]="translations.plannedYearHint()"
+            [formField]="plannedYear"
+          >
+            <ng-container errors>
+              @if (plannedYear().invalid()) {
+                {{ translations.validationPlannedYear() }}
+              }
+            </ng-container>
+          </libc-input>
+        }
         @if (!book() && !album()) {
           <libc-select
             data-test-id="item-dialog-content-type"

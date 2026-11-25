@@ -115,6 +115,9 @@ export class ItemDialog implements OnInit {
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
     labelIMDbId: computed(() => this.ngxSignalTranslate.translate('IMDbId')),
     labelYear: computed(() => this.ngxSignalTranslate.translate('Year')),
+    plannedYear: computed(() => this.ngxSignalTranslate.translate('Statistics.PlannedYear')),
+    plannedYearHint: computed(() => this.ngxSignalTranslate.translate('Statistics.PlannedYearHint')),
+    validationPlannedYear: computed(() => this.ngxSignalTranslate.translate('Statistics.ValidationYear')),
     labelIMDbRate: computed(() => this.ngxSignalTranslate.translate('IMDbRate')),
     labelMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Metacritic')),
     labelRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('RottenTomatoes')),
@@ -210,6 +213,7 @@ export class ItemDialog implements OnInit {
     title: '',
     IMDbId: '',
     year: null,
+    plannedYear: null,
     rate: '',
     rottenTomatoesRate: '',
     metacriticRate: '',
@@ -231,6 +235,13 @@ export class ItemDialog implements OnInit {
         !this.canEditImdbIdentity() || value()?.trim() ? undefined : { kind: 'required' }
       );
       validate(item.rate, ({ value }) => validateOptionalIMDbRateFormat(value()));
+      if (item.plannedYear)
+        validate(item.plannedYear, ({ value }) => {
+          const year = value();
+          return year == null || (Number.isInteger(year) && year >= 1000 && year <= 9999)
+            ? undefined
+            : { kind: 'plannedYear' };
+        });
       validate(item.rottenTomatoesRate, ({ value }) => validateOptionalRottenTomatoesRateFormat(value()));
       validate(item.metacriticRate, ({ value }) => validateOptionalMetacriticRateFormat(value()));
       min(item.userRate, 0, { error: { kind: 'min' } });
@@ -618,6 +629,7 @@ export class ItemDialog implements OnInit {
       externalItemId: imdbIdChanged ? resolvedImdbId : currentItem.externalItemId,
       externalIds: nextExternalIds,
       year: formValues.year,
+      plannedYear: formValues.plannedYear,
       rate: formValues.rate,
       rottenTomatoesRate: imdbIdChanged ? '' : formValues.rottenTomatoesRate,
       metacriticRate: imdbIdChanged ? '' : formValues.metacriticRate,

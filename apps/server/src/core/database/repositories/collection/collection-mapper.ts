@@ -73,6 +73,7 @@ export const toApiItem = (
     canonicalItemId: row.canonical_item_id ?? undefined,
     tags: relations.tags,
     year: row.year || null,
+    ...(row.planned_year == null ? {} : { plannedYear: row.planned_year }),
     rate: row.rate,
     rottenTomatoesRate: row.rotten_tomatoes_rate ?? '',
     metacriticRate: row.metacritic_rate ?? '',

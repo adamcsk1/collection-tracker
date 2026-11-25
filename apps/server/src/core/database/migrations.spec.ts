@@ -53,6 +53,28 @@ const preparePre034ShareState = async (
 describe('runMigrations', () => {
   const tempDirs: string[] = [];
 
+  it('adds optional planned years once without backfilling existing items', async () => {
+    const migration = '044_add_planned_year.sql';
+    const { db, migrationsDir } = await preparePreMigrationState(migration, tempDirs);
+    try {
+      db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('existing', 'token');
+      db.prepare(
+        `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash) VALUES ('existing', 'omdb', 'tt123', 'omdb:tt123', 'library', 'movie', 'Title', 'title', '', '', '', 'hash')`
+      ).run();
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migration), join(migrationsDir, migration));
+      await runMigrations(db, migrationsDir);
+      await runMigrations(db, migrationsDir);
+      expect(db.prepare('SELECT title, planned_year FROM collection_items').get()).toEqual({
+        title: 'Title',
+        planned_year: null,
+      });
+      expect(() => db.prepare('UPDATE collection_items SET planned_year = 999').run()).toThrow();
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').all(migration)).toHaveLength(1);
+    } finally {
+      db.close();
+    }
+  });
+
   it('adds profiles to existing databases once, preserves users, and cascades deletion', async () => {
     const migration = '043_add_user_profiles.sql';
     const { db, migrationsDir } = await preparePreMigrationState(migration, tempDirs);

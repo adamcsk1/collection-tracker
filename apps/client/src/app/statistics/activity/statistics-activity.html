@@ -1,0 +1,61 @@
+<div class="year-controls">
+  <libc-input
+    #yearInput
+    data-test-id="statistics-year"
+    type="number"
+    [label]="translations.year()"
+    [value]="'' + root.state.year()"
+    [hint]="translations.validationYear()"
+    (valueChange)="setYear($event)"
+    (focusout)="yearInput.value.set('' + root.state.year())"
+  />
+  <button type="button" data-test-id="statistics-this-year" (click)="root.setState('year', currentYear)">
+    {{ translations.thisYear() }}
+  </button>
+  <button type="button" data-test-id="statistics-last-year" (click)="root.setState('year', currentYear - 1)">
+    {{ translations.lastYear() }}
+  </button>
+</div>
+<p>{{ translations.hint() }}</p>
+@if (store.state.status() === 'pending') {
+  <p role="status">{{ translations.loading() }}</p>
+}
+@if (store.state.status() === 'error') {
+  <p role="alert">{{ translations.error() }}</p>
+  <button type="button" data-test-id="statistics-retry" (click)="refresh()">{{ translations.retry() }}</button>
+} @else if (store.state.data()) {
+  <div class="summary-grid" data-test-id="statistics-activity-summary">
+    @for (card of cards(); track card.status) {
+      <button
+        type="button"
+        class="card stat-card"
+        [attr.data-test-id]="'statistics-activity-' + card.status"
+        [attr.aria-pressed]="store.state.selected() === card.status"
+        (click)="select(card.status)"
+      >
+        <span class="stat-value">{{ card.count }}</span
+        ><span>{{ card.label }}</span>
+      </button>
+    }
+  </div>
+  @if (store.state.selected() === 'planned') {
+    <p>{{ translations.planHint() }}</p>
+  }
+  <libc-details data-test-id="statistics-monthly-details" [summary]="translations.monthly()" [open]="false">
+    <ct-statistics-bars
+      data-test-id="statistics-months"
+      [title]="translations.monthly()"
+      [entries]="months()"
+      [limit]="12"
+      [interactive]="true"
+      [selected]="store.state.month() === null ? null : '' + store.state.month()"
+      (selection)="selectMonth($event)"
+    />
+  </libc-details>
+  @if (store.state.month() !== null) {
+    <button type="button" data-test-id="statistics-all-months" (click)="store.setState('month', null)">
+      {{ translations.allMonths() }}
+    </button>
+  }
+}
+<ct-statistics-items [title]="selectedTitle()" [filters]="filters()" (changed)="refresh()" />

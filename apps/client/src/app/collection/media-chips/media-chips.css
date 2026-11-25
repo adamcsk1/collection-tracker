@@ -8,8 +8,8 @@
   flex-shrink: 0;
   justify-content: center;
   gap: var(--size-xs);
-  margin-bottom: var(--size-md);
-  padding: var(--size-md) var(--size-md) 0;
+  margin-bottom: var(--media-chips-margin-bottom, var(--size-md));
+  padding: var(--media-chips-padding, var(--size-md) var(--size-md) 0);
 
   button {
     &[aria-pressed='true'] {

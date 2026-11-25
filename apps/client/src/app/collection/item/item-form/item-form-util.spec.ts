@@ -78,6 +78,7 @@ describe('item form util', () => {
       title: ' Test Title ',
       IMDbId: 'tt1234567',
       year: '2020',
+      plannedYear: 2026,
       rate: '8.5',
       rottenTomatoesRate: '95%',
       metacriticRate: '85/100',
@@ -93,6 +94,8 @@ describe('item form util', () => {
     });
 
     expect(item.title).toBe('Test Title');
+    expect(item.plannedYear).toBe(2026);
+    expect(buildItemFormFromChange(item).plannedYear).toBe(2026);
     expect(item.IMDbId).toBe('tt1234567');
     expect(item.externalProvider).toBe('omdb');
     expect(item.externalItemId).toBe('tt1234567');

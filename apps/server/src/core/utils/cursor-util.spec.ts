@@ -9,6 +9,13 @@ const encodeRawCursor = (payload: Record<string, unknown>, secret: string): stri
 };
 
 describe('cursor-util', () => {
+  it('binds cursors to activity year, status and month', () => {
+    const base = { activityYear: 2026, activityStatus: 'completed' as const, activityMonth: 1 };
+    const hash = createCollectionFilterHash('user', base);
+    expect(createCollectionFilterHash('user', { ...base, activityYear: 2025 })).not.toBe(hash);
+    expect(createCollectionFilterHash('user', { ...base, activityStatus: 'planned' })).not.toBe(hash);
+    expect(createCollectionFilterHash('user', { ...base, activityMonth: 2 })).not.toBe(hash);
+  });
   const secret = 'cursor-test-secret';
   const filterHash = createCollectionFilterHash('user', {
     listType: 'library',

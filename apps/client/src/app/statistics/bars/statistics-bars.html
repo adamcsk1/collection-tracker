@@ -1,0 +1,43 @@
+<section class="card bars" data-test-id="statistics-bars" [attr.aria-label]="title()">
+  <h3>{{ title() }}</h3>
+  <ul>
+    @for (entry of visible(); track entry.value) {
+      <li>
+        @if (interactive()) {
+          <button
+            type="button"
+            [attr.data-test-id]="'statistics-bar-' + entry.value"
+            [attr.aria-pressed]="selected() === entry.value"
+            (click)="selection.emit(entry.value)"
+          >
+            <span>{{ entry.label }}</span
+            ><strong>{{ entry.count }}</strong>
+            <span class="bar-track" aria-hidden="true"
+              ><span [style.width.%]="(entry.count / maximum()) * 100"></span
+            ></span>
+          </button>
+        } @else {
+          <div class="bar-row">
+            <span>{{ entry.label }}</span
+            ><strong>{{ entry.count }}</strong>
+            <span class="bar-track" aria-hidden="true"
+              ><span [style.width.%]="(entry.count / maximum()) * 100"></span
+            ></span>
+          </div>
+        }
+      </li>
+    } @empty {
+      <li>{{ translations.empty() }}</li>
+    }
+  </ul>
+  @if (entries().length > limit()) {
+    <button
+      type="button"
+      data-test-id="statistics-bars-expand"
+      [attr.aria-expanded]="expanded()"
+      (click)="expanded.set(!expanded())"
+    >
+      {{ expanded() ? translations.showLess() : translations.showMore() }}
+    </button>
+  }
+</section>

@@ -38,6 +38,14 @@ describe('ApiService', () => {
     httpMock.verify();
   });
 
+  it('loads and unwraps personal activity for the selected year and media', async () => {
+    const promise = lastValueFrom(service.getCollectionActivity(2026, 'book'));
+    const request = httpMock.expectOne('https://api.test/collection-items/activity?year=2026&type=book');
+    const result = { year: 2026, planned: 2, completed: 1, inProgress: 1, months: [] };
+    request.flush({ data: result });
+    await expect(promise).resolves.toEqual(result);
+  });
+
   it.each([
     { available: true, reason: 'available' },
     { available: false, reason: 'not-configured' },

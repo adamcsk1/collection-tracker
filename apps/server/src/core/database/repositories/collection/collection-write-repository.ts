@@ -119,6 +119,9 @@ export const insertCollectionItem = (
       );
 
     const itemId = Number(result.lastInsertRowid);
+    if (item.plannedYear != null) {
+      db.prepare('UPDATE collection_items SET planned_year = ? WHERE id = ?').run(item.plannedYear, itemId);
+    }
     replaceExternalRatings(db, itemId, item);
     if (normalizedListType === 'tracking') {
       const autoComplete =
@@ -210,6 +213,12 @@ export const updateCollectionItemByRow = (
     );
 
     replaceExternalRatings(db, existingItem.id, updatedItem);
+    if (updatedItem.plannedYear !== undefined) {
+      db.prepare('UPDATE collection_items SET planned_year = ? WHERE id = ?').run(
+        updatedItem.plannedYear,
+        existingItem.id
+      );
+    }
     replaceItemRelations(db, existingItem.id, updatedItem);
     if (
       normalizedListType === 'tracking' &&

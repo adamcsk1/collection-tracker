@@ -29,11 +29,9 @@ its actions open in a bottom sheet. Escape dismisses account actions before the 
   books.
 - **Music**: `type=album` → music list; also `/collection/music`. Readable shared albums can appear alongside owned albums.
 
-- statistics page: **All | Movies | Series | Books | Music** media chips with focused summaries and scoped tags. All shows only
-  total, media-type, and favorite cards. Type views show relevant watch, tracking, reading, or listening status cards. Chart.js
-  visualizations adapt between media mix and mutually exclusive status distributions, plus genres, release years, user
-  rating bands, and selected tags. A page-scoped `ngx-simple-signal-store` owns scope, load status, retry state, current
-  response, and per-scope cache; scope responses are loaded lazily and cached while the page remains open.
+- statistics page: **My year** opens by default with a year picker, This year/Last year shortcuts, personal plans,
+  completions, live current progress, monthly bars, and paginated clickable title lists. **Collection** keeps readable
+  collection totals, favorites, media/status, genres, tags, release years and rating breakdowns. See [Statistics](./statistics.md).
 - `settings/features`: Wishlist, Up Next, Tracking, Books, Music
 - `settings/*`: account, tags, display, media refresh, tracker data, shares, export/import
 - about page: build metadata

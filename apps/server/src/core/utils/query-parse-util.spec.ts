@@ -19,6 +19,20 @@ import {
 } from './query-parse-util';
 
 describe('query-parse-util', () => {
+  it.each([
+    { activityYear: '2026' },
+    { activityStatus: 'planned' },
+    { activityYear: '02026', activityStatus: 'completed' },
+    { activityYear: '2026', activityStatus: 'completed', activityMonth: '13' },
+    { activityYear: '2026', activityStatus: 'planned', activityMonth: '2' },
+  ])('rejects invalid activity filters %j', (query) => {
+    expect(isCollectionItemsQueryValid(query)).toBe(false);
+  });
+  it('parses valid activity filters', () => {
+    const query = { activityYear: '2026', activityStatus: 'completed', activityMonth: '12' };
+    expect(isCollectionItemsQueryValid(query)).toBe(true);
+    expect(parseFilters(query)).toMatchObject({ activityYear: 2026, activityStatus: 'completed', activityMonth: 12 });
+  });
   describe('parseList', () => {
     it('returns undefined for non-string non-array values', () => {
       expect(parseList(undefined)).toBeUndefined();

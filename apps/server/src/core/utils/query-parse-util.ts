@@ -30,6 +30,16 @@ const isOptionalMember = (value: unknown, members: readonly string[]): boolean =
 const isOptionalQueryBoolean = (value: unknown): boolean =>
   value === undefined || value === 'true' || value === 'false';
 
+export const isActivityQueryValid = (query: Record<string, unknown>): boolean =>
+  (query.activityYear === undefined ||
+    (typeof query.activityYear === 'string' && /^[1-9]\d{3}$/.test(query.activityYear))) &&
+  isOptionalMember(query.activityStatus, ['planned', 'completed', 'inProgress']) &&
+  (query.activityStatus === undefined) === (query.activityYear === undefined) &&
+  (query.activityMonth === undefined ||
+    (query.activityStatus === 'completed' &&
+      typeof query.activityMonth === 'string' &&
+      /^(?:[1-9]|1[0-2])$/.test(query.activityMonth)));
+
 export const isCanonicalCollectionQueryLimit = (value: unknown): value is string =>
   typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number(value) <= COLLECTION_PAGE_MAX_LIMIT;
 
@@ -43,6 +53,7 @@ export const isCollectionItemsQueryValid = (
   query: Record<string, unknown>
 ): query is Record<string, unknown> & { cursor?: string; limit?: string } =>
   isOptionalString(query.search) &&
+  isActivityQueryValid(query) &&
   isOptionalStringList(query.tags) &&
   isOptionalStringList(query.genres) &&
   isOptionalMember(query.tagMode, ['any', 'all']) &&
@@ -122,6 +133,14 @@ export const parseFilters = (query: Record<string, unknown>): CollectionItemFilt
     listType,
     orderBy: parseOrderBy(query.orderBy),
     orderDirection: parseOrderDirection(query.orderDirection),
+    activityYear: typeof query.activityYear === 'string' ? Number(query.activityYear) : undefined,
+    activityStatus:
+      query.activityStatus === 'planned' ||
+      query.activityStatus === 'completed' ||
+      query.activityStatus === 'inProgress'
+        ? query.activityStatus
+        : undefined,
+    activityMonth: typeof query.activityMonth === 'string' ? Number(query.activityMonth) : undefined,
   };
 };
 

@@ -75,6 +75,14 @@ const insertItem = (
 };
 
 describe('tracking-movie-repository', () => {
+  it.each(['user', 'other'])('copies only the same owner planned year from %s', (sourceOwner) => {
+    insertUser('user');
+    insertUser('other');
+    const itemId = insertItem(sourceOwner, 'tt1234567', []);
+    getDatabase().prepare('UPDATE collection_items SET planned_year = 2026 WHERE id = ?').run(itemId);
+    const copied = copyLibraryMovieToCompleted(getDatabase(), 'user', sourceOwner, 'tt1234567');
+    expect(copied?.plannedYear).toBe(sourceOwner === 'user' ? 2026 : undefined);
+  });
   it('copies an own library movie to tracking', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie', '#action']);

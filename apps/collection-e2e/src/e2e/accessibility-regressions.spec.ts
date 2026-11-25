@@ -356,6 +356,7 @@ test.describe('WCAG regressions', () => {
     });
     const statisticsPage = createStatisticsPage(page);
     await statisticsPage.visit();
+    await statisticsPage.collectionView().click();
     await expect(statisticsPage.getSummary()).toBeVisible();
     const cards = statisticsPage.getSummaryCards();
     expect(await cards.count()).toBeGreaterThan(0);
@@ -363,10 +364,9 @@ test.describe('WCAG regressions', () => {
       const visibleName = (await card.innerText()).replace(/\s+/g, ' ').trim();
       await expect(card).toHaveAccessibleName(visibleName);
     }
-    await statisticsPage.openTagsDetails();
     await expect(statisticsPage.getTag('#accessible')).toBeVisible();
     await statisticsPage.getOverviewChartCard().scrollIntoViewIfNeeded();
-    await expect(statisticsPage.getOverviewCanvas()).toBeVisible();
+    await expect(statisticsPage.getOverviewChartCard()).toContainText('1');
     await settle(statisticsPage.getContent());
     await testInfo.attach('populated-statistics', {
       body: await statisticsPage.getOverviewChartCard().screenshot(),

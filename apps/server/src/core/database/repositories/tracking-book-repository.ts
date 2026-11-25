@@ -75,6 +75,7 @@ export const copyBookRowToCompleted = (
 
   const item = toCompletedBookChange(db, sourceRow);
   if (!item) return null;
+  if (sourceOwnerHash !== usernameHash) delete item.plannedYear;
   const transaction = db.transaction(() => {
     const insertedItem = insertCollectionItem(
       db,

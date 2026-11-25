@@ -1,0 +1,42 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.bars {
+  padding: var(--size-lg);
+  gap: var(--size-md);
+  h3 {
+    margin: 0;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--size-sm);
+  }
+  button,
+  .bar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--size-xs) var(--size-md);
+    width: 100%;
+    text-align: start;
+    overflow-wrap: anywhere;
+  }
+  button[aria-pressed='true'] {
+    border-color: var(--main-color);
+  }
+}
+.bar-track {
+  grid-column: 1 / -1;
+  height: 0.5rem;
+  background: color-mix(in srgb, var(--main-color) 15%, transparent);
+  border-radius: 1rem;
+  overflow: hidden;
+  > span {
+    display: block;
+    height: 100%;
+    background: var(--main-color);
+  }
+}

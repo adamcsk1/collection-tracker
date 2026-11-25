@@ -20,6 +20,11 @@ The API base remains `/api/v1`, but the old endpoint paths were replaced without
 
 Collection pages use signed cursor pagination with a maximum limit of `100` and no exact total. Normal collection queries use SQLite keyset pagination ordered by `createdAt` or `alphabet` plus item `id`. Cursor tokens are HMAC-signed and bound to the viewer, filters, ordering, and matched identities. Matched AI results preserve in-memory rank order and store the last visible rank and item ID as the signed keyset boundary because rank is not a database sort key.
 
+Statistics separates personal My year activity from readable Collection composition, using HTML/CSS bars without Chart.js.
+`GET /collection-items/activity` aggregates optional planned years, saved completion dates and live progress. Collection
+search supports signed activity-year/status/month filters; personal activity excludes other owners. Planned years are
+optional per-list item metadata, retained by export/import. Current progress is not historical. See `docs/statistics.md`.
+
 ## Docker Deployment Environment Variables
 
 Photo batch import uses optional `ollama-vision.config.json` in the active server data folder, separate from text-search

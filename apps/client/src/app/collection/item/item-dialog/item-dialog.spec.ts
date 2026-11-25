@@ -72,6 +72,19 @@ const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): Collecti
 });
 
 describe('ItemDialog', () => {
+  it('edits, validates and clears an optional planned year', async () => {
+    component['onEdit']();
+    const values = component['formModel']();
+    component['formModel'].set({ ...values, plannedYear: 2026 });
+    await fixture.whenStable();
+    expect(component['buildItemFromForm']().plannedYear).toBe(2026);
+    component['formModel'].set({ ...values, plannedYear: 2026.5 });
+    await fixture.whenStable();
+    expect(component['form'].plannedYear?.().invalid()).toBe(true);
+    component['formModel'].set({ ...values, plannedYear: null });
+    await fixture.whenStable();
+    expect(component['buildItemFromForm']().plannedYear).toBeNull();
+  });
   let fixture: ComponentFixture<ItemDialog>;
   let component: ItemDialog;
   let collectionService: {

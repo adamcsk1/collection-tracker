@@ -95,6 +95,14 @@ describe('registered API contract', () => {
     expect(registeredOperations).toEqual(getDocumentedOperations(getOpenApiDocument()));
   });
 
+  it('requires authentication for personal year activity', async () => {
+    registerAllApis(app);
+    await app.ready();
+    const response = await app.inject({ method: 'GET', url: '/api/v1/collection-items/activity?year=2026' });
+    expect(response.statusCode).toBe(401);
+    expect(response.headers['content-type']).toContain('application/problem+json');
+  });
+
   it('parses OpenAPI with resolvable local references and unique operation IDs', () => {
     const document = getOpenApiDocument();
     const operationIds: string[] = [];

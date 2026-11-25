@@ -234,6 +234,7 @@ export const createCollectionPage = (page: Page) => {
       await swipeActiveDialog(viewport.width - 2, viewport.width - 90);
     },
     getItemDialogEditButton: () => getItemDialog().locator('[data-test-id="item-dialog-edit"]'),
+    getItemDialogPlannedYearInput: () => getItemDialog().getByTestId('item-dialog-planned-year').locator('input'),
     getItemDialogMoreButton: () => getItemDialog().getByTestId('item-dialog-more'),
     getItemDialogMoreDialog: () => getItemDialog().getByTestId('item-dialog-more-actions'),
     getItemDialogMoreCloseButton: () => getItemDialog().getByTestId('item-dialog-more-close'),

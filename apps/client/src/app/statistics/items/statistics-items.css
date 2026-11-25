@@ -1,0 +1,23 @@
+section {
+  display: grid;
+  gap: var(--size-md);
+}
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--size-sm);
+}
+li button {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--size-sm);
+  width: 100%;
+  text-align: start;
+  strong {
+    flex: 1 1 60%;
+    overflow-wrap: anywhere;
+  }
+}

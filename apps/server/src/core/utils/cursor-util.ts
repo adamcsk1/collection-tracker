@@ -46,6 +46,9 @@ const normalizeFilters = (filters: CollectionItemFiltersApiModel | undefined): R
   listType: filters?.listType ?? 'library',
   orderBy: filters?.orderBy ?? 'createdAt',
   orderDirection: filters?.orderDirection ?? 'desc',
+  activityYear: filters?.activityYear ?? null,
+  activityStatus: filters?.activityStatus ?? null,
+  activityMonth: filters?.activityMonth ?? null,
 });
 
 export const createCollectionFilterHash = (

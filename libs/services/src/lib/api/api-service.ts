@@ -16,6 +16,8 @@ import {
   CollectionItemSuggestionsApiResponseModel,
   CollectionMatchedItemsApiRequestModel,
   CollectionStatisticsApiResponseModel,
+  CollectionActivityApiModel,
+  CollectionItemTypeFilter,
   CreateAccessTokenApiResponseModel,
   CreateApiResponseModel,
   GenreSuggestionsApiResponseModel,
@@ -278,6 +280,12 @@ export class ApiService extends BaseApiService {
     filters: Pick<CollectionItemFiltersApiModel, 'type'> = {}
   ): Observable<CollectionStatisticsApiResponseModel> {
     return this.request('GET', `/collection-items/statistics${this.buildQuery({ ...filters })}`);
+  }
+
+  public getCollectionActivity(year: number, type?: CollectionItemTypeFilter): Observable<CollectionActivityApiModel> {
+    return this.request('GET', `/collection-items/activity${this.buildQuery({ year, type })}`, undefined, {
+      suppressErrorAlert: true,
+    });
   }
 
   public create(

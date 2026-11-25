@@ -38,6 +38,9 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     typeof item?.plot !== 'string' ||
     (contentType !== 'movie' && contentType !== 'series' && contentType !== 'book' && contentType !== 'album') ||
     typeof favorite !== 'boolean' ||
+    (item.plannedYear !== undefined &&
+      item.plannedYear !== null &&
+      (!Number.isInteger(item.plannedYear) || item.plannedYear < 1000 || item.plannedYear > 9999)) ||
     !Array.isArray(item?.genre) ||
     !Array.isArray(item?.tags) ||
     (typeof year !== 'number' && typeof year !== 'string' && year !== null) ||
@@ -105,6 +108,7 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     externalIds: externalIds.length > 0 ? externalIds : undefined,
     tags: rawTags,
     year: normalizeYear(year),
+    ...(item.plannedYear === undefined ? {} : { plannedYear: item.plannedYear }),
     rate: item.rate.trim(),
     rottenTomatoesRate: item.rottenTomatoesRate.trim(),
     metacriticRate: item.metacriticRate.trim(),

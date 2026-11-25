@@ -421,6 +421,29 @@ const insertUser = (usernameHash = 'user') => {
 };
 
 describe('import-api', () => {
+  it('retains planned years during full import and rejects invalid years before deleting data', async () => {
+    insertUser();
+    const app = buildRouteApp();
+    const { register } = await import('./import-api');
+    register(app);
+    const response = mockResponse();
+    await getPostHandler(app, IMPORT_PATH)!(
+      { usernameHash: 'user', body: { ...buildImportBody(), collectionItems: [{ ...item, plannedYear: 2026 }] } },
+      response
+    );
+    expect(
+      getDatabase().prepare('SELECT planned_year FROM collection_items WHERE username_hash = ?').get('user')
+    ).toEqual({ planned_year: 2026 });
+    const invalidResponse = mockResponse();
+    await getPostHandler(app, IMPORT_PATH)!(
+      { usernameHash: 'user', body: { ...buildImportBody(), collectionItems: [{ ...item, plannedYear: 2026.5 }] } },
+      invalidResponse
+    );
+    expect(invalidResponse.code).toHaveBeenCalledWith(400);
+    expect(
+      getDatabase().prepare('SELECT planned_year FROM collection_items WHERE username_hash = ?').get('user')
+    ).toEqual({ planned_year: 2026 });
+  });
   afterEach(() => {
     delete process.env.OMDB_API_KEY;
     vi.unstubAllGlobals();

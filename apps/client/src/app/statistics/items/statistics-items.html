@@ -1,0 +1,40 @@
+<section
+  data-test-id="statistics-items"
+  [attr.aria-label]="title()"
+  [attr.aria-busy]="store.state.status() === 'pending'"
+>
+  <h3 data-test-id="statistics-items-heading" tabindex="-1">{{ title() }}</h3>
+  <ul>
+    @for (
+      item of store.state.items();
+      track item.ownerShareCode + item.listType + item.externalProvider + item.externalItemId
+    ) {
+      <li>
+        <button type="button" data-test-id="statistics-item" (click)="open(item)">
+          <strong>{{ item.title }}</strong
+          ><span>{{ translations.media()[item.contentType] }}</span>
+          @if (item.watchedAt) {
+            <time [attr.datetime]="item.watchedAt">{{ item.watchedAt.slice(0, 10) | date: 'mediumDate' }}</time>
+          } @else if (item.progressCurrent !== null && item.progressCurrent !== undefined) {
+            <span
+              >{{ item.progressCurrent }}
+              @if (item.progressTotal !== null && item.progressTotal !== undefined) {
+                / {{ item.progressTotal }}
+              }
+            </span>
+          }
+        </button>
+      </li>
+    }
+  </ul>
+  @if (store.state.status() === 'pending') {
+    <p role="status">{{ translations.loading() }}</p>
+  } @else if (store.state.status() === 'error') {
+    <p role="alert">{{ translations.error() }}</p>
+    <button type="button" data-test-id="statistics-items-retry" (click)="retry()">{{ translations.retry() }}</button>
+  } @else if (store.state.items().length === 0) {
+    <p data-test-id="statistics-empty">{{ translations.empty() }}</p>
+  } @else if (store.state.nextCursor()) {
+    <button type="button" data-test-id="statistics-load-more" (click)="more()">{{ translations.more() }}</button>
+  }
+</section>

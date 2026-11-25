@@ -347,6 +347,11 @@ export const buildItemWhere = (
   matchedIdentities?: ExternalItemIdentityModel[],
   matchedCanonicalItemRanks?: CanonicalItemRank[]
 ): QueryParts => {
+  if (filters?.activityStatus && filters.activityYear !== undefined) {
+    const activity = buildActivityWhere(viewerUsernameHash, filters);
+    addMatchedIdentityFilter(activity, matchedIdentities, matchedCanonicalItemRanks);
+    return activity;
+  }
   const ownership = buildReadableItemScope(viewerUsernameHash, filters);
   const queryParts: QueryParts = {
     where: [...ownership.where],
@@ -355,5 +360,56 @@ export const buildItemWhere = (
   addFilters(queryParts, filters, viewerUsernameHash);
   addMatchedIdentityFilter(queryParts, matchedIdentities, matchedCanonicalItemRanks);
 
+  return queryParts;
+};
+
+export const buildActivityWhere = (viewerUsernameHash: string, filters: CollectionItemFiltersApiModel): QueryParts => {
+  const queryParts: QueryParts = {
+    where: ['collection_items.username_hash = ?'],
+    params: [viewerUsernameHash],
+  };
+  if (filters.type) {
+    queryParts.where.push('collection_items.content_type = ?');
+    queryParts.params.push(filters.type);
+  }
+  if (filters.activityStatus === 'planned') {
+    queryParts.where.push('collection_items.planned_year = ?');
+    queryParts.params.push(filters.activityYear!);
+    addFilters(queryParts, filters, viewerUsernameHash);
+    const earlierWhere = queryParts.where.join(' AND ').replaceAll('collection_items.', 'earlier_plan.');
+    const earlierParams = [...queryParts.params];
+    queryParts.where.push(`NOT EXISTS (
+      SELECT 1 FROM collection_items earlier_plan
+      WHERE ${earlierWhere}
+        AND earlier_plan.content_type = collection_items.content_type
+        AND earlier_plan.planned_year = collection_items.planned_year
+        AND ${canonicalOrExactIdentityMatch('earlier_plan')}
+        AND earlier_plan.id < collection_items.id
+    )`);
+    queryParts.params.push(...earlierParams);
+  } else {
+    queryParts.where.push("collection_items.list_type = 'tracking'");
+    if (filters.activityStatus === 'inProgress') {
+      queryParts.where.push(`EXISTS (
+        SELECT 1 FROM collection_item_tracker_state activity_state
+        WHERE activity_state.item_id = collection_items.id AND activity_state.completed_at IS NULL
+          AND (collection_items.content_type = 'series' OR COALESCE(activity_state.progress_current, 0) > 0)
+      )`);
+    } else {
+      const year = filters.activityYear!;
+      const month = filters.activityMonth;
+      const start = month === undefined ? `${year}-01-01` : `${year}-${`${month}`.padStart(2, '0')}-01`;
+      // A lexical year-end boundary also supports year 9999 without constructing a five-digit year.
+      const end =
+        month === undefined || month === 12 ? `${year}-12-32` : `${year}-${`${month + 1}`.padStart(2, '0')}-01`;
+      queryParts.where.push(`EXISTS (
+        SELECT 1 FROM collection_item_tracker_state activity_state
+        WHERE activity_state.item_id = collection_items.id
+          AND activity_state.completed_at >= ? AND activity_state.completed_at < ?
+      )`);
+      queryParts.params.push(start, end);
+    }
+  }
+  if (filters.activityStatus !== 'planned') addFilters(queryParts, filters, viewerUsernameHash);
   return queryParts;
 };

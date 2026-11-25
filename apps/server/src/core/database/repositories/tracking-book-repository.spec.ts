@@ -65,6 +65,21 @@ const insertBookItem = (
 };
 
 describe('tracking-book-repository', () => {
+  it.each(['user', 'other'])('copies only the same owner planned year from %s', (sourceOwner) => {
+    insertUser('user');
+    insertUser('other');
+    const itemId = insertBookItem(sourceOwner, '9780132350884');
+    getDatabase().prepare('UPDATE collection_items SET planned_year = 2026 WHERE id = ?').run(itemId);
+    const copied = copyBookToCompletedByExternalId(
+      getDatabase(),
+      'user',
+      sourceOwner,
+      'openlibrary',
+      '9780132350884',
+      'books'
+    );
+    expect(copied?.plannedYear).toBe(sourceOwner === 'user' ? 2026 : undefined);
+  });
   it('markAllBooksAsCompleted copies uncompleted library books to tracker', () => {
     insertUser('user');
     insertBookItem('user', '9780132350884', ['#book']);

@@ -57,6 +57,14 @@ const insertAlbumItem = (
 };
 
 describe('tracking-music-repository', () => {
+  it.each(['user', 'other'])('copies only the same owner planned year from %s', (sourceOwner) => {
+    insertUser('user');
+    insertUser('other');
+    const itemId = insertAlbumItem(sourceOwner, mbid);
+    getDatabase().prepare('UPDATE collection_items SET planned_year = 2026 WHERE id = ?').run(itemId);
+    const copied = copyAlbumToTrackingByExternalId(getDatabase(), 'user', sourceOwner, 'musicbrainz', mbid, 'music');
+    expect(copied?.plannedYear).toBe(sourceOwner === 'user' ? 2026 : undefined);
+  });
   it('markAllMusicAsCompleted copies uncompleted music list albums to tracker', () => {
     insertUser('user');
     insertAlbumItem('user', mbid);

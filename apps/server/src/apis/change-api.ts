@@ -119,8 +119,12 @@ export const register = (app: FastifyInstance): void => {
         return response.code(409).send();
       }
 
-      const newHash = getItemHash(item);
-      let updatedItem = updateCollectionItemByRow(db, ownerHash, existingItem, newHash, item, listType);
+      const itemWithPlan =
+        item.plannedYear === undefined && existingItem.planned_year != null
+          ? normalizeItem({ ...item, plannedYear: existingItem.planned_year })!
+          : item;
+      const newHash = getItemHash(itemWithPlan);
+      let updatedItem = updateCollectionItemByRow(db, ownerHash, existingItem, newHash, itemWithPlan, listType);
       if (listType === 'tracking' && item.contentType === 'series') {
         updatedItem =
           syncTrackingCompletedTagByExternalId(db, ownerHash, item.externalProvider, item.externalItemId) ??

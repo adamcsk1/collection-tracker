@@ -399,6 +399,7 @@ const toCollectionItemChange = (item: ImportedCollectionItemApiModel): Collectio
   externalIds: item.externalIds,
   tags: item.tags,
   year: item.year,
+  ...(item.plannedYear === undefined ? {} : { plannedYear: item.plannedYear }),
   rate: item.rate,
   rottenTomatoesRate: item.rottenTomatoesRate,
   metacriticRate: item.metacriticRate,

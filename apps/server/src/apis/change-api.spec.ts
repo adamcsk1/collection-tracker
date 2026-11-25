@@ -74,6 +74,30 @@ const updatedItem: CollectionItemChangeApiModel = {
 const updatedItemHash = getItemHash(normalizeItem(updatedItem)!);
 
 describe('change-api', () => {
+  it('includes a preserved planned year in the concurrency hash when an update omits it', async () => {
+    const legacyHash = getItemHash(normalizeItem(updatedItem)!);
+    const plannedHash = getItemHash(normalizeItem({ ...updatedItem, plannedYear: 2026 })!);
+    insertItem(plannedHash);
+    getDatabase().prepare('UPDATE collection_items SET planned_year = 2026').run();
+    const { register } = await import('./change-api');
+    const response = mockResponse();
+    const request = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
+      usernameHash: 'user',
+      body: { ...updatedItem, hash: plannedHash },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    register(app);
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ plannedYear: 2026, hash: plannedHash }),
+    });
+    const staleResponse = mockResponse();
+    const stale = buildApp({ ...request, body: { ...updatedItem, hash: legacyHash } }, staleResponse);
+    register(stale.app);
+    await stale.handlerPromise();
+    expect(staleResponse.code).toHaveBeenCalledWith(409);
+  });
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
