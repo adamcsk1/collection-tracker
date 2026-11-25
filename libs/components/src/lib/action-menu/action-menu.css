@@ -113,7 +113,7 @@ button.quick-action {
     padding-bottom: max(var(--size-md), env(safe-area-inset-bottom));
     border: none;
     border-radius: var(--mobile-top-border-radius, 1rem) var(--mobile-top-border-radius, 1rem) 0 0;
-    background: var(--glassy-background);
+    background: var(--background-color-alt);
     animation: actions-sheet-enter 200ms ease-out;
 
     &::backdrop {

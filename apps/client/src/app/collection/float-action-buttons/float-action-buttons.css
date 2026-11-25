@@ -57,7 +57,7 @@
   align-items: stretch;
   gap: var(--size-xs);
   flex-shrink: 0;
-  background-color: var(--glassy-background);
+  background-color: var(--background-color-alt);
   padding: var(--size-sm);
   border-radius: var(--border-radius);
 }

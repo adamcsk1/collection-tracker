@@ -4,7 +4,7 @@
 }
 
 .collection-container {
-  background-color: var(--glassy-background);
+  background-color: var(--background-color-alt);
   margin: 0 auto;
   z-index: 1;
   display: block;

@@ -1,6 +1,6 @@
 .page {
   display: flex;
-  background-color: var(--glassy-background);
+  background-color: var(--background-color-alt);
   border-radius: var(--border-radius);
   max-width: var(--container-max-width);
   margin: 0 auto;

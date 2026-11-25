@@ -130,6 +130,26 @@ test.describe('WCAG regressions', () => {
   }
 
   for (const theme of ['light', 'dark'] as const) {
+    test(`content surfaces stay opaque in ${theme}`, async ({ page, autoLoginWithNewUser, api }) => {
+      await autoLoginWithNewUser();
+      expect((await api.request('POST', '/api/v1/users/me/settings', { theme })).status()).toBe(200);
+      const collection = createCollectionPage(page);
+      await collection.visit();
+      await expect(page.locator('html')).toHaveClass(new RegExp(theme));
+      const surfaceColor = theme === 'dark' ? 'rgb(22, 38, 48)' : 'rgb(233, 226, 211)';
+      expect(
+        await collection
+          .getList()
+          .evaluate((element) => getComputedStyle(element.closest('.collection-container')!).backgroundColor)
+      ).toBe(surfaceColor);
+      await collection.getAddNewButton().click();
+      await expect(page.getByTestId('dialog-frame')).toHaveCSS('background-color', surfaceColor);
+      await page.keyboard.press('Escape');
+      const statistics = createStatisticsPage(page);
+      await statistics.visit();
+      await expect(statistics.getContent().locator('..')).toHaveCSS('background-color', surfaceColor);
+    });
+
     test(`selected movie chip retains a rendered 3:1 state contrast after blur in ${theme}`, async ({
       page,
       autoLogin,

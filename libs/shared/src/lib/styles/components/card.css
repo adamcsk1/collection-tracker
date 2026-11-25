@@ -24,7 +24,7 @@
   padding: var(--size-xs) var(--size-sm);
   font-size: var(--font-size-base);
   color: var(--main-color);
-  background-color: var(--glassy-background);
+  background-color: var(--background-color-alt);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
