@@ -2,6 +2,12 @@ import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { infoLog } from '../logger';
+
+vi.mock('../logger', () => ({
+  debugLog: vi.fn().mockResolvedValue(undefined),
+  infoLog: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('ollama config', () => {
   let dataFolder: string | null = null;
@@ -262,6 +268,9 @@ describe('ollama config', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(validateOllamaConnection()).resolves.toBeUndefined();
+    expect(infoLog).toHaveBeenCalledWith(
+      'Ollama connected at http://127.0.0.1:11434 with model qwen2.5 and embedding model mxbai-embed-large'
+    );
   });
 
   it('does not match a different tag when the configured model has an explicit tag', async () => {
