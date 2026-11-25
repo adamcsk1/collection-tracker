@@ -44,6 +44,13 @@ npm run playwright:ui
 
 ## Operational Notes
 
+- CI builds the apps and both Docker images once, then transfers the compressed images through a one-day Actions
+  artifact. Each browser runs one accessibility job and two functional shards, with a separate seeded database and
+  containers per job. Tests remain serial within each job; local commands are unchanged. The accessibility selection
+  includes all `accessibility*.spec.ts` files and the health diagnostics contrast test; functional shards run the
+  complementary selection. Result artifacts include the browser and suite name. Increase the functional matrix entries
+  and their `shard` denominators together if more parallelism is needed. Image transfer and runner availability affect
+  the actual speedup.
 - Firefox temporarily uses build 1578 from the exact `playwright-firefox-patched` package alias, while the test runner
   and Chromium stay on their existing versions. This build fixes the cross-world ARIA reflection crash tracked in
   [Playwright #43967](https://github.com/microsoft/playwright/issues/43967) and

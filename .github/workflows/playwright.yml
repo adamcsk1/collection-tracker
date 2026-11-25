@@ -10,19 +10,14 @@ concurrency:
   group: playwright-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  ACCESSIBILITY_TESTS: 'accessibility[^ ]*\.spec\.ts|diagnostics contrast meets WCAG'
+
 jobs:
-  playwright:
-    name: Playwright (${{ matrix.browser }})
+  prepare:
+    name: Build Playwright images
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - browser: chromium
-            script: chrome
-          - browser: firefox
-            script: firefox
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +29,58 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build apps and Docker images
+        run: |
+          npm run build
+          bash apps/collection-e2e/scripts/build.sh collection-tracker-playwright
+
+      - name: Export Docker images
+        shell: bash
+        run: |
+          docker save collection-tracker-playwright collection-tracker-playwright-metadata | gzip -1 > "$RUNNER_TEMP/playwright-images.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playwright-images
+          path: ${{ runner.temp }}/playwright-images.tar.gz
+          compression-level: 0
+          retention-days: 1
+
+  playwright:
+    name: Playwright (${{ matrix.browser }}, ${{ matrix.suite.name }})
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+        suite:
+          - name: accessibility
+            shard: ''
+          - name: functional-1
+            shard: '1/2'
+          - name: functional-2
+            shard: '2/2'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: playwright-images
+          path: ${{ runner.temp }}
+
+      - name: Load Docker images
+        run: docker load --input "$RUNNER_TEMP/playwright-images.tar.gz"
+
       - name: Install Playwright browser
         run: |
           if [ "${{ matrix.browser }}" = "firefox" ]; then
@@ -42,8 +89,28 @@ jobs:
             npx playwright install --with-deps chromium
           fi
 
-      - name: Run Playwright and axe (${{ matrix.browser }})
-        run: npm run playwright:${{ matrix.script }}
+      - name: Seed and start isolated test instance
+        run: |
+          DATA_DIR="$PWD/apps/collection-e2e/env"
+          docker run --rm --entrypoint "" --user root \
+            -v "$DATA_DIR:/data" \
+            -v "$PWD/apps/collection-e2e/scripts/seed-e2e-db.js:/seed.js:ro" \
+            -v "$PWD/apps/server/src/migrations:/app/server/migrations:ro" \
+            collection-tracker-playwright \
+            bash -c "rm -rf /data/database && mkdir -p /data/database && DATA_DIR=/data NODE_PATH=/app/server/node_modules node /seed.js"
+          bash apps/collection-e2e/scripts/start.sh "$DATA_DIR" collection-tracker-playwright 2999
+
+      - name: Run Playwright and axe (${{ matrix.browser }}, ${{ matrix.suite.name }})
+        env:
+          BROWSER: ${{ matrix.browser }}
+          SUITE: ${{ matrix.suite.name }}
+          SHARD: ${{ matrix.suite.shard }}
+        run: |
+          if [ "$SUITE" = "accessibility" ]; then
+            npx playwright test --config apps/collection-e2e/playwright.config.ts --project="$BROWSER" --grep "$ACCESSIBILITY_TESTS"
+          else
+            npx playwright test --config apps/collection-e2e/playwright.config.ts --project="$BROWSER" --grep-invert "$ACCESSIBILITY_TESTS" --shard="$SHARD"
+          fi
 
       - name: Stop Playwright container
         if: always()
@@ -53,6 +120,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-results-${{ matrix.browser }}
+          name: playwright-results-${{ matrix.browser }}-${{ matrix.suite.name }}
           path: apps/collection-e2e/playwright-results
           if-no-files-found: ignore
