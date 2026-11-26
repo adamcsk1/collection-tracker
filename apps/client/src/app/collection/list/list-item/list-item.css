@@ -1,3 +1,5 @@
 :host {
   cursor: pointer;
+  background-color: color-mix(in srgb, var(--background-color-alt) 92%, white);
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, var(--background-color-alt));
 }

@@ -150,6 +150,46 @@ test.describe('WCAG regressions', () => {
       await expect(statistics.getContent().locator('..')).toHaveCSS('background-color', surfaceColor);
     });
 
+    test(`collection cards retain distinct surfaces and borders in ${theme}`, async ({
+      page,
+      autoLogin,
+      api,
+    }, testInfo) => {
+      await autoLogin();
+      expect((await api.request('POST', '/api/v1/users/me/settings', { theme })).status()).toBe(200);
+      expect(
+        (await api.request('POST', '/api/v1/collection-items', buildCollectionItem('Visible card boundary'))).status()
+      ).toBe(200);
+      const collection = createCollectionPage(page);
+      await collection.visit();
+      await expect(page.locator('html')).toHaveClass(new RegExp(theme));
+      const title = collection.getListItemByTitle('Visible card boundary');
+      await expect(title).toBeVisible();
+      for (const width of [320, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const surface = await title.evaluate((element) => {
+          const card = element.closest('[role="listitem"]')!;
+          const style = getComputedStyle(card);
+          return {
+            background: style.backgroundColor,
+            pageBackground: getComputedStyle(card.closest('.collection-container')!).backgroundColor,
+            borderColor: style.borderTopColor,
+            borderWidth: style.borderTopWidth,
+            borderStyle: style.borderTopStyle,
+            fits: card.getBoundingClientRect().right <= innerWidth,
+          };
+        });
+        expect(surface.background).not.toBe(surface.pageBackground);
+        expect(surface.background).not.toBe('rgba(0, 0, 0, 0)');
+        expect(surface.borderColor).not.toBe(surface.background);
+        expect(surface.borderColor).not.toBe('rgba(0, 0, 0, 0)');
+        expect(surface.borderWidth).toBe('1px');
+        expect(surface.borderStyle).toBe('solid');
+        expect(surface.fits).toBe(true);
+        await scan(page, testInfo, `card-boundary-${theme}-${width}`);
+      }
+    });
+
     test(`selected movie chip retains a rendered 3:1 state contrast after blur in ${theme}`, async ({
       page,
       autoLogin,
