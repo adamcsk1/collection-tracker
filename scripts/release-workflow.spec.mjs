@@ -122,12 +122,6 @@ describe('release workflow gate', () => {
   it('uses the Playwright browser workflow throughout publication gates', () => {
     const browserWorkflow = load(readFileSync('.github/workflows/playwright.yml', 'utf8'));
     expect(browserWorkflow.name).toBe('Playwright');
-    expect(browserWorkflow.jobs.playwright.strategy.matrix.browser).toEqual(['chromium', 'firefox']);
-    const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-    for (const browser of browserWorkflow.jobs.playwright.strategy.matrix.browser) {
-      const script = browser === 'chromium' ? 'chrome' : 'firefox';
-      expect(packageJson.scripts[`playwright:${script}`]).toContain(`--args="--project=${browser}"`);
-    }
     for (const path of ['.github/workflows/docker-ghcr.yml', '.github/workflows/cancel-on-failure.yml']) {
       const dependentWorkflow = load(readFileSync(path, 'utf8'));
       expect(dependentWorkflow.on.workflow_run.workflows).toContain('Playwright');

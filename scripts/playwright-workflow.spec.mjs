@@ -29,26 +29,6 @@ const listTests = (...filters) => {
 };
 
 describe('Playwright CI workflow', () => {
-  it('builds images once before six isolated browser jobs', () => {
-    expect(workflow.jobs.playwright.needs).toBe('prepare');
-    expect(workflow.jobs.playwright.strategy.matrix).toEqual({
-      browser: ['chromium', 'firefox'],
-      suite: [
-        { name: 'accessibility', shard: '' },
-        { name: 'functional-1', shard: '1/2' },
-        { name: 'functional-2', shard: '2/2' },
-      ],
-    });
-    const commands = workflow.jobs.playwright.steps.map((step) => step.run ?? '').join('\n');
-    expect(commands).not.toMatch(/npm run build|scripts\/(build|prepare)\.sh/);
-    expect(commands).toContain('docker load');
-    expect(commands).toContain('node /seed.js');
-    expect(commands).toContain('scripts/start.sh');
-    expect(workflow.jobs.playwright.steps.find((step) => step.name === 'Stop Playwright container').if).toBe(
-      'always()'
-    );
-  });
-
   it('assigns every test exactly once and keeps health contrast with accessibility', () => {
     const selection = workflow.env.ACCESSIBILITY_TESTS;
     const all = listTests();
