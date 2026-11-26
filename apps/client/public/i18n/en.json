@@ -146,6 +146,8 @@
   "Favorite": "Favorite",
   "Favorites": "Favorites",
   "Features": "Features",
+  "Filter.Media": "Media: {media}",
+  "Filter.Remove": "Remove filter: {filter}",
   "Filtering": "Filtering",
   "FiltersAndSort": "Filters and sort",
   "FilterSharedMine": "Mine only",

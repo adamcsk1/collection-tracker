@@ -14,7 +14,7 @@ import {
   CollectionItemFiltersApiModel,
   CollectionItemsPageModel,
 } from '@shared/models/api-model';
-import { provideSignalTranslateConfig } from 'ngx-signal-translate';
+import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { BehaviorSubject, Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -161,6 +161,68 @@ describe('List', () => {
     component['onRemoveFilter']('album');
     expect(focusSearch).toHaveBeenCalledOnce();
     expect(router.navigate).toHaveBeenCalledWith([], { queryParams: { type: null }, queryParamsHandling: 'merge' });
+  });
+
+  it.each([
+    ['movie', 'Movies'],
+    ['series', 'Series'],
+    ['book', 'Books'],
+    ['album', 'Music'],
+  ])('labels %s as a media filter with an explicit removal action', (type, label) => {
+    vi.spyOn(TestBed.inject(NgxSignalTranslateService), 'translate').mockImplementation((key, params) => {
+      if (key === 'Filter.Media') return `Media: ${params?.['media']}`;
+      if (key === 'Filter.Remove') return `Remove filter: ${params?.['filter']}`;
+      return key;
+    });
+    fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ type, favorite: true }));
+    expect(component['activeFilters']()).toEqual([
+      { value: type, label: `Media: ${label}`, removeLabel: `Remove filter: Media: ${label}` },
+      { value: 'favorite', label: 'Favorites', removeLabel: 'Remove filter: Favorites' },
+    ]);
+  });
+
+  it('renders filter context and removal names, and removes only the clicked filter', async () => {
+    vi.spyOn(TestBed.inject(NgxSignalTranslateService), 'translate').mockImplementation((key, params) => {
+      if (key === 'ActiveFilters') return 'Active filters';
+      if (key === 'Filter.Media') return `Media: ${params?.['media']}`;
+      if (key === 'Filter.Remove') return `Remove filter: ${params?.['filter']}`;
+      return key;
+    });
+    fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ type: 'album', favorite: true }));
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('[data-test-id="collection-active-filters-label"]')?.textContent).toBe(
+      'Active filters:'
+    );
+    const music = element.querySelector<HTMLButtonElement>('[data-test-id="active-filter-album"]')!;
+    expect(music.textContent?.trim()).toBe('Media: Music ×');
+    expect(music.getAttribute('aria-label')).toBe('Remove filter: Media: Music');
+    expect(music.title).toBe('Remove filter: Media: Music');
+    expect(music.hasAttribute('aria-pressed')).toBe(false);
+    music.click();
+    expect(router.navigate).toHaveBeenCalledWith([], { queryParams: { type: null }, queryParamsHandling: 'merge' });
+  });
+
+  it.each([
+    { name: 'no filters', filters: {}, search: '', ai: '', visible: false },
+    { name: 'one chip', filters: { type: 'album' }, search: '', ai: '', visible: false },
+    { name: 'one chip and whitespace', filters: { type: 'album' }, search: '  ', ai: '', visible: false },
+    { name: 'two chips', filters: { type: 'album', favorite: true }, search: '', ai: '', visible: true },
+    { name: 'one chip and text search', filters: { type: 'album' }, search: 'Calm', ai: '', visible: true },
+    { name: 'text search alone', filters: {}, search: 'Calm', ai: '', visible: true },
+    { name: 'AI search alone', filters: {}, search: '', ai: 'Calm music', visible: true },
+  ])('shows clear filters only when useful: $name', async ({ filters, search, ai, visible }) => {
+    if (Object.keys(filters).length) {
+      fixture.componentRef.setInput('routeFilterKey', JSON.stringify(filters));
+    }
+    collectionState.setState('searchText', search);
+    collectionState.setState('aiSearchPromptText', ai);
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    expect(!!element.querySelector('[data-test-id="collection-clear-filters"]')).toBe(visible);
+    if ('type' in filters) {
+      expect(element.querySelector('[data-test-id="active-filter-album"]')).not.toBeNull();
+    }
   });
 
   it('fires only one initial items request on creation', async () => {

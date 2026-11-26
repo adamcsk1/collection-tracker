@@ -15,20 +15,23 @@
       data-test-id="collection-active-filters"
       [attr.aria-label]="translations.activeFilters()"
     >
+      <span data-test-id="collection-active-filters-label">{{ translations.activeFilters() }}:</span>
       @for (filter of activeFilters(); track filter.value) {
         <button
           type="button"
           [attr.data-test-id]="'active-filter-' + filter.value"
-          [attr.aria-label]="filter.label"
-          aria-pressed="true"
+          [attr.aria-label]="filter.removeLabel"
+          [title]="filter.removeLabel"
           (click)="onRemoveFilter(filter.value)"
         >
           {{ filter.label }} <span aria-hidden="true">×</span>
         </button>
       }
-      <button type="button" data-test-id="collection-clear-filters" (click)="onClearFilters()">
-        {{ translations.clearFilters() }}
-      </button>
+      @if (showClearFilters()) {
+        <button type="button" data-test-id="collection-clear-filters" (click)="onClearFilters()">
+          {{ translations.clearFilters() }}
+        </button>
+      }
     </section>
   }
   @if ((!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') && visibleCollection().length === 0) {

@@ -129,10 +129,23 @@ export class List implements OnDestroy {
         (filter) =>
           !(this.listType() === 'books' && filter === 'book') && !(this.listType() === 'music' && filter === 'album')
       )
-      .map((filter) => ({ value: filter, label: this.ngxSignalTranslate.translate(keys[filter]) }));
+      .map((filter) => {
+        const valueLabel = this.ngxSignalTranslate.translate(keys[filter]);
+        const label = ['movie', 'series', 'book', 'album'].includes(filter)
+          ? this.ngxSignalTranslate.translate('Filter.Media', { media: valueLabel })
+          : valueLabel;
+        return {
+          value: filter,
+          label,
+          removeLabel: this.ngxSignalTranslate.translate('Filter.Remove', { filter: label }),
+        };
+      });
   });
   protected readonly hasActiveFilters = computed(
     () => this.activeFilters().length > 0 || !!this.collectionState.state.searchText().trim() || this.aiFilterActive()
+  );
+  protected readonly showClearFilters = computed(
+    () => this.activeFilters().length > 1 || !!this.collectionState.state.searchText().trim() || this.aiFilterActive()
   );
   protected readonly collectionLength = signal(0);
   protected readonly emptySearchResult = signal(false);
