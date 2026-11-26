@@ -1,4 +1,5 @@
 import java.time.Instant
+import org.gradle.api.tasks.testing.Test
 
 plugins {
   id("com.android.application")
@@ -79,13 +80,18 @@ android {
   }
 }
 
+tasks.withType<Test>().configureEach {
+  // Robolectric's native runtime requires explicit JNI access on recent JDKs.
+  jvmArgs("--enable-native-access=ALL-UNNAMED")
+}
+
 dependencies {
-  implementation("androidx.core:core-ktx:1.19.0")
+  implementation("androidx.core:core-ktx:1.19.1")
   implementation("androidx.appcompat:appcompat:1.8.0")
   implementation("com.google.android.material:material:1.14.0")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.2.21")
-  testImplementation("org.json:json:20250517")
-  testImplementation("org.robolectric:robolectric:4.16.1")
+  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.4.21")
+  testImplementation("org.json:json:20260814")
+  testImplementation("org.robolectric:robolectric:4.18.1")
   androidTestImplementation("androidx.test:runner:1.7.0")
   androidTestImplementation("junit:junit:4.13.2")
 }
