@@ -1,6 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
 import { buildCollectionItem } from '../fixtures/collection-item';
+import { buildMusicItem } from '../fixtures/musicbrainz';
+import { buildBooksItem } from '../fixtures/openlibrary';
 import { createExportImportPage } from '../page-objects/export-import.po';
 import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { expect, test } from '../support/test';
@@ -108,11 +110,38 @@ test.describe('Export/Import — tag management export and import', () => {
 test.describe('Export/Import — collection data export', () => {
   const seriesImdbId = 'tt8400001';
   const watchedImdbId = 'tt8400002';
+  const plannedYear = new Date().getFullYear() + 1;
+  const discoveryItems = [
+    {
+      ...buildBooksItem('Export Work Book'),
+      externalItemId: 'OL123W',
+      externalIds: [
+        { source: 'openlibrary', id: 'OL123W' },
+        { source: 'isbn', id: '9780306406157' },
+      ],
+      plannedYear,
+    },
+    {
+      ...buildMusicItem('Export Release Group Album'),
+      externalItemId: 'release-group:a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      externalIds: [
+        { source: 'musicbrainz', id: 'release-group:a1b2c3d4-e5f6-7890-abcd-ef1234567890' },
+        { source: 'musicbrainz', id: 'f509c5ff-ad54-4dde-b61e-24f750965835' },
+      ],
+      plannedYear,
+    },
+  ];
 
   test.beforeEach(async ({ api, autoLogin }) => {
     await autoLogin();
     await api.request('POST', '/api/v1/users/me/tags', []);
-    await api.request('POST', '/api/v1/collection-items', buildCollectionItem('Export Movie', 'movie'));
+    await api.request('POST', '/api/v1/collection-items', {
+      ...buildCollectionItem('Export Movie', 'movie'),
+      plannedYear,
+    });
+    for (const item of discoveryItems) {
+      expect((await api.request('POST', '/api/v1/collection-items', item)).status()).toBe(200);
+    }
     await api.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Export Series', 'series', seriesImdbId),
       listType: 'tracking',
@@ -147,6 +176,22 @@ test.describe('Export/Import — collection data export', () => {
     expect(Array.isArray(parsed.collectionItems)).toBe(true);
     expect(parsed.collectionItems.length).toBeGreaterThan(0);
     expect(Array.isArray(parsed.tagManagement)).toBe(true);
+    expect(parsed.collectionItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'Export Movie', plannedYear }),
+        ...discoveryItems.map((item) =>
+          expect.objectContaining({
+            title: item.title,
+            externalProvider: item.externalProvider,
+            externalItemId: item.externalItemId,
+            canonicalItemId: `${item.externalProvider}:${item.externalItemId}`,
+            externalIds: expect.arrayContaining(item.externalIds),
+            listType: item.listType,
+            plannedYear,
+          })
+        ),
+      ])
+    );
     expect(parsed.trackingData[`omdb/${seriesImdbId}`]).toEqual({
       seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
       completedEpisodes: [{ season: 1, episode: 1 }],
@@ -194,6 +239,21 @@ test.describe('Export/Import — collection data export', () => {
     const libraryTitles = libraryBody.data.map((collectionItem) => collectionItem.title);
     expect(libraryTitles).toContain('Export Movie');
     expect(libraryTitles).not.toContain('Imported State Should Remove This');
+    expect(libraryBody.data).toContainEqual(expect.objectContaining({ title: 'Export Movie', plannedYear }));
+    for (const item of discoveryItems) {
+      const response = await api.request('GET', `/api/v1/collection-items?limit=100&listType=${item.listType}`);
+      const body = (await response.json()) as { data: unknown[] };
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toMatchObject({
+        title: item.title,
+        externalProvider: item.externalProvider,
+        externalItemId: item.externalItemId,
+        canonicalItemId: `${item.externalProvider}:${item.externalItemId}`,
+        externalIds: expect.arrayContaining(item.externalIds),
+        listType: item.listType,
+        plannedYear,
+      });
+    }
 
     const completedEpisodesResponse = await api.request(
       'GET',

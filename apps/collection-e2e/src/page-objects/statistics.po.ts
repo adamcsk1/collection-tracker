@@ -23,6 +23,7 @@ export const createStatisticsPage = (page: Page) => ({
   },
   allMonths: () => page.getByTestId('statistics-all-months'),
   items: () => page.getByTestId('statistics-item'),
+  itemsHeading: () => page.getByTestId('statistics-items-heading'),
   loadMore: () => page.getByTestId('statistics-load-more'),
   selectScope: async (scope: StatisticsScope) => {
     await page.getByTestId(`collection-media-chip-${scope}`).click();

@@ -1,6 +1,10 @@
 import type { Page } from '@playwright/test';
 import sharp from 'sharp';
 import { buildOmdbItem } from '../fixtures/omdb';
+import { buildOpenLibraryItem } from '../fixtures/openlibrary';
+import { buildMusicBrainzItem } from '../fixtures/musicbrainz';
+import { createBooksPage } from '../page-objects/books.po';
+import { createMusicPage } from '../page-objects/music.po';
 import { createCollectionPage } from '../page-objects/collection.po';
 import { createMessageDialog } from '../page-objects/message-dialog.po';
 import { createPhotoImportDialog } from '../page-objects/photo-import.po';
@@ -152,6 +156,76 @@ test.describe('Photo import', () => {
     await page.keyboard.press('Escape');
     await expect(collection.getListItems()).toHaveCount(3);
   });
+
+  for (const contentType of ['book', 'album'] as const) {
+    test(`imports a ${contentType} photo through canonical metadata and detects it after reload`, async ({
+      page,
+      api,
+    }) => {
+      const title = contentType === 'book' ? 'Photo ISBN Book' : 'Photo Barcode Album';
+      const identifier = contentType === 'book' ? '9780306406157' : '5099902987613';
+      const releaseId = 'f509c5ff-ad54-4dde-b61e-24f750965835';
+      const metadata =
+        contentType === 'book'
+          ? { ...buildOpenLibraryItem(title, 'OL123W'), externalIds: [{ source: 'openlibrary', id: 'OL123W' }] }
+          : buildMusicBrainzItem(title, `release-group:${releaseId}`);
+      const discovered =
+        contentType === 'book'
+          ? { ...metadata, externalIds: [...metadata.externalIds, { source: 'isbn', id: identifier }] }
+          : { ...metadata, externalIds: [...metadata.externalIds, { source: 'musicbrainz', id: releaseId }] };
+      const listType = contentType === 'book' ? 'books' : 'music';
+      const list = contentType === 'book' ? createBooksPage(page) : createMusicPage(page);
+      const dialog = createPhotoImportDialog(page);
+      const queries: string[] = [];
+      await page.route('**/api/v1/ai/vision/recognize', (route) => {
+        expect(route.request().postDataJSON().contentType).toBe(contentType);
+        return route.fulfill({ json: { data: { titles: [{ title, identifier, year: null, contributor: null }] } } });
+      });
+      await page.route('**/api/v1/external-metadata/search*', (route) => {
+        const query = new URL(route.request().url()).searchParams.get('s')!;
+        queries.push(query);
+        return route.fulfill({ json: { data: { results: query === title ? [discovered] : [] } } });
+      });
+      await page.route('**/api/v1/external-metadata/items*', (route) => {
+        const identity = new URL(route.request().url()).searchParams.get('externalIdentityId');
+        expect([identifier, metadata.providerItemId]).toContain(identity);
+        return route.fulfill({ json: { data: identity === identifier ? discovered : metadata } });
+      });
+      let creates = 0;
+      page.on('request', (request) => {
+        if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/v1/collection-items') creates++;
+      });
+
+      for (const status of ['Added', 'Already in this collection']) {
+        await list.visit();
+        await list.getShowFunctionsButton().click();
+        await list.getAddNewButton().click();
+        await dialog.open();
+        await dialog.uploadPhotos([photo(`${contentType}.jpg`)]);
+        await dialog.readPhotos();
+        await expect(dialog.getMatchButtons(0)).toHaveCount(1);
+        await dialog.selectMatch(0);
+        await dialog.addSelected();
+        await expect(dialog.getStatus(0)).toHaveText(`${title}: ${status}`);
+        await page.reload();
+        await expect(list.getListItemTitles()).toHaveText([title]);
+      }
+      expect(creates).toBe(1);
+      expect(queries).toEqual(contentType === 'album' ? [identifier, title, identifier, title] : []);
+      const saved = await api.request('GET', `/api/v1/collection-items?listType=${listType}&limit=100`);
+      expect(saved.status()).toBe(200);
+      expect((await saved.json()).data).toEqual([
+        expect.objectContaining({
+          title,
+          contentType,
+          listType,
+          externalProvider: metadata.provider,
+          externalItemId: metadata.providerItemId,
+          externalIds: expect.arrayContaining(discovered.externalIds),
+        }),
+      ]);
+    });
+  }
 
   test('retries only failed photos and searches corrected row queries without duplicate selections', async ({
     page,
