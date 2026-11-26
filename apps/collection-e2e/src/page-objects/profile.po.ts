@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 export const createProfilePage = (page: Page) => ({
   visit: () => page.goto('/client/#/settings/account'),
+  editor: () => page.getByTestId('profile-editor'),
   name: () => page.getByTestId('profile-name'),
   displayName: () => page.getByTestId('profile-display-name').locator('input'),
   save: () => page.getByTestId('profile-save'),

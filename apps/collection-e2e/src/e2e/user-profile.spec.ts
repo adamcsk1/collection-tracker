@@ -7,6 +7,27 @@ import { buildCollectionItem } from '../fixtures/collection-item';
 import { expect, test } from '../support/test';
 import { createCommonPage } from '../page-objects/common.po';
 
+test('keeps profile controls within mobile content without narrowing desktop', async ({ page, autoLogin }) => {
+  await autoLogin();
+  const profile = createProfilePage(page);
+  await profile.visit();
+
+  for (const width of [320, 390, 520, 1440]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(profile.save()).toBeVisible();
+    const editor = await profile.editor().boundingBox();
+    expect(editor).not.toBeNull();
+    for (const control of [profile.save(), profile.file()]) {
+      const bounds = await control.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(editor!.x);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(editor!.x + editor!.width + 1);
+    }
+    expect(await profile.editor().evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    if (width === 1440) expect(editor!.width).toBeGreaterThan(320);
+  }
+});
+
 test('edits a profile, uploads and replaces a photo, rejects invalid replacement, then removes it', async ({
   page,
   api,
