@@ -62,6 +62,7 @@ button.quick-action {
     justify-content: space-between;
     gap: var(--size-sm);
     margin-bottom: var(--size-xs);
+    padding-inline-start: var(--size-sm);
 
     h3 {
       margin: 0;
@@ -92,9 +93,26 @@ button.quick-action {
       gap: var(--size-xs);
       width: 100%;
       min-height: 48px;
+      padding-inline: var(--size-sm);
       justify-content: flex-start;
       text-align: start;
       border-color: transparent;
+    }
+  }
+}
+
+@media (width > 650px) {
+  .secondary-actions {
+    width: min(18rem, calc(100vw - 2 * var(--size-md)));
+    padding: var(--size-xs);
+
+    .actions-heading button {
+      width: 44px;
+      height: 44px;
+    }
+
+    .action-list button {
+      min-height: 44px;
     }
   }
 }

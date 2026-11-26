@@ -159,6 +159,13 @@ test.describe('Item dialog — edit flow', () => {
       await expect(collectionPage.getItemDialogMoreDialog()).toHaveAttribute('open', '');
       await collectionPage.waitForItemActionsAnimation();
       const moreBounds = (await collectionPage.getItemDialogMoreDialog().boundingBox())!;
+      const headingBounds = (await collectionPage
+        .getItemDialogMoreDialog()
+        .getByTestId('item-dialog-more-heading')
+        .locator('h3')
+        .boundingBox())!;
+      const iconBounds = (await collectionPage.getItemDialogEditButton().locator('i').boundingBox())!;
+      expect(Math.abs(headingBounds.x - iconBounds.x)).toBeLessThanOrEqual(2);
       expect(moreBounds.x).toBeGreaterThanOrEqual(0);
       expect(moreBounds.y).toBeGreaterThanOrEqual(0);
       expect(moreBounds.x + moreBounds.width).toBeLessThanOrEqual(viewport.width);
@@ -167,6 +174,20 @@ test.describe('Item dialog — edit flow', () => {
         expect(moreBounds.x).toBe(0);
         expect(moreBounds.width).toBe(viewport.width);
         expect(moreBounds.y + moreBounds.height).toBeCloseTo(viewport.height, 0);
+      } else {
+        expect(moreBounds.width).toBe(288);
+      }
+      await expect(collectionPage.getItemDialogMoreDialog()).toHaveCSS(
+        'padding-top',
+        viewport.width <= 650 ? '16px' : '8px'
+      );
+      for (const button of [
+        collectionPage.getItemDialogMoreCloseButton(),
+        collectionPage.getItemDialogEditButton(),
+        collectionPage.getItemDialogShareButton(),
+        collectionPage.getItemDialogDeleteButton(),
+      ]) {
+        expect((await button.boundingBox())!.height).toBe(viewport.width <= 650 ? 48 : 44);
       }
       await page.screenshot({ path: testInfo.outputPath('item-more-actions.png') });
       await collectionPage.getItemDialogEditButton().click();
@@ -222,7 +243,7 @@ test.describe('Item dialog — edit flow', () => {
       for (const width of [390, 1280]) {
         await page.setViewportSize({ width, height: 844 });
         await collectionPage.waitForItemActionsAnimation();
-        await expect(dialog).toHaveCSS('padding-top', '16px');
+        await expect(dialog).toHaveCSS('padding-top', width <= 650 ? '16px' : '8px');
         await expect(dialog).toHaveCSS('border-top-width', width <= 650 ? '0px' : '1px');
         await expect(dialog).toHaveCSS('border-bottom-left-radius', width <= 650 ? '0px' : '5px');
         expect(await dialog.evaluate((element) => getComputedStyle(element, '::backdrop').backdropFilter)).toBe(

@@ -79,6 +79,9 @@ for (const width of [390, 1000, 1440]) {
     await popup.evaluate((dialog) =>
       Promise.all(dialog.getAnimations({ subtree: true }).map((animation) => animation.finished))
     );
+    const headingBounds = (await popup.getByTestId('nav-account-more-heading').locator('h3').boundingBox())!;
+    const iconBounds = (await common.getNavSettingsLink().locator('i').boundingBox())!;
+    expect(Math.abs(headingBounds.x - iconBounds.x)).toBeLessThanOrEqual(2);
     const bounds = await popup.boundingBox();
     if (!bounds) throw new Error('Missing account popup bounds');
     if (width <= 650) {
